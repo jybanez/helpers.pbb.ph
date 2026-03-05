@@ -5,6 +5,7 @@
     "operator_id": 2,
     "status": "Resolved",
     "alert_level": "Normal",
+    "call_duration_seconds": 13,
     "actual_caller_name": "Maria Santos",
     "actual_caller_relationship": null,
     "called_at": "2026-02-18T08:54:49Z",
@@ -653,7 +654,7 @@
         "incident_id": 16,
         "uploaded_by_user_id": 2,
         "type": "audio",
-        "path": "incidents/16/audio/caller-2-2026-02-18T08-54-49Z.weba",
+        "path": "samples/incidents/16/audio/caller-2-2026-02-18T08-54-49Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-31-caller-2-2026-02-18T08-54-49Z-1771404891392-72336a69",
@@ -667,7 +668,7 @@
         "incident_id": 16,
         "uploaded_by_user_id": 6,
         "type": "audio",
-        "path": "incidents/16/audio/caller.weba",
+        "path": "samples/incidents/16/audio/caller.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-31-caller-2-2026-02-18T08-54-49Z-1771404891392-72336a69",
@@ -681,7 +682,7 @@
         "incident_id": 16,
         "uploaded_by_user_id": 2,
         "type": "audio",
-        "path": "incidents/16/audio/operator-2-2026-02-18T08-54-49Z.weba",
+        "path": "samples/incidents/16/audio/operator-2-2026-02-18T08-54-49Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-31-operator-2-2026-02-18T08-54-49Z-1771404890748-f8effc66",

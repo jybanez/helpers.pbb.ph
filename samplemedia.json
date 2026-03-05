@@ -1,0 +1,149 @@
+[
+    {
+        "id": 86,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "video",
+        "path": "samples/media/videos/segment-1.webm",
+        "duration_seconds": 54,
+        "metadata": {
+            "upload_id": "rec-48-caller-1771657191655-3f68ac9d",
+            "segment_index": 1,
+            "recording_role": "caller"
+        },
+        "created_at": "2026-02-21T07:00:48.000000Z",
+        "updated_at": "2026-02-21T07:00:48.000000Z",
+        "ready": true
+    },
+    {
+        "id": 87,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "video",
+        "path": "samples/media/videos/segment-2.webm",
+        "duration_seconds": 3,
+        "metadata": {
+            "upload_id": "rec-48-caller-1771657255898-958b4259",
+            "segment_index": 2,
+            "recording_role": "caller"
+        },
+        "created_at": "2026-02-21T07:01:00.000000Z",
+        "updated_at": "2026-02-21T07:01:00.000000Z",
+        "ready": true
+    },
+    {
+        "id": 88,
+        "incident_id": 29,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "samples/media/audio/caller-3-2026-02-21T06-59-45Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+            "upload_id": "rec-48-caller-3-2026-02-21T06-59-45Z-1771657188216-7e5e227d",
+            "recording_role": "caller-3-2026-02-21T06-59-45Z"
+        },
+        "created_at": "2026-02-21T07:01:12.000000Z",
+        "updated_at": "2026-02-21T07:01:12.000000Z",
+        "ready": true
+    },
+    {
+        "id": 89,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "audio",
+        "path": "samples/media/audio/caller.weba",
+        "duration_seconds": null,
+        "metadata": {
+            "upload_id": "rec-48-caller-3-2026-02-21T06-59-45Z-1771657188216-7e5e227d",
+            "recording_role": "caller"
+        },
+        "created_at": "2026-02-21T07:01:12.000000Z",
+        "updated_at": "2026-02-21T07:01:12.000000Z",
+        "ready": true
+    },
+    {
+        "id": 90,
+        "incident_id": 29,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "samples/media/audio/operator-3-2026-02-21T06-59-45Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+            "upload_id": "rec-48-operator-3-2026-02-21T06-59-45Z-1771657187079-efe9d893",
+            "recording_role": "operator-3-2026-02-21T06-59-45Z"
+        },
+        "created_at": "2026-02-21T07:01:12.000000Z",
+        "updated_at": "2026-02-21T07:01:12.000000Z",
+        "ready": true
+    },
+    {
+        "id": 91,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "photo",
+        "path": "samples/media/photos/z2LE3V512X1IBWHvzeQUzkASGM3Or2IDoj2wedDg.jpg",
+        "duration_seconds": null,
+        "metadata": null,
+        "created_at": "2026-02-21T07:02:17.000000Z",
+        "updated_at": "2026-02-21T07:02:17.000000Z",
+        "ready": true
+    },
+    {
+        "id": 92,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "video",
+        "path": "samples/media/videos/segment-1.webm",
+        "duration_seconds": 11,
+        "metadata": {
+            "upload_id": "rec-52-caller-1771659144279-ea8ad195",
+            "segment_index": 1,
+            "recording_role": "caller"
+        },
+        "created_at": "2026-02-21T07:32:36.000000Z",
+        "updated_at": "2026-02-21T07:32:36.000000Z",
+        "ready": true
+    },
+    {
+        "id": 93,
+        "incident_id": 29,
+        "uploaded_by_user_id": 5,
+        "type": "photo",
+        "path": "samples/media/photos/oBUT6u6mBRZaydKUsJgksNtUroL9ed0ELegBiFaN.jpg",
+        "duration_seconds": null,
+        "metadata": null,
+        "created_at": "2026-02-21T07:32:44.000000Z",
+        "updated_at": "2026-02-21T07:32:44.000000Z",
+        "ready": true
+    },
+    {
+        "id": 94,
+        "incident_id": 29,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "samples/media/audio/caller-3-2026-02-21T07-32-19Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+            "upload_id": "rec-52-caller-3-2026-02-21T07-32-19Z-1771659139745-59f9d63f",
+            "recording_role": "caller-3-2026-02-21T07-32-19Z"
+        },
+        "created_at": "2026-02-21T07:32:55.000000Z",
+        "updated_at": "2026-02-21T07:32:55.000000Z",
+        "ready": true
+    },
+    {
+        "id": 95,
+        "incident_id": 29,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "samples/media/audio/operator-3-2026-02-21T07-32-19Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+            "upload_id": "rec-52-operator-3-2026-02-21T07-32-19Z-1771659139738-38a95461",
+            "recording_role": "operator-3-2026-02-21T07-32-19Z"
+        },
+        "created_at": "2026-02-21T07:32:55.000000Z",
+        "updated_at": "2026-02-21T07:32:55.000000Z",
+        "ready": true
+    }
+]

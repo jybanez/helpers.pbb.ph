@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Session Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.audio.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      min-height: 100px;
+    }
+    h1, h2, p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="audio-demo-controls">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <label for="sampleSelect">Sample</label>
+        <select id="sampleSelect"></select>
+        <label for="styleSelect">Graph</label>
+        <select id="styleSelect">
+          <option value="vu" selected>VU Meter</option>
+          <option value="dots">Dot Matrix Pulse</option>
+          <option value="mirrored">Mirrored Waveform</option>
+          <option value="spectrum">Spectrum Bars</option>
+          <option value="neon">Neon Ribbon Wave</option>
+          <option value="particle">Particle Pulse</option>
+          <option value="shockwave">Shockwave</option>
+          <option value="tsunami">Tsunami Ribbon</option>
+          <option value="plasma">Plasma Arc</option>
+          <option value="burst">Burst Columns</option>
+          <option value="heartbeat">Heartbeat Oscilloscope</option>
+        </select>
+        <label for="themeSelect">Theme</label>
+        <select id="themeSelect">
+          <option value="dark" selected>dark</option>
+          <option value="light">light</option>
+        </select>
+        <label for="sensitivityRange">Sensitivity</label>
+        <input id="sensitivityRange" type="range" min="1" max="6" step="0.1" value="3.4">
+        <code id="sensitivityValue">3.4x</code>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h1>Audio Session Demo</h1>
+      <p>Uses <code>incident.media[]</code> with <code>recording_role=&lt;role&gt;-&lt;call_id&gt;-&lt;timestamp&gt;</code>.</p>
+    </section>
+
+    <section class="panel">
+      <div id="audioHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Event Log</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createAudioCallSession } from "./js/ui/ui.audio.callSession.js";
+
+    const page = document.querySelector("main.page");
+    const sampleSelect = document.getElementById("sampleSelect");
+    const styleSelect = document.getElementById("styleSelect");
+    const themeSelect = document.getElementById("themeSelect");
+    const sensitivityRange = document.getElementById("sensitivityRange");
+    const sensitivityValue = document.getElementById("sensitivityValue");
+    const host = document.getElementById("audioHost");
+    const eventLog = document.getElementById("eventLog");
+    const sampleCandidates = [
+      "sampledata_1.json",
+      "sampledata_2.json",
+      "sampledata_6.json",
+      "sampledata_7.json",
+      "sampledata_15.json",
+      "sampledata_16.json",
+      "sampledata.json"
+    ];
+
+    function addEvent(message, payload) {
+      const line = `[${new Date().toISOString()}] ${message}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet."
+        ? line
+        : `${line}\n${eventLog.textContent}`;
+    }
+
+    async function fetchJson(path) {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Failed to load ${path}`);
+      }
+      return response.json();
+    }
+
+    async function initSamplePicker() {
+      const available = [];
+      for (const name of sampleCandidates) {
+        try {
+          await fetchJson(`./${name}`);
+          available.push(name);
+        } catch (error) {
+          // skip missing file
+        }
+      }
+      if (!available.length) {
+        throw new Error("No sampledata_*.json files could be loaded.");
+      }
+      sampleSelect.innerHTML = "";
+      available.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        sampleSelect.appendChild(option);
+      });
+      sampleSelect.value = available.includes("sampledata_16.json")
+        ? "sampledata_16.json"
+        : available[0];
+    }
+
+    let audioApi = null;
+    let lastLoggedSecond = -1;
+
+    function getSensitivity() {
+      const value = Number(sensitivityRange.value);
+      return Number.isFinite(value) ? value : 3.4;
+    }
+
+    function updateSensitivityLabel() {
+      sensitivityValue.textContent = `${getSensitivity().toFixed(1)}x`;
+    }
+
+    async function mountSelectedSample() {
+      const samplePath = `./${sampleSelect.value}`;
+      const payload = await fetchJson(samplePath);
+      const incident = payload?.incident || {};
+      const mediaCount = Array.isArray(incident.media) ? incident.media.length : 0;
+      if (audioApi) {
+        audioApi.destroy();
+      }
+      audioApi = createAudioCallSession(host, incident, {
+        audiographStyle: styleSelect.value,
+        sensitivity: getSensitivity(),
+        showMute: true,
+        autoplay: false,
+        onError(error) {
+          addEvent("audio.error", { message: error?.message || "Unknown error" });
+        },
+        onStateChange(state) {
+          if (!state) {
+            return;
+          }
+          const currentSecond = Math.floor((state.currentMs || 0) / 1000);
+          if (currentSecond !== lastLoggedSecond) {
+            lastLoggedSecond = currentSecond;
+            addEvent("audio.state", {
+              currentMs: state.currentMs,
+              durationMs: state.durationMs,
+              isPlaying: state.isPlaying
+            });
+          }
+        }
+      });
+      lastLoggedSecond = -1;
+      addEvent("audio.sample.loaded", {
+        sample: sampleSelect.value,
+        incident_id: incident?.id,
+        mediaCount
+      });
+    }
+
+    await initSamplePicker();
+    updateSensitivityLabel();
+    await mountSelectedSample();
+
+    sampleSelect.addEventListener("change", () => {
+      mountSelectedSample().catch((error) => {
+        console.error(error);
+        addEvent("audio.sample.error", { sample: sampleSelect.value, message: error.message });
+      });
+    });
+
+    styleSelect.addEventListener("change", () => {
+      mountSelectedSample().catch((error) => {
+        console.error(error);
+        addEvent("audio.style.error", { style: styleSelect.value, message: error.message });
+      });
+    });
+
+    themeSelect.addEventListener("change", () => {
+      page.dataset.theme = themeSelect.value;
+      addEvent("theme.toggle", { theme: themeSelect.value });
+    });
+
+    sensitivityRange.addEventListener("input", () => {
+      updateSensitivityLabel();
+      mountSelectedSample().catch((error) => {
+        console.error(error);
+        addEvent("audio.sensitivity.error", { sensitivity: getSensitivity(), message: error.message });
+      });
+    });
+  </script>
+</body>
+</html>

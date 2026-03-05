@@ -5,6 +5,7 @@
     "operator_id": 3,
     "status": "Resolved",
     "alert_level": "Elevated",
+    "call_duration_seconds": 47,
     "actual_caller_name": "Juan Dela Cruz",
     "actual_caller_relationship": null,
     "called_at": "2026-02-16T02:22:19Z",
@@ -333,7 +334,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 5,
         "type": "video",
-        "path": "incidents/2/videos/segment-1.webm",
+        "path": "samples/incidents/2/videos/segment-1.webm",
         "duration_seconds": 36,
         "metadata": {
           "upload_id": "rec-2-caller-1771208568480-cfee90d0",
@@ -348,7 +349,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/2/audio/caller-3-2026-02-16T02-22-16Z.weba",
+        "path": "samples/incidents/2/audio/caller-3-2026-02-16T02-22-16Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-2-caller-3-2026-02-16T02-22-16Z-1771208538611-f59fae66",
@@ -362,7 +363,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 5,
         "type": "audio",
-        "path": "incidents/2/audio/caller.weba",
+        "path": "samples/incidents/2/audio/caller.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-2-caller-3-2026-02-16T02-22-16Z-1771208538611-f59fae66",
@@ -376,7 +377,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 5,
         "type": "video",
-        "path": "incidents/2/videos/segment-1.webm",
+        "path": "samples/incidents/2/videos/segment-1.webm",
         "duration_seconds": 36,
         "metadata": {
           "upload_id": "rec-3-caller-1771208721552-2f0d6be2",
@@ -391,7 +392,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/2/audio/caller-3-2026-02-16T02-25-17Z.weba",
+        "path": "samples/incidents/2/audio/caller-3-2026-02-16T02-25-17Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-3-caller-3-2026-02-16T02-25-17Z-1771208718501-8ead2a5e",
@@ -405,7 +406,7 @@
         "incident_id": 2,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/2/audio/operator-3-2026-02-16T02-25-17Z.weba",
+        "path": "samples/incidents/2/audio/operator-3-2026-02-16T02-25-17Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-3-operator-3-2026-02-16T02-25-17Z-1771208718495-88fa8eb0",

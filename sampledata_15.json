@@ -5,6 +5,7 @@
     "operator_id": 3,
     "status": "Resolved",
     "alert_level": "Normal",
+    "call_duration_seconds": 5,
     "actual_caller_name": "Juan Dela Cruz",
     "actual_caller_relationship": null,
     "called_at": "2026-02-18T07:53:43Z",
@@ -263,7 +264,7 @@
         "incident_id": 15,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/15/audio/caller-3-2026-02-18T07-53-43Z.weba",
+        "path": "samples/incidents/15/audio/caller-3-2026-02-18T07-53-43Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-30-caller-3-2026-02-18T07-53-43Z-1771401225285-4c1ecb45",
@@ -277,7 +278,7 @@
         "incident_id": 15,
         "uploaded_by_user_id": 5,
         "type": "audio",
-        "path": "incidents/15/audio/caller.weba",
+        "path": "samples/incidents/15/audio/caller.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-30-caller-3-2026-02-18T07-53-43Z-1771401225285-4c1ecb45",
@@ -291,7 +292,7 @@
         "incident_id": 15,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/15/audio/operator-3-2026-02-18T07-53-43Z.weba",
+        "path": "samples/incidents/15/audio/operator-3-2026-02-18T07-53-43Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-30-operator-3-2026-02-18T07-53-43Z-1771401225268-e254633b",

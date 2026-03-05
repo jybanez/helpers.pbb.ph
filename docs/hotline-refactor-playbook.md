@@ -77,6 +77,11 @@ Never add backend-specific quirks inside helper rendering logic.
    - Incident type resource section is shown from `resources[]`, quantity resolved via `resources_needed[]` fallback `0`.
 4. Focus/scroll jumps:
    - Keep keyed reconciliation and anchor restoration in list helpers.
+5. Audio autoplay/context warnings:
+   - Keep audio context unlock logic tied to user gesture (`Play`) path.
+6. Audio timeline mismatches:
+   - Prefer `incident.call_duration_seconds` for total session duration when present.
+   - Keep per-segment timestamp positioning from `recording_role`.
 
 ## 8) UI Utility Ownership
 
@@ -89,6 +94,10 @@ Shared UI layer:
 - `js/ui/ui.dialog.js`
 - `js/ui/ui.tabs.js`
 - `js/ui/ui.strips.js`
+- `js/ui/ui.media.strip.js`
+- `js/ui/ui.audio.player.js`
+- `js/ui/ui.audio.audiograph.js`
+- `js/ui/ui.audio.callSession.js`
 
 Shared CSS:
 
@@ -97,6 +106,8 @@ Shared CSS:
 - `css/ui/ui.dialog.css`
 - `css/ui/ui.tabs.css`
 - `css/ui/ui.strips.css`
+- `css/ui/ui.media.strip.css`
+- `css/ui/ui.audio.css`
 
 Rule: add generic behavior to `ui/*`; keep incident domain logic in `incident/*`.
 
@@ -109,6 +120,7 @@ Run this checklist:
    - `demo.team.assignments.html`
    - `demo.incident.types.html`
    - `demo.ui.html`
+   - `demo.audio.html`
 2. No console errors in normal demo flow.
 3. Required-option behavior still matches contract.
 4. `getData()` output shape unchanged for touched helpers.

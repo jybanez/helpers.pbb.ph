@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./css/ui/ui.dialog.css">
   <link rel="stylesheet" href="./css/ui/ui.tabs.css">
   <link rel="stylesheet" href="./css/ui/ui.strips.css">
+  <link rel="stylesheet" href="./css/ui/ui.media.strip.css">
   <style>
     body {
       margin: 0;
@@ -55,11 +56,29 @@
       min-height: 90px;
     }
     #tabsHost,
-    #stripHost {
+    #stripHost,
+    #mediaStripHostScroll,
+    #mediaStripHostWrap {
       border: 1px solid #2b3750;
       border-radius: 8px;
       padding: 10px;
       background: #0b1220;
+    }
+    .media-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #b2c2e5;
+    }
+    .media-controls input[type="range"] {
+      width: 220px;
+    }
+    .media-controls code {
+      min-width: 58px;
+      display: inline-block;
+      text-align: right;
     }
   </style>
 </head>
@@ -101,6 +120,19 @@
     </section>
 
     <section class="panel">
+      <h2 class="ui-title">Media Strip</h2>
+      <div class="media-controls">
+        <label for="mediaAnimRange">Animation</label>
+        <input id="mediaAnimRange" type="range" min="80" max="1200" step="10" value="300">
+        <code id="mediaAnimValue">300ms</code>
+      </div>
+      <p>Scroll layout</p>
+      <div id="mediaStripHostScroll"></div>
+      <p>Wrap layout</p>
+      <div id="mediaStripHostWrap"></div>
+    </section>
+
+    <section class="panel">
       <h2 class="ui-title">Event Log</h2>
       <pre id="log" class="log">No events yet.</pre>
     </section>
@@ -114,9 +146,12 @@
     import { uiAlert, uiConfirm, uiPrompt } from "./js/ui/ui.dialog.js";
     import { createTabs } from "./js/ui/ui.tabs.js";
     import { createStrip } from "./js/ui/ui.strips.js";
+    import { createMediaStrip } from "./js/ui/ui.media.strip.js";
 
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
+    const mediaAnimRange = document.getElementById("mediaAnimRange");
+    const mediaAnimValue = document.getElementById("mediaAnimValue");
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -212,6 +247,109 @@
         },
       }
     );
+
+    const fallbackMediaItems = [
+      {
+        id: "img-1",
+        type: "image",
+        thumbUrl: "https://picsum.photos/id/1015/160/120",
+        srcUrl: "https://picsum.photos/id/1015/1600/1000",
+        title: "Mountain",
+        alt: "Mountain landscape",
+      },
+      {
+        id: "vid-1",
+        type: "video",
+        thumbUrl: "https://picsum.photos/id/1025/160/120",
+        srcUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        title: "Flower Video",
+      },
+      {
+        id: "img-2",
+        type: "image",
+        thumbUrl: "https://picsum.photos/id/1035/160/120",
+        srcUrl: "https://picsum.photos/id/1035/1600/1000",
+        title: "Forest",
+        alt: "Forest view",
+      },
+      {
+        id: "vid-2",
+        type: "video",
+        thumbUrl: "https://picsum.photos/id/1043/160/120",
+        srcUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+        title: "Big Buck Bunny Clip",
+      },
+      {
+        id: "img-3",
+        type: "image",
+        thumbUrl: "https://picsum.photos/id/1069/160/120",
+        srcUrl: "https://picsum.photos/id/1069/1600/1000",
+        title: "Sea",
+        alt: "Sea image",
+      },
+    ];
+
+    async function loadMediaItems() {
+      try {
+        const response = await fetch("./samplemedia.json", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load samplemedia.json (${response.status})`);
+        }
+        const payload = await response.json();
+        if (!Array.isArray(payload)) {
+          throw new Error("samplemedia.json is not an array");
+        }
+        writeLog("media.dataset", {
+          source: "samplemedia.json",
+          total: payload.length,
+          renderable: payload.filter((item) => item?.type === "photo" || item?.type === "video").length,
+        });
+        return payload;
+      } catch (error) {
+        writeLog("media.dataset.fallback", { reason: error.message });
+        return fallbackMediaItems;
+      }
+    }
+
+    const mediaItems = await loadMediaItems();
+    let mediaAnimationMs = Number(mediaAnimRange.value) || 300;
+
+    function updateMediaAnimationLabel(value) {
+      mediaAnimValue.textContent = `${value}ms`;
+    }
+    updateMediaAnimationLabel(mediaAnimationMs);
+
+    const mediaStripScroll = createMediaStrip(document.getElementById("mediaStripHostScroll"), mediaItems, {
+      layout: "scroll",
+      autoplay: true,
+      animationMs: mediaAnimationMs,
+      onOpen(item, index) {
+        writeLog("media.open", { layout: "scroll", index, id: item?.id, type: item?.type });
+      },
+      onClose(item, index) {
+        writeLog("media.close", { layout: "scroll", index, id: item?.id, type: item?.type });
+      },
+    });
+
+    const mediaStripWrap = createMediaStrip(document.getElementById("mediaStripHostWrap"), mediaItems, {
+      layout: "wrap",
+      autoplay: true,
+      animationMs: mediaAnimationMs,
+      onOpen(item, index) {
+        writeLog("media.open", { layout: "wrap", index, id: item?.id, type: item?.type });
+      },
+      onClose(item, index) {
+        writeLog("media.close", { layout: "wrap", index, id: item?.id, type: item?.type });
+      },
+    });
+
+    mediaAnimRange.addEventListener("input", () => {
+      mediaAnimationMs = Number(mediaAnimRange.value) || 300;
+      updateMediaAnimationLabel(mediaAnimationMs);
+      mediaStripScroll.update(mediaItems, { animationMs: mediaAnimationMs });
+      mediaStripWrap.update(mediaItems, { animationMs: mediaAnimationMs });
+      writeLog("media.animation.update", { animationMs: mediaAnimationMs });
+    });
   </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     "operator_id": 3,
     "status": "Resolved",
     "alert_level": "Normal",
+    "call_duration_seconds": 26,
     "actual_caller_name": "Maria Santos",
     "actual_caller_relationship": null,
     "called_at": "2026-02-18T04:03:34Z",
@@ -266,7 +267,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 6,
         "type": "video",
-        "path": "incidents/6/videos/segment-1.webm",
+        "path": "samples/incidents/6/videos/segment-1.webm",
         "duration_seconds": 22,
         "metadata": {
           "upload_id": "rec-19-caller-1771387423003-6ae61530",
@@ -281,7 +282,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/6/audio/caller-3-2026-02-18T04-03-34Z.weba",
+        "path": "samples/incidents/6/audio/caller-3-2026-02-18T04-03-34Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-19-caller-3-2026-02-18T04-03-34Z-1771387416224-1db8b850",
@@ -295,7 +296,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 6,
         "type": "audio",
-        "path": "incidents/6/audio/caller.weba",
+        "path": "samples/incidents/6/audio/caller.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-19-caller-3-2026-02-18T04-03-34Z-1771387416224-1db8b850",
@@ -309,7 +310,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/6/audio/operator-3-2026-02-18T04-03-34Z.weba",
+        "path": "samples/incidents/6/audio/operator-3-2026-02-18T04-03-34Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-19-operator-3-2026-02-18T04-03-34Z-1771387415437-5ad0ef83",
@@ -323,7 +324,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 6,
         "type": "video",
-        "path": "incidents/6/videos/segment-1.webm",
+        "path": "samples/incidents/6/videos/segment-1.webm",
         "duration_seconds": 16,
         "metadata": {
           "upload_id": "rec-20-caller-1771387936104-e97de5b4",
@@ -338,7 +339,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/6/audio/caller-3-2026-02-18T04-12-10Z.weba",
+        "path": "samples/incidents/6/audio/caller-3-2026-02-18T04-12-10Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-20-caller-3-2026-02-18T04-12-10Z-1771387931398-2d71d42b",
@@ -352,7 +353,7 @@
         "incident_id": 6,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/6/audio/operator-3-2026-02-18T04-12-10Z.weba",
+        "path": "samples/incidents/6/audio/operator-3-2026-02-18T04-12-10Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-20-operator-3-2026-02-18T04-12-10Z-1771387931377-8c4963bb",

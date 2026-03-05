@@ -28,6 +28,8 @@ css/
     ui.dialog.css
     ui.tabs.css
     ui.strips.css
+    ui.media.strip.css
+    ui.audio.css
   incident/
     incident.css
     incident.base.css
@@ -46,6 +48,10 @@ js/
     ui.dialog.js
     ui.tabs.js
     ui.strips.js
+    ui.media.strip.js
+    ui.audio.player.js
+    ui.audio.audiograph.js
+    ui.audio.callSession.js
   incident/
     incident.base.js
     incident.teams.assignments.js
@@ -58,6 +64,7 @@ index.html
 demo.team.assignments.html
 demo.incident.types.html
 demo.ui.html
+demo.audio.html
 sampledata.json
 sampledata_*.json
 boot.*.json
@@ -97,6 +104,15 @@ Reusable shared UI utilities live under `js/ui`:
   - `createTabs(container, options)` accessible tablist + panel component
 - `ui.strips.js`
   - `createStrip(container, items, options)` selectable pill-strip component (single/multi)
+- `ui.media.strip.js`
+  - `createMediaStrip(container, items, options)` media thumbnails strip (image/video) with modal viewer/player + in-modal prev/next navigation
+  - options include `layout: "scroll" | "wrap"` and `animationMs` (default `300`)
+- `ui.audio.player.js`
+  - `createAudioPlayer(container, data, options)` reusable transport UI (play/pause, time, seek)
+- `ui.audio.audiograph.js`
+  - `createAudioGraph(container, data, options)` standalone role audiograph renderer with multiple styles
+- `ui.audio.callSession.js`
+  - `createAudioCallSession(container, incident, options)` parent orchestrator for timeline playback + stacked role audiographs
 
 Reusable UI styles live under `css/ui`:
 
@@ -105,6 +121,8 @@ Reusable UI styles live under `css/ui`:
 - `ui.dialog.css` shared dialog/modal styles
 - `ui.tabs.css` tab UI styles
 - `ui.strips.css` strip/chip selector styles
+- `ui.media.strip.css` media strip, thumbnail, and media viewer styles
+- `ui.audio.css` audio player, audiograph, and call session styles
 
 Current usage:
 
@@ -303,6 +321,111 @@ Supported lookup keys in `incidentBase`:
 
 Missing references trigger console warnings.
 
+## Audio UI Helpers
+
+### `createAudioGraph(container, data, options)` (standalone)
+
+Standalone audiograph component for a single role, usable with or without the call-session helper.
+
+Data:
+
+- `role`
+- `roleLabel`
+- `muted`
+- `isPlaying`
+- `currentMs`
+- `durationMs`
+
+Options:
+
+- `style`: `vu | dots | mirrored | spectrum | neon | particle | shockwave | tsunami | plasma | burst | heartbeat`
+- `sensitivity` (default `3.4`)
+- `gateThreshold` (default `0.06`)
+- `attackMs` (default `45`)
+- `releaseMs` (default `260`)
+- `intensityCurve` (default `1.7`)
+- `freezeOnPause` (default `true`)
+- `overlayHeader` (default `true`)
+- `headerInsetPx` (default `30`)
+- `showMute`, `muteLabel`, `unmuteLabel`
+- `onToggleMute(muted, state)`
+
+Methods:
+
+- `destroy()`
+- `update(nextData, nextOptions?)`
+- `setMuted(muted, { notify? })`
+- `setPlayback({ isPlaying, currentMs, durationMs })`
+- `attachAudio(audioElement)`
+- `unlockAudioContext()`
+- `getState()`
+
+### `createAudioPlayer(container, data, options)`
+
+Reusable transport controls.
+
+Data:
+
+- `isPlaying`
+- `currentMs`
+- `durationMs`
+
+Options:
+
+- `playLabel`, `pauseLabel`
+- `onTogglePlay(nextPlaying, state)`
+- `onSeek(nextMs, meta)`
+
+Methods:
+
+- `destroy()`
+- `update(nextData, nextOptions?)`
+- `setPlaying(isPlaying)`
+- `setCurrent(currentMs)`
+- `setDuration(durationMs)`
+- `getState()`
+
+### `createAudioCallSession(container, incident, options)`
+
+Parent helper for session playback from `incident.media[]`.
+
+Behavior:
+
+- Parses audio roles using `incident.media[].metadata.recording_role` with format:
+  - `<role>-<call_id>-<timestamp>`
+- Invalid `recording_role` format is skipped.
+- Role streams are timestamp-aligned on one timeline.
+- Timestamp gaps are treated as silence.
+- Per-role mute keeps global timeline playing.
+- Timeline seek/rewind works across the full session.
+- Uses `incident.call_duration_seconds` (when present) as total timeline duration source of truth.
+
+Role labels:
+
+- `caller` -> `incident.caller.name` fallback `caller`
+- `operator` -> `incident.operator.name` fallback `operator`
+- unknown role -> role token
+
+Options:
+
+- `autoplay`
+- `baseUrl`
+- `audiographStyle`
+- `roleStyles`
+- `sensitivity`
+- `showMute`
+- `onError(error)`
+- `onStateChange(state)`
+
+Methods:
+
+- `destroy()`
+- `update(nextIncident, nextOptions?)`
+- `play()`
+- `pause()`
+- `seek(nextMs)`
+- `getState()`
+
 ## Demo Usage
 
 Open from a local server (Apache/WAMP/Nginx):
@@ -317,7 +440,12 @@ Open from a local server (Apache/WAMP/Nginx):
   - right: viewer list helper
   - right column mirrors left via `setList(items[])`
 - `demo.ui.html` -> UI utilities playground
-  - dialog, drawer, search, tabs, strips
+  - dialog, drawer, search, tabs, strips, media strip
+- `demo.audio.html` -> audio player + stacked role audiographs
+  - sample selector for available `sampledata_*.json`
+  - graph style selector
+  - sensitivity slider
+  - theme toggle
 
 Demo pages load:
 
@@ -365,3 +493,15 @@ Demo pages load:
 - Incident helper set (`teams.assignments`, `types`, details editor/viewer)
 - Shared UI utility layer (`ui.dom`, `ui.events`, `ui.drawer`, `ui.search`, `ui.dialog`, `ui.tabs`, `ui.strips`)
 - Demo pages published via GitHub Pages
+
+### v0.2.0
+
+- Added audio UI utility layer:
+  - `ui.audio.player`
+  - `ui.audio.audiograph` (standalone)
+  - `ui.audio.callSession`
+- Added `demo.audio.html` with sample selector + live style/sensitivity controls
+- Added advanced audiograph styles:
+  - `neon`, `particle`, `shockwave`, `tsunami`, `plasma`, `burst`, `heartbeat`
+- Added silence-gate + attack/release + freeze-on-pause visualization behavior
+- Added overlay-header mode for audiographs to maximize graph area

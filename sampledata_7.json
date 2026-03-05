@@ -5,6 +5,7 @@
     "operator_id": 3,
     "status": "Discarded",
     "alert_level": "Normal",
+    "call_duration_seconds": 97,
     "actual_caller_name": "Maria Santos",
     "actual_caller_relationship": null,
     "called_at": "2026-02-18T04:15:10Z",
@@ -282,7 +283,7 @@
         "incident_id": 7,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/7/audio/caller-3-2026-02-18T04-15-10Z.weba",
+        "path": "samples/incidents/7/audio/caller-3-2026-02-18T04-15-10Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-21-caller-3-2026-02-18T04-15-10Z-1771388112652-5051322d",
@@ -296,7 +297,7 @@
         "incident_id": 7,
         "uploaded_by_user_id": 6,
         "type": "audio",
-        "path": "incidents/7/audio/caller.weba",
+        "path": "samples/incidents/7/audio/caller.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-21-caller-3-2026-02-18T04-15-10Z-1771388112652-5051322d",
@@ -310,7 +311,7 @@
         "incident_id": 7,
         "uploaded_by_user_id": 3,
         "type": "audio",
-        "path": "incidents/7/audio/operator-3-2026-02-18T04-15-10Z.weba",
+        "path": "samples/incidents/7/audio/operator-3-2026-02-18T04-15-10Z.weba",
         "duration_seconds": null,
         "metadata": {
           "upload_id": "rec-21-operator-3-2026-02-18T04-15-10Z-1771388111999-66d8d46e",

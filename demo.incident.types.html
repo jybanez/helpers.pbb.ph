@@ -72,6 +72,8 @@
   <main class="page">
     <section class="controls">
       <a class="back" href="./index.html">← Back to Home</a>
+      <label for="sampleSelect">Sample</label>
+      <select id="sampleSelect"></select>
       <label for="themeSelect">Theme</label>
       <select id="themeSelect">
         <option value="dark" selected>dark</option>
@@ -109,9 +111,19 @@
     import { incidentBase } from "./js/incident/incident.base.js";
     import { incidentTypes } from "./js/incident/incident.types.js";
 
+    const sampleSelect = document.getElementById("sampleSelect");
     const themeSelect = document.getElementById("themeSelect");
     const debugToggle = document.getElementById("debugToggle");
     const eventLog = document.getElementById("eventLog");
+    const sampleCandidates = [
+      "sampledata_1.json",
+      "sampledata_2.json",
+      "sampledata_6.json",
+      "sampledata_7.json",
+      "sampledata_15.json",
+      "sampledata_16.json",
+      "sampledata.json"
+    ];
 
     async function fetchJson(path) {
       const response = await fetch(path);
@@ -130,7 +142,6 @@
 
     async function main() {
       const [
-        sample,
         teamStatuses,
         incidentStatuses,
         alertLevels,
@@ -140,7 +151,6 @@
         resourceTypes,
         operators
       ] = await Promise.all([
-        fetchJson("./sampledata_2.json"),
         fetchJson("./boot.team.assignment.status.json"),
         fetchJson("./boot.incident.status.json"),
         fetchJson("./boot.alert.levels.json"),
@@ -150,8 +160,6 @@
         fetchJson("./boot.resource.types.json"),
         fetchJson("./boot.operators.json")
       ]);
-
-      const incident = sample.incident || {};
 
       const lookups = {
         teamStatuses,
@@ -167,6 +175,7 @@
       let theme = "dark";
       let debug = false;
       let editableListItems = [];
+      let incidentState = {};
 
       const baseApi = incidentBase(document.createElement("div"), {}, { lookups, debug });
       window.hhIncident = { baseApi };
@@ -209,13 +218,71 @@
         });
       }
 
-      editableListItems = buildIncidentTypeItems(incident);
+      async function initSamplePicker() {
+        const availability = await Promise.all(
+          sampleCandidates.map(async (name) => {
+            try {
+              await fetchJson(`./${name}`);
+              return name;
+            } catch (error) {
+              return null;
+            }
+          })
+        );
+        const available = availability.filter(Boolean);
+        if (!available.length) {
+          throw new Error("No sampledata_*.json files could be loaded.");
+        }
+        sampleSelect.innerHTML = "";
+        available.forEach((name) => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          sampleSelect.appendChild(option);
+        });
+        sampleSelect.value = available.includes("sampledata_2.json")
+          ? "sampledata_2.json"
+          : available[0];
+      }
+
+      async function applySample(sampleFile) {
+        const samplePayload = await fetchJson(`./${sampleFile}`);
+        incidentState = samplePayload?.incident || {};
+        editableListItems = buildIncidentTypeItems(incidentState);
+        editorListApi.setList(editableListItems);
+        viewerListApi.setList(editableListItems);
+        editorListApi.update(editableListItems, {
+          theme,
+          debug,
+          lookups,
+          incident_id: incidentState?.id,
+          categories: incidentCategories,
+          incidentTypes: incidentTypesLookup,
+          resources: resourceTypes,
+          editable: true
+        });
+        viewerListApi.update(editableListItems, {
+          theme,
+          debug,
+          lookups,
+          categories: incidentCategories,
+          incidentTypes: incidentTypesLookup,
+          editable: false
+        });
+        addEvent("demo.sample.change", {
+          sample: sampleFile,
+          incident_id: incidentState?.id,
+          incident_types: editableListItems.length
+        });
+      }
+
+      await initSamplePicker();
 
       const editorListApi = incidentTypes(document.getElementById("incidentTypesEditorList"), editableListItems, {
         theme,
         debug,
         lookups,
-        incident_id: incident.id,
+        incident_id: null,
         categories: incidentCategories,
         incidentTypes: incidentTypesLookup,
         resources: resourceTypes,
@@ -269,7 +336,7 @@
           theme,
           debug,
           lookups,
-          incident_id: incident.id,
+          incident_id: incidentState?.id,
           categories: incidentCategories,
           incidentTypes: incidentTypesLookup,
           resources: resourceTypes,
@@ -295,6 +362,17 @@
         rerenderAll();
       });
 
+      sampleSelect.addEventListener("change", () => {
+        applySample(sampleSelect.value).catch((error) => {
+          console.error(error);
+          addEvent("demo.sample.change.error", {
+            sample: sampleSelect.value,
+            message: error.message
+          });
+        });
+      });
+
+      await applySample(sampleSelect.value);
       window.hhIncident.instances = [editorListApi, viewerListApi];
     }
 
