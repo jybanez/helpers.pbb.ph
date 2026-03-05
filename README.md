@@ -479,6 +479,272 @@ Demo pages load:
 </script>
 ```
 
+## Detailed Usage Reference
+
+### `incidentBase(container, data, options)`
+
+Purpose:
+
+- Shared incident-level utilities, lookup resolving, debug logging.
+
+Key options:
+
+- `lookups`: object containing boot references.
+- `debug`: `true|false`, enables extra console/debug output.
+
+Lookup keys expected:
+
+- `teamStatuses`, `incidentStatuses`, `alertLevels`, `incidentTypes`, `incidentCategories`, `teams`, `resourceTypes`, `operators`
+
+Behavior:
+
+- Missing lookup reference entries are warned in console.
+- Returns stable API (`destroy`, `update`) even with invalid data.
+
+Example:
+
+```js
+import { incidentBase } from "./js/incident/incident.base.js";
+
+const baseApi = incidentBase(document.createElement("div"), {}, {
+  debug: false,
+  lookups,
+});
+```
+
+### `incidentTeamsAssignments(container, data, options)`
+
+Purpose:
+
+- Renders list of team assignment cards.
+- Chooses editor/viewer child helper per `options.editable`.
+
+Required options:
+
+- `categories`, `teams`, `noticeAlreadyExist(team)`, `incident_id`, `operator_id`
+
+Optional options:
+
+- `editable` (default `true`)
+- `headerText` (default `"Dispatch Details"`)
+- `drawerHeaderText` (default `"Select Teams to Dispatch"`)
+- `onOpenDrawer()`, `onCloseDrawer()`
+- `onAssignTeam(newAssignmentPayload)`
+
+Methods:
+
+- `setList(items[])`
+- `getData()`
+- `getState()`
+- `update(nextData, nextOptions?)`
+- `destroy()`
+
+Example:
+
+```js
+import { incidentTeamsAssignments } from "./js/incident/incident.teams.assignments.js";
+
+const api = incidentTeamsAssignments(container, incidentPayload, {
+  editable: true,
+  incident_id: incidentPayload.id,
+  operator_id: 2,
+  categories,
+  teams,
+  noticeAlreadyExist(team) {
+    console.log("Already assigned:", team.name);
+  },
+  onAssignTeam(payload) {
+    console.log("New assignment payload:", payload);
+  },
+});
+```
+
+### `incidentTeamsAssignmentsEditor(container, data, options)`
+
+Purpose:
+
+- Single assignment editable card with status progression, notes, and allocations.
+
+Required options:
+
+- `incident_id`, `team_id`, `assigned_by_operator_id`
+- `confirmStatus(toStatus)`, `confirmCancel(fromStatus, reasonCode, reasonNote)`, `confirmDelete()`
+
+Callbacks:
+
+- `onStatusNext(assignmentId, toStatus)`
+- `onCancel(assignmentId, fromStatus, reasonCode, reasonNote)`
+- `onDelete(assignmentId)`
+- `onContactChange(assignmentId, value)`
+- `onNoteAdd(assignmentId, note)`
+- `onAllocateChange(assignmentId, resourceTypeId, allocated)`
+
+Notes:
+
+- Confirm callbacks may return `boolean | Promise<boolean>`.
+- Missing required options: logs error, renders nothing, returns stable API.
+
+### `incidentTeamsAssignmentsViewer(container, data, options)`
+
+Purpose:
+
+- Single assignment read-only card mirroring editor output.
+
+Required options:
+
+- `incident_id`, `team_id`, `assigned_by_operator_id`
+
+Notes:
+
+- No editor controls rendered (cancel/next status/note input hidden).
+- Same stable API (`destroy`, `update`, `getData`).
+
+### `incidentTypes(container, data, options)`
+
+Purpose:
+
+- List helper for incident type details cards.
+- `editable=true` uses editor children, `editable=false` uses viewer children.
+
+Required options:
+
+- `categories`, `incidentTypes`
+- `removeIncidentType(incidentTypeData)` is required when `editable=true`
+
+Optional options:
+
+- `headerText` (default `"Incident Details"`)
+- `drawerHeaderText` (default `"Select Reported Incidents"`)
+- `noticeAlreadyExists(incidentType)`
+- `onOpenDrawer()`, `onCloseDrawer()`, `onAddIncidentType(payload)`
+
+Methods:
+
+- `setList(items[])`
+- `getData()`
+- `getState()`
+- `update(nextData, nextOptions?)`
+- `destroy()`
+
+### `incidentTypesDetailsEditor(container, data, options)`
+
+Purpose:
+
+- Single incident-type editable detail card.
+
+Required options:
+
+- `removeIncidentType(incidentTypeData)`
+
+Optional callbacks:
+
+- `onFieldChange(incidentTypeId, fieldKey, value)`
+- `onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded)`
+
+Methods:
+
+- `getData()`
+- `validate()`
+- `isValid()`
+- `update(nextData, nextOptions?)`
+- `destroy()`
+
+Field support:
+
+- `text`, `number`, `textarea`, `select`, `multiselect`
+- `multiselect` stored as comma-separated string in `detail_entries[].field_value`
+
+### `incidentTypesDetailsViewer(container, data, options)`
+
+Purpose:
+
+- Read-only version of incident-type details card.
+
+Methods:
+
+- `getData()`
+- `validate()`
+- `isValid()`
+- `update(nextData, nextOptions?)`
+- `destroy()`
+
+### `createBottomDrawer(options)` (`js/ui/ui.drawer.js`)
+
+Purpose:
+
+- Reusable drawer shell used by list helpers and demo UIs.
+
+Key options:
+
+- `title`
+- `closeLabel`
+- `animationMs` (default `220`)
+- `position`: `"top" | "bottom" | "left" | "right"` (default `"bottom"`)
+- class overrides:
+  - `backdropClass`, `panelClass`, `headerClass`, `titleClass`, `closeClass`, `bodyClass`
+- `onClose()`
+
+Returned refs/methods:
+
+- refs: `panel`, `body`, `header`, `title`, `closeButton`, `backdrop`
+- methods: `open(parent?)`, `close()`, `destroy()`, `isOpen()`
+
+Example:
+
+```js
+import { createBottomDrawer } from "./js/ui/ui.drawer.js";
+
+const drawer = createBottomDrawer({
+  title: "Select Teams",
+  position: "right",
+  animationMs: 260,
+  onClose() {
+    console.log("drawer closed");
+  },
+});
+drawer.open(document.body);
+```
+
+### `createMediaStrip(container, items, options)` (`js/ui/ui.media.strip.js`)
+
+Purpose:
+
+- Render image/video thumbs and open modal viewer/player.
+
+Key options:
+
+- `layout`: `"scroll" | "wrap"`
+- `animationMs` (default `300`)
+- `autoplay`, `muted`, `loop`, `showControls`
+- `baseUrl`
+- `onOpen(item, index)`, `onClose(item, index)`
+
+Methods:
+
+- `update(nextItems, nextOptions?)`
+- `openById(id)`
+- `openByIndex(index)`
+- `getState()`
+- `destroy()`
+
+### Audio UI
+
+Use these together for call sessions, or individually for custom layouts.
+
+- `createAudioPlayer`:
+  - transport only (play/pause + clock + seek)
+- `createAudioGraph`:
+  - standalone graph with styles and mute control
+- `createAudioCallSession`:
+  - parent coordinator with timestamp alignment and role tracks
+
+Recommended integration flow:
+
+1. Normalize incident payload (`incident.media`, caller/operator names, call duration).
+2. Mount `createAudioCallSession` for the full experience.
+3. Use `onStateChange(state)` to sync external UI if needed.
+4. Use `update(nextIncident, nextOptions?)` when refreshed incident data arrives.
+
 ## Notes
 
 - This is a scaffold/prototype for testing flow.

@@ -3,11 +3,13 @@ import { createEventBag } from "./ui.events.js";
 
 export function createBottomDrawer(options = {}) {
   const events = createEventBag();
+  const animationMs = Math.max(0, Number(options.animationMs) || 220);
+  const position = normalizePosition(options.position);
   const backdrop = createElement("div", {
     className: options.backdropClass || "ui-drawer-backdrop",
   });
   const panel = createElement("aside", {
-    className: options.panelClass || "ui-drawer",
+    className: `${options.panelClass || "ui-drawer"} ui-drawer-pos-${position}`.trim(),
   });
   const header = createElement("div", {
     className: options.headerClass || "ui-drawer-header",
@@ -33,6 +35,10 @@ export function createBottomDrawer(options = {}) {
 
   let isOpen = false;
   let closeNotified = false;
+  let closeTimer = null;
+
+  backdrop.style.setProperty("--ui-drawer-animation-ms", `${animationMs}ms`);
+  panel.style.setProperty("--ui-drawer-animation-ms", `${animationMs}ms`);
 
   function notifyClose() {
     if (!closeNotified) {
@@ -45,27 +51,55 @@ export function createBottomDrawer(options = {}) {
     if (!isOpen) {
       return;
     }
-    events.clear();
-    if (backdrop.parentNode) {
-      backdrop.parentNode.removeChild(backdrop);
-    }
-    if (panel.parentNode) {
-      panel.parentNode.removeChild(panel);
-    }
     isOpen = false;
-    notifyClose();
+    events.clear();
+    backdrop.classList.remove("is-open");
+    panel.classList.remove("is-open");
+    backdrop.classList.add("is-closing");
+    panel.classList.add("is-closing");
+
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+    closeTimer = setTimeout(() => {
+      if (backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      if (panel.parentNode) {
+        panel.parentNode.removeChild(panel);
+      }
+      backdrop.classList.remove("is-closing");
+      panel.classList.remove("is-closing");
+      closeTimer = null;
+      notifyClose();
+    }, animationMs + 24);
   }
 
   function open(parent = document.body) {
     if (isOpen) {
       return;
     }
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
     closeNotified = false;
+    backdrop.classList.remove("is-open", "is-closing");
+    panel.classList.remove("is-open", "is-closing");
     parent.append(backdrop, panel);
     isOpen = true;
 
     events.on(backdrop, "click", close);
     events.on(closeButton, "click", close);
+
+    requestAnimationFrame(() => {
+      if (!isOpen) {
+        return;
+      }
+      backdrop.classList.add("is-open");
+      panel.classList.add("is-open");
+    });
   }
 
   return {
@@ -80,4 +114,12 @@ export function createBottomDrawer(options = {}) {
     destroy: close,
     isOpen: () => isOpen,
   };
+}
+
+function normalizePosition(value) {
+  const next = String(value || "bottom").toLowerCase();
+  if (next === "top" || next === "left" || next === "right") {
+    return next;
+  }
+  return "bottom";
 }

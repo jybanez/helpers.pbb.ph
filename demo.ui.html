@@ -105,7 +105,10 @@
     <section class="panel">
       <h2 class="ui-title">Drawer + Search</h2>
       <div class="row">
-        <button id="drawerBtn" class="ui-button" type="button">Open Drawer</button>
+        <button id="drawerBtnBottom" class="ui-button" type="button">Bottom Drawer</button>
+        <button id="drawerBtnTop" class="ui-button" type="button">Top Drawer</button>
+        <button id="drawerBtnLeft" class="ui-button" type="button">Left Drawer</button>
+        <button id="drawerBtnRight" class="ui-button" type="button">Right Drawer</button>
       </div>
     </section>
 
@@ -179,11 +182,12 @@
       writeLog("dialog.prompt", { value });
     });
 
-    document.getElementById("drawerBtn").addEventListener("click", () => {
+    function openDrawer(position) {
       const drawer = createBottomDrawer({
-        title: "Demo Drawer",
+        title: `Demo Drawer (${position})`,
+        position,
         onClose() {
-          writeLog("drawer.close", {});
+          writeLog("drawer.close", { position });
         },
       });
       const events = createEventBag();
@@ -216,8 +220,13 @@
       search.bind(events);
       search.setValue("");
       drawer.open(document.body);
-      writeLog("drawer.open", {});
-    });
+      writeLog("drawer.open", { position });
+    }
+
+    document.getElementById("drawerBtnBottom").addEventListener("click", () => openDrawer("bottom"));
+    document.getElementById("drawerBtnTop").addEventListener("click", () => openDrawer("top"));
+    document.getElementById("drawerBtnLeft").addEventListener("click", () => openDrawer("left"));
+    document.getElementById("drawerBtnRight").addEventListener("click", () => openDrawer("right"));
 
     createTabs(document.getElementById("tabsHost"), {
       activeId: "one",
