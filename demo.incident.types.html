@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Types Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="./css/incident/incident.css">
+  <link rel="stylesheet" href="./css/incident/incident.base.css">
+  <link rel="stylesheet" href="./css/incident/incident.types.css">
+  <link rel="stylesheet" href="./css/incident/incident.types.details.editor.css">
+  <link rel="stylesheet" href="./css/incident/incident.types.details.viewer.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .controls,
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .controls select {
+      border-radius: 8px;
+      border: 1px solid #334563;
+      background: #0b1423;
+      color: #d7e0f4;
+      padding: 6px 8px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    h1, h2 {
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="controls">
+      <a class="back" href="./index.html">← Back to Home</a>
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect">
+        <option value="dark" selected>dark</option>
+        <option value="light">light</option>
+      </select>
+      <label>
+        <input id="debugToggle" type="checkbox">
+        debug
+      </label>
+    </section>
+
+    <section class="panel">
+      <h1>Incident Types Demo</h1>
+      <p>Left panel is editable. Right panel mirrors left data as viewer output.</p>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <h2>incident.types (Editor)</h2>
+        <div id="incidentTypesEditorList"></div>
+      </article>
+      <article class="panel">
+        <h2>incident.types (Viewer)</h2>
+        <div id="incidentTypesViewerList"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Editor Events</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { incidentBase } from "./js/incident/incident.base.js";
+    import { incidentTypes } from "./js/incident/incident.types.js";
+
+    const themeSelect = document.getElementById("themeSelect");
+    const debugToggle = document.getElementById("debugToggle");
+    const eventLog = document.getElementById("eventLog");
+
+    async function fetchJson(path) {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(`Failed to load ${path}`);
+      }
+      return response.json();
+    }
+
+    function addEvent(message, payload) {
+      const line = `[${new Date().toISOString()}] ${message}\n${JSON.stringify(payload, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet."
+        ? line
+        : `${line}\n${eventLog.textContent}`;
+    }
+
+    async function main() {
+      const [
+        sample,
+        teamStatuses,
+        incidentStatuses,
+        alertLevels,
+        incidentTypesLookup,
+        incidentCategories,
+        teams,
+        resourceTypes,
+        operators
+      ] = await Promise.all([
+        fetchJson("./sampledata_2.json"),
+        fetchJson("./boot.team.assignment.status.json"),
+        fetchJson("./boot.incident.status.json"),
+        fetchJson("./boot.alert.levels.json"),
+        fetchJson("./boot.incident.types.json"),
+        fetchJson("./boot.incident.categories.json"),
+        fetchJson("./boot.teams.json"),
+        fetchJson("./boot.resource.types.json"),
+        fetchJson("./boot.operators.json")
+      ]);
+
+      const incident = sample.incident || {};
+
+      const lookups = {
+        teamStatuses,
+        incidentStatuses,
+        alertLevels,
+        incidentTypes: incidentTypesLookup,
+        incidentCategories,
+        teams,
+        resourceTypes,
+        operators
+      };
+
+      let theme = "dark";
+      let debug = false;
+      let editableListItems = [];
+
+      const baseApi = incidentBase(document.createElement("div"), {}, { lookups, debug });
+      window.hhIncident = { baseApi };
+
+      function buildIncidentTypeItems(incidentPayload) {
+        const incidentTypesFromPayload = Array.isArray(incidentPayload?.incident_types)
+          ? incidentPayload.incident_types
+          : [];
+        const detailEntries = Array.isArray(incidentPayload?.detail_entries)
+          ? incidentPayload.detail_entries
+          : [];
+        const resourcesNeeded = Array.isArray(incidentPayload?.resources_needed)
+          ? incidentPayload.resources_needed
+          : [];
+
+        return incidentTypesFromPayload.map((type) => {
+          const lookupType = (incidentTypesLookup || []).find((item) => String(item.id) === String(type.id));
+          const fields = Array.isArray(lookupType?.fields) ? lookupType.fields : [];
+          const resources = Array.isArray(lookupType?.resource_defaults)
+            ? lookupType.resource_defaults.map((resourceDefault) => ({
+                id: resourceDefault?.resource_type_id,
+                name: resourceDefault?.resource_type?.name || "",
+                resource_type_id: resourceDefault?.resource_type_id,
+                sort_order: resourceDefault?.sort_order || 0
+              }))
+            : [];
+
+          return {
+            id: type.id,
+            incident_id: incidentPayload.id,
+            incident_type_id: type.id,
+            incident_type_category_id: type.category_id,
+            incident_type_category_name: type?.category?.name || lookupType?.category?.name || "",
+            name: type.name,
+            fields,
+            detail_entries: detailEntries.filter((entry) => String(entry.incident_type_id) === String(type.id)),
+            resources,
+            resources_needed: resourcesNeeded.filter((entry) => String(entry.incident_type_id) === String(type.id))
+          };
+        });
+      }
+
+      editableListItems = buildIncidentTypeItems(incident);
+
+      const editorListApi = incidentTypes(document.getElementById("incidentTypesEditorList"), editableListItems, {
+        theme,
+        debug,
+        lookups,
+        incident_id: incident.id,
+        categories: incidentCategories,
+        incidentTypes: incidentTypesLookup,
+        resources: resourceTypes,
+        editable: true,
+        noticeAlreadyExists(incidentType) {
+          addEvent("incidentTypes.noticeAlreadyExists", {
+            incident_type_id: incidentType?.id,
+            name: incidentType?.name
+          });
+        },
+        onOpenDrawer() {
+          addEvent("incidentTypes.onOpenDrawer", {});
+        },
+        onCloseDrawer() {
+          addEvent("incidentTypes.onCloseDrawer", {});
+        },
+        onAddIncidentType(payload) {
+          addEvent("incidentTypes.onAddIncidentType", payload);
+        },
+        removeIncidentType(incidentTypeData) {
+          editableListItems = editableListItems.filter(
+            (item) => String(item.incident_type_id) !== String(incidentTypeData?.incident_type_id)
+          );
+          editorListApi.setList(editableListItems);
+          viewerListApi.setList(editableListItems);
+          addEvent("incidentTypes.removeIncidentType", incidentTypeData);
+        },
+        onFieldChange(incidentTypeId, fieldKey, value) {
+          editableListItems = editorListApi.getData();
+          viewerListApi.setList(editableListItems);
+          addEvent("incidentTypes.onFieldChange", { incidentTypeId, fieldKey, value });
+        },
+        onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded) {
+          editableListItems = editorListApi.getData();
+          viewerListApi.setList(editableListItems);
+          addEvent("incidentTypes.onResourceChange", { incidentTypeId, resourceTypeId, quantityNeeded });
+        }
+      });
+
+      const viewerListApi = incidentTypes(document.getElementById("incidentTypesViewerList"), editableListItems, {
+        theme,
+        debug,
+        lookups,
+        categories: incidentCategories,
+        incidentTypes: incidentTypesLookup,
+        editable: false
+      });
+
+      function rerenderAll() {
+        editorListApi.update(editableListItems, {
+          theme,
+          debug,
+          lookups,
+          incident_id: incident.id,
+          categories: incidentCategories,
+          incidentTypes: incidentTypesLookup,
+          resources: resourceTypes,
+          editable: true
+        });
+        viewerListApi.update(editableListItems, {
+          theme,
+          debug,
+          lookups,
+          categories: incidentCategories,
+          incidentTypes: incidentTypesLookup,
+          editable: false
+        });
+      }
+
+      themeSelect.addEventListener("change", () => {
+        theme = themeSelect.value;
+        rerenderAll();
+      });
+
+      debugToggle.addEventListener("change", () => {
+        debug = debugToggle.checked;
+        rerenderAll();
+      });
+
+      window.hhIncident.instances = [editorListApi, viewerListApi];
+    }
+
+    main().catch((error) => {
+      console.error(error);
+      eventLog.textContent = `Failed to initialize demo.\n${error.message}`;
+    });
+  </script>
+</body>
+</html>

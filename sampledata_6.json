@@ -1,0 +1,366 @@
+{
+  "incident": {
+    "id": 6,
+    "caller_id": 6,
+    "operator_id": 3,
+    "status": "Resolved",
+    "alert_level": "Normal",
+    "actual_caller_name": "Maria Santos",
+    "actual_caller_relationship": null,
+    "called_at": "2026-02-18T04:03:34Z",
+    "location": "Guadalupe, Cebu City, Central Visayas, 6000, Philippines",
+    "latitude": "10.3306837",
+    "longitude": "123.8827969",
+    "details": null,
+    "escalated_to_level": null,
+    "resolved_at": "2026-02-18T04:14:08Z",
+    "created_at": "2026-02-18T04:03:34Z",
+    "updated_at": "2026-02-18T04:14:08Z",
+    "location_road": null,
+    "location_suburb": "Guadalupe",
+    "location_neighbourhood": null,
+    "location_city": "Cebu City",
+    "location_municipality": null,
+    "location_state": null,
+    "location_postcode": "6000",
+    "location_country": "Philippines",
+    "caller": {
+      "id": 6,
+      "name": "Maria Santos",
+      "email": "maria@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:30Z",
+      "updated_at": "2026-02-20T22:21:49Z",
+      "role": "user",
+      "operator_level": null,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": null,
+      "avatar_path": "avatars/DpCRh10AJ4dhWHDvGiTkc9mzNA3J1DbZDuE9xTtx.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": null
+    },
+    "operator": {
+      "id": 3,
+      "name": "Operator Level 2",
+      "email": "operator2@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:29Z",
+      "updated_at": "2026-02-22T05:30:47Z",
+      "role": "operator",
+      "operator_level": 2,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": "2026-02-22T05:30:47Z",
+      "avatar_path": "avatars/OmTswIno3N0phuEY0zBAWwXI1gfvKgCMpYAoXszI.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": null
+    },
+    "incident_types": [
+      {
+        "id": 12,
+        "category_id": 3,
+        "name": "Robbery",
+        "sort_order": 8,
+        "is_active": true,
+        "created_at": "2026-01-23T13:00:10Z",
+        "updated_at": "2026-02-21T07:06:06Z",
+        "pivot": {
+          "incident_id": 6,
+          "incident_type_id": 12,
+          "created_at": "2026-02-18T04:06:50Z",
+          "updated_at": "2026-02-18T04:06:50Z"
+        },
+        "category": {
+          "id": 3,
+          "name": "Crime & Security",
+          "sort_order": 3,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-01-23T13:00:10Z"
+        }
+      },
+      {
+        "id": 22,
+        "category_id": 6,
+        "name": "Riot",
+        "sort_order": 19,
+        "is_active": true,
+        "created_at": "2026-02-16T03:52:29Z",
+        "updated_at": "2026-02-21T07:06:06Z",
+        "pivot": {
+          "incident_id": 6,
+          "incident_type_id": 22,
+          "created_at": "2026-02-18T04:04:39Z",
+          "updated_at": "2026-02-18T04:04:39Z"
+        },
+        "category": {
+          "id": 6,
+          "name": "Public Disturbance",
+          "sort_order": 6,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-01-23T13:00:10Z"
+        }
+      }
+    ],
+    "detail_entries": [
+      {
+        "id": 10,
+        "incident_id": 6,
+        "incident_type_id": 22,
+        "field_key": "individuals",
+        "field_label": "Number Individuals",
+        "field_value": "22",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T04:04:48Z",
+        "updated_at": "2026-02-18T04:04:48Z"
+      },
+      {
+        "id": 11,
+        "incident_id": 6,
+        "incident_type_id": 12,
+        "field_key": "establishment",
+        "field_label": "Establishment Type",
+        "field_value": "Convenient Store",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T04:07:15Z",
+        "updated_at": "2026-02-18T04:07:15Z"
+      },
+      {
+        "id": 12,
+        "incident_id": 6,
+        "incident_type_id": 12,
+        "field_key": "item_stolen",
+        "field_label": "Item Stolen",
+        "field_value": "Cash",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T04:07:22Z",
+        "updated_at": "2026-02-18T04:07:22Z"
+      },
+      {
+        "id": 13,
+        "incident_id": 6,
+        "incident_type_id": 12,
+        "field_key": "getaway_vehicle",
+        "field_label": "Getaway Vehicle",
+        "field_value": "Motorcycle",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T04:07:25Z",
+        "updated_at": "2026-02-18T04:07:27Z"
+      },
+      {
+        "id": 14,
+        "incident_id": 6,
+        "incident_type_id": 12,
+        "field_key": "number_suspects",
+        "field_label": "Number of Suspects",
+        "field_value": "3",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T04:07:30Z",
+        "updated_at": "2026-02-18T04:07:30Z"
+      }
+    ],
+    "resources_needed": [],
+    "team_assignments": [
+      {
+        "id": 7,
+        "incident_id": 6,
+        "team_id": 4,
+        "assigned_by_operator_id": 3,
+        "contact_person": "Slade",
+        "status": "completed",
+        "cancelled_from_status": null,
+        "cancel_reason_code": null,
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": null,
+        "assigned_at": "2026-02-18T04:05:33Z",
+        "accepted_at": "2026-02-18T04:09:37Z",
+        "arrived_at": "2026-02-18T04:12:41Z",
+        "completed_at": "2026-02-18T04:12:47Z",
+        "cancelled_at": null,
+        "created_at": "2026-02-18T04:05:33Z",
+        "updated_at": "2026-02-18T04:12:47Z",
+        "cancelled_by_operator_id": null,
+        "team": {
+          "id": 4,
+          "team_category_id": 2,
+          "name": "Barangay Peacekeeping Action Team",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-03T07:00:17Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 2,
+            "name": "Law Enforcement",
+            "sort_order": 2,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "incident_id": 6,
+        "team_id": 3,
+        "assigned_by_operator_id": 3,
+        "contact_person": "Slade",
+        "status": "completed",
+        "cancelled_from_status": null,
+        "cancel_reason_code": null,
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": null,
+        "assigned_at": "2026-02-18T04:09:01Z",
+        "accepted_at": "2026-02-18T04:09:39Z",
+        "arrived_at": "2026-02-18T04:14:01Z",
+        "completed_at": "2026-02-18T04:14:04Z",
+        "cancelled_at": null,
+        "created_at": "2026-02-18T04:09:01Z",
+        "updated_at": "2026-02-18T04:14:04Z",
+        "cancelled_by_operator_id": null,
+        "team": {
+          "id": 3,
+          "team_category_id": 2,
+          "name": "Revitalized-Pulis sa Barangay (R-PSB)",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-03T07:00:17Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 2,
+            "name": "Law Enforcement",
+            "sort_order": 2,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      }
+    ],
+    "media": [
+      {
+        "id": 16,
+        "incident_id": 6,
+        "uploaded_by_user_id": 6,
+        "type": "video",
+        "path": "incidents/6/videos/segment-1.webm",
+        "duration_seconds": 22,
+        "metadata": {
+          "upload_id": "rec-19-caller-1771387423003-6ae61530",
+          "segment_index": 1,
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-18T04:04:06Z",
+        "updated_at": "2026-02-18T04:04:06Z"
+      },
+      {
+        "id": 17,
+        "incident_id": 6,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/6/audio/caller-3-2026-02-18T04-03-34Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-19-caller-3-2026-02-18T04-03-34Z-1771387416224-1db8b850",
+          "recording_role": "caller-3-2026-02-18T04-03-34Z"
+        },
+        "created_at": "2026-02-18T04:04:07Z",
+        "updated_at": "2026-02-18T04:04:07Z"
+      },
+      {
+        "id": 18,
+        "incident_id": 6,
+        "uploaded_by_user_id": 6,
+        "type": "audio",
+        "path": "incidents/6/audio/caller.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-19-caller-3-2026-02-18T04-03-34Z-1771387416224-1db8b850",
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-18T04:04:07Z",
+        "updated_at": "2026-02-18T04:04:07Z"
+      },
+      {
+        "id": 19,
+        "incident_id": 6,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/6/audio/operator-3-2026-02-18T04-03-34Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-19-operator-3-2026-02-18T04-03-34Z-1771387415437-5ad0ef83",
+          "recording_role": "operator-3-2026-02-18T04-03-34Z"
+        },
+        "created_at": "2026-02-18T04:04:07Z",
+        "updated_at": "2026-02-18T04:04:07Z"
+      },
+      {
+        "id": 20,
+        "incident_id": 6,
+        "uploaded_by_user_id": 6,
+        "type": "video",
+        "path": "incidents/6/videos/segment-1.webm",
+        "duration_seconds": 16,
+        "metadata": {
+          "upload_id": "rec-20-caller-1771387936104-e97de5b4",
+          "segment_index": 1,
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-18T04:12:32Z",
+        "updated_at": "2026-02-18T04:12:32Z"
+      },
+      {
+        "id": 21,
+        "incident_id": 6,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/6/audio/caller-3-2026-02-18T04-12-10Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-20-caller-3-2026-02-18T04-12-10Z-1771387931398-2d71d42b",
+          "recording_role": "caller-3-2026-02-18T04-12-10Z"
+        },
+        "created_at": "2026-02-18T04:12:33Z",
+        "updated_at": "2026-02-18T04:12:33Z"
+      },
+      {
+        "id": 22,
+        "incident_id": 6,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/6/audio/operator-3-2026-02-18T04-12-10Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-20-operator-3-2026-02-18T04-12-10Z-1771387931377-8c4963bb",
+          "recording_role": "operator-3-2026-02-18T04-12-10Z"
+        },
+        "created_at": "2026-02-18T04:12:33Z",
+        "updated_at": "2026-02-18T04:12:33Z"
+      }
+    ]
+  }
+}

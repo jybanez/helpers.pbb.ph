@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Assignments Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="./css/incident/incident.css">
+  <link rel="stylesheet" href="./css/incident/incident.base.css">
+  <link rel="stylesheet" href="./css/incident/incident.teams.assignments.css">
+  <link rel="stylesheet" href="./css/incident/incident.teams.assignments.editor.css">
+  <link rel="stylesheet" href="./css/incident/incident.teams.assignments.viewer.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .controls,
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .controls select {
+      border-radius: 8px;
+      border: 1px solid #334563;
+      background: #0b1423;
+      color: #d7e0f4;
+      padding: 6px 8px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    h1, h2 {
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="controls">
+      <a class="back" href="./index.html">← Back to Home</a>
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect">
+        <option value="dark" selected>dark</option>
+        <option value="light">light</option>
+      </select>
+      <label>
+        <input id="debugToggle" type="checkbox">
+        debug
+      </label>
+    </section>
+
+    <section class="panel">
+      <h1>Team Assignments Demo</h1>
+      <p>Left is editable. Right mirrors left as read-only via <code>setList(items[])</code>.</p>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <h2>Editable Team Assignments</h2>
+        <div id="teamsAssignmentsEditable"></div>
+      </article>
+      <article class="panel">
+        <h2>Read-only Team Assignments</h2>
+        <div id="teamsAssignmentsReadonly"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Editor Events</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { incidentBase } from "./js/incident/incident.base.js";
+    import { incidentTeamsAssignments } from "./js/incident/incident.teams.assignments.js";
+
+    const themeSelect = document.getElementById("themeSelect");
+    const debugToggle = document.getElementById("debugToggle");
+    const eventLog = document.getElementById("eventLog");
+
+    async function fetchJson(path) {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(`Failed to load ${path}`);
+      }
+      return response.json();
+    }
+
+    function addEvent(message, payload) {
+      const line = `[${new Date().toISOString()}] ${message}\n${JSON.stringify(payload, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet."
+        ? line
+        : `${line}\n${eventLog.textContent}`;
+    }
+
+    async function main() {
+      const [
+        sample,
+        teamStatuses,
+        incidentStatuses,
+        alertLevels,
+        incidentTypesLookup,
+        incidentCategories,
+        teams,
+        resourceTypes,
+        operators
+      ] = await Promise.all([
+        fetchJson("./sampledata_16.json"),
+        fetchJson("./boot.team.assignment.status.json"),
+        fetchJson("./boot.incident.status.json"),
+        fetchJson("./boot.alert.levels.json"),
+        fetchJson("./boot.incident.types.json"),
+        fetchJson("./boot.incident.categories.json"),
+        fetchJson("./boot.teams.json"),
+        fetchJson("./boot.resource.types.json"),
+        fetchJson("./boot.operators.json")
+      ]);
+
+      const incident = sample.incident || {};
+      const initialItems = incident.team_assignments || [];
+
+      const lookups = {
+        teamStatuses,
+        incidentStatuses,
+        alertLevels,
+        incidentTypes: incidentTypesLookup,
+        incidentCategories,
+        teams,
+        resourceTypes,
+        operators
+      };
+
+      let theme = "dark";
+      let debug = false;
+      const nowIso = () => new Date().toISOString();
+
+      const incidentState = structuredClone(incident);
+      let listState = structuredClone(initialItems);
+
+      const baseApi = incidentBase(document.createElement("div"), {}, { lookups, debug });
+      window.hhIncident = { baseApi };
+
+      function updateListItem(assignmentId, patch) {
+        listState = listState.map((item) =>
+          item.id === assignmentId || (!item.id && item.team_id === patch.team_id)
+            ? { ...item, ...patch }
+            : item
+        );
+        incidentState.team_assignments = listState;
+      }
+
+      function removeListItem(assignmentId) {
+        listState = listState.filter((item) => item.id !== assignmentId);
+        incidentState.team_assignments = listState;
+      }
+
+      function getEditableOptions() {
+        return {
+          theme,
+          debug,
+          lookups,
+          incident_id: incidentState.id,
+          operator_id: 3,
+          categories: incidentCategories,
+          teams,
+          editable: true,
+          headerText: "Dispatch Details (Editable)",
+          drawerHeaderText: "Select Teams to Dispatch",
+          noticeAlreadyExist(team) {
+            window.alert(`${team.name} is already assigned.`);
+          },
+          onOpenDrawer() {
+            addEvent("incidentTeamsAssignments.onOpenDrawer", {});
+          },
+          onCloseDrawer() {
+            addEvent("incidentTeamsAssignments.onCloseDrawer", {});
+          },
+          onAssignTeam(assignment) {
+            const withMeta = {
+              ...assignment,
+              id: Date.now(),
+              team: teams.find((t) => String(t.id) === String(assignment.team_id)),
+              notes_log: [],
+              allocated_resources: []
+            };
+            listState = [...listState, withMeta];
+            incidentState.team_assignments = listState;
+            addEvent("incidentTeamsAssignments.onAssignTeam", withMeta);
+            syncColumns();
+          },
+          confirmStatus(toStatus) {
+            return window.confirm(`Confirm move to ${toStatus}?`);
+          },
+          confirmCancel(fromStatus, reasonCode, reasonNote) {
+            return window.confirm(
+              `Confirm cancellation from ${fromStatus}?\nReason: ${reasonCode}\nDetails: ${reasonNote || "-"}`
+            );
+          },
+          confirmDelete() {
+            return window.confirm("Confirm delete assignment?");
+          },
+          onStatusNext(assignmentId, toStatus) {
+            const patch = { status: toStatus };
+            if (toStatus === "accepted") patch.accepted_at = nowIso();
+            if (toStatus === "on_scene") patch.arrived_at = nowIso();
+            if (toStatus === "completed") patch.completed_at = nowIso();
+            updateListItem(assignmentId, patch);
+            addEvent("incidentTeamsAssignmentsEditor.onStatusNext", { assignmentId, toStatus });
+            syncColumns();
+          },
+          onCancel(assignmentId, fromStatus, reasonCode, reasonNote) {
+            updateListItem(assignmentId, {
+              status: "cancelled",
+              cancelled_from_status: fromStatus,
+              cancel_reason_code: reasonCode,
+              cancel_reason_note: reasonNote || null,
+              cancelled_at: nowIso()
+            });
+            addEvent("incidentTeamsAssignmentsEditor.onCancel", {
+              assignmentId,
+              fromStatus,
+              reasonCode,
+              reasonNote
+            });
+            syncColumns();
+          },
+          onDelete(assignmentId) {
+            addEvent("incidentTeamsAssignmentsEditor.onDelete", { assignmentId });
+            removeListItem(assignmentId);
+            syncColumns();
+          },
+          onContactChange(assignmentId, value) {
+            updateListItem(assignmentId, { contact_person: value });
+            addEvent("incidentTeamsAssignmentsEditor.onContactChange", { assignmentId, value });
+            syncReadonlyOnly();
+          },
+          onNoteAdd(assignmentId, note) {
+            const item = listState.find((row) => row.id === assignmentId) || {};
+            const notes = Array.isArray(item.notes_log) ? [...item.notes_log] : [];
+            notes.push({
+              id: Date.now(),
+              team_assignment_id: assignmentId,
+              operator_id: item.assigned_by_operator_id || null,
+              note,
+              created_at: nowIso()
+            });
+            updateListItem(assignmentId, { notes_log: notes });
+            addEvent("incidentTeamsAssignmentsEditor.onNoteAdd", { assignmentId, note });
+            syncColumns();
+          },
+          onAllocateChange(assignmentId, resourceTypeId, allocated) {
+            const item = listState.find((row) => row.id === assignmentId) || {};
+            const allocations = Array.isArray(item.allocated_resources) ? [...item.allocated_resources] : [];
+            const idx = allocations.findIndex((item) => item.resource_type_id === resourceTypeId);
+            const nextRow = { resource_type_id: resourceTypeId, quantity_allocated: allocated };
+            if (idx >= 0) {
+              allocations[idx] = nextRow;
+            } else {
+              allocations.push(nextRow);
+            }
+            updateListItem(assignmentId, { allocated_resources: allocations });
+            addEvent("incidentTeamsAssignmentsEditor.onAllocateChange", {
+              assignmentId,
+              resourceTypeId,
+              allocated
+            });
+            syncColumns();
+          }
+        };
+      }
+
+      function getReadonlyOptions() {
+        return {
+          theme,
+          debug,
+          lookups,
+          incident_id: incidentState.id,
+          operator_id: 3,
+          categories: incidentCategories,
+          teams,
+          editable: false,
+          headerText: "Dispatch Details (Read-only)",
+          drawerHeaderText: "Select Teams to Dispatch",
+          noticeAlreadyExist() {}
+        };
+      }
+
+      const editableApi = incidentTeamsAssignments(
+        document.getElementById("teamsAssignmentsEditable"),
+        incidentState,
+        getEditableOptions()
+      );
+      const readonlyApi = incidentTeamsAssignments(
+        document.getElementById("teamsAssignmentsReadonly"),
+        incidentState,
+        getReadonlyOptions()
+      );
+
+      function syncColumns() {
+        editableApi.setList(listState);
+        readonlyApi.setList(listState);
+      }
+
+      function syncReadonlyOnly() {
+        readonlyApi.setList(listState);
+      }
+
+      function rerenderAll() {
+        editableApi.update({ team_assignments: listState }, getEditableOptions());
+        readonlyApi.update({ team_assignments: listState }, getReadonlyOptions());
+      }
+
+      themeSelect.addEventListener("change", () => {
+        theme = themeSelect.value;
+        rerenderAll();
+      });
+
+      debugToggle.addEventListener("change", () => {
+        debug = debugToggle.checked;
+        rerenderAll();
+      });
+
+      syncColumns();
+      window.hhIncident.instances = [editableApi, readonlyApi];
+    }
+
+    main().catch((error) => {
+      console.error(error);
+      eventLog.textContent = `Failed to initialize demo.\n${error.message}`;
+    });
+  </script>
+</body>
+</html>

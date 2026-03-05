@@ -1,0 +1,821 @@
+{
+    "incident": {
+        "id": 29,
+        "caller_id": 5,
+        "operator_id": 3,
+        "status": "Deferred",
+        "alert_level": "Critical",
+        "actual_caller_name": "Juan Dela Cruz",
+        "actual_caller_relationship": null,
+        "called_at": "2026-02-21T06:59:47.000000Z",
+        "location": "Guadalupe, Cebu City, Central Visayas, 6000, Philippines",
+        "latitude": "10.3306102",
+        "longitude": "123.8827921",
+        "details": null,
+        "escalated_to_level": null,
+        "resolved_at": null,
+        "created_at": "2026-02-21T06:59:47.000000Z",
+        "updated_at": "2026-02-21T07:10:52.000000Z",
+        "location_road": null,
+        "location_suburb": "Guadalupe",
+        "location_neighbourhood": null,
+        "location_city": "Cebu City",
+        "location_municipality": null,
+        "location_state": null,
+        "location_postcode": "6000",
+        "location_country": "Philippines",
+        "transfers": [],
+        "caller": {
+            "id": 5,
+            "name": "Juan Dela Cruz",
+            "email": "juan@hotline.local",
+            "email_verified_at": null,
+            "created_at": "2026-01-17T16:07:30.000000Z",
+            "updated_at": "2026-02-21T20:21:33.000000Z",
+            "role": "user",
+            "operator_level": null,
+            "is_available": false,
+            "current_call_session_id": null,
+            "last_seen_at": null,
+            "avatar_path": "avatars/2FQmO10KxfJit542fAWDcvYBozUc4X2fkcTjWWzq.jpg",
+            "phone": null,
+            "address": null,
+            "current_incident_id": 29
+        },
+        "operator": {
+            "id": 3,
+            "name": "Operator Level 2",
+            "email": "operator2@hotline.local",
+            "email_verified_at": null,
+            "created_at": "2026-01-17T16:07:29.000000Z",
+            "updated_at": "2026-02-21T20:21:38.000000Z",
+            "role": "operator",
+            "operator_level": 2,
+            "is_available": false,
+            "current_call_session_id": null,
+            "last_seen_at": "2026-02-21T20:21:38.000000Z",
+            "avatar_path": "avatars/OmTswIno3N0phuEY0zBAWwXI1gfvKgCMpYAoXszI.jpg",
+            "phone": null,
+            "address": null,
+            "current_incident_id": null
+        },
+        "incident_types": [
+            {
+                "id": 23,
+                "category_id": 3,
+                "name": "Bomb Threat",
+                "sort_order": 20,
+                "is_active": true,
+                "created_at": "2026-02-21T07:06:06.000000Z",
+                "updated_at": "2026-02-21T07:06:06.000000Z",
+                "pivot": {
+                    "incident_id": 29,
+                    "incident_type_id": 23,
+                    "created_at": "2026-02-21T07:09:34.000000Z",
+                    "updated_at": "2026-02-21T07:09:34.000000Z"
+                },
+                "category": {
+                    "id": 3,
+                    "name": "Crime & Security",
+                    "sort_order": 3,
+                    "is_active": true,
+                    "created_at": "2026-01-23T13:00:10.000000Z",
+                    "updated_at": "2026-01-23T13:00:10.000000Z"
+                },
+                "fields": [
+                    {
+                        "id": 147,
+                        "incident_type_id": 23,
+                        "field_key": "detail",
+                        "field_label": "Details",
+                        "input_type": "textarea",
+                        "options": null,
+                        "placeholder": null,
+                        "help_text": null,
+                        "default_value": null,
+                        "min": null,
+                        "max": null,
+                        "step": null,
+                        "unit": null,
+                        "sort_order": 1,
+                        "is_required": true,
+                        "created_at": "2026-02-21T07:08:06.000000Z",
+                        "updated_at": "2026-02-21T07:08:06.000000Z"
+                    }
+                ],
+                "resource_defaults": []
+            }
+        ],
+        "media": [
+            {
+                "id": 86,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "video",
+                "path": "incidents/29/videos/segment-1.webm",
+                "duration_seconds": 54,
+                "metadata": {
+                    "upload_id": "rec-48-caller-1771657191655-3f68ac9d",
+                    "segment_index": 1,
+                    "recording_role": "caller"
+                },
+                "created_at": "2026-02-21T07:00:48.000000Z",
+                "updated_at": "2026-02-21T07:00:48.000000Z",
+                "ready": true
+            },
+            {
+                "id": 87,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "video",
+                "path": "incidents/29/videos/segment-2.webm",
+                "duration_seconds": 3,
+                "metadata": {
+                    "upload_id": "rec-48-caller-1771657255898-958b4259",
+                    "segment_index": 2,
+                    "recording_role": "caller"
+                },
+                "created_at": "2026-02-21T07:01:00.000000Z",
+                "updated_at": "2026-02-21T07:01:00.000000Z",
+                "ready": true
+            },
+            {
+                "id": 88,
+                "incident_id": 29,
+                "uploaded_by_user_id": 3,
+                "type": "audio",
+                "path": "incidents/29/audio/caller-3-2026-02-21T06-59-45Z.weba",
+                "duration_seconds": null,
+                "metadata": {
+                    "upload_id": "rec-48-caller-3-2026-02-21T06-59-45Z-1771657188216-7e5e227d",
+                    "recording_role": "caller-3-2026-02-21T06-59-45Z"
+                },
+                "created_at": "2026-02-21T07:01:12.000000Z",
+                "updated_at": "2026-02-21T07:01:12.000000Z",
+                "ready": true
+            },
+            {
+                "id": 89,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "audio",
+                "path": "incidents/29/audio/caller.weba",
+                "duration_seconds": null,
+                "metadata": {
+                    "upload_id": "rec-48-caller-3-2026-02-21T06-59-45Z-1771657188216-7e5e227d",
+                    "recording_role": "caller"
+                },
+                "created_at": "2026-02-21T07:01:12.000000Z",
+                "updated_at": "2026-02-21T07:01:12.000000Z",
+                "ready": true
+            },
+            {
+                "id": 90,
+                "incident_id": 29,
+                "uploaded_by_user_id": 3,
+                "type": "audio",
+                "path": "incidents/29/audio/operator-3-2026-02-21T06-59-45Z.weba",
+                "duration_seconds": null,
+                "metadata": {
+                    "upload_id": "rec-48-operator-3-2026-02-21T06-59-45Z-1771657187079-efe9d893",
+                    "recording_role": "operator-3-2026-02-21T06-59-45Z"
+                },
+                "created_at": "2026-02-21T07:01:12.000000Z",
+                "updated_at": "2026-02-21T07:01:12.000000Z",
+                "ready": true
+            },
+            {
+                "id": 91,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "photo",
+                "path": "incidents/29/photos/z2LE3V512X1IBWHvzeQUzkASGM3Or2IDoj2wedDg.jpg",
+                "duration_seconds": null,
+                "metadata": null,
+                "created_at": "2026-02-21T07:02:17.000000Z",
+                "updated_at": "2026-02-21T07:02:17.000000Z",
+                "ready": true
+            },
+            {
+                "id": 92,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "video",
+                "path": "incidents/29/videos/segment-1.webm",
+                "duration_seconds": 11,
+                "metadata": {
+                    "upload_id": "rec-52-caller-1771659144279-ea8ad195",
+                    "segment_index": 1,
+                    "recording_role": "caller"
+                },
+                "created_at": "2026-02-21T07:32:36.000000Z",
+                "updated_at": "2026-02-21T07:32:36.000000Z",
+                "ready": true
+            },
+            {
+                "id": 93,
+                "incident_id": 29,
+                "uploaded_by_user_id": 5,
+                "type": "photo",
+                "path": "incidents/29/photos/oBUT6u6mBRZaydKUsJgksNtUroL9ed0ELegBiFaN.jpg",
+                "duration_seconds": null,
+                "metadata": null,
+                "created_at": "2026-02-21T07:32:44.000000Z",
+                "updated_at": "2026-02-21T07:32:44.000000Z",
+                "ready": true
+            },
+            {
+                "id": 94,
+                "incident_id": 29,
+                "uploaded_by_user_id": 3,
+                "type": "audio",
+                "path": "incidents/29/audio/caller-3-2026-02-21T07-32-19Z.weba",
+                "duration_seconds": null,
+                "metadata": {
+                    "upload_id": "rec-52-caller-3-2026-02-21T07-32-19Z-1771659139745-59f9d63f",
+                    "recording_role": "caller-3-2026-02-21T07-32-19Z"
+                },
+                "created_at": "2026-02-21T07:32:55.000000Z",
+                "updated_at": "2026-02-21T07:32:55.000000Z",
+                "ready": true
+            },
+            {
+                "id": 95,
+                "incident_id": 29,
+                "uploaded_by_user_id": 3,
+                "type": "audio",
+                "path": "incidents/29/audio/operator-3-2026-02-21T07-32-19Z.weba",
+                "duration_seconds": null,
+                "metadata": {
+                    "upload_id": "rec-52-operator-3-2026-02-21T07-32-19Z-1771659139738-38a95461",
+                    "recording_role": "operator-3-2026-02-21T07-32-19Z"
+                },
+                "created_at": "2026-02-21T07:32:55.000000Z",
+                "updated_at": "2026-02-21T07:32:55.000000Z",
+                "ready": true
+            }
+        ],
+        "detail_entries": [
+            {
+                "id": 59,
+                "incident_id": 29,
+                "incident_type_id": 23,
+                "field_key": "detail",
+                "field_label": "Details",
+                "field_value": "Na'y bag gebilin sa my haligi, duda-han ag laki ga purong basin abusayaf ni siya.",
+                "unit": null,
+                "severity": null,
+                "notes": null,
+                "created_at": "2026-02-21T07:09:45.000000Z",
+                "updated_at": "2026-02-21T07:10:16.000000Z"
+            }
+        ],
+        "resources_needed": [],
+        "team_assignments": [
+            {
+                "id": 42,
+                "incident_id": 29,
+                "team_id": 19,
+                "assigned_by_operator_id": 3,
+                "contact_person": "JoyBoy",
+                "status": "on_scene",
+                "cancelled_from_status": null,
+                "cancel_reason_code": null,
+                "cancel_reason_note": null,
+                "notes": null,
+                "allocated_resources": null,
+                "assigned_at": "2026-02-21T07:10:26.000000Z",
+                "accepted_at": "2026-02-21T07:10:45.000000Z",
+                "arrived_at": "2026-02-21T07:32:58.000000Z",
+                "completed_at": null,
+                "cancelled_at": null,
+                "created_at": "2026-02-21T07:10:26.000000Z",
+                "updated_at": "2026-02-21T07:32:58.000000Z",
+                "cancelled_by_operator_id": null,
+                "team": {
+                    "id": 19,
+                    "team_category_id": 2,
+                    "name": "S.W.A.T.",
+                    "status": "available",
+                    "is_active": true,
+                    "base_location": null,
+                    "latitude": null,
+                    "longitude": null,
+                    "last_seen_at": null,
+                    "created_at": "2026-02-04T07:56:33.000000Z",
+                    "updated_at": "2026-02-19T05:45:27.000000Z",
+                    "category": {
+                        "id": 2,
+                        "name": "Law Enforcement",
+                        "sort_order": 2,
+                        "is_active": true,
+                        "created_at": "2026-02-03T02:14:07.000000Z",
+                        "updated_at": "2026-02-04T07:56:01.000000Z"
+                    },
+                    "resource_inventories": []
+                },
+                "notes_log": []
+            }
+        ],
+        "activity_logs": [
+            {
+                "id": 398,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.status_changed",
+                "description": "Team status changed from en_route to on_scene",
+                "metadata": {
+                    "team_id": 19,
+                    "to_status": "on_scene",
+                    "from_status": "en_route",
+                    "assignment_id": 42,
+                    "cancel_reason_code": null,
+                    "cancel_reason_note": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:32:58.000000Z",
+                "updated_at": "2026-02-21T07:32:58.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 397,
+                "incident_id": 29,
+                "call_session_id": 52,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "call.ended",
+                "description": "Call ended",
+                "metadata": {
+                    "source": null,
+                    "call_id": 52
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:32:54.000000Z",
+                "updated_at": "2026-02-21T07:32:54.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 396,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "incident.photo.sent",
+                "description": "Sent photo attachment",
+                "metadata": {
+                    "media_id": 93,
+                    "message_id": 5,
+                    "sender_role": "user"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:32:44.000000Z",
+                "updated_at": "2026-02-21T07:32:44.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 395,
+                "incident_id": 29,
+                "call_session_id": 52,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "call.reconnect_requested",
+                "description": "Caller requested reconnect",
+                "metadata": {
+                    "call_id": 52,
+                    "caller_id": 5,
+                    "operator_id": 3
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:32:17.000000Z",
+                "updated_at": "2026-02-21T07:32:17.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 394,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "incident.status.changed",
+                "description": "Incident status changed from Active to Deferred",
+                "metadata": {
+                    "to_status": "Deferred",
+                    "from_status": "Active",
+                    "resolve_override_reason": null,
+                    "incomplete_assignment_count": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:52.000000Z",
+                "updated_at": "2026-02-21T07:10:52.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 393,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.status_changed",
+                "description": "Team status changed from accepted to en_route",
+                "metadata": {
+                    "team_id": 19,
+                    "to_status": "en_route",
+                    "from_status": "accepted",
+                    "assignment_id": 42,
+                    "cancel_reason_code": null,
+                    "cancel_reason_note": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:48.000000Z",
+                "updated_at": "2026-02-21T07:10:48.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 392,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.status_changed",
+                "description": "Team status changed from requested to accepted",
+                "metadata": {
+                    "team_id": 19,
+                    "to_status": "accepted",
+                    "from_status": "requested",
+                    "assignment_id": 42,
+                    "cancel_reason_code": null,
+                    "cancel_reason_note": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:45.000000Z",
+                "updated_at": "2026-02-21T07:10:45.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 391,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.contact_updated",
+                "description": "Updated team contact person",
+                "metadata": {
+                    "team_id": 19,
+                    "assignment_id": 42,
+                    "contact_person": "JoyBoy"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:43.000000Z",
+                "updated_at": "2026-02-21T07:10:43.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 390,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.contact_updated",
+                "description": "Updated team contact person",
+                "metadata": {
+                    "team_id": 19,
+                    "assignment_id": 42,
+                    "contact_person": "Joy"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:42.000000Z",
+                "updated_at": "2026-02-21T07:10:42.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 389,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.contact_updated",
+                "description": "Updated team contact person",
+                "metadata": {
+                    "team_id": 19,
+                    "assignment_id": 42,
+                    "contact_person": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:33.000000Z",
+                "updated_at": "2026-02-21T07:10:33.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 388,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.contact_updated",
+                "description": "Updated team contact person",
+                "metadata": {
+                    "team_id": 19,
+                    "assignment_id": 42,
+                    "contact_person": "B"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:32.000000Z",
+                "updated_at": "2026-02-21T07:10:32.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 387,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.status_changed",
+                "description": "Team status changed from assigned to requested",
+                "metadata": {
+                    "team_id": 19,
+                    "to_status": "requested",
+                    "from_status": "assigned",
+                    "assignment_id": 42,
+                    "cancel_reason_code": null,
+                    "cancel_reason_note": null
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:29.000000Z",
+                "updated_at": "2026-02-21T07:10:29.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 386,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "team.assignment.created",
+                "description": "Assigned team S.W.A.T.",
+                "metadata": {
+                    "team_id": 19,
+                    "team_name": "S.W.A.T.",
+                    "assignment_id": 42
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:10:26.000000Z",
+                "updated_at": "2026-02-21T07:10:26.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 385,
+                "incident_id": 29,
+                "call_session_id": 51,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "call.ended",
+                "description": "Call ended",
+                "metadata": {
+                    "source": null,
+                    "call_id": 51
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:02:37.000000Z",
+                "updated_at": "2026-02-21T07:02:37.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 384,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "incident.photo.sent",
+                "description": "Sent photo attachment",
+                "metadata": {
+                    "media_id": 91,
+                    "message_id": 4,
+                    "sender_role": "user"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:02:17.000000Z",
+                "updated_at": "2026-02-21T07:02:17.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 383,
+                "incident_id": 29,
+                "call_session_id": 51,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "call.reconnect_requested",
+                "description": "Caller requested reconnect",
+                "metadata": {
+                    "call_id": 51,
+                    "caller_id": 5,
+                    "operator_id": 3
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:02:04.000000Z",
+                "updated_at": "2026-02-21T07:02:04.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 382,
+                "incident_id": 29,
+                "call_session_id": 50,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "call.reconnect_requested",
+                "description": "Caller requested reconnect",
+                "metadata": {
+                    "call_id": 50,
+                    "caller_id": 5,
+                    "operator_id": 3
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:01:35.000000Z",
+                "updated_at": "2026-02-21T07:01:35.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 381,
+                "incident_id": 29,
+                "call_session_id": 49,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "call.reconnect_requested",
+                "description": "Caller requested reconnect",
+                "metadata": {
+                    "call_id": 49,
+                    "caller_id": 5,
+                    "operator_id": 3
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:01:22.000000Z",
+                "updated_at": "2026-02-21T07:01:22.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 380,
+                "incident_id": 29,
+                "call_session_id": 48,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "call.ended",
+                "description": "Call ended",
+                "metadata": {
+                    "source": null,
+                    "call_id": 48
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:01:10.000000Z",
+                "updated_at": "2026-02-21T07:01:10.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            },
+            {
+                "id": 379,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "incident.message.sent",
+                "description": "Sent chat message",
+                "metadata": {
+                    "type": "text",
+                    "message_id": 3,
+                    "sender_role": "user"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:00:41.000000Z",
+                "updated_at": "2026-02-21T07:00:41.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 378,
+                "incident_id": 29,
+                "call_session_id": null,
+                "actor_user_id": 5,
+                "actor_role": "user",
+                "action": "incident.message.sent",
+                "description": "Sent chat message",
+                "metadata": {
+                    "type": "text",
+                    "message_id": 2,
+                    "sender_role": "user"
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T07:00:13.000000Z",
+                "updated_at": "2026-02-21T07:00:13.000000Z",
+                "actor": {
+                    "id": 5,
+                    "name": "Juan Dela Cruz",
+                    "role": "user"
+                }
+            },
+            {
+                "id": 377,
+                "incident_id": 29,
+                "call_session_id": 48,
+                "actor_user_id": 3,
+                "actor_role": "operator",
+                "action": "call.connected",
+                "description": "Operator connected call session",
+                "metadata": {
+                    "call_id": 48,
+                    "caller_id": 5,
+                    "operator_id": 3
+                },
+                "visibility": "operator",
+                "created_at": "2026-02-21T06:59:47.000000Z",
+                "updated_at": "2026-02-21T06:59:47.000000Z",
+                "actor": {
+                    "id": 3,
+                    "name": "Operator Level 2",
+                    "role": "operator"
+                }
+            }
+        ]
+    },
+    "call_duration_seconds": 37,
+    "call_answered_at": "2026-02-21T07:32:17.000000Z",
+    "call_ended_at": "2026-02-21T07:32:54.000000Z",
+    "transfers": []
+}

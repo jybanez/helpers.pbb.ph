@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Utilities Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="./css/ui/ui.tabs.css">
+  <link rel="stylesheet" href="./css/ui/ui.strips.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      min-height: 90px;
+    }
+    #tabsHost,
+    #stripHost {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      padding: 10px;
+      background: #0b1220;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">UI Utilities Demo</h1>
+      <p>Playground for reusable `ui` modules: drawer, search, dialog, tabs, strips.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Dialogs</h2>
+      <div class="row">
+        <button id="alertBtn" class="ui-button" type="button">Alert</button>
+        <button id="confirmBtn" class="ui-button" type="button">Confirm</button>
+        <button id="promptBtn" class="ui-button" type="button">Prompt</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Drawer + Search</h2>
+      <div class="row">
+        <button id="drawerBtn" class="ui-button" type="button">Open Drawer</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Tabs</h2>
+      <div id="tabsHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Strips</h2>
+      <div id="stripHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createBottomDrawer } from "./js/ui/ui.drawer.js";
+    import { createSearchField } from "./js/ui/ui.search.js";
+    import { createEventBag } from "./js/ui/ui.events.js";
+    import { createElement } from "./js/ui/ui.dom.js";
+    import { uiAlert, uiConfirm, uiPrompt } from "./js/ui/ui.dialog.js";
+    import { createTabs } from "./js/ui/ui.tabs.js";
+    import { createStrip } from "./js/ui/ui.strips.js";
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    document.getElementById("alertBtn").addEventListener("click", async () => {
+      await uiAlert("This is a UI alert message.", { title: "Alert" });
+      writeLog("dialog.alert", { ok: true });
+    });
+
+    document.getElementById("confirmBtn").addEventListener("click", async () => {
+      const ok = await uiConfirm("Proceed with this action?", { title: "Confirm Action" });
+      writeLog("dialog.confirm", { ok });
+    });
+
+    document.getElementById("promptBtn").addEventListener("click", async () => {
+      const value = await uiPrompt("Enter a value:", { title: "Prompt Input", placeholder: "Type here..." });
+      writeLog("dialog.prompt", { value });
+    });
+
+    document.getElementById("drawerBtn").addEventListener("click", () => {
+      const drawer = createBottomDrawer({
+        title: "Demo Drawer",
+        onClose() {
+          writeLog("drawer.close", {});
+        },
+      });
+      const events = createEventBag();
+      const content = createElement("div", { className: "row" });
+      const chipsHost = createElement("div", { className: "ui-strip" });
+
+      const search = createSearchField({
+        classPrefix: "ui-search",
+        inputClass: "ui-input",
+        placeholder: "Search sample chips",
+        value: "",
+        onChange(value) {
+          chipsHost.innerHTML = "";
+          ["Alpha", "Bravo", "Charlie", "Delta", "Echo"]
+            .filter((item) => item.toLowerCase().includes(String(value || "").toLowerCase()))
+            .forEach((item) => {
+              const chip = createElement("button", {
+                className: "ui-strip-item",
+                text: item,
+                attrs: { type: "button" },
+              });
+              events.on(chip, "click", () => writeLog("drawer.chip.click", { item }));
+              chipsHost.appendChild(chip);
+            });
+        },
+      });
+
+      drawer.body.append(content, chipsHost);
+      content.appendChild(search.wrap);
+      search.bind(events);
+      search.setValue("");
+      drawer.open(document.body);
+      writeLog("drawer.open", {});
+    });
+
+    createTabs(document.getElementById("tabsHost"), {
+      activeId: "one",
+      tabs: [
+        { id: "one", label: "Tab One", content: "Tab one content." },
+        { id: "two", label: "Tab Two", content: "Tab two content." },
+        { id: "three", label: "Tab Three", content: "Tab three content." },
+      ],
+      onChange(tab, id) {
+        writeLog("tabs.change", { id, label: tab?.label });
+      },
+    });
+
+    createStrip(
+      document.getElementById("stripHost"),
+      [
+        { id: "all", label: "All" },
+        { id: "active", label: "Active" },
+        { id: "pending", label: "Pending" },
+        { id: "closed", label: "Closed" },
+      ],
+      {
+        selected: "all",
+        multi: false,
+        onChange(selectedItems, selectedIds) {
+          writeLog("strip.change", { selectedIds, selectedItems });
+        },
+      }
+    );
+  </script>
+</body>
+</html>

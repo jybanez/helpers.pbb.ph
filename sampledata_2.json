@@ -1,0 +1,419 @@
+{
+  "incident": {
+    "id": 2,
+    "caller_id": 5,
+    "operator_id": 3,
+    "status": "Resolved",
+    "alert_level": "Elevated",
+    "actual_caller_name": "Juan Dela Cruz",
+    "actual_caller_relationship": null,
+    "called_at": "2026-02-16T02:22:19Z",
+    "location": "Guadalupe, Cebu City, Central Visayas, 6000, Philippines",
+    "latitude": "10.3306482",
+    "longitude": "123.8827879",
+    "details": null,
+    "escalated_to_level": null,
+    "resolved_at": "2026-02-16T03:36:55Z",
+    "created_at": "2026-02-16T02:22:19Z",
+    "updated_at": "2026-02-16T03:36:55Z",
+    "location_road": null,
+    "location_suburb": "Guadalupe",
+    "location_neighbourhood": null,
+    "location_city": "Cebu City",
+    "location_municipality": null,
+    "location_state": null,
+    "location_postcode": "6000",
+    "location_country": "Philippines",
+    "caller": {
+      "id": 5,
+      "name": "Juan Dela Cruz",
+      "email": "juan@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:30Z",
+      "updated_at": "2026-02-21T20:21:33Z",
+      "role": "user",
+      "operator_level": null,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": null,
+      "avatar_path": "avatars/2FQmO10KxfJit542fAWDcvYBozUc4X2fkcTjWWzq.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": 29
+    },
+    "operator": {
+      "id": 3,
+      "name": "Operator Level 2",
+      "email": "operator2@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:29Z",
+      "updated_at": "2026-02-22T05:30:47Z",
+      "role": "operator",
+      "operator_level": 2,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": "2026-02-22T05:30:47Z",
+      "avatar_path": "avatars/OmTswIno3N0phuEY0zBAWwXI1gfvKgCMpYAoXszI.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": null
+    },
+    "incident_types": [
+      {
+        "id": 20,
+        "category_id": 2,
+        "name": "Building/House Fire",
+        "sort_order": 17,
+        "is_active": true,
+        "created_at": "2026-02-03T02:44:58Z",
+        "updated_at": "2026-02-21T07:06:06Z",
+        "pivot": {
+          "incident_id": 2,
+          "incident_type_id": 20,
+          "created_at": "2026-02-16T03:27:45Z",
+          "updated_at": "2026-02-16T03:27:45Z"
+        },
+        "category": {
+          "id": 2,
+          "name": "Fire & Hazard",
+          "sort_order": 2,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-01-23T13:00:10Z"
+        }
+      }
+    ],
+    "detail_entries": [
+      {
+        "id": 1,
+        "incident_id": 2,
+        "incident_type_id": 3,
+        "field_key": "water_depth",
+        "field_label": "Water Depth",
+        "field_value": "12",
+        "unit": "m",
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:24:41Z",
+        "updated_at": "2026-02-16T03:25:17Z"
+      },
+      {
+        "id": 2,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "field_key": "structure_type",
+        "field_label": "Structure type",
+        "field_value": "Building",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:27:51Z",
+        "updated_at": "2026-02-16T03:27:51Z"
+      },
+      {
+        "id": 3,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "field_key": "size",
+        "field_label": "Fire size",
+        "field_value": "Medium",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:27:57Z",
+        "updated_at": "2026-02-16T03:27:57Z"
+      },
+      {
+        "id": 4,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "field_key": "injured_people",
+        "field_label": "Injured People",
+        "field_value": "0",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:28:47Z",
+        "updated_at": "2026-02-16T03:30:38Z"
+      }
+    ],
+    "resources_needed": [
+      {
+        "id": 1,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "resource_type_id": 4,
+        "quantity_needed": 7,
+        "quantity_available": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:28:19Z",
+        "updated_at": "2026-02-16T03:28:19Z",
+        "resource_type": {
+          "id": 4,
+          "name": "Fire Truck",
+          "category": "Fire",
+          "sort_order": 18,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-02-19T09:19:48Z"
+        }
+      },
+      {
+        "id": 2,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "resource_type_id": 5,
+        "quantity_needed": 5,
+        "quantity_available": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:28:19Z",
+        "updated_at": "2026-02-16T03:28:24Z",
+        "resource_type": {
+          "id": 5,
+          "name": "Water Tanker",
+          "category": "Fire",
+          "sort_order": 19,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-02-19T09:19:48Z"
+        }
+      },
+      {
+        "id": 3,
+        "incident_id": 2,
+        "incident_type_id": 20,
+        "resource_type_id": 1,
+        "quantity_needed": 1,
+        "quantity_available": null,
+        "notes": null,
+        "created_at": "2026-02-16T03:28:19Z",
+        "updated_at": "2026-02-16T03:28:36Z",
+        "resource_type": {
+          "id": 1,
+          "name": "Ambulance",
+          "category": "Medical",
+          "sort_order": 1,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-02-19T09:19:48Z"
+        }
+      }
+    ],
+    "team_assignments": [
+      {
+        "id": 1,
+        "incident_id": 2,
+        "team_id": 1,
+        "assigned_by_operator_id": 3,
+        "contact_person": null,
+        "status": "cancelled",
+        "cancelled_from_status": "requested",
+        "cancel_reason_code": "no_contact",
+        "cancel_reason_note": "asd",
+        "notes": null,
+        "allocated_resources": null,
+        "assigned_at": "2026-02-16T03:00:39Z",
+        "accepted_at": null,
+        "arrived_at": null,
+        "completed_at": null,
+        "cancelled_at": "2026-02-16T03:30:03Z",
+        "created_at": "2026-02-16T03:00:39Z",
+        "updated_at": "2026-02-16T03:30:03Z",
+        "cancelled_by_operator_id": 3,
+        "team": {
+          "id": 1,
+          "team_category_id": 1,
+          "name": "Team Alpha",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-02T20:35:55Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 1,
+            "name": "Barangay Teams",
+            "sort_order": 1,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "incident_id": 2,
+        "team_id": 14,
+        "assigned_by_operator_id": 3,
+        "contact_person": "dee",
+        "status": "completed",
+        "cancelled_from_status": null,
+        "cancel_reason_code": null,
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": null,
+        "assigned_at": "2026-02-16T03:31:25Z",
+        "accepted_at": "2026-02-16T03:32:02Z",
+        "arrived_at": "2026-02-16T03:32:48Z",
+        "completed_at": "2026-02-16T03:36:49Z",
+        "cancelled_at": null,
+        "created_at": "2026-02-16T03:31:25Z",
+        "updated_at": "2026-02-16T03:36:49Z",
+        "cancelled_by_operator_id": null,
+        "team": {
+          "id": 14,
+          "team_category_id": 4,
+          "name": "Lahug Fire Station",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-03T07:00:17Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 4,
+            "name": "Infrastructure Support",
+            "sort_order": 4,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "incident_id": 2,
+        "team_id": 13,
+        "assigned_by_operator_id": 3,
+        "contact_person": "dee",
+        "status": "completed",
+        "cancelled_from_status": null,
+        "cancel_reason_code": null,
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": null,
+        "assigned_at": "2026-02-16T03:31:36Z",
+        "accepted_at": "2026-02-16T03:32:03Z",
+        "arrived_at": "2026-02-16T03:32:54Z",
+        "completed_at": "2026-02-16T03:36:50Z",
+        "cancelled_at": null,
+        "created_at": "2026-02-16T03:31:36Z",
+        "updated_at": "2026-02-16T03:36:50Z",
+        "cancelled_by_operator_id": null,
+        "team": {
+          "id": 13,
+          "team_category_id": 4,
+          "name": "Mandaue Fire Station",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-03T07:00:17Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 4,
+            "name": "Infrastructure Support",
+            "sort_order": 4,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      }
+    ],
+    "media": [
+      {
+        "id": 7,
+        "incident_id": 2,
+        "uploaded_by_user_id": 5,
+        "type": "video",
+        "path": "incidents/2/videos/segment-1.webm",
+        "duration_seconds": 36,
+        "metadata": {
+          "upload_id": "rec-2-caller-1771208568480-cfee90d0",
+          "segment_index": 1,
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-16T02:23:28Z",
+        "updated_at": "2026-02-16T02:23:28Z"
+      },
+      {
+        "id": 8,
+        "incident_id": 2,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/2/audio/caller-3-2026-02-16T02-22-16Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-2-caller-3-2026-02-16T02-22-16Z-1771208538611-f59fae66",
+          "recording_role": "caller-3-2026-02-16T02-22-16Z"
+        },
+        "created_at": "2026-02-16T02:23:29Z",
+        "updated_at": "2026-02-16T02:23:29Z"
+      },
+      {
+        "id": 9,
+        "incident_id": 2,
+        "uploaded_by_user_id": 5,
+        "type": "audio",
+        "path": "incidents/2/audio/caller.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-2-caller-3-2026-02-16T02-22-16Z-1771208538611-f59fae66",
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-16T02:23:29Z",
+        "updated_at": "2026-02-16T02:23:29Z"
+      },
+      {
+        "id": 10,
+        "incident_id": 2,
+        "uploaded_by_user_id": 5,
+        "type": "video",
+        "path": "incidents/2/videos/segment-1.webm",
+        "duration_seconds": 36,
+        "metadata": {
+          "upload_id": "rec-3-caller-1771208721552-2f0d6be2",
+          "segment_index": 1,
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-16T02:26:01Z",
+        "updated_at": "2026-02-16T02:26:01Z"
+      },
+      {
+        "id": 11,
+        "incident_id": 2,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/2/audio/caller-3-2026-02-16T02-25-17Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-3-caller-3-2026-02-16T02-25-17Z-1771208718501-8ead2a5e",
+          "recording_role": "caller-3-2026-02-16T02-25-17Z"
+        },
+        "created_at": "2026-02-16T02:26:03Z",
+        "updated_at": "2026-02-16T02:26:03Z"
+      },
+      {
+        "id": 12,
+        "incident_id": 2,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/2/audio/operator-3-2026-02-16T02-25-17Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-3-operator-3-2026-02-16T02-25-17Z-1771208718495-88fa8eb0",
+          "recording_role": "operator-3-2026-02-16T02-25-17Z"
+        },
+        "created_at": "2026-02-16T02:26:03Z",
+        "updated_at": "2026-02-16T02:26:03Z"
+      }
+    ]
+  }
+}

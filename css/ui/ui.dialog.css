@@ -1,0 +1,52 @@
+.ui-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1200;
+}
+
+.ui-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 460px);
+  max-height: 88vh;
+  overflow: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  z-index: 1201;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+}
+
+.ui-dialog-header {
+  padding: var(--ui-space-3) var(--ui-space-4) var(--ui-space-2);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.ui-dialog-body {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.ui-dialog-footer {
+  padding: var(--ui-space-2) var(--ui-space-4) var(--ui-space-3);
+  border-top: 1px solid var(--ui-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.ui-dialog-message {
+  margin: 0;
+  color: var(--ui-text);
+}
+
+.ui-button-primary {
+  border-color: #4567a5;
+  background: #213454;
+  color: #e6efff;
+}

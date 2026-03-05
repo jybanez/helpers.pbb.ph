@@ -1,0 +1,305 @@
+{
+  "incident": {
+    "id": 15,
+    "caller_id": 5,
+    "operator_id": 3,
+    "status": "Resolved",
+    "alert_level": "Normal",
+    "actual_caller_name": "Juan Dela Cruz",
+    "actual_caller_relationship": null,
+    "called_at": "2026-02-18T07:53:43Z",
+    "location": "Guadalupe, Cebu City, Central Visayas, 6000, Philippines",
+    "latitude": "10.3306795",
+    "longitude": "123.8827979",
+    "details": null,
+    "escalated_to_level": null,
+    "resolved_at": "2026-02-18T08:54:10Z",
+    "created_at": "2026-02-18T07:53:43Z",
+    "updated_at": "2026-02-18T08:54:10Z",
+    "location_road": null,
+    "location_suburb": "Guadalupe",
+    "location_neighbourhood": null,
+    "location_city": "Cebu City",
+    "location_municipality": null,
+    "location_state": null,
+    "location_postcode": "6000",
+    "location_country": "Philippines",
+    "caller": {
+      "id": 5,
+      "name": "Juan Dela Cruz",
+      "email": "juan@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:30Z",
+      "updated_at": "2026-02-21T20:21:33Z",
+      "role": "user",
+      "operator_level": null,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": null,
+      "avatar_path": "avatars/2FQmO10KxfJit542fAWDcvYBozUc4X2fkcTjWWzq.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": 29
+    },
+    "operator": {
+      "id": 3,
+      "name": "Operator Level 2",
+      "email": "operator2@hotline.local",
+      "email_verified_at": null,
+      "created_at": "2026-01-17T16:07:29Z",
+      "updated_at": "2026-02-22T05:30:47Z",
+      "role": "operator",
+      "operator_level": 2,
+      "is_available": false,
+      "current_call_session_id": null,
+      "last_seen_at": "2026-02-22T05:30:47Z",
+      "avatar_path": "avatars/OmTswIno3N0phuEY0zBAWwXI1gfvKgCMpYAoXszI.jpg",
+      "phone": null,
+      "address": null,
+      "current_incident_id": null
+    },
+    "incident_types": [
+      {
+        "id": 10,
+        "category_id": 4,
+        "name": "Landslide",
+        "sort_order": 4,
+        "is_active": true,
+        "created_at": "2026-01-23T13:00:10Z",
+        "updated_at": "2026-02-21T07:06:06Z",
+        "pivot": {
+          "incident_id": 15,
+          "incident_type_id": 10,
+          "created_at": "2026-02-18T07:54:00Z",
+          "updated_at": "2026-02-18T07:54:00Z"
+        },
+        "category": {
+          "id": 4,
+          "name": "Disaster & Weather",
+          "sort_order": 4,
+          "is_active": true,
+          "created_at": "2026-01-23T13:00:10Z",
+          "updated_at": "2026-01-23T13:00:10Z"
+        }
+      }
+    ],
+    "detail_entries": [
+      {
+        "id": 26,
+        "incident_id": 15,
+        "incident_type_id": 10,
+        "field_key": "blocked_roads",
+        "field_label": "Blocked Roads",
+        "field_value": "Jhighdro part",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T07:54:08Z",
+        "updated_at": "2026-02-18T07:54:21Z"
+      },
+      {
+        "id": 27,
+        "incident_id": 15,
+        "incident_type_id": 10,
+        "field_key": "structures_affected",
+        "field_label": "Structures Affected",
+        "field_value": "2",
+        "unit": "Structures",
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T07:54:24Z",
+        "updated_at": "2026-02-18T07:54:24Z"
+      },
+      {
+        "id": 28,
+        "incident_id": 15,
+        "incident_type_id": 10,
+        "field_key": "missing",
+        "field_label": "People Missing",
+        "field_value": "10",
+        "unit": "people",
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T07:54:29Z",
+        "updated_at": "2026-02-18T07:54:29Z"
+      },
+      {
+        "id": 29,
+        "incident_id": 15,
+        "incident_type_id": 10,
+        "field_key": "evac_required",
+        "field_label": "Evacuation Needed",
+        "field_value": "Yes",
+        "unit": null,
+        "severity": null,
+        "notes": null,
+        "created_at": "2026-02-18T07:54:31Z",
+        "updated_at": "2026-02-18T07:54:31Z"
+      }
+    ],
+    "resources_needed": [],
+    "team_assignments": [
+      {
+        "id": 14,
+        "incident_id": 15,
+        "team_id": 1,
+        "assigned_by_operator_id": 3,
+        "contact_person": "anie",
+        "status": "cancelled",
+        "cancelled_from_status": "en_route",
+        "cancel_reason_code": "safety_risk",
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": [],
+        "assigned_at": "2026-02-18T08:21:29Z",
+        "accepted_at": "2026-02-18T08:37:39Z",
+        "arrived_at": null,
+        "completed_at": null,
+        "cancelled_at": "2026-02-18T08:42:34Z",
+        "created_at": "2026-02-18T08:21:29Z",
+        "updated_at": "2026-02-18T08:42:34Z",
+        "cancelled_by_operator_id": 3,
+        "team": {
+          "id": 1,
+          "team_category_id": 1,
+          "name": "Team Alpha",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-02T20:35:55Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 1,
+            "name": "Barangay Teams",
+            "sort_order": 1,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      },
+      {
+        "id": 15,
+        "incident_id": 15,
+        "team_id": 11,
+        "assigned_by_operator_id": 3,
+        "contact_person": "anie",
+        "status": "completed",
+        "cancelled_from_status": null,
+        "cancel_reason_code": null,
+        "cancel_reason_note": null,
+        "notes": null,
+        "allocated_resources": [
+          {
+            "resource_type_id": 1,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 3,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 15,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 30,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 17,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 21,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 23,
+            "quantity_allocated": 1
+          },
+          {
+            "resource_type_id": 39,
+            "quantity_allocated": 1
+          }
+        ],
+        "assigned_at": "2026-02-18T08:37:11Z",
+        "accepted_at": "2026-02-18T08:37:53Z",
+        "arrived_at": "2026-02-18T08:54:00Z",
+        "completed_at": "2026-02-18T08:54:08Z",
+        "cancelled_at": null,
+        "created_at": "2026-02-18T08:37:11Z",
+        "updated_at": "2026-02-18T08:54:08Z",
+        "cancelled_by_operator_id": null,
+        "team": {
+          "id": 11,
+          "team_category_id": 5,
+          "name": "ERUF",
+          "status": "available",
+          "is_active": true,
+          "base_location": null,
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": null,
+          "created_at": "2026-02-03T07:00:17Z",
+          "updated_at": "2026-02-19T05:45:27Z",
+          "category": {
+            "id": 5,
+            "name": "Medical Support",
+            "sort_order": 5,
+            "is_active": true,
+            "created_at": "2026-02-03T02:14:07Z",
+            "updated_at": "2026-02-04T07:56:01Z"
+          }
+        }
+      }
+    ],
+    "media": [
+      {
+        "id": 45,
+        "incident_id": 15,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/15/audio/caller-3-2026-02-18T07-53-43Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-30-caller-3-2026-02-18T07-53-43Z-1771401225285-4c1ecb45",
+          "recording_role": "caller-3-2026-02-18T07-53-43Z"
+        },
+        "created_at": "2026-02-18T07:53:48Z",
+        "updated_at": "2026-02-18T07:53:48Z"
+      },
+      {
+        "id": 46,
+        "incident_id": 15,
+        "uploaded_by_user_id": 5,
+        "type": "audio",
+        "path": "incidents/15/audio/caller.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-30-caller-3-2026-02-18T07-53-43Z-1771401225285-4c1ecb45",
+          "recording_role": "caller"
+        },
+        "created_at": "2026-02-18T07:53:48Z",
+        "updated_at": "2026-02-18T07:53:48Z"
+      },
+      {
+        "id": 47,
+        "incident_id": 15,
+        "uploaded_by_user_id": 3,
+        "type": "audio",
+        "path": "incidents/15/audio/operator-3-2026-02-18T07-53-43Z.weba",
+        "duration_seconds": null,
+        "metadata": {
+          "upload_id": "rec-30-operator-3-2026-02-18T07-53-43Z-1771401225268-e254633b",
+          "recording_role": "operator-3-2026-02-18T07-53-43Z"
+        },
+        "created_at": "2026-02-18T07:53:48Z",
+        "updated_at": "2026-02-18T07:53:48Z"
+      }
+    ]
+  }
+}
