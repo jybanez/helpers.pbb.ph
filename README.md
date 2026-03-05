@@ -2,6 +2,12 @@
 
 A lightweight helper-library prototype for rendering incident-related UI components using plain JavaScript and CSS.
 
+## Repository And Live Demo
+
+- GitHub Repository: `https://github.com/jybanez/helpers.hotline.pbb.ph`
+- Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.hotline.pbb.ph`
+- Refactor Playbook (for `hotline.pbb.ph` integration): `docs/hotline-refactor-playbook.md`
+
 This repository currently covers **7 helpers**:
 
 - `incidentBase`
@@ -349,3 +355,13 @@ Demo pages load:
 
 - This is a scaffold/prototype for testing flow.
 - You can extend this with additional incident component helpers later while keeping the same API pattern.
+- For maintainers integrating into `hotline.pbb.ph`, follow `docs/hotline-refactor-playbook.md` before refactoring contracts.
+
+## Release Notes
+
+### v0.1.0
+
+- Initial public prototype published
+- Incident helper set (`teams.assignments`, `types`, details editor/viewer)
+- Shared UI utility layer (`ui.dom`, `ui.events`, `ui.drawer`, `ui.search`, `ui.dialog`, `ui.tabs`, `ui.strips`)
+- Demo pages published via GitHub Pages
