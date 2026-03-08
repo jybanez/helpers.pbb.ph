@@ -72,6 +72,7 @@ js/
 index.html
 demo.team.assignments.html
 demo.incident.types.html
+demo.grid.html
 demo.ui.html
 demo.audio.html
 demo.nav.html
@@ -118,7 +119,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `createMediaStrip(container, items, options)` media thumbnails strip (image/video) with modal viewer/player + in-modal prev/next navigation
   - options include `layout: "scroll" | "wrap"` and `animationMs` (default `300`)
 - `ui.grid.js`
-  - `createGrid(container, rows, options)` data grid/table with local/remote modes and optional sort/search/pagination
+  - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, and optional row virtualization
 - `ui.menu.js`
   - `createMenu(triggerEl, items, options)` anchored popover menu primitive
   - item icon contract: `icon` (SVG/HTML string), `iconPosition: "start" | "end"`, `iconOnly: boolean`
@@ -669,8 +670,12 @@ Open from a local server (Apache/WAMP/Nginx):
   - left: editable list helper
   - right: viewer list helper
   - right column mirrors left via `setList(items[])`
+- `demo.grid.html` -> dedicated grid demo
+  - local grid (client search/sort/pagination)
+  - remote grid (query-driven updates)
+  - large virtualized grid with fixed-height scrolling
 - `demo.ui.html` -> UI utilities playground
-  - dialog, drawer, search, tabs, strips, media strip, grid
+  - dialog, drawer, search, tabs, strips, media strip
 - `demo.audio.html` -> audio player + stacked role audiographs
   - sample selector for available `sampledata_*.json`
   - graph style selector
@@ -962,6 +967,7 @@ Core options:
   - `enableSearch`
   - `enablePagination`
   - `enableColumnResize`
+  - `enableVirtualization`
 - column resize options:
   - `minColumnWidth` (default `72`)
   - `columnWidths` (object map by `column.key`, e.g. `{ status: 160 }`)
@@ -972,6 +978,10 @@ Core options:
   - `search`, `searchPlaceholder`
 - paging options:
   - `page`, `pageSize`, `pageSizeOptions`, `totalRows` (remote)
+- virtualization options:
+  - `virtualRowHeight` (default `40`)
+  - `virtualOverscan` (default `8`)
+  - `virtualThreshold` (default `80`)
 - state display:
   - `loading`, `errorText`, `emptyText`
 

@@ -12,6 +12,10 @@ const DEFAULT_OPTIONS = {
   enableSearch: undefined,
   enablePagination: undefined,
   enableColumnResize: false,
+  enableVirtualization: false,
+  virtualRowHeight: 40,
+  virtualOverscan: 8,
+  virtualThreshold: 80,
   minColumnWidth: 72,
   columnWidths: {},
   wrapCellContent: true,
@@ -35,11 +39,13 @@ const DEFAULT_OPTIONS = {
 
 export function createGrid(container, rows = [], options = {}) {
   const events = createEventBag();
+  const rowEvents = createEventBag();
   let currentRows = normalizeRows(rows);
   let currentOptions = normalizeOptions(options);
 
   let root = null;
   let tableEl = null;
+  let tableWrapEl = null;
   let searchInput = null;
   let tableBody = null;
   let pageInfo = null;
@@ -50,6 +56,18 @@ export function createGrid(container, rows = [], options = {}) {
   let isResizing = false;
   let activeResizeCleanup = null;
   let suppressSortUntil = 0;
+  let renderFrame = null;
+  let virtualState = {
+    enabled: false,
+    rows: [],
+    totalRows: 0,
+    rowHeight: 40,
+    overscan: 8,
+    start: 0,
+    end: 0,
+    lastRenderedStart: -1,
+    lastRenderedEnd: -1,
+  };
 
   let query = {
     search: currentOptions.search || "",
@@ -91,6 +109,7 @@ export function createGrid(container, rows = [], options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    rowEvents.clear();
     events.clear();
     clearNode(container);
 
@@ -151,6 +170,7 @@ export function createGrid(container, rows = [], options = {}) {
     }
 
     const tableWrap = createElement("div", { className: "ui-grid-table-wrap" });
+    tableWrapEl = tableWrap;
     const table = createElement("table", { className: "ui-grid-table" });
     tableEl = table;
     const colgroup = createElement("colgroup");
@@ -268,6 +288,18 @@ export function createGrid(container, rows = [], options = {}) {
     }
 
     container.appendChild(root);
+    events.on(tableWrapEl, "scroll", () => {
+      if (!virtualState.enabled) {
+        return;
+      }
+      if (renderFrame != null) {
+        cancelAnimationFrame(renderFrame);
+      }
+      renderFrame = requestAnimationFrame(() => {
+        renderFrame = null;
+        renderVirtualRows();
+      });
+    });
     syncTableWidth();
     renderRows();
   }
@@ -374,6 +406,7 @@ export function createGrid(container, rows = [], options = {}) {
     if (!tableBody) {
       return;
     }
+    rowEvents.clear();
     clearNode(tableBody);
 
     if (currentOptions.loading) {
@@ -397,76 +430,156 @@ export function createGrid(container, rows = [], options = {}) {
     }
 
     if (!rowsToRender.length) {
+      virtualState.enabled = false;
+      virtualState.lastRenderedStart = -1;
+      virtualState.lastRenderedEnd = -1;
       tableBody.appendChild(buildStateRow(currentOptions.emptyText));
       updatePagerMeta(totalRows, totalPages, safePage);
       return;
     }
 
-    rowsToRender.forEach((row, index) => {
-      const tr = createElement("tr", { className: "ui-grid-row" });
-      const rowKey = getRowKey(row, index, currentOptions.rowKey);
-      const selected = selectedKeys.has(String(rowKey));
-      tr.dataset.rowKey = String(rowKey);
-      tr.classList.toggle("is-selected", selected);
-
-      if (isSelectable()) {
-        const cell = createElement("td", { className: "ui-grid-col-select" });
-        const checkbox = createElement("input", {
-          attrs: {
-            type: isSingleSelect() ? "radio" : "checkbox",
-            name: "ui-grid-select",
-          },
-        });
-        checkbox.checked = selected;
-        events.on(checkbox, "change", () => {
-          toggleSelection(rowKey, checkbox.checked);
-        });
-        cell.appendChild(checkbox);
-        tr.appendChild(cell);
-      }
-
-      currentOptions.columns.forEach((column) => {
-        const wrapEnabled = resolveCellWrap(currentOptions.wrapCellContent, column);
-        const td = createElement("td", {
-          className: `ui-grid-cell ${wrapEnabled ? "is-wrap" : "is-nowrap"}`.trim(),
-        });
-        if (column.align) {
-          td.style.textAlign = String(column.align);
-        }
-        const value = row?.[column.key];
-        let content = value;
-        if (typeof column.format === "function") {
-          content = column.format(value, row);
-        }
-        if (typeof column.renderCell === "function") {
-          const rendered = column.renderCell({ row, value, key: column.key, column });
-          if (rendered instanceof HTMLElement) {
-            td.appendChild(rendered);
-          } else {
-            td.textContent = rendered == null ? "" : String(rendered);
-          }
-        } else {
-          td.textContent = content == null ? "" : String(content);
-          if (!wrapEnabled && td.textContent) {
-            td.title = td.textContent;
-          }
-        }
-        tr.appendChild(td);
+    if (shouldVirtualize(rowsToRender.length)) {
+      virtualState.enabled = true;
+      virtualState.rows = rowsToRender;
+      virtualState.totalRows = rowsToRender.length;
+      virtualState.rowHeight = Math.max(24, Number(currentOptions.virtualRowHeight) || 40);
+      virtualState.overscan = Math.max(0, Number(currentOptions.virtualOverscan) || 8);
+      virtualState.lastRenderedStart = -1;
+      virtualState.lastRenderedEnd = -1;
+      renderVirtualRows();
+    } else {
+      virtualState.enabled = false;
+      virtualState.lastRenderedStart = -1;
+      virtualState.lastRenderedEnd = -1;
+      rowsToRender.forEach((row, index) => {
+        tableBody.appendChild(buildDataRow(row, index));
       });
-
-      events.on(tr, "click", (event) => {
-        if (isResizing) {
-          return;
-        }
-        if (event.target && event.target.closest("input")) {
-          return;
-        }
-        currentOptions.onRowClick?.(row, { rowKey, index });
-      });
-      tableBody.appendChild(tr);
-    });
+    }
 
     updatePagerMeta(totalRows, totalPages, safePage);
+  }
+
+  function shouldVirtualize(rowCount) {
+    if (!currentOptions.enableVirtualization) {
+      return false;
+    }
+    const threshold = Math.max(1, Number(currentOptions.virtualThreshold) || 80);
+    return rowCount >= threshold;
+  }
+
+  function renderVirtualRows() {
+    if (!tableBody || !tableWrapEl || !virtualState.enabled) {
+      return;
+    }
+    const totalRows = virtualState.totalRows;
+    const rowHeight = virtualState.rowHeight;
+    const overscan = virtualState.overscan;
+    const viewportHeight = Math.max(1, tableWrapEl.clientHeight || 1);
+    const visibleCount = Math.max(1, Math.ceil(viewportHeight / rowHeight));
+    const scrollTop = Math.max(0, tableWrapEl.scrollTop || 0);
+    const firstVisible = Math.max(0, Math.floor(scrollTop / rowHeight));
+    const start = Math.max(0, firstVisible - overscan);
+    const end = Math.min(totalRows, firstVisible + visibleCount + overscan);
+    if (start === virtualState.lastRenderedStart && end === virtualState.lastRenderedEnd) {
+      return;
+    }
+    virtualState.start = start;
+    virtualState.end = end;
+    virtualState.lastRenderedStart = start;
+    virtualState.lastRenderedEnd = end;
+    rowEvents.clear();
+    clearNode(tableBody);
+
+    const topHeight = start * rowHeight;
+    const bottomHeight = Math.max(0, (totalRows - end) * rowHeight);
+
+    if (topHeight > 0) {
+      tableBody.appendChild(buildSpacerRow(topHeight));
+    }
+    for (let index = start; index < end; index += 1) {
+      const row = virtualState.rows[index];
+      tableBody.appendChild(buildDataRow(row, index));
+    }
+    if (bottomHeight > 0) {
+      tableBody.appendChild(buildSpacerRow(bottomHeight));
+    }
+  }
+
+  function buildSpacerRow(height) {
+    const tr = createElement("tr", { className: "ui-grid-row-spacer" });
+    const td = createElement("td", {
+      className: "ui-grid-cell-spacer",
+      attrs: { colspan: String(currentOptions.columns.length + (isSelectable() ? 1 : 0)) },
+    });
+    const filler = createElement("div", { className: "ui-grid-spacer-fill" });
+    filler.style.height = `${Math.max(0, Math.round(height))}px`;
+    td.appendChild(filler);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function buildDataRow(row, index) {
+    const tr = createElement("tr", { className: "ui-grid-row" });
+    const rowKey = getRowKey(row, index, currentOptions.rowKey);
+    const selected = selectedKeys.has(String(rowKey));
+    tr.dataset.rowKey = String(rowKey);
+    tr.classList.toggle("is-selected", selected);
+
+    if (isSelectable()) {
+      const cell = createElement("td", { className: "ui-grid-col-select" });
+      const checkbox = createElement("input", {
+        attrs: {
+          type: isSingleSelect() ? "radio" : "checkbox",
+          name: "ui-grid-select",
+        },
+      });
+      checkbox.checked = selected;
+      rowEvents.on(checkbox, "change", () => {
+        toggleSelection(rowKey, checkbox.checked);
+      });
+      cell.appendChild(checkbox);
+      tr.appendChild(cell);
+    }
+
+    currentOptions.columns.forEach((column) => {
+      const wrapEnabled = resolveCellWrap(currentOptions.wrapCellContent, column);
+      const td = createElement("td", {
+        className: `ui-grid-cell ${wrapEnabled ? "is-wrap" : "is-nowrap"}`.trim(),
+      });
+      if (column.align) {
+        td.style.textAlign = String(column.align);
+      }
+      const value = row?.[column.key];
+      let content = value;
+      if (typeof column.format === "function") {
+        content = column.format(value, row);
+      }
+      if (typeof column.renderCell === "function") {
+        const rendered = column.renderCell({ row, value, key: column.key, column });
+        if (rendered instanceof HTMLElement) {
+          td.appendChild(rendered);
+        } else {
+          td.textContent = rendered == null ? "" : String(rendered);
+        }
+      } else {
+        td.textContent = content == null ? "" : String(content);
+        if (!wrapEnabled && td.textContent) {
+          td.title = td.textContent;
+        }
+      }
+      tr.appendChild(td);
+    });
+
+    rowEvents.on(tr, "click", (event) => {
+      if (isResizing) {
+        return;
+      }
+      if (event.target && event.target.closest("input")) {
+        return;
+      }
+      currentOptions.onRowClick?.(row, { rowKey, index });
+    });
+    return tr;
   }
 
   function toggleSelection(rowKey, checked) {
@@ -597,13 +710,19 @@ export function createGrid(container, rows = [], options = {}) {
   }
 
   function destroy() {
+    if (renderFrame != null) {
+      cancelAnimationFrame(renderFrame);
+      renderFrame = null;
+    }
     if (activeResizeCleanup) {
       activeResizeCleanup();
     }
+    rowEvents.clear();
     events.clear();
     clearNode(container);
     root = null;
     tableEl = null;
+    tableWrapEl = null;
     searchInput = null;
     tableBody = null;
     pageInfo = null;

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grid Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.grid.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    #gridHostLarge .ui-grid-table-wrap {
+      height: 420px;
+      max-height: 420px;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      min-height: 100px;
+      max-height: 260px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Grid Demo</h1>
+      <p class="muted">Dedicated playground for local, remote, and large virtualized grids.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Local Grid</h2>
+      <p class="muted">Client-side search, sort, pagination, and selectable rows.</p>
+      <div id="gridHostLocal"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Remote Grid</h2>
+      <p class="muted">Grid emits query changes; parent simulates API paging and sets rows.</p>
+      <div id="gridHostRemote"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Large Grid (Virtualized)</h2>
+      <p class="muted">Fixed-height scroll container with virtualization enabled for large row count.</p>
+      <div id="gridHostLarge"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createGrid } from "./js/ui/ui.grid.js";
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
+      writeLog("theme.toggle", { theme: page.dataset.theme });
+    });
+
+    const gridColumns = [
+      { key: "id", label: "ID", width: "70px", sortable: true, align: "right" },
+      { key: "status", label: "Status", width: "120px", sortable: true },
+      { key: "caller", label: "Caller", sortable: true },
+      { key: "location", label: "Location", sortable: false },
+      { key: "createdAt", label: "Created", width: "160px", sortable: true },
+    ];
+
+    const gridRows = [
+      { id: 16, status: "resolved", caller: "Maria Santos", location: "Guadalupe", createdAt: "2026-02-18 08:54" },
+      { id: 15, status: "active", caller: "Juan Dela Cruz", location: "Talamban", createdAt: "2026-02-17 21:30" },
+      { id: 7, status: "resolved", caller: "Ana Torres", location: "Lahug", createdAt: "2026-02-10 10:17" },
+      { id: 6, status: "active", caller: "Joel Ramos", location: "Mabolo", createdAt: "2026-02-09 07:41" },
+      { id: 3, status: "pending", caller: "Iris Lim", location: "Banilad", createdAt: "2026-02-02 23:11" },
+      { id: 2, status: "resolved", caller: "Karl Peña", location: "Mandaue", createdAt: "2026-01-31 09:12" },
+    ];
+
+    createGrid(document.getElementById("gridHostLocal"), gridRows, {
+      mode: "local",
+      columns: gridColumns,
+      selectable: "multi",
+      wrapCellContent: false,
+      enableColumnResize: true,
+      pageSize: 3,
+      onRowClick(row) {
+        writeLog("grid.local.rowClick", { id: row.id });
+      },
+      onSelectionChange(rows, keys) {
+        writeLog("grid.local.selection", { keys, count: rows.length });
+      },
+      onColumnResize(payload) {
+        writeLog("grid.local.columnResize", payload);
+      },
+    });
+
+    const remoteGrid = createGrid(document.getElementById("gridHostRemote"), gridRows.slice(0, 3), {
+      mode: "remote",
+      columns: gridColumns,
+      selectable: "single",
+      enableSort: true,
+      enableSearch: true,
+      enablePagination: true,
+      enableColumnResize: true,
+      page: 1,
+      pageSize: 3,
+      totalRows: 48,
+      onQueryChange(nextQuery) {
+        writeLog("grid.remote.query", nextQuery);
+        const simulatedPage = Math.max(1, Number(nextQuery.page) || 1);
+        const start = ((simulatedPage - 1) * 3) % gridRows.length;
+        const nextRows = [...gridRows.slice(start), ...gridRows.slice(0, start)].slice(0, 3);
+        remoteGrid.setRows(nextRows);
+        remoteGrid.update(nextRows, { totalRows: 48 });
+      },
+      onColumnResize(payload) {
+        writeLog("grid.remote.columnResize", payload);
+      },
+    });
+
+    const statuses = ["active", "pending", "resolved"];
+    const locations = ["Guadalupe", "Talamban", "Lahug", "Mabolo", "Banilad", "Mandaue"];
+    const largeRows = Array.from({ length: 12000 }, (_, index) => {
+      const id = index + 1;
+      const status = statuses[index % statuses.length];
+      const location = locations[index % locations.length];
+      const createdHour = String(index % 24).padStart(2, "0");
+      const createdMinute = String((index * 7) % 60).padStart(2, "0");
+      return {
+        id,
+        status,
+        caller: `Caller ${id}`,
+        location,
+        createdAt: `2026-03-${String((index % 28) + 1).padStart(2, "0")} ${createdHour}:${createdMinute}`,
+      };
+    });
+
+    createGrid(document.getElementById("gridHostLarge"), largeRows, {
+      mode: "local",
+      columns: gridColumns,
+      selectable: "none",
+      wrapCellContent: false,
+      enableSort: true,
+      enableSearch: true,
+      enablePagination: false,
+      enableColumnResize: true,
+      enableVirtualization: true,
+      virtualRowHeight: 40,
+      virtualOverscan: 10,
+      virtualThreshold: 100,
+      onRowClick(row) {
+        writeLog("grid.large.rowClick", { id: row.id });
+      },
+      onColumnResize(payload) {
+        writeLog("grid.large.columnResize", payload);
+      },
+    });
+  </script>
+</body>
+</html>
