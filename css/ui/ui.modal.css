@@ -125,3 +125,45 @@
   justify-content: flex-end;
   gap: var(--ui-space-2, 8px);
 }
+
+.ui-modal-body form {
+  display: grid;
+  gap: var(--ui-space-2, 8px);
+}
+
+.ui-modal-body label {
+  font-size: 12px;
+  color: var(--ui-muted, #9fb2d8);
+}
+
+.ui-modal-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+.ui-modal-body textarea,
+.ui-modal-body select {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--ui-radius-sm, 8px);
+  border: 1px solid var(--ui-border-strong, #344769);
+  background: var(--ui-bg-soft, #101c31);
+  color: var(--ui-text, #d7e0f4);
+  font: 14px/1.35 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+  padding: 8px 10px;
+  outline: none;
+}
+
+.ui-modal-body textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.ui-modal-body input::placeholder,
+.ui-modal-body textarea::placeholder {
+  color: var(--ui-muted, #8ea4ce);
+  opacity: 0.95;
+}
+
+.ui-modal-body input:focus,
+.ui-modal-body textarea:focus,
+.ui-modal-body select:focus {
+  border-color: #69a4ff;
+  box-shadow: 0 0 0 2px rgba(92, 147, 230, 0.22);
+}

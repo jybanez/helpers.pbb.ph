@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stepper Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.stepper.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    #host { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #0b1220; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; height: 220px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Stepper Demo</h1>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="prevBtn" class="ui-button" type="button">Previous</button>
+        <button id="nextBtn" class="ui-button" type="button">Next</button>
+        <button id="toggleOrientationBtn" class="ui-button" type="button">Toggle Orientation</button>
+      </div>
+      <div id="host"></div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { createStepper } from "./js/ui/ui.stepper.js";
+
+    const page = document.querySelector("main.page");
+    const host = document.getElementById("host");
+    const log = document.getElementById("log");
+    const steps = [
+      { id: "intake", title: "Intake", subtitle: "Call accepted" },
+      { id: "dispatch", title: "Dispatch", subtitle: "Team assignment" },
+      { id: "response", title: "Response", subtitle: "Field operations" },
+      { id: "closure", title: "Closure", subtitle: "Resolved report" },
+    ];
+    let currentIndex = 1;
+    let orientation = "horizontal";
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function materialize() {
+      return steps.map((step, index) => ({
+        ...step,
+        status: index < currentIndex ? "complete" : (index === currentIndex ? "current" : "future"),
+      }));
+    }
+
+    const instance = createStepper(host, materialize(), {
+      orientation,
+      onStepClick(step) {
+        currentIndex = steps.findIndex((entry) => entry.id === step.id);
+        instance.update(materialize(), { currentStepId: step.id, orientation });
+        writeLog("stepper.click", { id: step.id });
+      },
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      currentIndex = Math.max(0, currentIndex - 1);
+      instance.update(materialize(), { orientation });
+      writeLog("stepper.prev", { currentIndex });
+    });
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      currentIndex = Math.min(steps.length - 1, currentIndex + 1);
+      instance.update(materialize(), { orientation });
+      writeLog("stepper.next", { currentIndex });
+    });
+    document.getElementById("toggleOrientationBtn").addEventListener("click", () => {
+      orientation = orientation === "horizontal" ? "vertical" : "horizontal";
+      instance.update(materialize(), { orientation });
+      writeLog("stepper.orientation", { orientation });
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+  </script>
+</body>
+</html>
+

@@ -193,31 +193,24 @@
     const minTime = times[0];
     const maxTime = times[times.length - 1];
     const durationMs = Math.max(1, maxTime - minTime);
-    let filteredItems = timelineItems.slice();
-
-    function toRelativeMs(item) {
-      return new Date(item.timestamp).getTime() - minTime;
-    }
-
-    function updateTimelinesByRange(range) {
+    function applyLinkedRange(range) {
       const startMs = Math.max(0, Number(range?.startMs) || 0);
       const endMs = Math.min(durationMs, Number(range?.endMs) || durationMs);
-      filteredItems = timelineItems.filter((item) => {
-        const relative = toRelativeMs(item);
-        return relative >= startMs && relative <= endMs;
-      });
-      vertical.update(filteredItems);
-      horizontal.update(filteredItems);
+      const linkedRange = { startMs, endMs, anchorMs: minTime };
+      vertical.setLinkedRange(linkedRange);
+      horizontal.setLinkedRange(linkedRange);
+      const visible = horizontal.getState().visibleItems;
       writeLog("timeline.range.filtered", {
         startMs,
         endMs,
         totalItems: timelineItems.length,
-        visibleItems: filteredItems.length,
+        visibleItems: visible.length,
       });
     }
 
     function nearestItemAt(ms) {
-      const list = filteredItems.length ? filteredItems : timelineItems;
+      const visible = horizontal.getState().visibleItems;
+      const list = visible.length ? visible : timelineItems;
       const absolute = minTime + Math.max(0, Math.min(durationMs, ms));
       let winner = list[0];
       let bestDistance = Infinity;
@@ -254,7 +247,8 @@
       zoomLevels: [1, 2, 5],
       zoom: 1,
       onSeek(valueMs) {
-        if (!filteredItems.length) {
+        const visible = horizontal.getState().visibleItems;
+        if (!visible.length) {
           writeLog("timeline.scrubber.seek", { valueMs, activeItemId: null });
           return;
         }
@@ -263,8 +257,9 @@
         writeLog("timeline.scrubber.seek", { valueMs, activeItemId: active.id, activeTitle: active.title });
       },
       onRangeChange(range) {
-        updateTimelinesByRange(range);
-        if (filteredItems.length) {
+        applyLinkedRange(range);
+        const visible = horizontal.getState().visibleItems;
+        if (visible.length) {
           const active = nearestItemAt(scrubber.getValue());
           setActiveItem(active.id);
         } else {
@@ -279,8 +274,9 @@
 
     // initialize filtered timelines from initial range and highlight active item
     const initialRange = scrubber.getState().range || { startMs: 0, endMs: durationMs };
-    updateTimelinesByRange(initialRange);
-    if (filteredItems.length) {
+    applyLinkedRange(initialRange);
+    const initialVisible = horizontal.getState().visibleItems;
+    if (initialVisible.length) {
       setActiveItem(nearestItemAt(scrubber.getValue()).id);
     }
 

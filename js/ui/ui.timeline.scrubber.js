@@ -10,6 +10,9 @@ const DEFAULT_OPTIONS = {
   zoom: 1,
   zoomLevels: [1, 2, 5],
   showZoomControls: true,
+  seekStepMs: 1_000,
+  seekStepMsFast: 10_000,
+  preventPageScrollOnInteract: true,
   onSeek: null,
   onRangeChange: null,
   onZoomChange: null,
@@ -42,7 +45,6 @@ export function createTimelineScrubber(container, options = {}) {
   let endHandle = null;
   let tickWrap = null;
   let dragState = null;
-
   function render() {
     if (!container || container.nodeType !== 1) {
       return;
@@ -122,6 +124,7 @@ export function createTimelineScrubber(container, options = {}) {
     }, { passive: false });
     events.on(rail, "pointerdown", (event) => {
       event.preventDefault();
+      event.stopPropagation();
       rail.focus({ preventScroll: true });
       if (event.target === thumb || event.target === startHandle || event.target === endHandle) {
         return;
@@ -130,6 +133,8 @@ export function createTimelineScrubber(container, options = {}) {
       setTime(ms, { emit: true });
       startDrag(event, "value");
     });
+    events.on(rail, "keydown", onRailKeyDown);
+    events.on(viewport, "wheel", onViewportWheel, { passive: false });
 
     viewport.appendChild(rail);
     root.appendChild(viewport);
@@ -145,6 +150,51 @@ export function createTimelineScrubber(container, options = {}) {
 
     container.appendChild(root);
     syncVisuals();
+  }
+
+  function onViewportWheel(event) {
+    if (!currentOptions.preventPageScrollOnInteract || !viewport || !rail) {
+      return;
+    }
+    const canScrollX = viewport.scrollWidth > viewport.clientWidth;
+    if (!canScrollX) {
+      return;
+    }
+    const horizontalIntent = Math.abs(event.deltaX) >= Math.abs(event.deltaY);
+    if (horizontalIntent) {
+      return;
+    }
+    viewport.scrollLeft += event.deltaY;
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+  }
+
+  function onRailKeyDown(event) {
+    if (!rail) {
+      return;
+    }
+    const isFast = event.shiftKey;
+    const step = Math.max(1, Number(isFast ? currentOptions.seekStepMsFast : currentOptions.seekStepMs) || 1000);
+    let handled = true;
+    if (event.key === "ArrowLeft") {
+      setTime(valueMs - step, { emit: true });
+    } else if (event.key === "ArrowRight") {
+      setTime(valueMs + step, { emit: true });
+    } else if (event.key === "Home") {
+      setTime(0, { emit: true });
+    } else if (event.key === "End") {
+      setTime(durationMs, { emit: true });
+    } else if (event.key === "PageUp") {
+      setTime(valueMs + (step * 5), { emit: true });
+    } else if (event.key === "PageDown") {
+      setTime(valueMs - (step * 5), { emit: true });
+    } else {
+      handled = false;
+    }
+    if (handled) {
+      event.preventDefault();
+    }
   }
 
   function syncVisuals() {
@@ -177,10 +227,10 @@ export function createTimelineScrubber(container, options = {}) {
   }
 
   function startDrag(event, type) {
-    event.preventDefault();
     if (event.cancelable) {
       event.preventDefault();
     }
+    event.stopPropagation();
     if (!rail) {
       return;
     }

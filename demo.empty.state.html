@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Empty State Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.empty.state.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    #host { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #0b1220; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; height: 220px; overflow: auto; }
+    .incident-list { display: grid; gap: 8px; }
+    .incident-list-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .incident-list-title { margin: 0; font-size: 16px; }
+    .incident-list-item { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #111b2f; display: grid; gap: 4px; }
+    .incident-list-meta { color: #9fb2d8; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Empty State Demo</h1>
+    </section>
+    <section class="panel">
+      <div id="host"></div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { createEmptyState } from "./js/ui/ui.empty.state.js";
+    import { clearNode, createElement } from "./js/ui/ui.dom.js";
+
+    const page = document.querySelector("main.page");
+    const host = document.getElementById("host");
+    const log = document.getElementById("log");
+    let emptyState = null;
+    const sampleIncidents = [
+      { id: 1016, caller: "Maria Santos", location: "Guadalupe", status: "Active", createdAt: "2026-03-08 22:13" },
+      { id: 1017, caller: "Juan Dela Cruz", location: "Talamban", status: "Dispatched", createdAt: "2026-03-08 22:17" },
+      { id: 1018, caller: "Ana Torres", location: "Lahug", status: "On Scene", createdAt: "2026-03-08 22:21" },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function mountEmptyState(data = {}) {
+      clearNode(host);
+      emptyState?.destroy?.();
+      emptyState = createEmptyState(host, {
+        title: data.title || "No linked incidents",
+        description: data.description || "Try widening your date range or clear active filters.",
+        iconHtml: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 10h10M9 14h6M5 18h14"/></svg>',
+        actions: [
+          { id: "reset", label: "Reset Filters" },
+          { id: "refresh", label: "Refresh" },
+          { id: "sample", label: "Load Sample Data" },
+        ],
+      }, {
+        onActionClick(action) {
+          writeLog("emptyState.action", action);
+          if (action.id === "reset") {
+            mountEmptyState({
+              title: "Filters cleared",
+              description: "All active filters were reset. Try refreshing or load sample data.",
+            });
+            return;
+          }
+          if (action.id === "sample") {
+            mountSampleData();
+            return;
+          }
+          if (action.id === "refresh") {
+            emptyState.update({
+              title: "Refreshing...",
+              description: "Checking for newly linked incidents.",
+              actions: [],
+            });
+            window.setTimeout(() => {
+              mountSampleData();
+              writeLog("emptyState.refresh.complete", { status: "results_found", count: sampleIncidents.length });
+            }, 800);
+          }
+        },
+      });
+    }
+
+    function mountSampleData() {
+      clearNode(host);
+      emptyState?.destroy?.();
+      emptyState = null;
+      const wrap = createElement("section", { className: "incident-list" });
+      const head = createElement("div", { className: "incident-list-head" });
+      head.append(
+        createElement("h3", { className: "incident-list-title", text: `Linked incidents (${sampleIncidents.length})` }),
+        createElement("button", { className: "ui-button", text: "Back To Empty", attrs: { type: "button" } }),
+      );
+      wrap.appendChild(head);
+      sampleIncidents.forEach((incident) => {
+        const item = createElement("article", { className: "incident-list-item" });
+        item.append(
+          createElement("strong", { text: `#${incident.id} · ${incident.status}` }),
+          createElement("span", { text: `${incident.caller} · ${incident.location}` }),
+          createElement("span", { className: "incident-list-meta", text: `Created: ${incident.createdAt}` }),
+        );
+        wrap.appendChild(item);
+      });
+      const backBtn = head.querySelector("button");
+      backBtn.addEventListener("click", () => {
+        writeLog("sampleData.backToEmpty", {});
+        mountEmptyState();
+      });
+      host.appendChild(wrap);
+      writeLog("sampleData.loaded", { count: sampleIncidents.length });
+    }
+
+    mountEmptyState();
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+  </script>
+</body>
+</html>

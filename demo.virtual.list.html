@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual List Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.virtual.list.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    #host { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #0b1220; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; height: 220px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Virtual List Demo</h1>
+      <p>Shows stable rendering with large row counts using windowed virtualization.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <button id="scrollTopBtn" class="ui-button" type="button">Top</button>
+        <button id="scrollMidBtn" class="ui-button" type="button">Middle</button>
+        <button id="scrollEndBtn" class="ui-button" type="button">End</button>
+      </div>
+      <div id="host"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { createVirtualList } from "./js/ui/ui.virtual.list.js";
+    import { createElement } from "./js/ui/ui.dom.js";
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const rows = Array.from({ length: 5000 }, (_, index) => ({
+      id: index + 1,
+      label: `Incident #${index + 1} - ${index % 2 ? "Active" : "Resolved"}`,
+      location: ["Guadalupe", "Talamban", "Lahug", "Mabolo"][index % 4],
+    }));
+
+    const list = createVirtualList(document.getElementById("host"), rows, {
+      height: 420,
+      rowHeight: 38,
+      overscan: 8,
+      renderItem(item) {
+        const row = createElement("div", {
+          html: `<strong>${item.label}</strong> <span style="color:#9fb2d8">• ${item.location}</span>`,
+        });
+        return row;
+      },
+      onRangeChange(range) {
+        writeLog("virtualList.range", range);
+      },
+    });
+
+    document.getElementById("scrollTopBtn").addEventListener("click", () => list.scrollToIndex(0, "smooth"));
+    document.getElementById("scrollMidBtn").addEventListener("click", () => list.scrollToIndex(Math.floor(rows.length / 2), "smooth"));
+    document.getElementById("scrollEndBtn").addEventListener("click", () => list.scrollToIndex(rows.length - 1, "smooth"));
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    window.virtualListDemo = { list };
+  </script>
+</body>
+</html>
+

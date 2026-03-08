@@ -108,11 +108,14 @@ Shared UI layer:
 - `js/ui/ui.command.palette.js`
 - `js/ui/ui.tree.js`
 - `js/ui/ui.kanban.js`
+- `js/ui/ui.file.uploader.js`
 - `js/ui/ui.tabs.js`
 - `js/ui/ui.strips.js`
 - `js/ui/ui.media.strip.js`
 - `js/ui/ui.grid.js`
 - `js/ui/ui.progress.js`
+- `js/ui/ui.virtual.list.js`
+- `js/ui/ui.scheduler.js`
 - `js/ui/ui.menu.js`
 - `js/ui/ui.dropdown.js`
 - `js/ui/ui.dropup.js`
@@ -137,11 +140,14 @@ Shared CSS:
 - `css/ui/ui.command.palette.css`
 - `css/ui/ui.tree.css`
 - `css/ui/ui.kanban.css`
+- `css/ui/ui.file.uploader.css`
 - `css/ui/ui.tabs.css`
 - `css/ui/ui.strips.css`
 - `css/ui/ui.media.strip.css`
 - `css/ui/ui.grid.css`
 - `css/ui/ui.progress.css`
+- `css/ui/ui.virtual.list.css`
+- `css/ui/ui.scheduler.css`
 - `css/ui/ui.nav.css`
 - `css/ui/ui.audio.css`
 
@@ -157,10 +163,17 @@ Run this checklist:
    - `demo.incident.types.html`
    - `demo.grid.html`
    - `demo.progress.html`
+   - `demo.virtual.list.html`
+   - `demo.scheduler.html`
    - `demo.timeline.html`
    - `demo.ui.html`
    - `demo.audio.html`
    - `demo.nav.html`
+   - `demo.stepper.html`
+   - `demo.splitter.html`
+   - `demo.inspector.html`
+   - `demo.empty.state.html`
+   - `demo.skeleton.html`
 2. No console errors in normal demo flow.
 3. Required-option behavior still matches contract.
 4. `getData()` output shape unchanged for touched helpers.
@@ -171,6 +184,7 @@ Run this checklist:
 - Patch (`x.y.Z`): CSS/internal cleanup, no contract changes.
 - Minor (`x.Y.z`): new optional APIs/utilities/components.
 - Major (`X.y.z`): contract or behavior-breaking changes.
+- Keep `README.md` release notes as the canonical component-version history; avoid per-component ad-hoc version labels.
 
 If changing callback signatures or removing methods, plan a major version.
 
@@ -217,12 +231,21 @@ If changing callback signatures or removing methods, plan a major version.
 - `ui.command.palette`:
   - global quick actions with shortcut handling
   - preserve keyboard navigation and command filtering behavior
+  - preserve async provider flow (`providers[]`) and loading behavior
+  - preserve pinned/recent grouping and history hooks (`onHistoryChange`)
+  - keep `historyStorageKey` behavior optional (no hard dependency on storage)
 - `ui.tree`:
   - expandable/selectable/checkable hierarchy
   - preserve stable selection/check callbacks
+  - preserve lazy-loading contract (`lazyLoadChildren`, `onLoadChildren`)
+  - preserve virtualization settings behavior for large trees
 - `ui.kanban`:
   - lane/card rendering with drag-drop card moves
-  - preserve move callback payload shape (`card`, `fromLaneId`, `toLaneId`, `lanes`)
+  - preserve move callback payload shape (`card`, `fromLaneId`, `toLaneId`, `fromIndex`, `toIndex`, `lanes`)
+- `ui.file.uploader`:
+  - preserve legacy `onUpload(item, controls)` behavior
+  - preserve chunk/resume hook contracts when `useChunkUpload` is enabled
+  - keep state fields stable for progress + chunk metadata (`uploadedBytes`, `chunkIndex`, `totalChunks`)
 
 ## 12) Demo Ownership Split
 
@@ -235,5 +258,12 @@ If changing callback signatures or removing methods, plan a major version.
   - vertical/horizontal timeline
   - scrubber interaction (seek/range/zoom)
 - Navigation-focused behavior belongs in `demo.nav.html`.
+- Virtual-list-focused behavior belongs in `demo.virtual.list.html`.
+- Scheduler/calendar-focused behavior belongs in `demo.scheduler.html`.
+- Stepper behavior belongs in `demo.stepper.html`.
+- Splitter behavior belongs in `demo.splitter.html`.
+- Data inspector behavior belongs in `demo.inspector.html`.
+- Empty-state behavior belongs in `demo.empty.state.html`.
+- Skeleton behavior belongs in `demo.skeleton.html`.
 
 When introducing a substantial UI module, prefer a dedicated demo page and link it from `index.html`.

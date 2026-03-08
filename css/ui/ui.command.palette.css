@@ -42,6 +42,23 @@
   gap: 4px;
 }
 
+.ui-command-palette-group {
+  margin: 8px 2px 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ui-muted, #9fb2d8);
+}
+
+.ui-command-palette-loading {
+  margin: 0;
+  color: var(--ui-muted, #9fb2d8);
+  border: 1px dashed var(--ui-border, #2b3750);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+}
+
 .ui-command-palette-item {
   width: 100%;
   display: flex;

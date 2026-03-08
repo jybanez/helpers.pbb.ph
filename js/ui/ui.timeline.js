@@ -10,6 +10,8 @@ const DEFAULT_OPTIONS = {
   timeZone: undefined,
   groupByDate: true,
   showConnector: true,
+  linkedRange: null, // { startMs, endMs, anchorMs? }
+  includeUndatedInRange: false,
   onItemClick: null,
   onActionClick: null,
 };
@@ -18,6 +20,7 @@ export function createTimeline(container, items = [], options = {}) {
   const events = createEventBag();
   let currentItems = normalizeItems(items);
   let currentOptions = normalizeOptions(options);
+  let visibleItems = [];
   let root = null;
 
   function render() {
@@ -36,7 +39,9 @@ export function createTimeline(container, items = [], options = {}) {
       ].filter(Boolean).join(" "),
     });
 
-    if (!currentItems.length) {
+    visibleItems = applyLinkedRange(currentItems, currentOptions);
+
+    if (!visibleItems.length) {
       root.appendChild(createElement("p", {
         className: "ui-timeline-empty",
         text: currentOptions.emptyText,
@@ -46,16 +51,16 @@ export function createTimeline(container, items = [], options = {}) {
     }
 
     if (currentOptions.orientation === "vertical" && currentOptions.groupByDate) {
-      renderVerticalGrouped(root);
+      renderVerticalGrouped(root, visibleItems);
     } else {
-      renderList(root, currentItems);
+      renderList(root, visibleItems);
     }
 
     container.appendChild(root);
   }
 
-  function renderVerticalGrouped(host) {
-    const groups = groupItemsByDate(currentItems, currentOptions.locale, currentOptions.timeZone);
+  function renderVerticalGrouped(host, itemsToRender) {
+    const groups = groupItemsByDate(itemsToRender, currentOptions.locale, currentOptions.timeZone);
     groups.forEach((group) => {
       const section = createElement("section", { className: "ui-timeline-group" });
       section.appendChild(createElement("p", {
@@ -164,6 +169,14 @@ export function createTimeline(container, items = [], options = {}) {
     render();
   }
 
+  function setLinkedRange(range) {
+    currentOptions = normalizeOptions({
+      ...currentOptions,
+      linkedRange: range ?? null,
+    });
+    render();
+  }
+
   function destroy() {
     events.clear();
     clearNode(container);
@@ -174,6 +187,7 @@ export function createTimeline(container, items = [], options = {}) {
     return {
       options: { ...currentOptions },
       items: currentItems.map((item) => ({ ...item })),
+      visibleItems: visibleItems.map((item) => ({ ...item })),
     };
   }
 
@@ -183,6 +197,7 @@ export function createTimeline(container, items = [], options = {}) {
     update,
     append,
     prepend,
+    setLinkedRange,
     destroy,
     getState,
   };
@@ -196,6 +211,13 @@ function normalizeOptions(options) {
   next.density = String(next.density || "comfortable").toLowerCase() === "compact"
     ? "compact"
     : "comfortable";
+  if (next.linkedRange != null) {
+    const normalizedRange = normalizeLinkedRange(next.linkedRange);
+    next.linkedRange = normalizedRange || null;
+  } else {
+    next.linkedRange = null;
+  }
+  next.includeUndatedInRange = Boolean(next.includeUndatedInRange);
   return next;
 }
 
@@ -307,6 +329,72 @@ function groupItemsByDate(items, locale, timeZone) {
     label: key === "unknown" ? "Undated" : formatGroupLabel(key, locale),
     items: groupItems,
   }));
+}
+
+function applyLinkedRange(items, options) {
+  if (!options?.linkedRange) {
+    return items.slice();
+  }
+  const anchorMs = resolveRangeAnchorMs(items, options);
+  if (!Number.isFinite(anchorMs)) {
+    return options.includeUndatedInRange ? items.slice() : [];
+  }
+  const startMs = options.linkedRange.startMs;
+  const endMs = options.linkedRange.endMs;
+
+  return items.filter((item) => {
+    if (!item.timestamp) {
+      return options.includeUndatedInRange;
+    }
+    const timestampMs = new Date(item.timestamp).getTime();
+    if (!Number.isFinite(timestampMs)) {
+      return options.includeUndatedInRange;
+    }
+    const relativeMs = timestampMs - anchorMs;
+    return relativeMs >= startMs && relativeMs <= endMs;
+  });
+}
+
+function resolveRangeAnchorMs(items, options) {
+  const explicitAnchor = Number(options?.linkedRange?.anchorMs);
+  if (Number.isFinite(explicitAnchor)) {
+    return explicitAnchor;
+  }
+  let minMs = Infinity;
+  items.forEach((item) => {
+    if (!item.timestamp) {
+      return;
+    }
+    const timestampMs = new Date(item.timestamp).getTime();
+    if (Number.isFinite(timestampMs) && timestampMs < minMs) {
+      minMs = timestampMs;
+    }
+  });
+  return Number.isFinite(minMs) ? minMs : NaN;
+}
+
+function normalizeLinkedRange(range) {
+  if (!range || typeof range !== "object") {
+    return null;
+  }
+  const startRaw = Number(range.startMs);
+  const endRaw = Number(range.endMs);
+  if (!Number.isFinite(startRaw) || !Number.isFinite(endRaw)) {
+    return null;
+  }
+  let startMs = Math.max(0, Math.round(startRaw));
+  let endMs = Math.max(0, Math.round(endRaw));
+  if (startMs > endMs) {
+    const temp = startMs;
+    startMs = endMs;
+    endMs = temp;
+  }
+  const normalized = { startMs, endMs };
+  const anchorRaw = Number(range.anchorMs);
+  if (Number.isFinite(anchorRaw)) {
+    normalized.anchorMs = Math.round(anchorRaw);
+  }
+  return normalized;
 }
 
 function formatGroupLabel(isoDate, locale) {

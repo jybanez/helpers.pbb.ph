@@ -9,7 +9,11 @@ const DEFAULT_OPTIONS = {
   cardTitleKey: "title",
   cardMetaKey: "meta",
   draggable: true,
+  keyboardMoves: true,
+  wipLimits: null, // { [laneId]: number }
+  validateMove: null, // ({ card, fromLaneId, toLaneId, fromIndex, toIndex, lanes }) => boolean | { ok, reason }
   onCardMove: null,
+  onMoveRejected: null,
   onCardClick: null,
 };
 
@@ -19,6 +23,8 @@ export function createKanban(container, lanes = [], options = {}) {
   let currentLanes = normalizeLanes(lanes, currentOptions);
   let dragCardId = null;
   let dragFromLaneId = null;
+  let dragFromIndex = -1;
+  let pendingFocusCardId = null;
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -34,6 +40,11 @@ export function createKanban(container, lanes = [], options = {}) {
       root.appendChild(renderLane(lane));
     });
     container.appendChild(root);
+    if (pendingFocusCardId) {
+      const focusNode = container.querySelector(`.ui-kanban-card[data-card-id="${cssEscape(pendingFocusCardId)}"]`);
+      focusNode?.focus?.({ preventScroll: true });
+      pendingFocusCardId = null;
+    }
   }
 
   function renderLane(lane) {
@@ -61,28 +72,31 @@ export function createKanban(container, lanes = [], options = {}) {
       if (!dragCardId || !dragFromLaneId) {
         return;
       }
-      moveCard(dragCardId, dragFromLaneId, lane.id);
+      moveCard(dragCardId, dragFromLaneId, lane.id, lane.cards.length);
       dragCardId = null;
       dragFromLaneId = null;
+      dragFromIndex = -1;
     });
 
     if (!lane.cards.length) {
       cards.appendChild(createElement("p", { className: "ui-kanban-empty", text: "No cards." }));
     } else {
       lane.cards.forEach((card) => {
-        cards.appendChild(renderCard(card, lane.id));
+        const cardIndex = lane.cards.findIndex((entry) => entry.id === card.id);
+        cards.appendChild(renderCard(card, lane.id, cardIndex));
       });
     }
     laneNode.appendChild(cards);
     return laneNode;
   }
 
-  function renderCard(card, laneId) {
+  function renderCard(card, laneId, cardIndex) {
     const node = createElement("article", {
       className: "ui-kanban-card",
       attrs: {
         "data-card-id": card.id,
         draggable: currentOptions.draggable ? "true" : null,
+        tabindex: currentOptions.keyboardMoves ? "0" : null,
       },
     });
     node.appendChild(createElement("h5", { className: "ui-kanban-card-title", text: card.title }));
@@ -97,44 +111,164 @@ export function createKanban(container, lanes = [], options = {}) {
       events.on(node, "dragstart", (event) => {
         dragCardId = card.id;
         dragFromLaneId = laneId;
+        dragFromIndex = cardIndex;
         node.classList.add("is-dragging");
         event.dataTransfer?.setData("text/plain", card.id);
         event.dataTransfer?.setData("application/x-kanban-lane", laneId);
+      });
+      events.on(node, "dragover", (event) => {
+        if (!dragCardId) {
+          return;
+        }
+        event.preventDefault();
+      });
+      events.on(node, "drop", (event) => {
+        event.preventDefault();
+        if (!dragCardId || !dragFromLaneId) {
+          return;
+        }
+        const rect = node.getBoundingClientRect();
+        const insertAfter = event.clientY > (rect.top + (rect.height / 2));
+        const targetIndex = cardIndex + (insertAfter ? 1 : 0);
+        moveCard(dragCardId, dragFromLaneId, laneId, targetIndex);
+        dragCardId = null;
+        dragFromLaneId = null;
+        dragFromIndex = -1;
       });
       events.on(node, "dragend", () => {
         node.classList.remove("is-dragging");
         dragCardId = null;
         dragFromLaneId = null;
+        dragFromIndex = -1;
+      });
+    }
+
+    if (currentOptions.keyboardMoves) {
+      events.on(node, "keydown", (event) => {
+        if (event.defaultPrevented || !currentOptions.draggable) {
+          return;
+        }
+        let handled = false;
+        if (event.key === "ArrowUp") {
+          handled = moveCard(card.id, laneId, laneId, cardIndex - 1);
+        } else if (event.key === "ArrowDown") {
+          handled = moveCard(card.id, laneId, laneId, cardIndex + 1);
+        } else if (event.key === "ArrowLeft") {
+          const laneIndex = currentLanes.findIndex((lane) => lane.id === laneId);
+          if (laneIndex > 0) {
+            const toLaneId = currentLanes[laneIndex - 1].id;
+            handled = moveCard(card.id, laneId, toLaneId);
+          }
+        } else if (event.key === "ArrowRight") {
+          const laneIndex = currentLanes.findIndex((lane) => lane.id === laneId);
+          if (laneIndex >= 0 && laneIndex < currentLanes.length - 1) {
+            const toLaneId = currentLanes[laneIndex + 1].id;
+            handled = moveCard(card.id, laneId, toLaneId);
+          }
+        }
+        if (handled) {
+          event.preventDefault();
+          pendingFocusCardId = card.id;
+        }
       });
     }
     return node;
   }
 
-  function moveCard(cardId, fromLaneId, toLaneId) {
+  function moveCard(cardId, fromLaneId, toLaneId, toIndex = null) {
     if (!cardId || !fromLaneId || !toLaneId) {
-      return;
+      return false;
     }
-    if (fromLaneId === toLaneId) {
-      return;
-    }
+
     const fromLane = currentLanes.find((lane) => lane.id === fromLaneId);
     const toLane = currentLanes.find((lane) => lane.id === toLaneId);
     if (!fromLane || !toLane) {
-      return;
+      return false;
     }
-    const index = fromLane.cards.findIndex((card) => card.id === cardId);
-    if (index < 0) {
-      return;
+    const fromIndex = fromLane.cards.findIndex((card) => card.id === cardId);
+    if (fromIndex < 0) {
+      return false;
     }
-    const [card] = fromLane.cards.splice(index, 1);
-    toLane.cards.push(card);
-    currentOptions.onCardMove?.({
+
+    const fallbackToIndex = toLane.cards.length;
+    const requestedToIndex = Number.isFinite(Number(toIndex)) ? Number(toIndex) : fallbackToIndex;
+    let nextToIndex = clampIndex(Math.round(requestedToIndex), 0, toLane.cards.length);
+    if (fromLaneId === toLaneId && fromIndex < nextToIndex) {
+      nextToIndex -= 1;
+    }
+    if (fromLaneId === toLaneId && fromIndex === nextToIndex) {
+      return false;
+    }
+
+    const card = fromLane.cards[fromIndex];
+    const validation = canMoveCard({
       card,
       fromLaneId,
       toLaneId,
+      fromIndex,
+      toIndex: nextToIndex,
+    });
+    if (!validation.ok) {
+      currentOptions.onMoveRejected?.({
+        reason: validation.reason || "Move rejected.",
+        card,
+        fromLaneId,
+        toLaneId,
+        fromIndex,
+        toIndex: nextToIndex,
+      });
+      return false;
+    }
+
+    const [movedCard] = fromLane.cards.splice(fromIndex, 1);
+    const insertionIndex = clampIndex(nextToIndex, 0, toLane.cards.length);
+    toLane.cards.splice(insertionIndex, 0, movedCard);
+    currentOptions.onCardMove?.({
+      card: movedCard,
+      fromLaneId,
+      toLaneId,
+      fromIndex,
+      toIndex: insertionIndex,
       lanes: currentLanes.map(cloneLane),
     });
     render();
+    return true;
+  }
+
+  function canMoveCard(payload) {
+    const projected = currentLanes.map(cloneLane);
+    const source = projected.find((lane) => lane.id === payload.fromLaneId);
+    const target = projected.find((lane) => lane.id === payload.toLaneId);
+    if (!source || !target) {
+      return { ok: false, reason: "Invalid lane." };
+    }
+    const sourceIndex = source.cards.findIndex((card) => card.id === payload.card.id);
+    if (sourceIndex < 0) {
+      return { ok: false, reason: "Card not found." };
+    }
+    const [card] = source.cards.splice(sourceIndex, 1);
+    const insertIndex = clampIndex(payload.toIndex, 0, target.cards.length);
+    target.cards.splice(insertIndex, 0, card);
+
+    const wipLimit = resolveWipLimit(payload.toLaneId, currentOptions.wipLimits);
+    if (Number.isFinite(wipLimit) && target.cards.length > wipLimit) {
+      return { ok: false, reason: `Lane limit reached (${wipLimit}).` };
+    }
+
+    if (typeof currentOptions.validateMove === "function") {
+      const result = currentOptions.validateMove({
+        ...payload,
+        lanes: projected,
+      });
+      if (result === false) {
+        return { ok: false, reason: "Move blocked by validation." };
+      }
+      if (result && typeof result === "object" && result.ok === false) {
+        return { ok: false, reason: String(result.reason || "Move blocked by validation.") };
+      }
+    }
+
+    return { ok: true };
   }
 
   function update(nextLanes = currentLanes, nextOptions = {}) {
@@ -213,4 +347,23 @@ function cloneLane(lane) {
       raw: card.raw,
     })),
   };
+}
+
+function resolveWipLimit(laneId, wipLimits) {
+  if (!wipLimits || typeof wipLimits !== "object") {
+    return NaN;
+  }
+  const value = Number(wipLimits[laneId]);
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : NaN;
+}
+
+function clampIndex(value, min, max) {
+  return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
+}
+
+function cssEscape(value) {
+  if (typeof CSS !== "undefined" && CSS && typeof CSS.escape === "function") {
+    return CSS.escape(String(value));
+  }
+  return String(value).replace(/["\\]/g, "\\$&");
 }

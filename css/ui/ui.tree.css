@@ -10,6 +10,19 @@
   gap: 2px;
 }
 
+.ui-tree-viewport {
+  position: relative;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(43, 55, 80, 0.55);
+  background: rgba(8, 16, 28, 0.6);
+}
+
+.ui-tree-rows-layer {
+  position: relative;
+  min-height: 100%;
+}
+
 .ui-tree-item {
   display: grid;
   gap: 4px;
@@ -24,7 +37,7 @@
   border-radius: 8px;
 }
 
-.ui-tree-item.is-selected > .ui-tree-row {
+.ui-tree-row.is-selected {
   background: rgba(70, 117, 186, 0.2);
 }
 
@@ -61,6 +74,11 @@
   opacity: 0.45;
 }
 
+.ui-tree-toggle.is-loading {
+  cursor: progress;
+  opacity: 0.7;
+}
+
 .ui-tree-label {
   font-size: 13px;
   text-align: left;
@@ -75,12 +93,6 @@
 
 .ui-tree-check {
   accent-color: #4f95ff;
-}
-
-.ui-tree-list .ui-tree-list {
-  margin-left: 18px;
-  padding-left: 8px;
-  border-left: 1px dashed rgba(92, 120, 168, 0.45);
 }
 
 .ui-tree-empty {

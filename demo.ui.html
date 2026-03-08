@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="./css/ui/ui.command.palette.css">
   <link rel="stylesheet" href="./css/ui/ui.tree.css">
   <link rel="stylesheet" href="./css/ui/ui.kanban.css">
+  <link rel="stylesheet" href="./css/ui/ui.file.uploader.css">
+  <link rel="stylesheet" href="./css/ui/ui.progress.css">
   <link rel="stylesheet" href="./css/ui/ui.tabs.css">
   <link rel="stylesheet" href="./css/ui/ui.strips.css">
   <link rel="stylesheet" href="./css/ui/ui.media.strip.css">
@@ -71,6 +73,7 @@
     #stripHost,
     #treeHost,
     #kanbanHost,
+    #fileUploaderHost,
     #mediaStripHostScroll,
     #mediaStripHostWrap {
       border: 1px solid #2b3750;
@@ -227,6 +230,11 @@ modal.open();</code></pre>
     </section>
 
     <section class="panel">
+      <h2 class="ui-title">File Uploader</h2>
+      <div id="fileUploaderHost"></div>
+    </section>
+
+    <section class="panel">
       <h2 class="ui-title">Media Strip</h2>
       <div class="media-controls">
         <label for="mediaAnimRange">Animation</label>
@@ -257,6 +265,7 @@ modal.open();</code></pre>
     import { createCommandPalette } from "./js/ui/ui.command.palette.js";
     import { createTree } from "./js/ui/ui.tree.js";
     import { createKanban } from "./js/ui/ui.kanban.js";
+    import { createFileUploader } from "./js/ui/ui.file.uploader.js";
     import { uiAlert, uiConfirm, uiPrompt } from "./js/ui/ui.dialog.js";
     import { createTabs } from "./js/ui/ui.tabs.js";
     import { createStrip } from "./js/ui/ui.strips.js";
@@ -476,6 +485,27 @@ modal.open();</code></pre>
     });
 
     const commandPalette = createCommandPalette({
+      historyStorageKey: "ui-demo-command-history",
+      pinnedCommandIds: ["open-timeline", "toggle-theme"],
+      providers: [
+        async ({ query }) => {
+          await new Promise((resolve) => setTimeout(resolve, 180));
+          if (!query) {
+            return [];
+          }
+          return [
+            {
+              id: `search-${query}`,
+              label: `Search incidents for "${query}"`,
+              section: "Search",
+              keywords: [query, "incidents", "lookup"],
+              run() {
+                writeLog("commandPalette.provider.run", { query });
+              },
+            },
+          ];
+        },
+      ],
       title: "Quick Actions",
       commands: [
         {
@@ -542,9 +572,35 @@ modal.open();</code></pre>
           { id: "response-time", label: "Response Time" },
         ],
       },
+      {
+        id: "archive",
+        label: "Archive (lazy)",
+        hasChildren: true,
+      },
+      ...Array.from({ length: 160 }, (_, index) => ({
+        id: `log-${index + 1}`,
+        label: `Event Log ${index + 1}`,
+      })),
     ], {
       selectable: true,
       checkable: true,
+      enableVirtualization: true,
+      virtualHeight: 280,
+      virtualRowHeight: 34,
+      lazyLoadChildren: async (node) => {
+        if (node.id !== "archive") {
+          return [];
+        }
+        await new Promise((resolve) => setTimeout(resolve, 220));
+        return [
+          { id: "archive-2026", label: "Archive 2026" },
+          { id: "archive-2025", label: "Archive 2025" },
+          { id: "archive-2024", label: "Archive 2024" },
+        ];
+      },
+      onLoadChildren(node, children) {
+        writeLog("tree.loadChildren", { id: node.id, loaded: children.length });
+      },
       onSelect(node) {
         writeLog("tree.select", { id: node.id, label: node.label });
       },
@@ -582,6 +638,15 @@ modal.open();</code></pre>
         ],
       },
     ], {
+      wipLimits: {
+        active: 3,
+      },
+      validateMove({ toLaneId }) {
+        if (toLaneId === "resolved") {
+          return { ok: false, reason: "Use workflow transition to resolve incidents." };
+        }
+        return { ok: true };
+      },
       onCardClick(card, laneId) {
         writeLog("kanban.card.click", { cardId: card.id, laneId });
       },
@@ -590,7 +655,60 @@ modal.open();</code></pre>
           cardId: payload.card.id,
           fromLaneId: payload.fromLaneId,
           toLaneId: payload.toLaneId,
+          fromIndex: payload.fromIndex,
+          toIndex: payload.toIndex,
         });
+      },
+      onMoveRejected(payload) {
+        writeLog("kanban.card.move.rejected", payload);
+      },
+    });
+
+    createFileUploader(document.getElementById("fileUploaderHost"), {
+      accept: ".jpg,.jpeg,.png,.webp,.mp4,.webm,.pdf",
+      multiple: true,
+      maxFiles: 12,
+      maxFileSize: 15 * 1024 * 1024,
+      autoUpload: false,
+      useChunkUpload: true,
+      chunkSize: 512 * 1024,
+      onGetResumeState({ uploadKey }) {
+        try {
+          const raw = window.localStorage.getItem(`ui-demo-uploader:${uploadKey}`);
+          return raw ? JSON.parse(raw) : { uploadedBytes: 0 };
+        } catch (_error) {
+          return { uploadedBytes: 0 };
+        }
+      },
+      async onUploadChunk(payload) {
+        for (let i = 1; i <= 5; i += 1) {
+          if (payload.signal.aborted) {
+            throw new Error("Upload cancelled.");
+          }
+          payload.reportChunkProgress(i / 5);
+          await new Promise((resolve) => setTimeout(resolve, 40));
+        }
+      },
+      onPersistResumeState({ uploadKey, uploadedBytes }) {
+        window.localStorage.setItem(`ui-demo-uploader:${uploadKey}`, JSON.stringify({ uploadedBytes }));
+      },
+      onClearResumeState({ uploadKey }) {
+        window.localStorage.removeItem(`ui-demo-uploader:${uploadKey}`);
+      },
+      onChange(state) {
+        writeLog("uploader.change", {
+          total: state.items.length,
+          queued: state.items.filter((i) => i.status === "queued").length,
+          uploading: state.items.filter((i) => i.status === "uploading").length,
+          success: state.items.filter((i) => i.status === "success").length,
+          error: state.items.filter((i) => i.status === "error").length,
+        });
+      },
+      onError(error, item) {
+        writeLog("uploader.error", { id: item?.id, name: item?.name, message: String(error?.message || error) });
+      },
+      onComplete(state) {
+        writeLog("uploader.complete", { total: state.items.length });
       },
     });
 

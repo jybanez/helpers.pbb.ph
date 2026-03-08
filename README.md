@@ -35,12 +35,20 @@ css/
     ui.command.palette.css
     ui.tree.css
     ui.kanban.css
+    ui.stepper.css
+    ui.splitter.css
+    ui.data.inspector.css
+    ui.empty.state.css
+    ui.skeleton.css
+    ui.file.uploader.css
     ui.tabs.css
     ui.strips.css
     ui.media.strip.css
     ui.audio.css
     ui.grid.css
     ui.progress.css
+    ui.virtual.list.css
+    ui.scheduler.css
     ui.nav.css
   incident/
     incident.css
@@ -67,11 +75,19 @@ js/
     ui.command.palette.js
     ui.tree.js
     ui.kanban.js
+    ui.stepper.js
+    ui.splitter.js
+    ui.data.inspector.js
+    ui.empty.state.js
+    ui.skeleton.js
+    ui.file.uploader.js
     ui.tabs.js
     ui.strips.js
     ui.media.strip.js
     ui.grid.js
     ui.progress.js
+    ui.virtual.list.js
+    ui.scheduler.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -94,10 +110,17 @@ demo.team.assignments.html
 demo.incident.types.html
 demo.grid.html
 demo.progress.html
+demo.virtual.list.html
+demo.scheduler.html
 demo.timeline.html
 demo.ui.html
 demo.audio.html
 demo.nav.html
+demo.stepper.html
+demo.splitter.html
+demo.inspector.html
+demo.empty.state.html
+demo.skeleton.html
 samples/
   sampledata.json
   sampledata_*.json
@@ -157,6 +180,18 @@ Reusable shared UI utilities live under `js/ui`:
   - `createTree(container, data, options)` expandable/selectable tree view with optional checkboxes
 - `ui.kanban.js`
   - `createKanban(container, lanes, options)` lane-based board with draggable cards and move callbacks
+- `ui.stepper.js`
+  - `createStepper(container, steps, options)` step indicator/navigation component for multi-step workflows
+- `ui.splitter.js`
+  - `createSplitter(container, options)` resizable two-pane layout primitive (horizontal/vertical)
+- `ui.data.inspector.js`
+  - `createDataInspector(container, data, options)` expandable object/JSON inspector with copy-path actions
+- `ui.empty.state.js`
+  - `createEmptyState(container, data, options)` standardized empty/error/no-result presentation block
+- `ui.skeleton.js`
+  - `createSkeleton(container, data, options)` loading placeholders (`lines`, `card`, `grid`)
+- `ui.file.uploader.js`
+  - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
   - `createTabs(container, options)` accessible tablist + panel component
 - `ui.strips.js`
@@ -168,6 +203,10 @@ Reusable shared UI utilities live under `js/ui`:
   - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, and optional row virtualization
 - `ui.progress.js`
   - `createProgress(container, data, options)` progress indicator with multiple styles (linear, segmented, steps, radial, ring, etc.)
+- `ui.virtual.list.js`
+  - `createVirtualList(container, items, options)` virtualized list primitive for very large row sets
+- `ui.scheduler.js`
+  - `createScheduler(container, data, options)` month/week scheduler primitive with slot/event interactions
 - `ui.menu.js`
   - `createMenu(triggerEl, items, options)` anchored popover menu primitive
   - item icon contract: `icon` (SVG/HTML string), `iconPosition: "start" | "end"`, `iconOnly: boolean`
@@ -207,12 +246,20 @@ Reusable UI styles live under `css/ui`:
 - `ui.command.palette.css` command palette styles
 - `ui.tree.css` tree view styles
 - `ui.kanban.css` kanban board styles
+- `ui.stepper.css` stepper styles
+- `ui.splitter.css` splitter/pane resize styles
+- `ui.data.inspector.css` data inspector styles
+- `ui.empty.state.css` empty-state styles
+- `ui.skeleton.css` skeleton loading styles
+- `ui.file.uploader.css` file uploader styles
 - `ui.tabs.css` tab UI styles
 - `ui.strips.css` strip/chip selector styles
 - `ui.media.strip.css` media strip, thumbnail, and media viewer styles
 - `ui.audio.css` audio player, audiograph, and call session styles
 - `ui.grid.css` data-grid/table styles
 - `ui.progress.css` progress styles
+- `ui.virtual.list.css` virtual-list styles
+- `ui.scheduler.css` scheduler styles
 - `ui.nav.css` navigation/menu styles
 
 Current usage:
@@ -735,8 +782,15 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demo.progress.html` -> progress styles demo
   - live configurable progress
   - style gallery for all rendering variants
+- `demo.virtual.list.html` -> dedicated virtual-list playground
+  - large row-set windowing
+  - `scrollToIndex(...)` controls
+  - visible-range callback logging
+- `demo.scheduler.html` -> dedicated scheduler/calendar playground
+  - month/week views
+  - slot and event callback interactions
 - `demo.ui.html` -> UI utilities playground
-  - modal, dialog, toast, select, datepicker, command palette, tree, kanban, drawer, search, tabs, strips, media strip
+  - modal, dialog, toast, select, datepicker, command palette, tree, kanban, file uploader, drawer, search, tabs, strips, media strip
 - `demo.timeline.html` -> dedicated timeline playground
   - vertical grouped timeline
   - horizontal timeline
@@ -749,6 +803,20 @@ Open from a local server (Apache/WAMP/Nginx):
   - theme toggle
 - `demo.nav.html` -> navigation/menu utilities playground
   - navbar, sidebar, breadcrumbs, dropdown, dropup
+- `demo.stepper.html` -> dedicated stepper playground
+  - workflow progression states
+  - orientation toggle + step navigation
+- `demo.splitter.html` -> dedicated splitter playground
+  - horizontal and vertical pane resizing
+  - pointer + keyboard resize behavior
+- `demo.inspector.html` -> dedicated data inspector playground
+  - nested object/array inspection
+  - copy-path interactions
+- `demo.empty.state.html` -> dedicated empty-state playground
+  - action callbacks and icon/title/description variants
+- `demo.skeleton.html` -> dedicated skeleton playground
+  - lines/card/grid variants
+  - animation toggle
 
 Demo pages load:
 
@@ -1237,6 +1305,59 @@ const progress = createProgress(container, {
 progress.setValue(70);
 ```
 
+### `createVirtualList(container, items, options)` (`js/ui/ui.virtual.list.js`)
+
+Purpose:
+
+- Render large lists with stable performance via viewport virtualization/windowing.
+
+Options:
+
+- `height`
+- `rowHeight`
+- `overscan`
+- `emptyText`, `className`
+- `renderItem(item, index)` returns `HTMLElement | string`
+- `onRangeChange({ start, end }, state)`
+
+Methods:
+
+- `update(nextItems, nextOptions?)`
+- `setItems(items)`
+- `scrollToIndex(index, behavior?)`
+- `getState()`
+- `destroy()`
+
+### `createScheduler(container, data, options)` (`js/ui/ui.scheduler.js`)
+
+Purpose:
+
+- Render reusable scheduler/calendar primitives with month/week views.
+
+Data shape:
+
+- `date` (current focus date)
+- `events[]`: `{ id, title, start, end?, color? }`
+
+Options:
+
+- `view`: `month | week`
+- `locale`
+- `weekStartsOn` (`0..6`)
+- `events[]` (default source if not passed in `data`)
+- `onViewChange(view, state)`
+- `onDateChange(date, state)`
+- `onSlotClick({ date, view }, state)`
+- `onEventClick(event, state)`
+
+Methods:
+
+- `update(nextData, nextOptions?)`
+- `setView(view)`
+- `setDate(date)`
+- `getState()`
+- `destroy()`
+
 ### `createDatepicker(container, options)` (`js/ui/ui.datepicker.js`)
 
 Purpose:
@@ -1304,6 +1425,10 @@ Options:
 - `density`: `compact | comfortable`
 - `groupByDate`: `boolean` (vertical only)
 - `showConnector`: `boolean`
+- `linkedRange`: `{ startMs, endMs, anchorMs? } | null`
+  - filters visible events by relative timestamp range
+  - `anchorMs` is optional; when omitted, timeline uses the earliest event timestamp as anchor
+- `includeUndatedInRange`: `boolean`
 - `emptyText`, `className`
 - `locale`, `timeZone`
 - `onItemClick(item)`
@@ -1314,8 +1439,13 @@ Methods:
 - `update(nextItems, nextOptions?)`
 - `append(items)`
 - `prepend(items)`
+- `setLinkedRange(range|null)`
 - `destroy()`
 - `getState()`
+
+`getState()` returns both:
+- `items` (full normalized timeline list)
+- `visibleItems` (range-filtered list after `linkedRange`)
 
 Example:
 
@@ -1348,6 +1478,9 @@ Options:
 - `range`: `{ startMs, endMs }`
 - `zoom`, `zoomLevels`
 - `showZoomControls`
+- `seekStepMs` (keyboard seek step, default `1000`)
+- `seekStepMsFast` (Shift+keyboard seek step, default `10000`)
+- `preventPageScrollOnInteract` (default `true`)
 - `onSeek(valueMs, state)`
 - `onRangeChange({ startMs, endMs }, state)`
 - `onZoomChange(zoom, state)`
@@ -1385,13 +1518,24 @@ const scrubber = createTimelineScrubber(container, {
 Purpose:
 
 - Global quick-action launcher (`Ctrl/Cmd + K`) with search and keyboard navigation.
+- Supports static + async command sources with grouped/pinned/recent views.
 
 Options:
 
 - `commands[]`: `{ id, label, section?, keywords?, shortcut?, icon?, disabled?, run? }`
+- `providers[]`: async/static providers `(ctx) => commands[] | Promise<commands[]>`
+  - `ctx = { query, state, open }`
+- `providerDebounceMs`
 - `title`, `placeholder`, `emptyText`
+- `loadingText`
 - `shortcut` (default `"k"`), `metaKey`, `ctrlKey`
+- `groupBySection` (default `true`)
+- `showPinned`, `showRecent`
+- `pinnedCommandIds[]`
+- `recentCommandIds[]`, `maxRecent`
+- `historyStorageKey` (optional localStorage key)
 - `onRun(command)`
+- `onHistoryChange(recentCommandIds, state)`
 
 Methods:
 
@@ -1406,10 +1550,18 @@ Methods:
 Purpose:
 
 - Expandable/selectable hierarchical view with optional checkboxes.
+- Supports lazy async child loading and optional virtualization for very large node sets.
 
 Options:
 
 - `expandAll`, `selectable`, `checkable`, `className`
+- `lazyLoadChildren(node, state)` async loader for nodes with `hasChildren: true`
+- `onLoadChildren(node, children, state)`
+- virtualization:
+  - `enableVirtualization`
+  - `virtualHeight`
+  - `virtualRowHeight`
+  - `virtualOverscan`
 - `onToggle(node, isExpanded)`
 - `onSelect(node)`
 - `onCheck(node, checked, checkedIds)`
@@ -1422,6 +1574,9 @@ Methods:
 - `setSelected(nodeId)`
 - `getState()`
 - `destroy()`
+
+`getState()` includes:
+- `visibleRows[]` (`{ id, level }`) for current expanded/filter view
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 
@@ -1437,18 +1592,170 @@ Data shape:
 Options:
 
 - `draggable`, `className`
+- `keyboardMoves` (default `true`)
 - key mapping options:
   - `laneIdKey`, `laneTitleKey`
   - `cardIdKey`, `cardTitleKey`, `cardMetaKey`
+- `wipLimits`: `{ [laneId]: number }`
+- `validateMove({ card, fromLaneId, toLaneId, fromIndex, toIndex, lanes })`
+  - return `false` or `{ ok:false, reason }` to block move
 - `onCardClick(card, laneId)`
-- `onCardMove({ card, fromLaneId, toLaneId, lanes })`
+- `onCardMove({ card, fromLaneId, toLaneId, fromIndex, toIndex, lanes })`
+- `onMoveRejected({ reason, card, fromLaneId, toLaneId, fromIndex, toIndex })`
 
 Methods:
 
 - `update(nextLanes, nextOptions?)`
-- `moveCard(cardId, fromLaneId, toLaneId)`
+- `moveCard(cardId, fromLaneId, toLaneId, toIndex?)`
 - `getState()`
 - `destroy()`
+
+### `createStepper(container, steps, options)` (`js/ui/ui.stepper.js`)
+
+Purpose:
+
+- Render workflow steps with current/completed/future states.
+
+Options:
+
+- `orientation`: `horizontal | vertical`
+- `clickable`: `boolean`
+- `currentStepId`
+- `onStepClick(step, index, state)`
+
+Methods:
+
+- `update(nextSteps, nextOptions?)`
+- `setCurrentStep(stepId)`
+- `getState()`
+- `destroy()`
+
+### `createSplitter(container, options)` (`js/ui/ui.splitter.js`)
+
+Purpose:
+
+- Provide a reusable two-pane resizable layout primitive.
+
+Options:
+
+- `orientation`: `horizontal | vertical`
+- `initialRatio`, `minRatio`, `maxRatio`
+- `paneA`, `paneB` (`HTMLElement | string | function`)
+- `onResize(ratio, state)`
+
+Methods:
+
+- `update(nextOptions?)`
+- `setRatio(ratio)`
+- `getState()`
+- `destroy()`
+
+### `createDataInspector(container, data, options)` (`js/ui/ui.data.inspector.js`)
+
+Purpose:
+
+- Inspect nested objects/arrays with expand/collapse and path copy.
+
+Options:
+
+- `expandDepth`
+- `emptyText`, `className`
+- `onCopyPath(path, value)`
+
+Methods:
+
+- `update(nextData, nextOptions?)`
+- `getState()`
+- `destroy()`
+
+### `createEmptyState(container, data, options)` (`js/ui/ui.empty.state.js`)
+
+Purpose:
+
+- Standardize empty/no-results/error views with optional actions.
+
+Data/Options:
+
+- `title`, `description`, `iconHtml`
+- `actions[]`: `{ id, label, className? }`
+- `onActionClick(action, state)`
+
+Methods:
+
+- `update(nextData, nextOptions?)`
+- `getState()`
+- `destroy()`
+
+### `createSkeleton(container, data, options)` (`js/ui/ui.skeleton.js`)
+
+Purpose:
+
+- Render loading placeholders while data is being fetched/rendered.
+
+Options:
+
+- `variant`: `lines | card | grid`
+- `animated`
+- `lines`, `rows`, `columns`
+
+Methods:
+
+- `update(nextData, nextOptions?)`
+- `getState()`
+- `destroy()`
+
+### `createFileUploader(container, options)` (`js/ui/ui.file.uploader.js`)
+
+Purpose:
+
+- Handle drag/drop or browse file intake with queue state, validation, and upload lifecycle hooks.
+
+Options:
+
+- input/queue:
+  - `accept`, `multiple`, `maxFiles`
+  - `maxFileSize`
+  - `allowedTypes` (`["image/", ".pdf", "video/mp4"]`)
+- behavior:
+  - `autoUpload`
+  - `smoothProgress` (default `true`)
+  - `progressAnimationMs` (default `220`)
+  - `useChunkUpload` (default `false`)
+  - `chunkSize` (default `1MB`)
+  - `uploadKeyPrefix` (default `"upload"`)
+  - UI text options (`dropText`, `emptyText`, `startText`, `clearText`, `browseText`)
+- hooks:
+  - `onUpload(item, controls)` async upload adapter
+  - chunk/resume hooks:
+    - `onGetResumeState({ item, uploadKey, state }) -> { uploadedBytes? }`
+    - `onCreateUploadSession({ item, uploadKey, state, signal })`
+    - `onUploadChunk(payload)` where payload includes:
+      - `item`, `uploadKey`, `session`
+      - `chunkIndex`, `totalChunks`
+      - `chunkStart`, `chunkEnd`, `chunkSize`, `chunk`
+      - `uploadedBytes`, `totalBytes`, `signal`
+      - `reportChunkProgress(ratio)`
+    - `onPersistResumeState({ item, uploadKey, uploadedBytes, totalBytes, chunkIndex, totalChunks, session })`
+    - `onFinalizeUpload({ item, uploadKey, session, totalBytes, totalChunks, state, signal })`
+    - `onClearResumeState({ item, uploadKey, session })`
+  - `onChange(state)`
+  - `onError(error, item, state)`
+  - `onComplete(state)`
+
+Methods:
+
+- `addFiles(files)`
+- `start()`
+- `clear()`
+- `update(nextOptions?)`
+- `remove(itemId)`
+- `retry(itemId)`
+- `getState()`
+- `destroy()`
+
+Note:
+
+- `ui.file.uploader` composes `ui.progress` per queued file row for consistent progress visuals and behavior.
 
 ### `createMediaStrip(container, items, options)` (`js/ui/ui.media.strip.js`)
 
@@ -1498,43 +1805,19 @@ Recommended integration flow:
 
 ## Roadmap
 
-### v0.12 (Current)
+### Current Stable Line: `v0.15.x`
 
-- Command/Productivity:
-  - `ui.command.palette` (quick actions + shortcut search)
-- Information Architecture:
-  - `ui.tree` (expand/select/check hierarchy)
-- Workflow Board:
-  - `ui.kanban` (lane/card drag-drop)
-- Demo/Docs:
-  - added live demos in `demo.ui.html`
-  - added usage docs and contracts
+- Latest documented release: `v0.15.2`
+- All library modules now follow monotonic SemVer in release notes:
+  - breaking API changes -> `major`
+  - new components/features -> `minor`
+  - fixes/docs/internal cleanup -> `patch`
 
-### v0.13
+### Next Planned Line: `v0.16.x` (Unreleased)
 
-- Timeline polishing:
-  - stabilize scrubber interactions across browsers/devices
-  - optional linked-range filtering mode in component API (not just demo wiring)
-- Kanban v2:
-  - intra-lane reorder
-  - lane WIP limits + validation callbacks
-  - keyboard-accessible card moves
-
-### v0.14
-
-- Command palette v2:
-  - async providers
-  - grouped sections + pinned/recent commands
-  - command history and telemetry hooks
-- Tree v2:
-  - async/lazy children loading
-  - virtualized rendering for very large hierarchies
-
-### v0.15
-
-- Scheduler/calendar primitives
-- File uploader with resumable/chunk hooks
-- Virtual list primitive for non-grid components
+- Dedicated accessibility hardening pass across all UI utilities
+- Additional data-entry primitives (mask/format helpers, richer validation wrappers)
+- Performance refinements for heavy demo pages (timeline/grid/audio)
 
 ## Release Notes
 
@@ -1680,9 +1963,120 @@ Recommended integration flow:
   - `ui.tree.js`
   - `ui.tree.css`
   - expandable/selectable/checkable hierarchy
+
+### v0.13.0
+
+- Added file uploader utility:
+  - `ui.file.uploader.js`
+  - `ui.file.uploader.css`
+  - drag/drop queue, validation, progress, retry/cancel/remove, upload adapter hook
+- Improved timeline demo integration:
+  - scrubber range now filters visible timeline items
+  - seek highlight operates on filtered result set
+- UX polishing:
+  - fixed-height, scrollable event logs across demo pages
+  - global themed scrollbar styling in `ui.tokens.css`
+
+### v0.13.1
+
+- Timeline polishing (roadmap v0.13 progress):
+  - added component-level linked range filtering in `ui.timeline`:
+    - `options.linkedRange = { startMs, endMs, anchorMs? }`
+    - `setLinkedRange(range|null)`
+    - `getState().visibleItems`
+  - updated `demo.timeline.html` to use timeline API linked-range filtering (not demo-only external filtering)
+
+### v0.13.2
+
+- Kanban v2 (roadmap v0.13 progress):
+  - intra-lane reorder support (drag/drop and programmatic `toIndex`)
+  - lane WIP limits via `wipLimits`
+  - move validation hook via `validateMove(...)`
+  - rejected-move event via `onMoveRejected(...)`
+  - keyboard-accessible card moves (arrow keys)
 - Added kanban utility:
   - `ui.kanban.js`
   - `ui.kanban.css`
   - drag-drop lane card movement with callbacks
 - Updated `demo.ui.html`:
   - new sections for command palette, tree, and kanban
+
+### v0.13.3
+
+- Timeline scrubber interaction hardening (roadmap v0.13 progress):
+  - improved pointer interaction stability (`preventDefault` + propagation control on drag gestures)
+  - keyboard seek controls on scrubber rail:
+    - `ArrowLeft/ArrowRight`, `Home/End`, `PageUp/PageDown`
+    - configurable `seekStepMs` and `seekStepMsFast` (Shift)
+  - wheel-to-horizontal-scroll handling in zoomed scrubber viewport
+  - `preventPageScrollOnInteract` option (default `true`)
+
+### v0.14.0
+
+- Added workflow/layout/data primitives:
+  - `ui.stepper.js` + `ui.stepper.css`
+  - `ui.splitter.js` + `ui.splitter.css`
+  - `ui.data.inspector.js` + `ui.data.inspector.css`
+  - `ui.empty.state.js` + `ui.empty.state.css`
+  - `ui.skeleton.js` + `ui.skeleton.css`
+- Added dedicated demo pages:
+  - `demo.stepper.html`
+  - `demo.splitter.html`
+  - `demo.inspector.html`
+  - `demo.empty.state.html`
+  - `demo.skeleton.html`
+- Kept `demo.ui.html` focused on general UI playground utilities
+
+### v0.14.1
+
+- Command palette v2 (roadmap v0.14 progress):
+  - async command providers (`providers[]`)
+  - grouped sections rendering
+  - pinned/recent command groups
+  - history persistence (`historyStorageKey`)
+  - history change hook (`onHistoryChange`)
+- Updated `demo.ui.html` command palette demo to exercise provider + pinned/recent behavior
+
+### v0.14.2
+
+- Tree v2 (roadmap v0.14 progress):
+  - async/lazy child loading:
+    - `lazyLoadChildren(node, state)`
+    - `onLoadChildren(node, children, state)`
+  - optional virtualization for large trees:
+    - `enableVirtualization`
+    - `virtualHeight`
+    - `virtualRowHeight`
+    - `virtualOverscan`
+  - `getState().visibleRows` added for flattened visible tree snapshot
+- Updated `demo.ui.html` tree section to demonstrate:
+  - lazy loading on demand
+  - large-node virtualization behavior
+
+### v0.15.0
+
+- Added virtual list primitive (roadmap v0.15 progress):
+  - `ui.virtual.list.js`
+  - `ui.virtual.list.css`
+  - windowed rendering with configurable `height`, `rowHeight`, and `overscan`
+  - API: `update`, `setItems`, `scrollToIndex`, `getState`, `destroy`
+- Added dedicated `demo.virtual.list.html`
+- Linked new demo from `index.html`
+
+### v0.15.1
+
+- Added scheduler/calendar primitive (roadmap v0.15 progress):
+  - `ui.scheduler.js`
+  - `ui.scheduler.css`
+  - month/week views with event and slot callbacks
+- Added dedicated `demo.scheduler.html`
+- Linked new demo from `index.html`
+
+### v0.15.2
+
+- File uploader v2 chunk/resume hooks (roadmap v0.15 progress):
+  - `useChunkUpload`, `chunkSize`
+  - `onGetResumeState`, `onCreateUploadSession`
+  - `onUploadChunk`, `onPersistResumeState`
+  - `onFinalizeUpload`, `onClearResumeState`
+- Updated `demo.ui.html` uploader demo to exercise chunk upload + localStorage resume-state flow

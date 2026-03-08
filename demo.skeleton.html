@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skeleton Demo</title>
+  <link rel="stylesheet" href="./css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="./css/ui/ui.components.css">
+  <link rel="stylesheet" href="./css/ui/ui.skeleton.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .host { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #0b1220; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; height: 220px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+        <button id="toggleAnimBtn" class="ui-button" type="button">Toggle Animation</button>
+      </div>
+      <h1 class="ui-title">Skeleton Demo</h1>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Lines</h2>
+      <div id="hostLines" class="host"></div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Card</h2>
+      <div id="hostCard" class="host"></div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Grid</h2>
+      <div id="hostGrid" class="host"></div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { createSkeleton } from "./js/ui/ui.skeleton.js";
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    let animated = true;
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+    const lines = createSkeleton(document.getElementById("hostLines"), { lines: 5 }, { variant: "lines", animated });
+    const card = createSkeleton(document.getElementById("hostCard"), {}, { variant: "card", animated });
+    const grid = createSkeleton(document.getElementById("hostGrid"), { rows: 3 }, { variant: "grid", columns: 4, animated });
+
+    document.getElementById("toggleAnimBtn").addEventListener("click", () => {
+      animated = !animated;
+      lines.update({}, { animated });
+      card.update({}, { animated });
+      grid.update({}, { animated });
+      writeLog("skeleton.animated", { animated });
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+  </script>
+</body>
+</html>
+
