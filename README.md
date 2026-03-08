@@ -1217,3 +1217,51 @@ Recommended integration flow:
   - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`
 - Added `ui.nav.css` styles
 - Added `demo.nav.html` for interactive navigation demos
+
+### v0.5.0
+
+- Expanded navigation/menu capabilities:
+  - unified icon contract across nav components (`icon`, `iconPosition`, `iconOnly`)
+  - breadcrumb built-in state helpers (`setItems`, `addCrumb`, `getItems`, `reset`)
+  - navbar action menus (`menuItems`, `menuOptions`) with callbacks
+  - menu alignment support (`align: left|right`) and placement refinements
+- Improved navigation UX:
+  - animated sidebar collapse/expand
+  - animated dropdown/dropup show/hide with deferred unmount
+  - sidebar collapsed icon-only item rendering
+- Updated `demo.nav.html`:
+  - sidebar-responsive layout collapse behavior
+  - breadcrumb add/reset/truncate wiring via library API
+
+### v0.6.0
+
+- Grid improvements:
+  - added optional row virtualization:
+    - `enableVirtualization`
+    - `virtualRowHeight`
+    - `virtualOverscan`
+    - `virtualThreshold`
+  - large-list rendering stability fixes (virtual windowing + row-event cleanup)
+  - retained column-resize support in virtualized mode
+- Demo restructuring:
+  - added dedicated `demo.grid.html` with:
+    - local grid
+    - remote grid
+    - large virtualized fixed-height grid
+  - removed grid section from `demo.ui.html`
+
+### v0.7.0
+
+- Added general-purpose modal foundation:
+  - `ui.modal.js`
+  - `ui.modal.css`
+  - reusable modal API with focus trap, escape/backdrop close, sizing, lifecycle hooks
+- Refactored dialog helpers to use modal foundation:
+  - `uiAlert`
+  - `uiConfirm`
+  - `uiPrompt`
+- Added progress UI library:
+  - `ui.progress.js`
+  - `ui.progress.css`
+  - styles: `linear`, `striped`, `gradient`, `segmented`, `steps`, `radial`, `ring`, `indeterminate`
+- Added `demo.progress.html` and linked it from `index.html`

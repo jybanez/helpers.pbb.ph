@@ -82,6 +82,13 @@ Never add backend-specific quirks inside helper rendering logic.
 6. Audio timeline mismatches:
    - Prefer `incident.call_duration_seconds` for total session duration when present.
    - Keep per-segment timestamp positioning from `recording_role`.
+7. Virtualized grid jank:
+   - Row-level listeners must be cleaned between virtual window renders.
+   - Avoid full DOM rebuild when visible start/end window did not change.
+8. Menu alignment regressions:
+   - Use centralized alignment/placement resolution in menu core (`ui.menu`), not only wrapper helpers.
+9. Sidebar animation loss:
+   - Avoid full rerender on collapse toggle; prefer in-place class/state updates to preserve transitions.
 
 ## 8) UI Utility Ownership
 
@@ -91,11 +98,13 @@ Shared UI layer:
 - `js/ui/ui.events.js`
 - `js/ui/ui.drawer.js`
 - `js/ui/ui.search.js`
+- `js/ui/ui.modal.js`
 - `js/ui/ui.dialog.js`
 - `js/ui/ui.tabs.js`
 - `js/ui/ui.strips.js`
 - `js/ui/ui.media.strip.js`
 - `js/ui/ui.grid.js`
+- `js/ui/ui.progress.js`
 - `js/ui/ui.menu.js`
 - `js/ui/ui.dropdown.js`
 - `js/ui/ui.dropup.js`
@@ -110,11 +119,13 @@ Shared CSS:
 
 - `css/ui/ui.tokens.css`
 - `css/ui/ui.components.css`
+- `css/ui/ui.modal.css`
 - `css/ui/ui.dialog.css`
 - `css/ui/ui.tabs.css`
 - `css/ui/ui.strips.css`
 - `css/ui/ui.media.strip.css`
 - `css/ui/ui.grid.css`
+- `css/ui/ui.progress.css`
 - `css/ui/ui.nav.css`
 - `css/ui/ui.audio.css`
 
@@ -128,8 +139,11 @@ Run this checklist:
    - `index.html`
    - `demo.team.assignments.html`
    - `demo.incident.types.html`
+   - `demo.grid.html`
+   - `demo.progress.html`
    - `demo.ui.html`
    - `demo.audio.html`
+   - `demo.nav.html`
 2. No console errors in normal demo flow.
 3. Required-option behavior still matches contract.
 4. `getData()` output shape unchanged for touched helpers.
@@ -142,3 +156,44 @@ Run this checklist:
 - Major (`X.y.z`): contract or behavior-breaking changes.
 
 If changing callback signatures or removing methods, plan a major version.
+
+## 11) New Utilities (Recent Additions)
+
+### 11.1 Modal Foundation (`ui.modal`)
+
+- `createModal(options)` is now the base shell for overlay/dialog rendering.
+- `ui.dialog` helpers (`uiAlert`, `uiConfirm`, `uiPrompt`) are expected to compose over `ui.modal`, not duplicate modal/backdrop/focus logic.
+- Required behaviors to preserve:
+  - escape/backdrop close controls
+  - focus trap and focus restore
+  - body scroll lock while open
+
+### 11.2 Progress UI (`ui.progress`)
+
+- `createProgress(container, data, options)` provides generic progress renderers:
+  - `linear`, `striped`, `gradient`, `segmented`, `steps`, `radial`, `ring`, `indeterminate`
+- Keep this component domain-agnostic; incident/business state mapping remains in caller adapters.
+
+### 11.3 Grid Virtualization (`ui.grid`)
+
+- Virtualization is optional and controlled by options:
+  - `enableVirtualization`
+  - `virtualRowHeight`
+  - `virtualOverscan`
+  - `virtualThreshold`
+- Preserve compatibility with:
+  - selection modes
+  - row click callbacks
+  - column resizing
+  - remote mode query events
+
+## 12) Demo Ownership Split
+
+- `demo.ui.html` is for general UI playground and should avoid heavy domain/data-grid scenarios.
+- Grid-focused behavior belongs in `demo.grid.html`:
+  - local
+  - remote
+  - large virtualized fixed-height list
+- Navigation-focused behavior belongs in `demo.nav.html`.
+
+When introducing a substantial UI module, prefer a dedicated demo page and link it from `index.html`.
