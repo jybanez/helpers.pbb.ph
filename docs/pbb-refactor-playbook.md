@@ -1,6 +1,6 @@
-# Hotline Refactor Playbook
+# PBB Refactor Playbook
 
-This guide is for engineers integrating this library into `hotline.pbb.ph` without breaking behavior.
+This guide is for engineers integrating this library into `*.pbb.ph` projects without breaking behavior.
 
 ## 1) Source Of Truth
 
@@ -45,7 +45,7 @@ Validation is per-instance, never global.
 
 Avoid simultaneous behavior changes and structural refactors in one PR.
 
-## 5) Integration Pattern In hotline.pbb.ph
+## 5) Integration Pattern In pbb.ph Projects
 
 Use adapter functions between helper callbacks and backend APIs.
 

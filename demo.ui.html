@@ -340,16 +340,16 @@
 
     async function loadMediaItems() {
       try {
-        const response = await fetch("./samplemedia.json", { cache: "no-store" });
+        const response = await fetch("./samples/samplemedia.json", { cache: "no-store" });
         if (!response.ok) {
-          throw new Error(`Failed to load samplemedia.json (${response.status})`);
+          throw new Error(`Failed to load samples/samplemedia.json (${response.status})`);
         }
         const payload = await response.json();
         if (!Array.isArray(payload)) {
-          throw new Error("samplemedia.json is not an array");
+          throw new Error("samples/samplemedia.json is not an array");
         }
         writeLog("media.dataset", {
-          source: "samplemedia.json",
+          source: "samples/samplemedia.json",
           total: payload.length,
           renderable: payload.filter((item) => item?.type === "photo" || item?.type === "video").length,
         });

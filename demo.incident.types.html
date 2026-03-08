@@ -222,7 +222,7 @@
         const availability = await Promise.all(
           sampleCandidates.map(async (name) => {
             try {
-              await fetchJson(`./${name}`);
+                await fetchJson(`./samples/${name}`);
               return name;
             } catch (error) {
               return null;
@@ -246,7 +246,7 @@
       }
 
       async function applySample(sampleFile) {
-        const samplePayload = await fetchJson(`./${sampleFile}`);
+        const samplePayload = await fetchJson(`./samples/${sampleFile}`);
         incidentState = samplePayload?.incident || {};
         editableListItems = buildIncidentTypeItems(incidentState);
         editorListApi.setList(editableListItems);

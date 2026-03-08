@@ -4,9 +4,9 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 
 ## Repository And Live Demo
 
-- GitHub Repository: `https://github.com/jybanez/helpers.hotline.pbb.ph`
-- Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.hotline.pbb.ph`
-- Refactor Playbook (for `hotline.pbb.ph` integration): `docs/hotline-refactor-playbook.md`
+- GitHub Repository: `https://github.com/jybanez/helpers.pbb.ph`
+- Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
+- Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
 This repository currently covers **7 helpers**:
 
@@ -81,8 +81,10 @@ demo.progress.html
 demo.ui.html
 demo.audio.html
 demo.nav.html
-sampledata.json
-sampledata_*.json
+samples/
+  sampledata.json
+  sampledata_*.json
+  samplemedia.json
 boot.*.json
 ```
 
@@ -700,8 +702,9 @@ Open from a local server (Apache/WAMP/Nginx):
 
 Demo pages load:
 
-- `sampledata.json`
-- `sampledata_*.json` (in specific demos)
+- `samples/sampledata.json`
+- `samples/sampledata_*.json` (in specific demos)
+- `samples/samplemedia.json` (for media-strip demo)
 - `boot.team.assignment.status.json`
 - `boot.incident.status.json`
 - `boot.alert.levels.json`
@@ -1180,7 +1183,7 @@ Recommended integration flow:
 
 - This is a scaffold/prototype for testing flow.
 - You can extend this with additional incident component helpers later while keeping the same API pattern.
-- For maintainers integrating into `hotline.pbb.ph`, follow `docs/hotline-refactor-playbook.md` before refactoring contracts.
+- For maintainers integrating into any `*.pbb.ph` project, follow `docs/pbb-refactor-playbook.md` before refactoring contracts.
 
 ## Release Notes
 

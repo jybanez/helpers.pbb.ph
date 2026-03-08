@@ -330,7 +330,7 @@
         const availability = await Promise.all(
           sampleCandidates.map(async (name) => {
             try {
-              await fetchJson(`./${name}`);
+              await fetchJson(`./samples/${name}`);
               return name;
             } catch (error) {
               return null;
@@ -354,7 +354,7 @@
       }
 
       async function applySample(sampleFile) {
-        const samplePayload = await fetchJson(`./${sampleFile}`);
+        const samplePayload = await fetchJson(`./samples/${sampleFile}`);
         incidentState = structuredClone(samplePayload?.incident || {});
         listState = structuredClone(incidentState.team_assignments || []);
         editableApi.update({ team_assignments: listState }, getEditableOptions());

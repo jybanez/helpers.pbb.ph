@@ -136,7 +136,7 @@
       const available = [];
       for (const name of sampleCandidates) {
         try {
-          await fetchJson(`./${name}`);
+          await fetchJson(`./samples/${name}`);
           available.push(name);
         } catch (error) {
           // skip missing file
@@ -170,7 +170,7 @@
     }
 
     async function mountSelectedSample() {
-      const samplePath = `./${sampleSelect.value}`;
+      const samplePath = `./samples/${sampleSelect.value}`;
       const payload = await fetchJson(samplePath);
       const incident = payload?.incident || {};
       const mediaCount = Array.isArray(incident.media) ? incident.media.length : 0;
