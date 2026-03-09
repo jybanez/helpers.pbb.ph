@@ -119,6 +119,10 @@
 }
 
 .ui-modal-footer {
+  display: none;
+}
+
+.ui-modal-footer:not([hidden]) {
   padding: var(--ui-space-2, 8px) var(--ui-space-4, 16px) var(--ui-space-3, 12px);
   border-top: 1px solid var(--ui-border, #2b3750);
   display: flex;
