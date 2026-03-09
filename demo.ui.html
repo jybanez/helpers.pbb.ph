@@ -304,10 +304,31 @@ modal.open();</code></pre>
 
     document.getElementById("modalBtn").addEventListener("click", () => {
       const body = createElement("div");
-      body.append(
-        createElement("p", { text: "General-purpose modal content can be any HTMLElement." }),
-        createElement("p", { text: "Use createModal() for custom forms, details, or action sheets." })
-      );
+      body.innerHTML = `
+        <form class="ui-modal-demo-form">
+          <p style="margin:0;color:#9fb2d8;">General-purpose modal content can be any HTMLElement. This sample uses common form fields.</p>
+          <label>
+            Incident Title
+            <input type="text" class="ui-input" placeholder="Power outage in Sector 7" value="Power outage in Sector 7">
+          </label>
+          <label>
+            Team Category
+            <select class="ui-input">
+              <option>Infrastructure & Utilities</option>
+              <option>Medical & Rescue</option>
+              <option>Fire & Hazard</option>
+            </select>
+          </label>
+          <label>
+            Notes
+            <textarea class="ui-input" placeholder="Add dispatch notes">Transformer issue reported by caller. Awaiting field confirmation.</textarea>
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:#d7e0f4;">
+            <input type="checkbox" checked>
+            Notify assigned teams immediately
+          </label>
+        </form>
+      `;
       const closeBtn = createElement("button", {
         className: "ui-button ui-button-primary",
         text: "Close",
@@ -335,13 +356,30 @@ modal.open();</code></pre>
 
     document.getElementById("actionModalBtn").addEventListener("click", () => {
       const content = createElement("div");
-      content.append(
-        createElement("p", { text: "Use createActionModal for declarative footer buttons." }),
-        createElement("p", { text: "Delete this sample record?" })
-      );
+      content.innerHTML = `
+        <form class="ui-modal-demo-form">
+          <p style="margin:0;color:#9fb2d8;">Use createActionModal for declarative footer buttons. This example reviews an operator profile change.</p>
+          <label>
+            Operator Name
+            <input type="text" class="ui-input" value="Maria Santos">
+          </label>
+          <label>
+            Role
+            <select class="ui-input">
+              <option selected>Operator Level 1</option>
+              <option>Operator Level 2</option>
+              <option>Supervisor</option>
+            </select>
+          </label>
+          <label>
+            Remarks
+            <textarea class="ui-input" placeholder="Reason for update">Promote access for night-shift dispatch coverage.</textarea>
+          </label>
+        </form>
+      `;
 
       const modal = createActionModal({
-        title: "Action Modal Example",
+        title: "Update Operator Profile",
         size: "sm",
         content,
         actions: [
@@ -354,12 +392,12 @@ modal.open();</code></pre>
             },
           },
           {
-            id: "delete",
-            label: "Delete",
-            variant: "danger",
+            id: "save",
+            label: "Save Changes",
+            variant: "primary",
             autoFocus: true,
             onClick() {
-              writeLog("actionModal.delete", { ok: true });
+              writeLog("actionModal.save", { ok: true });
             },
           },
         ],
