@@ -45,6 +45,7 @@ css/
     ui.tabs.css
     ui.strips.css
     ui.media.strip.css
+    ui.media.viewer.css
     ui.audio.css
     ui.grid.css
     ui.tree.grid.css
@@ -89,6 +90,7 @@ js/
     ui.tabs.js
     ui.strips.js
     ui.media.strip.js
+    ui.media.viewer.js
     ui.grid.js
     ui.tree.grid.js
     ui.progress.js
@@ -121,6 +123,7 @@ demo.scheduler.html
 demo.timeline.html
 demo.ui.html
 demo.audio.html
+demo.media.viewer.html
 demo.nav.html
 demo.stepper.html
 demo.splitter.html
@@ -217,6 +220,8 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.media.strip.js`
   - `createMediaStrip(container, items, options)` media thumbnails strip (image/video) with modal viewer/player + in-modal prev/next navigation
   - options include `layout: "scroll" | "wrap"` and `animationMs` (default `300`)
+- `ui.media.viewer.js`
+  - `createMediaViewer(container, options)` standalone image/video lightbox viewer with zoom/pan, fit modes, gallery navigation, and optional video audiograph
 - `ui.grid.js`
   - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, optional row virtualization, and optional chrome-less rendering
 - `ui.tree.grid.js`
@@ -275,7 +280,8 @@ Reusable UI styles live under `css/ui`:
 - `ui.file.uploader.css` file uploader styles
 - `ui.tabs.css` tab UI styles
 - `ui.strips.css` strip/chip selector styles
-- `ui.media.strip.css` media strip, thumbnail, and media viewer styles
+- `ui.media.strip.css` media strip and thumbnail launcher styles
+- `ui.media.viewer.css` modal media viewer styles
 - `ui.audio.css` audio player, audiograph, and call session styles
 - `ui.grid.css` data-grid/table styles
 - `ui.tree.grid.css` tree-grid styles
@@ -307,6 +313,7 @@ Recommended keys:
   - `ui.modal`
   - `ui.dialog`
   - `ui.toast`
+  - `ui.media.viewer`
   - `ui.grid`
   - `ui.timeline`
   - `ui.file.uploader`
@@ -914,6 +921,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - slot and event callback interactions
 - `demo.ui.html` -> UI utilities playground
   - modal, dialog, toast, select, datepicker, command palette, tree, kanban, file uploader, drawer, search, tabs, strips, media strip
+- `demo.media.viewer.html` -> dedicated media-viewer playground
+  - standalone image/video viewer
+  - zoom/pan + fit modes
+  - optional video audiograph
 - `demo.timeline.html` -> dedicated timeline playground
   - vertical grouped timeline
   - horizontal timeline
@@ -945,7 +956,7 @@ Demo pages load:
 
 - `samples/sampledata.json`
 - `samples/sampledata_*.json` (in specific demos)
-- `samples/samplemedia.json` (for media-strip demo)
+- `samples/samplemedia.json` (for media-strip and media-viewer demos)
 - `boot.team.assignment.status.json`
 - `boot.incident.status.json`
 - `boot.alert.levels.json`
@@ -1888,13 +1899,22 @@ Note:
 
 Purpose:
 
-- Render image/video thumbs and open modal viewer/player.
+- Render image/video thumbs and open the shared standalone media viewer.
 
 Key options:
 
 - `layout`: `"scroll" | "wrap"`
 - `animationMs` (default `300`)
 - `autoplay`, `muted`, `loop`, `showControls`
+- `viewerAriaLabel`
+- `viewerFit`
+- `showViewerHeader`
+- `showViewerFooter`
+- `showViewerCounter`
+- `showViewerClose`
+- `showViewerPrevNext`
+- `showViewerToolbar`
+- `showViewerAudiograph`
 - `baseUrl`
 - `onOpen(item, index)`, `onClose(item, index)`
 
@@ -1903,6 +1923,69 @@ Methods:
 - `update(nextItems, nextOptions?)`
 - `openById(id)`
 - `openByIndex(index)`
+- `getState()`
+- `destroy()`
+
+Note:
+
+- `ui.media.strip` now delegates full-view behavior to `ui.media.viewer` so zoom/pan/video viewing stays centralized in one component.
+
+### `createMediaViewer(container, options)` (`js/ui/ui.media.viewer.js`)
+
+Purpose:
+
+- Render a standalone modal/lightbox viewer for image/video items with transform-based zoom/pan.
+
+Key options:
+
+- data/state:
+  - `items`
+  - `index`
+  - `open`
+- viewing:
+  - `fit: "contain" | "cover" | "original"`
+  - `zoomStep`
+  - `minZoom`
+  - `maxZoom`
+  - `wheelZoom`
+  - `panWhenZoomed`
+  - `loop`
+- shell:
+  - `showHeader`
+  - `showFooter`
+  - `showCounter`
+  - `showClose`
+  - `showPrevNext`
+  - `showToolbar`
+  - `closeOnBackdrop`
+  - `closeOnEscape`
+  - `ariaLabel`
+- video:
+  - `autoplayVideo`
+  - `mutedVideo`
+  - `loopVideo`
+  - `showVideoControls`
+  - `showAudiograph`
+  - `audiographStyle`
+  - `audiographSensitivity`
+- hooks:
+  - `onOpen(item, index)`
+  - `onChange(item, index)`
+  - `onClose()`
+  - `onZoomChange(state)`
+
+Methods:
+
+- `open(index?)`
+- `close()`
+- `next()`
+- `prev()`
+- `setIndex(index)`
+- `zoomIn()`
+- `zoomOut()`
+- `resetView()`
+- `setFit(fit)`
+- `update(nextOptions?)`
 - `getState()`
 - `destroy()`
 
@@ -1932,21 +2015,63 @@ Recommended integration flow:
 
 ## Roadmap
 
-### Current Stable Line: `v0.17.x`
+### Current Stable Line: `v0.18.x`
 
-- Latest documented release: `v0.17.8`
+- Latest documented release: `v0.18.2`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
   - fixes/docs/internal cleanup -> `patch`
 
-### Next Planned Line: `v0.17.x`
+### Next Planned Line: `v0.18.x`
 
 - Dedicated accessibility hardening pass across all UI utilities
 - Additional data-entry primitives (mask/format helpers, richer validation wrappers)
 - Performance refinements for heavy demo pages (timeline/grid/audio)
 
 ## Release Notes
+
+### v0.18.1
+
+- Refactored `ui.media.strip` to delegate full-view behavior to `ui.media.viewer`
+- `ui.media.strip` now loads `ui.media.viewer` through the loader dependency graph
+- Preserved strip launcher APIs:
+  - `openByIndex(index)`
+  - `openById(id)`
+  - `update(nextItems, nextOptions?)`
+  - `getState()`
+- Added strip-side pass-through options for shared viewer behavior:
+  - `viewerFit`
+  - `showViewerFooter`
+  - `showViewerAudiograph`
+
+### v0.18.2
+
+- Expanded `ui.media.strip` viewer pass-through options:
+  - `viewerAriaLabel`
+  - `showViewerHeader`
+  - `showViewerCounter`
+  - `showViewerClose`
+  - `showViewerPrevNext`
+  - `showViewerToolbar`
+- Updated `demo.ui.html` media-strip section to exercise shared viewer options directly from the strip launcher
+
+### v0.18.0
+
+- Added `ui.media.viewer`:
+  - standalone image/video modal viewer
+  - fixed-size dialog shell
+  - transform-based zoom/pan
+  - fit modes (`contain`, `cover`, `original`)
+  - gallery navigation (`prev`, `next`, `setIndex`)
+  - optional video audiograph via `ui.audio.audiograph`
+- Added `css/ui/ui.media.viewer.css`
+- Added `demo.media.viewer.html`
+- Added loader registry/group support:
+  - `ui.media.viewer`
+  - included in `media` group
+- Added `ui.media.viewer` API and usage documentation
+- Added dedicated demo link from `index.html`
 
 ### v0.1.0
 

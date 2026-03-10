@@ -69,22 +69,6 @@
       padding: 10px;
       background: #0b1220;
     }
-    .media-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      font-size: 13px;
-      color: #b2c2e5;
-    }
-    .media-controls input[type="range"] {
-      width: 220px;
-    }
-    .media-controls code {
-      min-width: 58px;
-      display: inline-block;
-      text-align: right;
-    }
     .toggle-stack {
       display: grid;
       gap: 12px;
@@ -286,10 +270,17 @@ modal.open();</code></pre>
 
     <section class="panel">
       <h2 class="ui-title">Media Strip</h2>
-      <div class="media-controls">
-        <label for="mediaAnimRange">Animation</label>
-        <input id="mediaAnimRange" type="range" min="80" max="1200" step="10" value="300">
-        <code id="mediaAnimValue">300ms</code>
+      <p class="muted">Thumbnail launcher only. Full-view behavior is now delegated to the shared media viewer. Use <code>demo.media.viewer.html</code> for the dedicated viewer playground.</p>
+      <div class="row">
+        <label for="mediaStripFitSelect">Viewer fit</label>
+        <select id="mediaStripFitSelect" class="ui-input">
+          <option value="contain" selected>Contain</option>
+          <option value="cover">Cover</option>
+          <option value="original">Original</option>
+        </select>
+        <label><input id="mediaStripFooterToggle" type="checkbox" checked> Footer</label>
+        <label><input id="mediaStripToolbarToggle" type="checkbox" checked> Toolbar</label>
+        <label><input id="mediaStripAudiographToggle" type="checkbox"> Video audiograph</label>
       </div>
       <p>Scroll layout</p>
       <div id="mediaStripHostScroll"></div>
@@ -330,9 +321,10 @@ modal.open();</code></pre>
 
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
-    const mediaAnimRange = document.getElementById("mediaAnimRange");
-    const mediaAnimValue = document.getElementById("mediaAnimValue");
-
+    const mediaStripFitSelect = document.getElementById("mediaStripFitSelect");
+    const mediaStripFooterToggle = document.getElementById("mediaStripFooterToggle");
+    const mediaStripToolbarToggle = document.getElementById("mediaStripToolbarToggle");
+    const mediaStripAudiographToggle = document.getElementById("mediaStripAudiographToggle");
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
@@ -994,17 +986,13 @@ modal.open();</code></pre>
     }
 
     const mediaItems = await loadMediaItems();
-    let mediaAnimationMs = Number(mediaAnimRange.value) || 300;
-
-    function updateMediaAnimationLabel(value) {
-      mediaAnimValue.textContent = `${value}ms`;
-    }
-    updateMediaAnimationLabel(mediaAnimationMs);
-
     const mediaStripScroll = createMediaStrip(document.getElementById("mediaStripHostScroll"), mediaItems, {
       layout: "scroll",
       autoplay: true,
-      animationMs: mediaAnimationMs,
+      viewerFit: mediaStripFitSelect.value,
+      showViewerFooter: mediaStripFooterToggle.checked,
+      showViewerToolbar: mediaStripToolbarToggle.checked,
+      showViewerAudiograph: mediaStripAudiographToggle.checked,
       onOpen(item, index) {
         writeLog("media.open", { layout: "scroll", index, id: item?.id, type: item?.type });
       },
@@ -1016,7 +1004,10 @@ modal.open();</code></pre>
     const mediaStripWrap = createMediaStrip(document.getElementById("mediaStripHostWrap"), mediaItems, {
       layout: "wrap",
       autoplay: true,
-      animationMs: mediaAnimationMs,
+      viewerFit: mediaStripFitSelect.value,
+      showViewerFooter: mediaStripFooterToggle.checked,
+      showViewerToolbar: mediaStripToolbarToggle.checked,
+      showViewerAudiograph: mediaStripAudiographToggle.checked,
       onOpen(item, index) {
         writeLog("media.open", { layout: "wrap", index, id: item?.id, type: item?.type });
       },
@@ -1025,13 +1016,22 @@ modal.open();</code></pre>
       },
     });
 
-    mediaAnimRange.addEventListener("input", () => {
-      mediaAnimationMs = Number(mediaAnimRange.value) || 300;
-      updateMediaAnimationLabel(mediaAnimationMs);
-      mediaStripScroll.update(mediaItems, { animationMs: mediaAnimationMs });
-      mediaStripWrap.update(mediaItems, { animationMs: mediaAnimationMs });
-      writeLog("media.animation.update", { animationMs: mediaAnimationMs });
-    });
+    function syncMediaStripViewerOptions() {
+      const nextOptions = {
+        viewerFit: mediaStripFitSelect.value,
+        showViewerFooter: mediaStripFooterToggle.checked,
+        showViewerToolbar: mediaStripToolbarToggle.checked,
+        showViewerAudiograph: mediaStripAudiographToggle.checked,
+      };
+      mediaStripScroll.update(mediaItems, nextOptions);
+      mediaStripWrap.update(mediaItems, nextOptions);
+      writeLog("mediaStrip.viewerOptions.update", nextOptions);
+    }
+
+    mediaStripFitSelect.addEventListener("change", syncMediaStripViewerOptions);
+    mediaStripFooterToggle.addEventListener("change", syncMediaStripViewerOptions);
+    mediaStripToolbarToggle.addEventListener("change", syncMediaStripViewerOptions);
+    mediaStripAudiographToggle.addEventListener("change", syncMediaStripViewerOptions);
 
   </script>
 </body>

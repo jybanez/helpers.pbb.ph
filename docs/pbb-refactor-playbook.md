@@ -116,6 +116,7 @@ Shared UI layer:
 - `js/ui/ui.tabs.js`
 - `js/ui/ui.strips.js`
 - `js/ui/ui.media.strip.js`
+- `js/ui/ui.media.viewer.js`
 - `js/ui/ui.grid.js`
 - `js/ui/ui.tree.grid.js`
 - `js/ui/ui.progress.js`
@@ -150,6 +151,7 @@ Shared CSS:
 - `css/ui/ui.tabs.css`
 - `css/ui/ui.strips.css`
 - `css/ui/ui.media.strip.css`
+- `css/ui/ui.media.viewer.css`
 - `css/ui/ui.grid.css`
 - `css/ui/ui.tree.grid.css`
 - `css/ui/ui.progress.css`
@@ -175,6 +177,7 @@ Run this checklist:
    - `demo.timeline.html`
    - `demo.ui.html`
    - `demo.audio.html`
+   - `demo.media.viewer.html`
    - `demo.nav.html`
    - `demo.stepper.html`
    - `demo.splitter.html`
@@ -305,6 +308,19 @@ If changing callback signatures or removing methods, plan a major version.
   - preserve transport/session labeling support (`ariaLabel`, `seekLabel`)
   - preserve mute semantics and per-role control behavior
 
+### 11.6 Media Viewer
+
+- `ui.media.viewer` is the dedicated standalone image/video lightbox layer.
+- Keep it separate from `ui.media.strip`:
+  - `ui.media.strip` owns thumbnail launch/browsing and should compose over the viewer instead of maintaining a second embedded lightbox implementation
+  - `ui.media.viewer` owns modal viewing, zoom/pan, and gallery navigation
+- Preserve:
+  - stable viewer shell sizing across item changes
+  - transform-based zoom/pan behavior
+  - keyboard support (`Escape`, `Left/Right`, `+/-`, `0`, `Home/End`)
+  - optional video audiograph composition via `ui.audio.audiograph`
+  - item normalization compatibility with strip-style media payloads (`path/src`, `thumb`, `poster`, `photo|image|video`)
+
 ## 12) Demo Ownership Split
 
 - `demo.ui.html` is for general UI playground and should avoid heavy domain/data-grid scenarios.
@@ -315,6 +331,7 @@ If changing callback signatures or removing methods, plan a major version.
 - Timeline-focused behavior belongs in `demo.timeline.html`:
   - vertical/horizontal timeline
   - scrubber interaction (seek/range/zoom)
+- Media-viewer-focused behavior belongs in `demo.media.viewer.html`.
 - Navigation-focused behavior belongs in `demo.nav.html`.
 - Virtual-list-focused behavior belongs in `demo.virtual.list.html`.
 - Scheduler/calendar-focused behavior belongs in `demo.scheduler.html`.

@@ -189,7 +189,7 @@ export function createSelect(container, items = [], options = {}) {
       }));
       return;
     }
-    filtered.forEach((item) => {
+    filtered.forEach((item, index) => {
       const key = String(item.value);
       const isSelected = selected.has(key);
       const row = createElement("button", {
@@ -202,7 +202,7 @@ export function createSelect(container, items = [], options = {}) {
           "aria-selected": isSelected ? "true" : "false",
         },
       });
-      row.dataset.index = String(filtered.indexOf(item));
+      row.dataset.index = String(index);
       events.on(row, "click", () => {
         toggleSelected(key);
         emitChange();

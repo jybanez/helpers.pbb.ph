@@ -198,8 +198,14 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.media.strip": {
     js: "./ui.media.strip.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.media.strip.css"],
-    deps: [],
+    deps: ["ui.media.viewer"],
     export: "createMediaStrip",
+  },
+  "ui.media.viewer": {
+    js: "./ui.media.viewer.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.media.viewer.css"],
+    deps: ["ui.audio.audiograph"],
+    export: "createMediaViewer",
   },
   "ui.grid": {
     js: "./ui.grid.js",
@@ -405,6 +411,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
   ],
   media: [
     "ui.media.strip",
+    "ui.media.viewer",
     "ui.audio.player",
     "ui.audio.audiograph",
     "ui.audio.callSession",

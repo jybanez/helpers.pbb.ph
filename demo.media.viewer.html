@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Viewer Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .control {
+      display: grid;
+      gap: 6px;
+    }
+    .control label {
+      font-size: 12px;
+      color: #9fb2d8;
+    }
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .thumb-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid #29406d;
+      border-radius: 10px;
+      background: #0b1423;
+      padding: 10px;
+    }
+    .thumb-button {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border: 1px solid #29406d;
+      border-radius: 10px;
+      background: #080d16;
+      overflow: hidden;
+      padding: 0;
+      cursor: pointer;
+    }
+    .thumb-button:hover {
+      border-color: #4f8cff;
+    }
+    .thumb-button img,
+    .thumb-button video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb-play {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(8, 12, 20, 0.3);
+    }
+    .thumb-play svg {
+      width: 28px;
+      height: 28px;
+      fill: rgba(240, 246, 255, 0.95);
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+    }
+    .thumb-title,
+    .thumb-meta {
+      margin: 0;
+    }
+    .thumb-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .thumb-meta {
+      font-size: 12px;
+      color: #9fb2d8;
+    }
+    .viewer-host {
+      min-height: 0;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 220px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.media.viewer"]);
+  </script>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Media Viewer Demo</h1>
+      <p class="muted">Standalone image/video viewer with navigation, zoom, pan, fit modes, and optional video audiograph.</p>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <div class="control">
+          <label for="fitSelect">Initial fit</label>
+          <select id="fitSelect" class="ui-input">
+            <option value="contain" selected>Contain</option>
+            <option value="cover">Cover</option>
+            <option value="original">Original</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="zoomStepRange">Zoom step</label>
+          <input id="zoomStepRange" class="ui-input" type="range" min="0.1" max="1" step="0.05" value="0.2">
+        </div>
+        <div class="control">
+          <label for="showAudiographInput">Video audiograph</label>
+          <label><input id="showAudiographInput" type="checkbox"> Enable audiograph for video items</label>
+        </div>
+        <div class="control">
+          <label for="showFooterInput">Metadata footer</label>
+          <label><input id="showFooterInput" type="checkbox" checked> Show metadata footer</label>
+        </div>
+        <div class="control">
+          <label for="autoplayInput">Autoplay video</label>
+          <label><input id="autoplayInput" type="checkbox" checked> Autoplay when opened</label>
+        </div>
+      </div>
+      <p class="muted">Keyboard: <code>Esc</code> close, <code>←/→</code> navigate, <code>+/-</code> zoom, <code>0</code> reset, <code>Home/End</code> jump.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Media Items</h2>
+      <div id="thumbGrid" class="thumb-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Viewer Host</h2>
+      <p class="muted">The viewer is mounted here as a standalone component. The modal shell is owned by the component, not by the thumbnail launcher.</p>
+      <div id="viewerHost" class="viewer-host"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createMediaViewer = await uiLoader.get("ui.media.viewer");
+
+    const page = document.querySelector("main.page");
+    const thumbGrid = document.getElementById("thumbGrid");
+    const viewerHost = document.getElementById("viewerHost");
+    const eventLog = document.getElementById("eventLog");
+    const fitSelect = document.getElementById("fitSelect");
+    const zoomStepRange = document.getElementById("zoomStepRange");
+    const showAudiographInput = document.getElementById("showAudiographInput");
+    const showFooterInput = document.getElementById("showFooterInput");
+    const autoplayInput = document.getElementById("autoplayInput");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet."
+        ? line
+        : `${line}\n${eventLog.textContent}`;
+    }
+
+    function normalizeSampleItems(payload) {
+      return (Array.isArray(payload) ? payload : [])
+        .filter((item) => item?.type === "photo" || item?.type === "video")
+        .map((item, index) => ({
+          id: item.id ?? `media-${index + 1}`,
+          type: item.type === "photo" ? "image" : "video",
+          src: item.path,
+          thumb: item.type === "photo" ? item.path : "",
+          poster: item.poster || "",
+          title: item.title || `${item.type === "photo" ? "Photo" : "Video"} ${index + 1}`,
+          alt: item.alt || item.title || `${item.type === "photo" ? "Photo" : "Video"} ${index + 1}`,
+          duration_seconds: item.duration_seconds ?? null,
+          metadata: {
+            incident_id: item.incident_id ?? "-",
+            uploaded_by_user_id: item.uploaded_by_user_id ?? "-",
+            type: item.type,
+            created_at: item.created_at || "-",
+            ready: item.ready === true ? "Yes" : "No",
+          },
+        }));
+    }
+
+    async function loadItems() {
+      const response = await fetch("./samples/samplemedia.json", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Failed to load samples/samplemedia.json (${response.status})`);
+      }
+      const payload = await response.json();
+      const items = normalizeSampleItems(payload);
+      if (!items.length) {
+        throw new Error("No photo/video media items found in samples/samplemedia.json");
+      }
+      writeLog("media.dataset.loaded", {
+        source: "samples/samplemedia.json",
+        total: payload.length,
+        viewable: items.length,
+      });
+      return items;
+    }
+
+    function getViewerOptions(items) {
+      return {
+        items,
+        fit: fitSelect.value,
+        zoomStep: Number(zoomStepRange.value) || 0.2,
+        showAudiograph: showAudiographInput.checked,
+        showFooter: showFooterInput.checked,
+        autoplayVideo: autoplayInput.checked,
+        ariaLabel: "Media viewer demo",
+        onOpen(item, index) {
+          writeLog("mediaViewer.open", { index, id: item?.id, type: item?.type });
+        },
+        onChange(item, index) {
+          writeLog("mediaViewer.change", { index, id: item?.id, type: item?.type });
+        },
+        onClose() {
+          writeLog("mediaViewer.close", {});
+        },
+        onZoomChange(state) {
+          writeLog("mediaViewer.zoom", {
+            index: state.index,
+            zoom: state.zoom,
+            fit: state.fit,
+            panX: state.panX,
+            panY: state.panY,
+          });
+        },
+      };
+    }
+
+    function renderThumbs(items, viewer) {
+      thumbGrid.innerHTML = "";
+      items.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "thumb-card";
+
+        const button = document.createElement("button");
+        button.className = "thumb-button";
+        button.type = "button";
+        button.setAttribute("aria-label", `Open ${item.title}`);
+
+        if (item.type === "video") {
+          const video = document.createElement("video");
+          video.src = item.src;
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = "metadata";
+          button.appendChild(video);
+
+          const overlay = document.createElement("span");
+          overlay.className = "thumb-play";
+          overlay.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12l10-6z"></path></svg>';
+          button.appendChild(overlay);
+        } else {
+          const image = document.createElement("img");
+          image.src = item.src;
+          image.alt = item.alt;
+          image.loading = "lazy";
+          button.appendChild(image);
+        }
+
+        button.addEventListener("click", () => viewer.open(index));
+
+        const title = document.createElement("p");
+        title.className = "thumb-title";
+        title.textContent = item.title;
+
+        const meta = document.createElement("p");
+        meta.className = "thumb-meta";
+        meta.textContent = item.type === "video"
+          ? `${item.metadata.created_at} · ${item.duration_seconds ?? "-"}s`
+          : item.metadata.created_at;
+
+        card.append(button, title, meta);
+        thumbGrid.appendChild(card);
+      });
+    }
+
+    const items = await loadItems();
+    const viewer = createMediaViewer(viewerHost, getViewerOptions(items));
+    renderThumbs(items, viewer);
+
+    function syncViewer() {
+      viewer.update(getViewerOptions(items));
+      writeLog("mediaViewer.options.update", {
+        fit: fitSelect.value,
+        zoomStep: Number(zoomStepRange.value) || 0.2,
+        showAudiograph: showAudiographInput.checked,
+        showFooter: showFooterInput.checked,
+        autoplayVideo: autoplayInput.checked,
+      });
+    }
+
+    fitSelect.addEventListener("change", syncViewer);
+    zoomStepRange.addEventListener("input", syncViewer);
+    showAudiographInput.addEventListener("change", syncViewer);
+    showFooterInput.addEventListener("change", syncViewer);
+    autoplayInput.addEventListener("change", syncViewer);
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
+      writeLog("theme.toggle", { theme: page.dataset.theme });
+    });
+  </script>
+</body>
+</html>
