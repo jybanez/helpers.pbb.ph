@@ -788,12 +788,6 @@ modal.open();</code></pre>
       wipLimits: {
         active: 3,
       },
-      validateMove({ toLaneId }) {
-        if (toLaneId === "resolved") {
-          return { ok: false, reason: "Use workflow transition to resolve incidents." };
-        }
-        return { ok: true };
-      },
       onCardClick(card, laneId) {
         writeLog("kanban.card.click", { cardId: card.id, laneId });
       },

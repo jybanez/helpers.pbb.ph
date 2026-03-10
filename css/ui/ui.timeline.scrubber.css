@@ -98,6 +98,14 @@
   touch-action: none;
 }
 
+.ui-timeline-scrubber-rail:focus-visible,
+.ui-timeline-scrubber-thumb:focus-visible,
+.ui-timeline-scrubber-handle:focus-visible,
+.ui-timeline-scrubber-zoom-btn:focus-visible {
+  outline: 2px solid #7bb5ff;
+  outline-offset: 2px;
+}
+
 .ui-timeline-scrubber-handle {
   position: absolute;
   top: 50%;

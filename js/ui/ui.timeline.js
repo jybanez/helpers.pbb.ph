@@ -3,6 +3,7 @@ import { createEventBag } from "./ui.events.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  ariaLabel: "Timeline",
   orientation: "vertical", // vertical | horizontal
   density: "comfortable", // compact | comfortable
   emptyText: "No timeline items.",
@@ -37,6 +38,10 @@ export function createTimeline(container, items = [], options = {}) {
         `ui-timeline--density-${currentOptions.density}`,
         currentOptions.className || "",
       ].filter(Boolean).join(" "),
+      attrs: {
+        role: "region",
+        "aria-label": currentOptions.ariaLabel,
+      },
     });
 
     visibleItems = applyLinkedRange(currentItems, currentOptions);
@@ -67,7 +72,10 @@ export function createTimeline(container, items = [], options = {}) {
         className: "ui-timeline-group-label",
         text: group.label,
       }));
-      const list = createElement("div", { className: "ui-timeline-list" });
+      const list = createElement("div", {
+        className: "ui-timeline-list",
+        attrs: { role: "list" },
+      });
       renderList(list, group.items);
       section.appendChild(list);
       host.appendChild(section);
@@ -75,7 +83,10 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function renderList(host, listItems) {
-    const list = createElement("div", { className: "ui-timeline-list" });
+    const list = createElement("div", {
+      className: "ui-timeline-list",
+      attrs: { role: "list" },
+    });
     listItems.forEach((item, index) => {
       const card = renderItem(item, index, listItems.length);
       list.appendChild(card);
@@ -86,7 +97,12 @@ export function createTimeline(container, items = [], options = {}) {
   function renderItem(item, index, total) {
     const row = createElement("article", {
       className: "ui-timeline-item",
-      attrs: { "data-item-id": String(item.id) },
+      attrs: {
+        "data-item-id": String(item.id),
+        role: "listitem",
+        tabindex: typeof currentOptions.onItemClick === "function" ? "0" : null,
+        "aria-label": buildItemAriaLabel(item),
+      },
     });
 
     const rail = createElement("div", { className: "ui-timeline-rail" });
@@ -146,6 +162,18 @@ export function createTimeline(container, items = [], options = {}) {
     events.on(row, "click", () => {
       currentOptions.onItemClick?.(item);
     });
+    if (typeof currentOptions.onItemClick === "function") {
+      events.on(row, "keydown", (event) => {
+        if (event.defaultPrevented) {
+          return;
+        }
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+        event.preventDefault();
+        currentOptions.onItemClick?.(item);
+      });
+    }
 
     row.append(rail, body);
     return row;
@@ -267,6 +295,20 @@ function normalizeActions(actions) {
       };
     })
     .filter(Boolean);
+}
+
+function buildItemAriaLabel(item) {
+  const parts = [item.title];
+  if (item.subtitle) {
+    parts.push(item.subtitle);
+  }
+  if (item.timestamp) {
+    parts.push(item.timestamp);
+  }
+  if (item.description) {
+    parts.push(item.description);
+  }
+  return parts.filter(Boolean).join(". ");
 }
 
 function normalizeStatus(status) {

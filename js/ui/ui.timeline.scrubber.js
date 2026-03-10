@@ -3,6 +3,10 @@ import { createEventBag } from "./ui.events.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  ariaLabel: "Timeline scrubber",
+  valueLabel: "Timeline position",
+  rangeStartLabel: "Range start",
+  rangeEndLabel: "Range end",
   durationMs: 60_000,
   valueMs: 0,
   enableRange: false,
@@ -54,6 +58,10 @@ export function createTimelineScrubber(container, options = {}) {
 
     root = createElement("section", {
       className: `ui-timeline-scrubber ${currentOptions.className || ""}`.trim(),
+      attrs: {
+        role: "region",
+        "aria-label": currentOptions.ariaLabel,
+      },
     });
 
     const top = createElement("div", { className: "ui-timeline-scrubber-top" });
@@ -84,6 +92,7 @@ export function createTimelineScrubber(container, options = {}) {
     rail = createElement("div", { className: "ui-timeline-scrubber-rail" });
     rail.setAttribute("tabindex", "0");
     rail.setAttribute("role", "slider");
+    rail.setAttribute("aria-label", currentOptions.valueLabel);
     rail.setAttribute("aria-valuemin", "0");
     rail.setAttribute("aria-valuemax", String(durationMs));
     rail.setAttribute("aria-valuenow", String(valueMs));
@@ -92,15 +101,23 @@ export function createTimelineScrubber(container, options = {}) {
     rangeNode = createElement("div", { className: "ui-timeline-scrubber-range" });
     thumb = createElement("button", {
       className: "ui-timeline-scrubber-thumb",
-      attrs: { type: "button", "aria-label": "Seek" },
+      attrs: { type: "button", "aria-label": currentOptions.valueLabel },
     });
     startHandle = createElement("button", {
       className: "ui-timeline-scrubber-handle is-start",
-      attrs: { type: "button", "aria-label": "Range start" },
+      attrs: {
+        type: "button",
+        "aria-label": currentOptions.rangeStartLabel,
+        role: "slider",
+      },
     });
     endHandle = createElement("button", {
       className: "ui-timeline-scrubber-handle is-end",
-      attrs: { type: "button", "aria-label": "Range end" },
+      attrs: {
+        type: "button",
+        "aria-label": currentOptions.rangeEndLabel,
+        role: "slider",
+      },
     });
 
     rail.append(fill, rangeNode, thumb);
@@ -108,6 +125,8 @@ export function createTimelineScrubber(container, options = {}) {
       rail.append(startHandle, endHandle);
       events.on(startHandle, "pointerdown", (event) => startDrag(event, "range-start"));
       events.on(endHandle, "pointerdown", (event) => startDrag(event, "range-end"));
+      events.on(startHandle, "keydown", (event) => onHandleKeyDown(event, "range-start"));
+      events.on(endHandle, "keydown", (event) => onHandleKeyDown(event, "range-end"));
       events.on(startHandle, "mousedown", (event) => event.preventDefault());
       events.on(endHandle, "mousedown", (event) => event.preventDefault());
       events.on(startHandle, "touchstart", (event) => event.preventDefault(), { passive: false });
@@ -197,6 +216,39 @@ export function createTimelineScrubber(container, options = {}) {
     }
   }
 
+  function onHandleKeyDown(event, type) {
+    const isFast = event.shiftKey;
+    const step = Math.max(1, Number(isFast ? currentOptions.seekStepMsFast : currentOptions.seekStepMs) || 1000);
+    let nextValue = type === "range-start" ? rangeStartMs : rangeEndMs;
+    let handled = true;
+    if (event.key === "ArrowLeft") {
+      nextValue -= step;
+    } else if (event.key === "ArrowRight") {
+      nextValue += step;
+    } else if (event.key === "Home") {
+      nextValue = 0;
+    } else if (event.key === "End") {
+      nextValue = durationMs;
+    } else if (event.key === "PageUp") {
+      nextValue += step * 5;
+    } else if (event.key === "PageDown") {
+      nextValue -= step * 5;
+    } else {
+      handled = false;
+    }
+    if (!handled) {
+      return;
+    }
+    event.preventDefault();
+    if (type === "range-start") {
+      setRange(nextValue, rangeEndMs, { emit: true });
+      startHandle?.focus({ preventScroll: true });
+      return;
+    }
+    setRange(rangeStartMs, nextValue, { emit: true });
+    endHandle?.focus({ preventScroll: true });
+  }
+
   function syncVisuals() {
     if (!rail) {
       return;
@@ -208,6 +260,7 @@ export function createTimelineScrubber(container, options = {}) {
     totalLabel.textContent = formatDuration(durationMs, durationMs);
     rail.setAttribute("aria-valuemax", String(durationMs));
     rail.setAttribute("aria-valuenow", String(valueMs));
+    rail.setAttribute("aria-valuetext", formatDuration(valueMs, durationMs));
 
     if (currentOptions.enableRange) {
       const startPct = toPct(rangeStartMs, durationMs);
@@ -216,6 +269,14 @@ export function createTimelineScrubber(container, options = {}) {
       rangeNode.style.width = `${Math.max(0, endPct - startPct)}%`;
       startHandle.style.left = `${startPct}%`;
       endHandle.style.left = `${endPct}%`;
+      startHandle.setAttribute("aria-valuemin", "0");
+      startHandle.setAttribute("aria-valuemax", String(rangeEndMs));
+      startHandle.setAttribute("aria-valuenow", String(rangeStartMs));
+      startHandle.setAttribute("aria-valuetext", formatDuration(rangeStartMs, durationMs));
+      endHandle.setAttribute("aria-valuemin", String(rangeStartMs));
+      endHandle.setAttribute("aria-valuemax", String(durationMs));
+      endHandle.setAttribute("aria-valuenow", String(rangeEndMs));
+      endHandle.setAttribute("aria-valuetext", formatDuration(rangeEndMs, durationMs));
       rangeNode.hidden = false;
       startHandle.hidden = false;
       endHandle.hidden = false;

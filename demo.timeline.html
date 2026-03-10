@@ -91,6 +91,7 @@
       <h2 class="ui-title">Scrubber</h2>
       <div id="timelineScrubberHost"></div>
       <p class="muted">Seek updates active timeline event. Horizontal view auto-scrolls to active card.</p>
+      <p class="muted">Keyboard: timeline cards use <code>Enter</code>/<code>Space</code>; scrubber uses arrow keys, <code>Home</code>/<code>End</code>, and range handles can be adjusted directly.</p>
     </section>
 
     <section class="panel">
@@ -105,7 +106,7 @@
 
     <section class="panel">
       <h2 class="ui-title">Event Log</h2>
-      <pre id="log" class="log">No events yet.</pre>
+      <pre id="log" class="log" tabindex="0" aria-label="Timeline event log">No events yet.</pre>
     </section>
   </main>
 
@@ -172,6 +173,7 @@
     ];
 
     const vertical = createTimeline(verticalHost, timelineItems, {
+      ariaLabel: "Vertical incident timeline",
       orientation: "vertical",
       groupByDate: true,
       onItemClick(item) {
@@ -183,6 +185,7 @@
     });
 
     const horizontal = createTimeline(horizontalHost, timelineItems, {
+      ariaLabel: "Horizontal incident timeline",
       orientation: "horizontal",
       groupByDate: false,
       density: "compact",
@@ -245,6 +248,10 @@
     }
 
     const scrubber = createTimelineScrubber(document.getElementById("timelineScrubberHost"), {
+      ariaLabel: "Timeline range and seek controls",
+      valueLabel: "Timeline position",
+      rangeStartLabel: "Visible range start",
+      rangeEndLabel: "Visible range end",
       durationMs,
       valueMs: durationMs,
       enableRange: true,

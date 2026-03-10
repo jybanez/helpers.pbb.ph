@@ -270,9 +270,13 @@ If changing callback signatures or removing methods, plan a major version.
 
 - `createTimeline(container, items, options)` supports vertical/horizontal orientation and grouped rendering.
 - `createTimelineScrubber(container, options)` supports seek, range handles, and zoom levels.
+- preserve labeling support (`ariaLabel`, `valueLabel`, `rangeStartLabel`, `rangeEndLabel`)
+- preserve keyboard item activation on clickable timeline cards
+- preserve keyboard adjustment behavior on scrubber range handles
 - In demo/reference integrations:
   - scrubber range may filter visible timeline items
   - seek should keep active item highlight behavior stable
+  - keyboard focus must remain visible on timeline cards and scrubber controls
 
 ### 11.5 Command Palette / Tree / Kanban
 

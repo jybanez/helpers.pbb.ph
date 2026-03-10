@@ -59,6 +59,11 @@
   padding: 10px;
 }
 
+.ui-timeline-item:focus-visible {
+  outline: 2px solid #7bb5ff;
+  outline-offset: 2px;
+}
+
 .ui-timeline-rail {
   position: relative;
   display: grid;

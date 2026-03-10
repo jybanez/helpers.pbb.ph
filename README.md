@@ -1544,6 +1544,7 @@ Item shape (recommended):
 
 Options:
 
+- `ariaLabel`
 - `orientation`: `vertical | horizontal`
 - `density`: `compact | comfortable`
 - `groupByDate`: `boolean` (vertical only)
@@ -1596,6 +1597,8 @@ Purpose:
 
 Options:
 
+- `ariaLabel`
+- `valueLabel`, `rangeStartLabel`, `rangeEndLabel`
 - `durationMs`, `valueMs`
 - `enableRange`
 - `range`: `{ startMs, endMs }`
@@ -1931,7 +1934,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.17.x`
 
-- Latest documented release: `v0.17.6`
+- Latest documented release: `v0.17.8`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
@@ -2439,3 +2442,30 @@ Recommended integration flow:
   - session root and track list now expose region/list semantics
 - `demo.audio.html`
   - now passes an explicit `ariaLabel` to the audio session demo
+
+### v0.17.7
+
+- Continued the accessibility pass on timeline-focused utilities
+- `ui.timeline`
+  - added `ariaLabel`
+  - timeline roots now expose region semantics
+  - timeline lists expose list semantics
+  - clickable timeline items are now keyboard-activatable with `Enter` / `Space`
+- `ui.timeline.scrubber`
+  - added `ariaLabel`, `valueLabel`, `rangeStartLabel`, and `rangeEndLabel`
+  - scrubber root now exposes region semantics
+  - main seek rail now exposes accessible value text
+  - range handles now expose slider semantics with keyboard adjustment support
+- `demo.timeline.html`
+  - now passes explicit accessibility labels to both timeline instances and the scrubber demo
+
+### v0.17.8
+
+- Completed the focused demo audit for timeline interactions
+- `css/ui/ui.timeline.css`
+  - added visible keyboard focus treatment for timeline items
+- `css/ui/ui.timeline.scrubber.css`
+  - added visible keyboard focus treatment for the scrubber rail, thumb, handles, and zoom controls
+- `demo.timeline.html`
+  - added explicit keyboard guidance for timeline/scrubber interaction
+  - event log is now keyboard-focusable and labeled
