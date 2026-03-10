@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Grid Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 220px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #2f4e85;
+      color: #d7e0f4;
+      font-size: 11px;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.tree.grid"]);
+  </script>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Tree Grid Demo</h1>
+      <p class="muted">Hierarchical rows with first-column indentation and aligned succeeding columns.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <button id="expandAllBtn" class="ui-button" type="button">Expand All</button>
+        <button id="collapseAllBtn" class="ui-button" type="button">Collapse All</button>
+      </div>
+      <div id="treeGridHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createTreeGrid = await uiLoader.get("ui.tree.grid");
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
+      writeLog("theme.toggle", { theme: page.dataset.theme });
+    });
+
+    const rows = [
+      {
+        id: "incident-16",
+        label: "Incident 16",
+        type: "incident",
+        status: "active",
+        location: "Guadalupe",
+        createdAt: "2026-03-10 08:54",
+        children: [
+          {
+            id: "assignment-16-1",
+            label: "Team Alpha",
+            type: "assignment",
+            status: "requested",
+            location: "Sector 4",
+            createdAt: "2026-03-10 09:03",
+          },
+          {
+            id: "assignment-16-2",
+            label: "Team Bravo",
+            type: "assignment",
+            status: "accepted",
+            location: "Sector 6",
+            createdAt: "2026-03-10 09:04",
+            children: [
+              {
+                id: "resource-16-2-1",
+                label: "Medical Kit",
+                type: "resource",
+                status: "allocated",
+                location: "Vehicle A",
+                createdAt: "2026-03-10 09:08",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "incident-15",
+        label: "Incident 15",
+        type: "incident",
+        status: "resolved",
+        location: "Talamban",
+        createdAt: "2026-03-09 22:10",
+        children: [
+          {
+            id: "assignment-15-1",
+            label: "Team Delta",
+            type: "assignment",
+            status: "completed",
+            location: "Zone 2",
+            createdAt: "2026-03-09 22:20",
+          },
+        ],
+      },
+    ];
+
+    const treeGrid = createTreeGrid(document.getElementById("treeGridHost"), {
+      rows,
+      defaultExpanded: true,
+      enableColumnResize: true,
+      selectable: "single",
+      columns: [
+        {
+          key: "label",
+          label: "Name",
+          tree: true,
+          width: "320px",
+          icon(row) {
+            if (row.type === "incident") {
+              return '<svg viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="M12 12 4 7M12 12l8-5M12 12v9"/></svg>';
+            }
+            if (row.type === "assignment") {
+              return '<svg viewBox="0 0 24 24"><path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10Z"/><path d="M12 11.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>';
+            }
+            return '<svg viewBox="0 0 24 24"><path d="M4 7h16M7 4v16M17 4v16"/></svg>';
+          },
+        },
+        {
+          key: "status",
+          label: "Status",
+          width: "140px",
+          render(value) {
+            const chip = document.createElement("span");
+            chip.className = "status-pill";
+            chip.textContent = String(value || "");
+            return chip;
+          },
+        },
+        { key: "location", label: "Location", width: "220px" },
+        { key: "createdAt", label: "Created", width: "180px" },
+      ],
+      onToggle(payload) {
+        writeLog("treeGrid.toggle", payload);
+      },
+      onRowClick(payload) {
+        writeLog("treeGrid.rowClick", payload);
+      },
+      onSelectionChange(payload) {
+        writeLog("treeGrid.selection", payload);
+      },
+    });
+
+    document.getElementById("expandAllBtn").addEventListener("click", () => {
+      treeGrid.expandAll();
+      writeLog("treeGrid.expandAll", {});
+    });
+    document.getElementById("collapseAllBtn").addEventListener("click", () => {
+      treeGrid.collapseAll();
+      writeLog("treeGrid.collapseAll", {});
+    });
+  </script>
+</body>
+</html>

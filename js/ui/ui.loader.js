@@ -207,6 +207,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createGrid",
   },
+  "ui.tree.grid": {
+    js: "./ui.tree.grid.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.tree.grid.css"],
+    deps: [],
+    export: "createTreeGrid",
+  },
   "ui.virtual.list": {
     js: "./ui.virtual.list.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.virtual.list.css"],
@@ -387,6 +393,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
   ],
   data: [
     "ui.grid",
+    "ui.tree.grid",
     "ui.progress",
     "ui.virtual.list",
     "ui.scheduler",

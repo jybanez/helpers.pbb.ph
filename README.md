@@ -47,6 +47,7 @@ css/
     ui.media.strip.css
     ui.audio.css
     ui.grid.css
+    ui.tree.grid.css
     ui.progress.css
     ui.virtual.list.css
     ui.scheduler.css
@@ -89,6 +90,7 @@ js/
     ui.strips.js
     ui.media.strip.js
     ui.grid.js
+    ui.tree.grid.js
     ui.progress.js
     ui.virtual.list.js
     ui.scheduler.js
@@ -217,6 +219,8 @@ Reusable shared UI utilities live under `js/ui`:
   - options include `layout: "scroll" | "wrap"` and `animationMs` (default `300`)
 - `ui.grid.js`
   - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, and optional row virtualization
+- `ui.tree.grid.js`
+  - `createTreeGrid(container, options)` tree grid with first-column hierarchy, aligned tabular columns, expand/collapse controls, and column resize
 - `ui.progress.js`
   - `createProgress(container, data, options)` progress indicator with multiple styles (linear, segmented, steps, radial, ring, etc.)
 - `ui.virtual.list.js`
@@ -274,6 +278,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.media.strip.css` media strip, thumbnail, and media viewer styles
 - `ui.audio.css` audio player, audiograph, and call session styles
 - `ui.grid.css` data-grid/table styles
+- `ui.tree.grid.css` tree-grid styles
 - `ui.progress.css` progress styles
 - `ui.virtual.list.css` virtual-list styles
 - `ui.scheduler.css` scheduler styles
@@ -1898,7 +1903,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.16.x`
 
-- Latest documented release: `v0.16.3`
+- Latest documented release: `v0.16.4`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
@@ -2235,3 +2240,15 @@ Recommended integration flow:
   - standalone toggle button demo
   - multi toggle group demo
   - single-select segmented toggle group demo
+
+### v0.16.4
+
+- Added hierarchical tree grid component:
+  - `js/ui/ui.tree.grid.js`
+  - `css/ui/ui.tree.grid.css`
+- Added loader registry entry:
+  - `ui.tree.grid`
+- Added `ui.tree.grid` to the `data` loader group
+- Added dedicated demo page:
+  - `demo.tree.grid.html`
+- Linked tree grid demo from `index.html`

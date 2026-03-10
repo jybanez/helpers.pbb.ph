@@ -117,6 +117,7 @@ Shared UI layer:
 - `js/ui/ui.strips.js`
 - `js/ui/ui.media.strip.js`
 - `js/ui/ui.grid.js`
+- `js/ui/ui.tree.grid.js`
 - `js/ui/ui.progress.js`
 - `js/ui/ui.virtual.list.js`
 - `js/ui/ui.scheduler.js`
@@ -150,6 +151,7 @@ Shared CSS:
 - `css/ui/ui.strips.css`
 - `css/ui/ui.media.strip.css`
 - `css/ui/ui.grid.css`
+- `css/ui/ui.tree.grid.css`
 - `css/ui/ui.progress.css`
 - `css/ui/ui.virtual.list.css`
 - `css/ui/ui.scheduler.css`
