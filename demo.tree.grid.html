@@ -139,6 +139,64 @@
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
     }
 
+    function createCellActionButton({ label, icon, tone = "borderless", onClick }) {
+      const button = document.createElement("button");
+      const toneClass = tone === "danger" ? "ui-button-danger" : "ui-button-borderless";
+      button.className = `ui-button ui-button-icon ${toneClass} ui-cell-action`;
+      button.type = "button";
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      button.innerHTML = icon;
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof onClick === "function") {
+          onClick(event);
+        }
+      });
+      return button;
+    }
+
+    function createActionCell(row, scope) {
+      const host = document.createElement("div");
+      host.className = "ui-cell-actions";
+
+      host.appendChild(createCellActionButton({
+        label: "View details",
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+        onClick() {
+          writeLog(`${scope}.view`, { rowId: row.id, label: row.label, type: row.type });
+        },
+      }));
+
+      if (row.type !== "resource") {
+        host.appendChild(createCellActionButton({
+          label: "Edit row",
+          icon: '<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path d="m4 20 4.5-1 9-9-3.5-3.5-9 9L4 20Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m12.5 5.5 3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+          onClick() {
+            writeLog(`${scope}.edit`, { rowId: row.id, label: row.label, type: row.type });
+          },
+        }));
+      }
+
+      host.appendChild(createCellActionButton({
+        label: row.type === "incident" ? "Add child row" : "Remove row",
+        tone: row.type === "incident" ? "borderless" : "danger",
+        icon: row.type === "incident"
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path d="M5 7h14M9 7V4h6v3m-7 3v7m4-7v7m4-7v7M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        onClick() {
+          writeLog(row.type === "incident" ? `${scope}.addChild` : `${scope}.remove`, {
+            rowId: row.id,
+            label: row.label,
+            type: row.type,
+          });
+        },
+      }));
+
+      return host;
+    }
+
     document.getElementById("themeToggle").addEventListener("click", () => {
       page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
       writeLog("theme.toggle", { theme: page.dataset.theme });
@@ -281,6 +339,15 @@
         },
         { key: "location", label: "Location", width: "220px" },
         { key: "createdAt", label: "Created", width: "180px" },
+        {
+          key: "actions",
+          label: "Actions",
+          width: "168px",
+          align: "right",
+          render(value, row) {
+            return createActionCell(row, "treeGrid");
+          },
+        },
       ],
       onToggle(payload) {
         writeLog("treeGrid.toggle", payload);
@@ -312,6 +379,15 @@
         { key: "status", label: "Status", width: "140px" },
         { key: "location", label: "Location", width: "220px" },
         { key: "createdAt", label: "Created", width: "180px" },
+        {
+          key: "actions",
+          label: "Actions",
+          width: "132px",
+          align: "right",
+          render(value, row) {
+            return createActionCell(row, "treeGridLarge");
+          },
+        },
       ],
       onToggle(payload) {
         writeLog("treeGridLarge.toggle", {
@@ -385,6 +461,15 @@
         { key: "status", label: "Status", width: "140px" },
         { key: "location", label: "Location", width: "220px" },
         { key: "createdAt", label: "Created", width: "180px" },
+        {
+          key: "actions",
+          label: "Actions",
+          width: "168px",
+          align: "right",
+          render(value, row) {
+            return createActionCell(row, "treeGridLazy");
+          },
+        },
       ],
       onToggle(payload) {
         writeLog("treeGridLazy.toggle", payload);

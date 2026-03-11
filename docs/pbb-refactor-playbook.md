@@ -147,6 +147,10 @@ Shared UI layer:
   - `.ui-button-quiet`
   - `.ui-button-link`
   - `.ui-button-icon`
+- Dense grid/tree-grid/list action cells should prefer:
+  - `.ui-cell-actions`
+  - `.ui-cell-action`
+  - combined with shared button classes such as `.ui-button`, `.ui-button-icon`, `.ui-button-borderless`, `.ui-button-danger`
 - The goal is to keep visual behavior consistent across `*.pbb.ph` projects and avoid local style drift.
 - If a project cannot use an existing variant cleanly, document the gap and promote a new shared variant instead of normalizing on ad hoc overrides.
 - `js/ui/ui.menu.js`

@@ -268,6 +268,9 @@ Reusable UI styles live under `css/ui`:
     - `.ui-button-quiet` low-emphasis bordered action
     - `.ui-button-link` link-style action
     - `.ui-button-icon` square icon button sizing helper
+  - cell-action helpers:
+    - `.ui-cell-actions` inline action-row wrapper for grid/tree-grid/list cells
+    - `.ui-cell-action` per-action alignment helper for icon/button controls inside dense cells
 - `ui.modal.css` shared modal shell styles
 - `ui.dialog.css` dialog-specific styles on top of modal shell
 - `ui.toast.css` toast notification styles
@@ -316,6 +319,7 @@ Application integrations should use the registry loader.
 - Prefer shared styling contracts before adding project-local CSS overrides.
 - Start with `css/ui/ui.components.css` primitives such as:
   - button variants: `.ui-button-primary`, `.ui-button-ghost`, `.ui-button-borderless`, `.ui-button-quiet`, `.ui-button-link`, `.ui-button-icon`
+  - dense cell actions: `.ui-cell-actions`, `.ui-cell-action`
   - shell/layout primitives: `.ui-panel`, `.ui-surface`, `.ui-field`, `.ui-label`, `.ui-badge`, `.ui-eyebrow`, `.ui-shell-header`, `.ui-shell-search`
 - If the same override appears more than once in a consuming app, it is a candidate to move back into the shared library instead of remaining project-local.
 
@@ -423,6 +427,163 @@ Editor-only options:
 
 - `onChange(payload)`
 - `onSubmit(payload)` (emit-only, no auto-submit)
+
+## Toggle Components
+
+The shared toggle layer standardizes binary on/off controls so consuming apps do not need to invent local active/inactive button behavior.
+
+Recommended use cases:
+
+- map-toolbar toggles such as `Terrain` and `POI`
+- filter chips
+- admin settings toggles
+- compact action strips
+- segmented single-select controls
+
+### `createToggleButton(container, options)`
+
+Reusable binary toggle rendered as a native `button` with `aria-pressed`.
+
+Supported options:
+
+- `id`
+- `label`
+- `pressed`
+- `icon`
+- `ariaLabel`
+- `variant`: `"pill" | "segmented" | "chip" | "icon" | "ghost"`
+- `tone`: `"neutral" | "success" | "info" | "warning" | "danger"`
+- `size`: `"sm" | "md" | "lg"`
+- `quiet`
+- `disabled`
+- `leadingDot`
+- `iconPosition`: `"start" | "end"`
+- `count`
+- `loading`
+- `tooltip`
+- `className`
+- `onChange(payload)`
+
+Accessibility contract:
+
+- renders as a native `button`
+- always sets `type="button"`
+- always syncs `aria-pressed="true|false"`
+- icon-only toggles require `ariaLabel`; invalid icon-only usage logs `console.error(...)` and renders nothing
+
+Returned API:
+
+- `setPressed(nextPressed, emit = false)`
+- `getPressed()`
+- `setDisabled(nextDisabled)`
+- `setLabel(nextLabel)`
+- `update(nextOptions = {})`
+- `getState()`
+- `destroy()`
+
+`onChange(payload)` callback shape:
+
+```js
+{
+  id: "terrain",
+  pressed: true,
+  button, // toggle-button instance
+  event,  // click event or null when emitted programmatically
+}
+```
+
+Example:
+
+```js
+const toggle = createToggleButton(container, {
+  id: "terrain",
+  label: "Terrain",
+  pressed: true,
+  variant: "pill",
+  tone: "success",
+  leadingDot: true,
+  onChange(payload) {
+    console.log(payload.id, payload.pressed);
+  },
+});
+```
+
+### `createToggleGroup(container, options)`
+
+Composes multiple toggle buttons with shared sizing, tone, and selection rules.
+
+Supported options:
+
+- `items`
+- `variant`: `"pill" | "segmented" | "chip" | "icon" | "ghost"`
+- `tone`: `"neutral" | "success" | "info" | "warning" | "danger"`
+- `size`: `"sm" | "md" | "lg"`
+- `multi`
+- `allowNone`
+- `quiet`
+- `disabled`
+- `leadingDot`
+- `className`
+- `name`
+- `onChange(payload)`
+
+Group modes:
+
+- `multi: true`
+  - each toggle is independent
+  - best for overlays and filters
+- `multi: false`
+  - behaves like a single-select group
+  - `allowNone: false` guarantees one pressed item remains selected
+
+Implementation note:
+
+- `segmented` is supported at the button level but is primarily intended for grouped usage
+
+Returned API:
+
+- `getItems()`
+- `getValue()`
+- `setItems(nextItems = [])`
+- `updateItem(id, patch = {})`
+- `setPressed(id, nextPressed, emit = false)`
+- `update(nextOptions = {})`
+- `destroy()`
+
+`onChange(payload)` callback shape:
+
+```js
+{
+  items,        // cloned group item array
+  changedItem,  // cloned item that changed
+  changedIndex, // index of the changed item
+  group,        // toggle-group instance
+  value,        // pressed ids[] for multi, single id|null for single-select
+}
+```
+
+Example:
+
+```js
+const group = createToggleGroup(container, {
+  items: [
+    { id: "terrain", label: "Terrain", pressed: true },
+    { id: "poi", label: "POI", pressed: false },
+  ],
+  variant: "segmented",
+  tone: "success",
+  multi: true,
+  onChange(payload) {
+    console.log(payload.value, payload.changedItem);
+  },
+});
+```
+
+Shared styling contract:
+
+- Use `ui.toggle.css` for toggle-specific visuals.
+- For toolbar shells and surrounding layout, prefer shared primitives from `ui.components.css`.
+- Do not replace toggle styling with project-local pressed-state implementations unless the shared contract is insufficient.
 
 ## Team Assignment Helpers
 
@@ -2110,7 +2271,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.18.x`
 
-- Latest documented release: `v0.18.9`
+- Latest documented release: `v0.18.12`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

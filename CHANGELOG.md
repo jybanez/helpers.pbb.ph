@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.18.x`
-- Latest documented release: `v0.18.9`
+- Latest documented release: `v0.18.12`
 - Next planned line: `v0.19.x`
 
 ## Release Line Index
@@ -30,6 +30,43 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.18.12
+
+- Updated `demo.grid.html` to use the same shared dense action-cell pattern as `demo.tree.grid.html`
+- Standardized flat-grid demo actions on:
+  - `ui-button`
+  - `ui-button-icon`
+  - `ui-button-borderless`
+  - `ui-button-danger`
+- This keeps `ui.grid` and `ui.tree.grid` aligned on the recommended cell-action implementation instead of letting each demo invent a different button/icon pattern
+
+### v0.18.11
+
+- Formalized the `ui.toggle.button` / `ui.toggle.group` contract in `README.md`
+- Documented the actual callback payloads emitted by the current implementation instead of abstract proposal signatures:
+  - button `onChange({ id, pressed, button, event })`
+  - group `onChange({ items, changedItem, changedIndex, group, value })`
+- Expanded the public toggle documentation to cover:
+  - variants
+  - tones
+  - sizing
+  - group modes
+  - returned instance APIs
+  - accessibility rules
+- Treated the README toggle section as the formal contract surface for consuming apps
+
+### v0.18.10
+
+- Added shared dense-cell action primitives in `ui.components.css`:
+  - `.ui-cell-actions`
+  - `.ui-cell-action`
+- Updated `demo.tree.grid.html` to demonstrate the recommended action-cell pattern using:
+  - `ui-button`
+  - `ui-button-icon`
+  - `ui-button-borderless`
+  - `ui-button-danger`
+- Documented tree-grid/list/grid cell actions as shared styling contracts instead of leaving consuming apps to create raw unstyled buttons inside cells
+
 ### v0.18.9
 
 - Added shared button-style variants in `ui.components.css`:

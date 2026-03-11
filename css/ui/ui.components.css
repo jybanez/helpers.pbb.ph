@@ -59,6 +59,19 @@
   gap: var(--ui-space-1);
 }
 
+.ui-cell-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.ui-cell-action {
+  flex: 0 0 auto;
+}
+
 .ui-label {
   font: 600 12px/1.25 var(--ui-font);
   color: var(--ui-muted);
