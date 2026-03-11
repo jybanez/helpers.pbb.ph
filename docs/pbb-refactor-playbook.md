@@ -105,6 +105,12 @@ Never add backend-specific quirks inside helper rendering logic.
    - Use centralized alignment/placement resolution in menu core (`ui.menu`), not only wrapper helpers.
 9. Sidebar animation loss:
    - Avoid full rerender on collapse toggle; prefer in-place class/state updates to preserve transitions.
+10. Modal async safety regressions:
+   - Preserve helper-owned busy-state handling in `createModal(...)` / `createActionModal(...)`.
+   - Do not reintroduce app-local duplicate-submit guards when the shared modal contract can own:
+     - overlay lock
+     - control disabling
+     - close suppression while busy
 
 ## 8) UI Utility Ownership
 

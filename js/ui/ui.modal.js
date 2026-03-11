@@ -12,6 +12,11 @@ const DEFAULT_OPTIONS = {
   showCloseButton: true,
   closeOnBackdrop: true,
   closeOnEscape: true,
+  busy: false,
+  busyMessage: "",
+  closeWhileBusy: false,
+  backdropCloseWhileBusy: false,
+  escapeCloseWhileBusy: false,
   trapFocus: true,
   lockScroll: true,
   size: "md", // sm | md | lg | xl | full
@@ -63,19 +68,39 @@ export function createModal(options = {}) {
   });
   const body = createElement("div", { className: "ui-modal-body" });
   const footer = createElement("footer", { className: "ui-modal-footer" });
+  const busyLayer = createElement("div", {
+    className: "ui-modal-busy",
+    attrs: { hidden: "hidden", "aria-hidden": "true" },
+  });
+  const busyOverlay = createElement("div", { className: "ui-modal-busy-overlay" });
+  const busySpinner = createElement("span", {
+    className: "ui-modal-busy-spinner",
+    attrs: { "aria-hidden": "true" },
+  });
+  const busyMessage = createElement("div", {
+    className: "ui-modal-busy-message",
+    attrs: { role: "status", "aria-live": "polite" },
+  });
 
   header.append(titleEl, headerActions, closeButton);
-  panel.append(header, body, footer);
+  busyLayer.append(busyOverlay, busySpinner, busyMessage);
+  panel.append(header, body, footer, busyLayer);
   root.append(backdrop, panel);
 
   events.on(backdrop, "click", () => {
     if (!open || !currentOptions.closeOnBackdrop) {
       return;
     }
+    if (isBusy() && !currentOptions.backdropCloseWhileBusy) {
+      return;
+    }
     close({ reason: "backdrop" });
   });
   events.on(closeButton, "click", () => {
     if (!open) {
+      return;
+    }
+    if (isBusy() && !currentOptions.closeWhileBusy) {
       return;
     }
     close({ reason: "close-button" });
@@ -118,6 +143,7 @@ export function createModal(options = {}) {
     setSlot(body, currentOptions.content);
     setSlot(footer, currentOptions.footer);
     footer.hidden = !footer.childNodes.length;
+    syncBusyState();
   }
 
   function setSlot(target, value) {
@@ -166,6 +192,10 @@ export function createModal(options = {}) {
       return;
     }
     if (event.key === "Escape" && currentOptions.closeOnEscape) {
+      if (isBusy() && !currentOptions.escapeCloseWhileBusy) {
+        event.preventDefault();
+        return;
+      }
       event.preventDefault();
       close({ reason: "escape" });
       return;
@@ -282,6 +312,69 @@ export function createModal(options = {}) {
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
     applyClasses();
     applySlots();
+  }
+
+  function isBusy() {
+    return Boolean(currentOptions.busy);
+  }
+
+  function syncBusyState() {
+    const busy = isBusy();
+    const message = String(currentOptions.busyMessage || "").trim();
+    panel.classList.toggle("is-busy", busy);
+    panel.setAttribute("aria-busy", busy ? "true" : "false");
+    busyLayer.hidden = !busy;
+    busyLayer.setAttribute("aria-hidden", busy ? "false" : "true");
+    busyMessage.textContent = message;
+    syncBusyInteractivity(busy);
+    if (busy && open) {
+      panel.focus();
+    }
+  }
+
+  function syncBusyInteractivity(busy) {
+    toggleBusyDisabled(headerActions.querySelectorAll("button, input, select, textarea"), busy);
+    toggleBusyDisabled(footer.querySelectorAll("button, input, select, textarea"), busy);
+    toggleBusyDisabled(body.querySelectorAll("button, input, select, textarea"), busy);
+
+    if (busy && !currentOptions.closeWhileBusy) {
+      setBusyDisabled(closeButton, true);
+    } else {
+      setBusyDisabled(closeButton, false);
+    }
+  }
+
+  function toggleBusyDisabled(nodes, busy) {
+    Array.from(nodes || []).forEach((node) => {
+      if (!(node instanceof HTMLElement)) {
+        return;
+      }
+      setBusyDisabled(node, busy);
+    });
+  }
+
+  function setBusyDisabled(node, busy) {
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+    if (!("disabled" in node)) {
+      return;
+    }
+    if (busy) {
+      if (!node.hasAttribute("data-ui-busy-managed")) {
+        node.setAttribute("data-ui-busy-managed", "true");
+        node.setAttribute("data-ui-busy-prev-disabled", node.disabled ? "true" : "false");
+      }
+      node.disabled = true;
+      return;
+    }
+    if (!node.hasAttribute("data-ui-busy-managed")) {
+      return;
+    }
+    const prevDisabled = node.getAttribute("data-ui-busy-prev-disabled") === "true";
+    node.disabled = prevDisabled;
+    node.removeAttribute("data-ui-busy-managed");
+    node.removeAttribute("data-ui-busy-prev-disabled");
   }
 
   function openModal(content = undefined, nextOptions = undefined) {
@@ -410,6 +503,15 @@ export function createModal(options = {}) {
     setTitle(nextTitle) {
       update({ title: nextTitle });
     },
+    setBusy(nextBusy, nextOptions = {}) {
+      const busy = Boolean(nextBusy);
+      const patch = { busy };
+      if (nextOptions && Object.prototype.hasOwnProperty.call(nextOptions, "message")) {
+        patch.busyMessage = nextOptions.message == null ? "" : String(nextOptions.message);
+      }
+      update(patch);
+    },
+    isBusy,
     destroy,
     getState,
     refs: {
@@ -422,6 +524,10 @@ export function createModal(options = {}) {
       body,
       footer,
       closeButton,
+      busyLayer,
+      busyOverlay,
+      busySpinner,
+      busyMessage,
     },
   };
 }
@@ -437,7 +543,7 @@ export function createActionModal(options = {}) {
     return actions.map((action) => createActionButton(action, placement));
   }
 
-  function createActionButton(action, placement) {
+function createActionButton(action, placement) {
     const button = createElement("button", {
       className: getActionButtonClass(action),
       attrs: {
@@ -467,10 +573,26 @@ export function createActionModal(options = {}) {
       button.setAttribute("data-action-autofocus", "true");
     }
     button.addEventListener("click", async (event) => {
+      if (modal?.isBusy?.()) {
+        event.preventDefault();
+        return;
+      }
       const context = { action, modal, event, placement };
       let result;
       if (typeof action.onClick === "function") {
-        result = await action.onClick(context);
+        result = action.onClick(context);
+        if (actionOptions.autoBusy && isPromiseLike(result)) {
+          modal?.setBusy(true, { message: action.busyMessage || actionOptions.busyMessage || "" });
+          try {
+            result = await result;
+          } finally {
+            if (modal && modal.getState().open) {
+              modal.setBusy(false);
+            }
+          }
+        } else {
+          result = await result;
+        }
       }
       if (action.closeOnClick !== false && result !== false) {
         await modal?.close({
@@ -570,6 +692,7 @@ function normalizeActionModalOptions(options = {}) {
   const next = { ...(options || {}) };
   next.actions = normalizeActions(options.actions);
   next.headerActions = normalizeActions(options.headerActions);
+  next.autoBusy = options?.autoBusy !== false;
   return next;
 }
 
@@ -595,6 +718,7 @@ function normalizeActions(actions) {
         iconPosition: String(action.iconPosition || "start").toLowerCase() === "end" ? "end" : "start",
         iconOnly: Boolean(action.iconOnly),
         ariaLabel: String(action.ariaLabel || "").trim(),
+        busyMessage: String(action.busyMessage || "").trim(),
         onClick: typeof action.onClick === "function" ? action.onClick : null,
         closeOnClick: action.closeOnClick !== false,
         disabled: Boolean(action.disabled),
@@ -628,4 +752,8 @@ function getActionButtonClass(action) {
     classes.push(action.className);
   }
   return classes.join(" ");
+}
+
+function isPromiseLike(value) {
+  return Boolean(value) && (typeof value === "object" || typeof value === "function") && typeof value.then === "function";
 }

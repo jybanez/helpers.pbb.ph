@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.18.x`
-- Latest documented release: `v0.18.12`
+- Latest documented release: `v0.18.13`
 - Next planned line: `v0.19.x`
 
 ## Release Line Index
@@ -30,6 +30,23 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.18.13
+
+- Added modal-level busy-state support to `createModal(...)`:
+  - `busy`
+  - `busyMessage`
+  - `closeWhileBusy`
+  - `backdropCloseWhileBusy`
+  - `escapeCloseWhileBusy`
+  - `setBusy(isBusy, { message? })`
+  - `isBusy()`
+- Busy state now applies a helper-owned overlay, sets `aria-busy`, disables interactive controls, and prevents duplicate modal interaction while active
+- Added helper-managed `autoBusy` support to `createActionModal(...)` for promise-returning action handlers
+- Updated `demo.ui.html` to show:
+  - explicit busy-state control via `setBusy(...)`
+  - automatic busy handling for async action-modal save flows
+- Expanded the modal documentation in `README.md` so busy-state handling is part of the public shared contract
+
 ### v0.18.12
 
 - Updated `demo.grid.html` to use the same shared dense action-cell pattern as `demo.tree.grid.html`

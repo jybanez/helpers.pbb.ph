@@ -43,6 +43,10 @@
   transition: transform 180ms ease, opacity 160ms ease;
 }
 
+.ui-modal.is-busy {
+  overflow: hidden;
+}
+
 .ui-modal-root.is-open .ui-modal {
   transform: translateY(0) scale(1);
   opacity: 1;
@@ -186,6 +190,48 @@
   gap: var(--ui-space-2, 8px);
 }
 
+.ui-modal-busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  z-index: 4;
+}
+
+.ui-modal-busy[hidden] {
+  display: none;
+}
+
+.ui-modal-busy-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 18, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.ui-modal-busy-spinner,
+.ui-modal-busy-message {
+  position: relative;
+  z-index: 1;
+}
+
+.ui-modal-busy-spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 3px solid rgba(125, 163, 228, 0.2);
+  border-top-color: #79a9ff;
+  animation: ui-modal-spin 760ms linear infinite;
+}
+
+.ui-modal-busy-message {
+  max-width: min(80%, 340px);
+  text-align: center;
+  color: var(--ui-text, #d7e0f4);
+  font: 600 13px/1.35 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+}
+
 .ui-modal-body form {
   display: grid;
   gap: var(--ui-space-2, 8px);
@@ -226,4 +272,13 @@
 .ui-modal-body select:focus {
   border-color: #69a4ff;
   box-shadow: 0 0 0 2px rgba(92, 147, 230, 0.22);
+}
+
+@keyframes ui-modal-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

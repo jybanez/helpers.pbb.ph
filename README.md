@@ -1401,6 +1401,11 @@ Key options:
 - `position`: `"center" | "top"`
 - `showHeader`, `showCloseButton`
 - `closeOnBackdrop`, `closeOnEscape`
+- `busy`
+- `busyMessage`
+- `closeWhileBusy`
+- `backdropCloseWhileBusy`
+- `escapeCloseWhileBusy`
 - `trapFocus`, `lockScroll`
 - `initialFocus` (`selector | HTMLElement | (panel) => HTMLElement`)
 - `className`
@@ -1415,8 +1420,23 @@ Methods:
 - `setHeaderActions(headerActions)`
 - `setFooter(footer)`
 - `setTitle(title)`
+- `setBusy(isBusy, { message? })`
+- `isBusy()`
 - `destroy()`
 - `getState()`
+
+Busy-state behavior:
+
+- modal shell exposes a helper-owned busy overlay
+- `setBusy(true, { message })`:
+  - sets `aria-busy="true"` on the modal panel
+  - disables body/footer/header actions
+  - disables close controls when the close policy forbids close while busy
+  - suppresses duplicate interaction while the modal is intentionally locked
+- default busy close policies are safe:
+  - `closeWhileBusy: false`
+  - `backdropCloseWhileBusy: false`
+  - `escapeCloseWhileBusy: false`
 
 Example:
 
@@ -1433,7 +1453,9 @@ const modal = createModal({
 });
 
 modal.open();
+modal.setBusy(true, { message: "Saving..." });
 // later
+modal.setBusy(false);
 modal.close({ reason: "done" });
 ```
 
@@ -1446,6 +1468,7 @@ Purpose:
 Key options:
 
 - all `createModal(...)` options
+- `autoBusy` (default `true`)
 - `headerActions`: array of button actions using the same action object contract as footer `actions`
 - `actions`: array of button actions
   - `id`
@@ -1455,16 +1478,28 @@ Key options:
   - `iconPosition`: `"start" | "end"`
   - `iconOnly`
   - `ariaLabel` (recommended when `iconOnly: true`)
+  - `busyMessage`
   - `closeOnClick` (default `true`)
   - `disabled`
   - `autoFocus`
-  - `onClick({ action, modal, event })` (can return `false` to prevent close)
+  - `onClick({ action, modal, event, placement })` (can return `false` to prevent close)
 
 Methods:
 
 - all `createModal(...)` methods
 - `setHeaderActions(actions[])`
 - `setActions(actions[])`
+
+Auto-busy behavior:
+
+- if `autoBusy !== false` and an action `onClick(...)` returns a promise:
+  - modal enters busy state before awaiting the promise
+  - modal leaves busy state after resolve/reject
+  - duplicate action clicks are ignored while busy
+- close rules remain normal:
+  - resolved `false` keeps the modal open
+  - rejected promise keeps the modal open
+  - resolved truthy value closes when `closeOnClick !== false`
 
 ### `uiAlert(message, options)`, `uiConfirm(message, options)`, `uiPrompt(message, options)` (`js/ui/ui.dialog.js`)
 
@@ -2271,7 +2306,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.18.x`
 
-- Latest documented release: `v0.18.12`
+- Latest documented release: `v0.18.13`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

@@ -231,6 +231,7 @@
       <h2 class="ui-title">Modal</h2>
       <div class="row">
         <button id="modalBtn" class="ui-button" type="button">Open Modal</button>
+        <button id="busyModalBtn" class="ui-button" type="button">Open Busy Modal</button>
         <button id="actionModalBtn" class="ui-button" type="button">Open Action Modal</button>
       </div>
       <pre class="log"><code>import { uiLoader } from "./js/ui/ui.loader.js";
@@ -520,6 +521,59 @@ modal.open();</code></pre>
       writeLog("modal.open", { size: "md" });
     });
 
+    document.getElementById("busyModalBtn").addEventListener("click", () => {
+      const body = createElement("div");
+      body.innerHTML = `
+        <form class="ui-modal-demo-form">
+          <p style="margin:0;color:#9fb2d8;">This example uses explicit modal busy-state control for a short-lived async save.</p>
+          <label>
+            Hub Name
+            <input type="text" class="ui-input" value="North Relay Hub">
+          </label>
+          <label>
+            Notes
+            <textarea class="ui-input" placeholder="Describe the change">Update fallback uplink and preserve tower routing order.</textarea>
+          </label>
+        </form>
+      `;
+      const saveBtn = createElement("button", {
+        className: "ui-button ui-button-primary",
+        text: "Save",
+        attrs: { type: "button" },
+      });
+      const footer = createElement("div", { className: "ui-dialog-footer-actions" });
+      footer.appendChild(saveBtn);
+
+      const modal = createModal({
+        title: "Edit Hub",
+        content: body,
+        busyMessage: "Saving hub settings...",
+        closeWhileBusy: false,
+        backdropCloseWhileBusy: false,
+        escapeCloseWhileBusy: false,
+        footer,
+        onClose(meta) {
+          writeLog("modal.busy.close", meta || {});
+          modal.destroy();
+        },
+      });
+
+      saveBtn.addEventListener("click", async () => {
+        if (modal.isBusy()) {
+          return;
+        }
+        writeLog("modal.busy.save.begin", { ok: true });
+        modal.setBusy(true, { message: "Saving hub settings..." });
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+        modal.setBusy(false);
+        writeLog("modal.busy.save.complete", { ok: true });
+        modal.close({ reason: "save-complete", result: true });
+      });
+
+      modal.open();
+      writeLog("modal.busy.open", { size: "md" });
+    });
+
     document.getElementById("actionModalBtn").addEventListener("click", () => {
       const content = createElement("div");
       content.innerHTML = `
@@ -548,6 +602,8 @@ modal.open();</code></pre>
         title: "Update Operator Profile",
         size: "sm",
         content,
+        autoBusy: true,
+        busyMessage: "Saving operator profile...",
         headerActions: [
           {
             id: "preview",
@@ -588,8 +644,12 @@ modal.open();</code></pre>
             variant: "primary",
             icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3H5a2 2 0 0 0-2 2v14h18V7l-4-4Zm-5 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm3-10H5V5h10v2Z"/></svg>',
             autoFocus: true,
-            onClick() {
-              writeLog("actionModal.save", { ok: true });
+            busyMessage: "Saving operator profile...",
+            async onClick() {
+              writeLog("actionModal.save.begin", { ok: true });
+              await new Promise((resolve) => setTimeout(resolve, 1300));
+              writeLog("actionModal.save.complete", { ok: true });
+              return true;
             },
           },
         ],
