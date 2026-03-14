@@ -4,12 +4,14 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Versioning
 
-- Current stable line: `v0.18.x`
-- Latest documented release: `v0.18.14`
-- Next planned line: `v0.19.x`
+- Current stable line: `v0.20.x`
+- Latest documented release: `v0.20.6`
+- Next planned line: `v0.21.x`
 
 ## Release Line Index
 
+- `v0.20.x`: schema form modal helper and modal-form demos
+- `v0.19.x`: hierarchy map, real Cebu hierarchy sample generator, hierarchy demo
 - `v0.18.x`: media viewer, modal action consistency, tree-grid search, regression harnesses
 - `v0.17.x`: accessibility hardening across interactive UI components and demos
 - `v0.16.x`: loader, toggle primitives, tree grid, chrome-less support
@@ -30,6 +32,198 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.20.6
+
+- Split modal-form regression coverage into two targeted browser harnesses:
+  - `tests/form.modal.regression.html` / `tests/form.modal.regression.mjs` for the base `createFormModal(...)` helper
+  - `tests/form.modal.presets.regression.html` / `tests/form.modal.presets.regression.mjs` for preset-wrapper behavior
+- Added `node tests/form.modal.presets.regression.mjs` to the documented validation commands
+- This separation makes preset-wrapper failures easier to debug without mixing them with base helper validation/render regressions
+
+### v0.20.5
+
+- Expanded `tests/form.modal.regression.html` to cover the preset-wrapper layer:
+  - `createLoginFormModal(...)`
+  - `createReauthFormModal(...)`
+  - `createStatusUpdateFormModal(...)`
+  - `createReasonFormModal(...)`
+- Added regression coverage for:
+  - remapped field names
+  - locked re-auth identifier behavior
+  - app-supplied status/reason option flows
+  - confirmation-phrase enforcement in the reason-required preset
+- Improved `demo.form.modal.html` with compact payload previews so engineers can see the remapped output shape before opening each preset
+
+### v0.20.4
+
+- Expanded `js/ui/ui.form.modal.presets.js` with:
+  - `createStatusUpdateFormModal(options)`
+  - `createReasonFormModal(options)`
+- Added loader keys:
+  - `ui.form.modal.status`
+  - `ui.form.modal.reason`
+- Preset wrappers accept engineer-provided field-name mappings plus app-supplied option lists for:
+  - status values
+  - reason categories
+- Expanded `demo.form.modal.html` with focused preset coverage for:
+  - status update form
+  - categorized reason-required form
+
+### v0.20.3
+
+- Added `js/ui/ui.form.modal.presets.js` with:
+  - `createLoginFormModal(options)`
+  - `createReauthFormModal(options)`
+- Added loader keys:
+  - `ui.form.modal.login`
+  - `ui.form.modal.reauth`
+- Preset wrappers keep helper-owned structure while allowing engineer-provided field-name mappings for cross-project integration
+- Expanded `demo.form.modal.html` with focused preset coverage for:
+  - login wrapper with remapped field names
+  - re-auth wrapper with locked identifier
+
+### v0.20.2
+
+- Migrated the former hand-built busy modal form example in `demo.ui.html` to `createFormModal(...)`
+- Added `tests/form.modal.regression.html` and `tests/form.modal.regression.mjs` covering:
+  - helper required validation
+  - app-supplied field errors
+  - form-level error rendering
+  - truthy submit close-on-success behavior
+- Added `node tests/form.modal.regression.mjs` to the documented validation commands
+
+### v0.20.1
+
+- Added `demo.form.modal.html` as a focused demo page for `createFormModal(...)`
+- Added `Form Modal` to the shared demo navigation and `index.html`
+- Migrated the legacy login modal example in `demo.ui.html` to use `createFormModal(...)` instead of a hand-built modal implementation
+
+### v0.20.0
+
+- Added `ui.form.modal` with `createFormModal(options)` as a schema-driven helper for short modal-bound forms built on `createActionModal(...)`
+- Shipped the V1 row-based form contract:
+  - one item in a row => full width
+  - two items in a row => equal-width columns
+  - more than two items => rejected or normalized conservatively
+- Added helper-owned modal-form APIs for:
+  - `getValues()`
+  - `setValues(values)`
+  - `setErrors(fieldErrors)`
+  - `clearErrors()`
+  - `setFormError(message)`
+  - `clearFormError()`
+- Reused helper-owned modal busy-state behavior for form submit flows instead of creating a second busy-overlay system
+- Expanded `demo.ui.html` with a dedicated schema-form modal section covering:
+  - login field-error flow
+  - form-level error flow
+  - successful async submit flow
+  - two-column row layout
+
+### v0.19.7
+
+- Added `js/ui/ui.semantic.icons.js` so `ui.dialog` and `ui.toast` share one semantic status icon source instead of carrying duplicate inline SVG maps
+- Expanded the `demo.ui.html` toast section with a comparison matrix and explicit examples for:
+  - default semantic icons
+  - `showVariantIcon: false`
+  - `variantIcon` overrides
+
+### v0.19.6
+
+- Added default semantic status icons to `ui.toast` so `success`, `info`, `warn`, `error`, and `neutral` toasts share the same status language as `ui.dialog`
+- Added toast icon control options:
+  - `showVariantIcon`
+  - `variantIcon`
+- Added opt-in speech support to `ui.dialog` helpers:
+  - `speak`
+  - `speakText`
+  - `voiceName`
+  - `speakRate`
+  - `speakPitch`
+  - `speakVolume`
+- Updated `demo.ui.html` to expose dialog voice selection and speech toggling alongside the existing toast speech controls
+
+### v0.19.5
+
+- Improved `demo.ui.html` dialog coverage with a compact comparison matrix so users can see the intended feature combination before opening each dialog:
+  - variant
+  - built-in status icon visibility
+  - description support
+  - default primary action emphasis
+
+### v0.19.4
+
+- Expanded `demo.ui.html` dialog coverage to show the current `ui.dialog` feature set more explicitly:
+  - `success`
+  - `info`
+  - `warning`
+  - `error`
+  - `description`
+  - built-in semantic status icons
+  - `showVariantIcon: false` opt-out behavior
+
+### v0.19.3
+
+- Added `description` to `ui.dialog` helpers so alert/confirm/prompt flows can show a secondary guidance line below the primary message without forcing custom modal content
+- Added shared description styling in `css/ui/ui.dialog.css`
+- Updated `demo.ui.html` dialog examples to demonstrate title + message + description composition
+
+### v0.19.2
+
+- Added default semantic status icons to `ui.dialog` for non-`default` variants:
+  - `success`
+  - `info`
+  - `warning`
+  - `error`
+- Added dialog icon control options:
+  - `showVariantIcon`
+  - `variantIcon`
+- Kept the icon behavior at the dialog layer so `ui.modal` remains the neutral shell while `ui.dialog` owns semantic presentation
+
+### v0.19.1
+
+- Added semantic dialog variants to `ui.dialog`:
+  - `default`
+  - `success`
+  - `info`
+  - `warning`
+  - `error`
+- `uiAlert(...)`, `uiConfirm(...)`, and `uiPrompt(...)` now accept `variant` and apply dialog-level accent styling through `css/ui/ui.dialog.css`
+- `uiConfirm(...)` and `uiPrompt(...)` now use safer default action emphasis for `warning` and `error` dialogs by promoting their primary action to the shared `danger` button variant unless the caller overrides it explicitly
+- Updated `demo.ui.html` dialog examples to exercise semantic dialog variants directly:
+  - alert => `info`
+  - confirm => `warning`
+  - prompt => `success`
+
+### v0.19.0
+
+- Added `ui.hierarchy.map` as a hierarchy-first visual explorer with:
+  - primary tree rendering
+  - external entity lane
+  - overlay relationship links
+  - search
+  - zoom/pan
+  - selection
+  - chrome-less support
+- Added `demo.hierarchy.map.html` wired to a real Cebu hierarchy sample and synthetic foundation support overlays
+- Added `scripts/generate.hierarchy.sample.ps1` to regenerate the demo hierarchy from local MySQL data in `pbb_hq_ph`
+- Added `samples/samplehierarchy_cebu.json` containing:
+  - Philippines
+  - Region VII
+  - Cebu
+  - Cebu City
+  - Mandaue City
+  - Lapu-Lapu City (Opon)
+  - all actual barangays under those cities
+  - five synthetic foundations and overlay support links for stress testing
+
+### v0.18.16
+
+- Added a browser-rendered modal busy-state regression harness:
+  - `tests/modal.busy.regression.html`
+  - `tests/modal.busy.regression.mjs`
+- The harness protects the shared `ui.modal` contract against regressions where `setBusy(...)` could visually dismiss an open modal by dropping runtime state classes during `update(...)`
+- Documented `node tests/modal.busy.regression.mjs` as part of the supported repo validation commands
+
 ### v0.18.14
 
 - Added `.ui-form-error` to `ui.components.css` as the shared inline form/auth error primitive
@@ -723,4 +917,5 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Incident helper set (`teams.assignments`, `types`, details editor/viewer)
 - Shared UI utility layer (`ui.dom`, `ui.events`, `ui.drawer`, `ui.search`, `ui.dialog`, `ui.tabs`, `ui.strips`)
 - Demo pages published via GitHub Pages
+
 

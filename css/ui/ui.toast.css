@@ -37,7 +37,7 @@
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   padding: 10px 12px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 8px;
   align-items: start;
   opacity: 1;
@@ -73,6 +73,43 @@
 .ui-toast-content {
   display: grid;
   gap: 4px;
+}
+
+.ui-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: currentColor;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ui-toast-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.ui-toast--neutral .ui-toast-icon {
+  background: rgba(79, 137, 255, 0.14);
+}
+
+.ui-toast--success .ui-toast-icon {
+  background: rgba(69, 196, 122, 0.16);
+}
+
+.ui-toast--info .ui-toast-icon {
+  background: rgba(84, 200, 245, 0.16);
+}
+
+.ui-toast--warn .ui-toast-icon {
+  background: rgba(246, 189, 59, 0.16);
+}
+
+.ui-toast--error .ui-toast-icon {
+  background: rgba(245, 106, 106, 0.16);
 }
 
 .ui-toast-title {

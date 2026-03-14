@@ -78,6 +78,31 @@
       display: grid;
       gap: 8px;
     }
+    .demo-matrix {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .demo-matrix-card {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+    }
+    .demo-matrix-card strong {
+      font-size: 13px;
+    }
+    .demo-matrix-meta {
+      display: grid;
+      gap: 4px;
+      font-size: 12px;
+      color: #9fb2d8;
+    }
+    .demo-matrix-meta code {
+      color: #d7e0f4;
+    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -100,6 +125,7 @@
       "ui.modal",
       "ui.dialog",
       "ui.toast",
+      "ui.form.modal",
       "ui.select",
       "ui.toggle.button",
       "ui.toggle.group",
@@ -128,20 +154,111 @@
 
     <section class="panel">
       <h2 class="ui-title">Dialogs</h2>
+      <p class="muted">Showcases semantic dialog variants, built-in status icons, descriptions, header actions, and icon opt-out/override behavior.</p>
+      <div class="demo-matrix">
+        <article class="demo-matrix-card">
+          <strong>Alert (Info)</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>info</code></span>
+            <span>Variant icon: <code>shown</code></span>
+            <span>Description: <code>yes</code></span>
+            <span>Primary emphasis: <code>primary</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Confirm (Warning)</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>warning</code></span>
+            <span>Variant icon: <code>shown</code></span>
+            <span>Description: <code>yes</code></span>
+            <span>Primary emphasis: <code>danger</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Prompt (Success)</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>success</code></span>
+            <span>Variant icon: <code>shown</code></span>
+            <span>Description: <code>yes</code></span>
+            <span>Primary emphasis: <code>primary</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>No Variant Icon</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>warning</code></span>
+            <span>Variant icon: <code>suppressed</code></span>
+            <span>Description: <code>yes</code></span>
+            <span>Primary emphasis: <code>primary</code></span>
+          </div>
+        </article>
+      </div>
       <div class="row">
-        <button id="alertBtn" class="ui-button" type="button">Alert</button>
-        <button id="confirmBtn" class="ui-button" type="button">Confirm</button>
-        <button id="promptBtn" class="ui-button" type="button">Prompt</button>
+        <button id="alertBtn" class="ui-button" type="button">Alert (Info)</button>
+        <button id="confirmBtn" class="ui-button" type="button">Confirm (Warning)</button>
+        <button id="promptBtn" class="ui-button" type="button">Prompt (Success)</button>
+        <button id="successDialogBtn" class="ui-button ui-button-primary" type="button">Success</button>
+        <button id="errorDialogBtn" class="ui-button ui-button-danger" type="button">Error</button>
+        <button id="iconlessDialogBtn" class="ui-button ui-button-ghost" type="button">No Variant Icon</button>
+      </div>
+      <div class="row">
+        <label>
+          <input id="dialogSpeakToggle" type="checkbox">
+          Speak Dialogs
+        </label>
+        <label>
+          Voice
+          <select id="dialogVoiceSelect" class="ui-input" style="min-width: 220px;">
+            <option value="">Default Voice</option>
+          </select>
+        </label>
       </div>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Toast</h2>
+      <p style="margin:0 0 12px;color:#9fb2d8;">Toasts now share the same semantic icon language as dialogs. This section also shows the icon suppression and override paths.</p>
+      <div class="demo-matrix">
+        <article class="demo-matrix-card">
+          <strong>Info Toast</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>info</code></span>
+            <span>Variant icon: <code>default</code></span>
+            <span>Speech: <code>optional</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Success Toast</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>success</code></span>
+            <span>Variant icon: <code>default</code></span>
+            <span>Speech: <code>optional</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>No Icon Toast</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>warn</code></span>
+            <span>Variant icon: <code>suppressed</code></span>
+            <span>Speech: <code>optional</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Custom Icon Toast</strong>
+          <div class="demo-matrix-meta">
+            <span>Variant: <code>error</code></span>
+            <span>Variant icon: <code>custom</code></span>
+            <span>Speech: <code>optional</code></span>
+          </div>
+        </article>
+      </div>
       <div class="row">
         <button id="toastInfoBtn" class="ui-button" type="button">Info Toast</button>
         <button id="toastSuccessBtn" class="ui-button" type="button">Success Toast</button>
         <button id="toastWarnBtn" class="ui-button" type="button">Warn Toast</button>
         <button id="toastErrorBtn" class="ui-button" type="button">Error Toast</button>
+        <button id="toastNoIconBtn" class="ui-button ui-button-ghost" type="button">No Icon Toast</button>
+        <button id="toastCustomIconBtn" class="ui-button ui-button-borderless" type="button">Custom Icon Toast</button>
         <label>
           <input id="toastSpeakToggle" type="checkbox">
           Speak Toasts
@@ -231,8 +348,8 @@
       <h2 class="ui-title">Modal</h2>
       <div class="row">
         <button id="modalBtn" class="ui-button" type="button">Open Modal</button>
-        <button id="busyModalBtn" class="ui-button" type="button">Open Busy Modal</button>
-        <button id="loginModalBtn" class="ui-button" type="button">Open Login Failure Modal</button>
+        <button id="busyModalBtn" class="ui-button" type="button">Open Busy Form Modal</button>
+        <button id="loginModalBtn" class="ui-button" type="button">Open Login Form Modal</button>
         <button id="actionModalBtn" class="ui-button" type="button">Open Action Modal</button>
       </div>
       <pre class="log"><code>import { uiLoader } from "./js/ui/ui.loader.js";
@@ -249,6 +366,42 @@ const modal = createActionModal({
 });
 
 modal.open();</code></pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Schema Form Modal</h2>
+      <p style="margin:0;color:#9fb2d8;">Focused V1 helper built on <code>createActionModal(...)</code>. These demos cover field errors, form-level errors, busy submit, success close, and two-column rows.</p>
+      <div class="row">
+        <button id="formModalLoginBtn" class="ui-button" type="button">Open Login Form</button>
+        <button id="formModalCrudBtn" class="ui-button" type="button">Open CRUD Form</button>
+        <button id="formModalSuccessBtn" class="ui-button ui-button-primary" type="button">Open Success Form</button>
+      </div>
+      <div class="demo-matrix">
+        <article class="demo-matrix-card">
+          <strong>Login Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>single-column</code></span>
+            <span>Error path: <code>field error</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>CRUD Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>two-column</code></span>
+            <span>Error path: <code>form error</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Success Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>mixed</code></span>
+            <span>Close on success: <code>yes</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+      </div>
     </section>
 
     <section class="panel">
@@ -326,6 +479,7 @@ modal.open();</code></pre>
     const createModal = await uiLoader.get("ui.modal");
     const createActionModal = await uiLoader.get("ui.action.modal");
     const createToastStack = await uiLoader.get("ui.toast");
+    const createFormModal = await uiLoader.get("ui.form.modal");
     const createSelect = await uiLoader.get("ui.select");
     const createToggleButton = await uiLoader.get("ui.toggle.button");
     const createToggleGroup = await uiLoader.get("ui.toggle.group");
@@ -347,9 +501,18 @@ modal.open();</code></pre>
     const mediaStripFooterToggle = document.getElementById("mediaStripFooterToggle");
     const mediaStripToolbarToggle = document.getElementById("mediaStripToolbarToggle");
     const mediaStripAudiographToggle = document.getElementById("mediaStripAudiographToggle");
+    const dialogSpeakToggle = document.getElementById("dialogSpeakToggle");
+    const dialogVoiceSelect = document.getElementById("dialogVoiceSelect");
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function getDialogSpeechOptions() {
+      return {
+        speak: Boolean(dialogSpeakToggle?.checked),
+        voiceName: String(dialogVoiceSelect?.value || ""),
+      };
     }
 
     document.getElementById("themeToggle").addEventListener("click", () => {
@@ -361,6 +524,9 @@ modal.open();</code></pre>
     document.getElementById("alertBtn").addEventListener("click", async () => {
       await uiAlert("This is a UI alert message.", {
         title: "Alert",
+        variant: "info",
+        description: "Use alert dialogs for read-only notices where the user only needs to acknowledge the message.",
+        ...getDialogSpeechOptions(),
         okIcon: `
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9.55 17.4 4.8 12.65l1.4-1.4 3.35 3.35 8.25-8.25 1.4 1.4-9.65 9.65z" fill="currentColor"></path>
@@ -389,6 +555,9 @@ modal.open();</code></pre>
     document.getElementById("confirmBtn").addEventListener("click", async () => {
       const ok = await uiConfirm("Proceed with this action?", {
         title: "Confirm Action",
+        variant: "warning",
+        description: "The action will continue immediately and may affect multiple linked records.",
+        ...getDialogSpeechOptions(),
         cancelIcon: `
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.41L10.59 13.4 4.29 19.7 2.88 18.29 9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3z" fill="currentColor"></path>
@@ -422,6 +591,9 @@ modal.open();</code></pre>
     document.getElementById("promptBtn").addEventListener("click", async () => {
       const value = await uiPrompt("Enter a value:", {
         title: "Prompt Input",
+        variant: "success",
+        description: "This secondary line can explain validation expectations or the effect of the submitted value.",
+        ...getDialogSpeechOptions(),
         placeholder: "Type here...",
         cancelIcon: `
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -451,6 +623,40 @@ modal.open();</code></pre>
         ],
       });
       writeLog("dialog.prompt", { value });
+    });
+
+    document.getElementById("successDialogBtn").addEventListener("click", async () => {
+      await uiAlert("Barangay uplink synchronized successfully.", {
+        title: "Synchronization Complete",
+        variant: "success",
+        description: "All dependent records were updated and the next verification cycle can proceed normally.",
+        ...getDialogSpeechOptions(),
+        okText: "Continue",
+      });
+      writeLog("dialog.success", { acknowledged: true });
+    });
+
+    document.getElementById("errorDialogBtn").addEventListener("click", async () => {
+      const confirmed = await uiConfirm("Unable to save uplink mapping.", {
+        title: "Save Failed",
+        variant: "error",
+        description: "The target barangay is currently locked by another editor. Retry after the lock expires or force refresh the record.",
+        ...getDialogSpeechOptions(),
+        confirmText: "Retry",
+        cancelText: "Dismiss",
+      });
+      writeLog("dialog.error", { retry: confirmed });
+    });
+
+    document.getElementById("iconlessDialogBtn").addEventListener("click", async () => {
+      await uiAlert("This warning intentionally suppresses the built-in variant icon.", {
+        title: "Maintenance Window",
+        variant: "warning",
+        showVariantIcon: false,
+        description: "Use this path when the semantic color treatment is enough and the extra icon would add noise.",
+        ...getDialogSpeechOptions(),
+      });
+      writeLog("dialog.warningNoIcon", { acknowledged: true });
     });
 
     document.getElementById("modalBtn").addEventListener("click", () => {
@@ -524,156 +730,65 @@ modal.open();</code></pre>
     });
 
     document.getElementById("busyModalBtn").addEventListener("click", () => {
-      const body = createElement("div");
-      body.innerHTML = `
-        <form class="ui-modal-demo-form">
-          <p style="margin:0;color:#9fb2d8;">This example uses explicit modal busy-state control for a short-lived async save.</p>
-          <label>
-            Hub Name
-            <input type="text" class="ui-input" value="North Relay Hub">
-          </label>
-          <label>
-            Notes
-            <textarea class="ui-input" placeholder="Describe the change">Update fallback uplink and preserve tower routing order.</textarea>
-          </label>
-        </form>
-      `;
-      const saveBtn = createElement("button", {
-        className: "ui-button ui-button-primary",
-        text: "Save",
-        attrs: { type: "button" },
-      });
-      const footer = createElement("div", { className: "ui-dialog-footer-actions" });
-      footer.appendChild(saveBtn);
-
-      const modal = createModal({
+      const formModal = createFormModal({
         title: "Edit Hub",
-        content: body,
+        size: "sm",
         busyMessage: "Saving hub settings...",
-        closeWhileBusy: false,
-        backdropCloseWhileBusy: false,
-        escapeCloseWhileBusy: false,
-        footer,
+        submitLabel: "Save",
+        rows: [
+          [{ type: "text", content: "This flow was migrated from a hand-built modal form to createFormModal(...)." }],
+          [{ type: "input", input: "text", name: "hubName", label: "Hub Name", value: "North Relay Hub", required: true }],
+          [{ type: "textarea", name: "notes", label: "Notes", value: "Update fallback uplink and preserve tower routing order." }],
+        ],
+        async onSubmit(values) {
+          writeLog("modal.busy.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 1400));
+          writeLog("modal.busy.submit.complete", values);
+          return true;
+        },
         onClose(meta) {
           writeLog("modal.busy.close", meta || {});
-          modal.destroy();
         },
       });
 
-      saveBtn.addEventListener("click", async () => {
-        if (modal.isBusy()) {
-          return;
-        }
-        writeLog("modal.busy.save.begin", { ok: true });
-        modal.setBusy(true, { message: "Saving hub settings..." });
-        await new Promise((resolve) => setTimeout(resolve, 1400));
-        modal.setBusy(false);
-        writeLog("modal.busy.save.complete", { ok: true });
-        modal.close({ reason: "save-complete", result: true });
-      });
-
-      modal.open();
-
-      writeLog("modal.busy.open", { size: "md" });
+      formModal.open();
+      writeLog("modal.busy.open", { size: "sm", helper: "createFormModal" });
     });
 
+    function openLoginFormModal(source = "schema-demo") {
+      const formModal = createFormModal({
+        title: "Operator Login",
+        size: "sm",
+        busyMessage: "Signing in...",
+        submitLabel: "Login",
+        rows: [
+          [{ type: "text", content: "This demo intentionally fails and keeps the modal open." }],
+          [{ type: "input", input: "email", name: "email", label: "Email address", value: "operator@pbb.ph", autocomplete: "username", required: true }],
+          [{ type: "input", input: "password", name: "password", label: "Password", value: "wrong-password", autocomplete: "current-password", required: true }],
+        ],
+        async onSubmit(values, ctx) {
+          writeLog(`${source}.submit.begin`, { email: values.email });
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (values.password !== "correct-password") {
+            ctx.setErrors({ password: "Invalid password." });
+            writeLog(`${source}.submit.failed`, { email: values.email });
+            return false;
+          }
+          writeLog(`${source}.submit.success`, { email: values.email });
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, { ok: true });
+      return formModal;
+    }
+
     document.getElementById("loginModalBtn").addEventListener("click", () => {
-  const content = createElement("div");
-  content.innerHTML = `
-    <div class="demo-modal-form">
-      <label class="ui-label" for="loginEmail">Email address</label>
-      <input id="loginEmail" class="ui-input" type="email" value="operator@pbb.ph" autocomplete="off" />
-      <label class="ui-label" for="loginPassword">Password</label>
-      <input id="loginPassword" class="ui-input" type="password" value="wrong-password" autocomplete="new-password" />
-      <p style="margin:0;color:#9fb2d8;">This demo intentionally fails and keeps the modal open.</p>
-      <p id="loginError" class="ui-form-error" hidden></p>
-      <div class="ui-dialog-footer-actions">
-        <button id="loginCancel" class="ui-button ui-button-ghost" type="button">Cancel</button>
-        <button id="loginSubmit" class="ui-button ui-button-primary" type="button">Login</button>
-      </div>
-    </div>
-  `;
-
-  const emailInput = content.querySelector("#loginEmail");
-  const passwordInput = content.querySelector("#loginPassword");
-  const errorEl = content.querySelector("#loginError");
-  const cancelBtn = content.querySelector("#loginCancel");
-  const loginBtn = content.querySelector("#loginSubmit");
-
-  let modal;
-
-  async function attemptLogin() {
-    if (modal.isBusy()) {
-      return;
-    }
-
-    errorEl.hidden = true;
-    errorEl.textContent = "";
-    modal.setBusy(true, { message: "Signing in..." });
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      const email = emailInput.value.trim();
-      errorEl.textContent = "Incorrect password.";
-      errorEl.hidden = false;
-      passwordInput.focus();
-      writeLog("loginModal.failed", { email });
-    } finally {
-      if (modal.getState().open) {
-        modal.setBusy(false);
-      }
-    }
-  }
-
-  modal = createModal({
-    title: "Operator Login (Failure Demo)",
-    size: "sm",
-    content,
-    busy: false,
-    busyMessage: "Signing in...",
-    showCloseButton: false,
-    closeOnBackdrop: false,
-    closeOnEscape: false,
-    closeWhileBusy: false,
-    backdropCloseWhileBusy: false,
-    escapeCloseWhileBusy: false,
-    onBeforeClose(meta) {
-      writeLog("loginModal.closeBlocked", meta || {});
-      return false;
-    },
-    onClose(meta) {
-      writeLog("loginModal.close", meta || {});
-      modal.destroy();
-    },
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    if (modal.isBusy()) {
-      return;
-    }
-    writeLog("loginModal.close", { reason: "cancel" });
-    modal.destroy();
-  });
-
-  loginBtn.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    await attemptLogin();
-  });
-
-  passwordInput.addEventListener("keydown", async (event) => {
-    if (event.key !== "Enter") {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    await attemptLogin();
-  });
-
-  modal.open();
-  writeLog("loginModal.open", { variant: "failure-demo" });
-
-});
+      openLoginFormModal("loginModal");
+    });
 
 document.getElementById("actionModalBtn").addEventListener("click", () => {
       const content = createElement("div");
@@ -764,28 +879,104 @@ document.getElementById("actionModalBtn").addEventListener("click", () => {
       writeLog("actionModal.open", { size: "sm" });
     });
 
+    document.getElementById("formModalLoginBtn").addEventListener("click", () => {
+      openLoginFormModal("formModal.login");
+    });
+
+    document.getElementById("formModalCrudBtn").addEventListener("click", () => {
+      const formModal = createFormModal({
+        title: "Create User",
+        size: "md",
+        busyMessage: "Saving user...",
+        submitLabel: "Save User",
+        rows: [
+          [{ type: "text", content: "This example uses a two-column row and returns a form-level error from the submit handler." }],
+          [
+            { type: "input", input: "text", name: "firstname", label: "First Name", value: "Maria", required: true },
+            { type: "input", input: "text", name: "lastname", label: "Last Name", value: "Santos", required: true },
+          ],
+          [
+            { type: "input", input: "email", name: "email", label: "Email", value: "exists@pbb.ph", required: true, autocomplete: "email" },
+            {
+              type: "select",
+              name: "role",
+              label: "Role",
+              value: "operator",
+              options: [
+                { label: "Operator", value: "operator" },
+                { label: "Supervisor", value: "supervisor" },
+                { label: "Admin", value: "admin" },
+              ],
+            },
+          ],
+          [{ type: "checkbox", name: "notify", label: "Send welcome notification", value: true }],
+        ],
+        async onSubmit(values, ctx) {
+          writeLog("formModal.crud.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 1100));
+          if (String(values.email || "").toLowerCase() === "exists@pbb.ph") {
+            ctx.setFormError("Unable to save record. The email address is already assigned to another user.");
+            writeLog("formModal.crud.submit.failed", { reason: "email-exists" });
+            return false;
+          }
+          writeLog("formModal.crud.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("formModal.crud.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("formModal.crud.open", { ok: true });
+    });
+
+    document.getElementById("formModalSuccessBtn").addEventListener("click", () => {
+      const formModal = createFormModal({
+        title: "Create Barangay Mapping",
+        size: "sm",
+        busyMessage: "Creating mapping...",
+        submitLabel: "Create Mapping",
+        rows: [
+          [{ type: "alert", tone: "info", content: "This path demonstrates a successful async submit that closes the modal." }],
+          [{ type: "input", input: "text", name: "barangayCode", label: "Barangay Code", value: "072217001", required: true }],
+          [{ type: "input", input: "url", name: "endpoint", label: "Endpoint URL", value: "https://api.pbb.ph/relay/barangay", required: true, help: "Use the production endpoint for this demo." }],
+        ],
+        async onSubmit(values) {
+          writeLog("formModal.success.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          writeLog("formModal.success.submit.complete", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("formModal.success.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("formModal.success.open", { ok: true });
+    });
+
     const toastSpeakToggle = document.getElementById("toastSpeakToggle");
     const toastVoiceSelect = document.getElementById("toastVoiceSelect");
     let toaster = null;
 
-    function populateToastVoiceSelect() {
-      if (!toastVoiceSelect || !toaster || typeof toaster.getVoices !== "function") {
+    function populateVoiceSelect(selectEl) {
+      if (!selectEl || !toaster || typeof toaster.getVoices !== "function") {
         return;
       }
-      const selected = String(toastVoiceSelect.value || "");
+      const selected = String(selectEl.value || "");
       const voices = toaster.getVoices();
-      toastVoiceSelect.innerHTML = "";
+      selectEl.innerHTML = "";
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
       defaultOption.textContent = "Default Voice";
-      toastVoiceSelect.appendChild(defaultOption);
+      selectEl.appendChild(defaultOption);
       voices.forEach((voice) => {
         const option = document.createElement("option");
         option.value = voice.name;
         option.textContent = voice.lang ? `${voice.name} (${voice.lang})` : voice.name;
-        toastVoiceSelect.appendChild(option);
+        selectEl.appendChild(option);
       });
-      toastVoiceSelect.value = voices.some((voice) => voice.name === selected) ? selected : "";
+      selectEl.value = voices.some((voice) => voice.name === selected) ? selected : "";
     }
 
     function mountToaster() {
@@ -800,9 +991,16 @@ document.getElementById("actionModalBtn").addEventListener("click", () => {
         speakTypes: ["warn", "error"],
         voiceName: String(toastVoiceSelect?.value || ""),
       });
-      populateToastVoiceSelect();
+      populateVoiceSelect(toastVoiceSelect);
+      populateVoiceSelect(dialogVoiceSelect);
     }
     mountToaster();
+    dialogSpeakToggle?.addEventListener("change", () => {
+      writeLog("dialog.speak.toggle", { enabled: Boolean(dialogSpeakToggle.checked) });
+    });
+    dialogVoiceSelect?.addEventListener("change", () => {
+      writeLog("dialog.voice.change", { voiceName: dialogVoiceSelect.value || "default" });
+    });
     toastSpeakToggle?.addEventListener("change", () => {
       mountToaster();
       writeLog("toast.speak.toggle", { enabled: Boolean(toastSpeakToggle.checked) });
@@ -813,7 +1011,8 @@ document.getElementById("actionModalBtn").addEventListener("click", () => {
     });
     if (typeof window !== "undefined" && window.speechSynthesis && typeof window.speechSynthesis.addEventListener === "function") {
       window.speechSynthesis.addEventListener("voiceschanged", () => {
-        populateToastVoiceSelect();
+        populateVoiceSelect(toastVoiceSelect);
+        populateVoiceSelect(dialogVoiceSelect);
       });
     }
     document.getElementById("toastInfoBtn").addEventListener("click", () => {
@@ -831,6 +1030,20 @@ document.getElementById("actionModalBtn").addEventListener("click", () => {
     document.getElementById("toastErrorBtn").addEventListener("click", () => {
       toaster.error("Failed to load dispatch resources.", { title: "Error" });
       writeLog("toast.error", { ok: true });
+    });
+    document.getElementById("toastNoIconBtn").addEventListener("click", () => {
+      toaster.warn("This warning intentionally suppresses the shared semantic icon.", {
+        title: "Warning",
+        showVariantIcon: false,
+      });
+      writeLog("toast.warn.noIcon", { ok: true });
+    });
+    document.getElementById("toastCustomIconBtn").addEventListener("click", () => {
+      toaster.error("This toast overrides the default status icon with a custom maintenance glyph.", {
+        title: "Custom Error",
+        variantIcon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5V5.5h16v13H4Zm2-2h12v-9H6v9Zm5-1.5h2v-2h-2v2Zm0-3.5h2V9h-2v2.5Z" fill="currentColor"></path></svg>',
+      });
+      writeLog("toast.error.customIcon", { ok: true });
     });
 
     const selectItems = [

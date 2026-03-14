@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form Modal Presets Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.form.modal.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import {
+      createLoginFormModal,
+      createReauthFormModal,
+      createStatusUpdateFormModal,
+      createReasonFormModal,
+    } from "../js/ui/ui.form.modal.presets.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const presetLoginModal = createLoginFormModal({
+      fields: {
+        identifier: "user_email",
+        password: "user_password",
+      },
+      initialValues: {
+        user_email: "operator@pbb.ph",
+        user_password: "wrong-password",
+      },
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.user_password !== "correct-password") {
+          ctx.setErrors({ user_password: "Invalid password." });
+          return false;
+        }
+        return true;
+      },
+    });
+
+    presetLoginModal.open();
+    await wait(80);
+    Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /login/i.test(button.textContent || "")).click();
+    await wait(180);
+
+    const presetPasswordError = document.querySelector('input[name="user_password"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+    assert(presetLoginModal.getValues().user_email === "operator@pbb.ph", "preset login should preserve remapped identifier field");
+    assert(presetPasswordError?.textContent.includes("Invalid password."), "preset login should render error on remapped password field");
+
+    presetLoginModal.destroy();
+    await wait(80);
+
+    const reauthModal = createReauthFormModal({
+      fields: {
+        identifier: "account_email",
+        password: "reauth_password",
+      },
+      identifierValue: "supervisor@pbb.ph",
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.reauth_password !== "correct-password") {
+          ctx.setErrors({ reauth_password: "Password does not match the active session." });
+          return false;
+        }
+        return true;
+      },
+    });
+
+    reauthModal.open();
+    await wait(80);
+    const lockedIdentifier = document.querySelector('input[name="account_email"]');
+    assert(lockedIdentifier?.disabled === true, "reauth preset should render locked identifier field");
+    reauthModal.setValues({ reauth_password: "wrong-password" });
+    Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /continue/i.test(button.textContent || "")).click();
+    await wait(180);
+    const reauthError = document.querySelector('input[name="reauth_password"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+    assert(reauthError?.textContent.includes("active session"), "reauth preset should render error on remapped password field");
+
+    reauthModal.destroy();
+    await wait(80);
+
+    const statusModal = createStatusUpdateFormModal({
+      fields: {
+        status: "incident_status",
+        remarks: "notes",
+        notify: "notify_teams",
+      },
+      statusOptions: [
+        { label: "Pending", value: "pending" },
+        { label: "Resolved", value: "resolved" },
+      ],
+      initialValues: {
+        incident_status: "pending",
+        notes: "Awaiting team dispatch.",
+        notify_teams: true,
+      },
+      async onSubmit() {
+        await wait(80);
+        return true;
+      },
+    });
+
+    statusModal.open();
+    await wait(80);
+    const statusValues = statusModal.getValues();
+    assert(statusValues.incident_status === "pending", "status preset should use remapped status field name");
+    assert(statusValues.notes === "Awaiting team dispatch.", "status preset should use remapped remarks field name");
+    assert(statusValues.notify_teams === true, "status preset should use remapped notify field name");
+
+    statusModal.destroy();
+    await wait(80);
+
+    const reasonModal = createReasonFormModal({
+      fields: {
+        reasonCode: "cancel_reason",
+        reasonDetails: "remarks",
+        confirmText: "confirm_cancel",
+      },
+      reasonOptions: [
+        { label: "Duplicate Record", value: "duplicate_record" },
+        { label: "Operational Override", value: "operational_override" },
+      ],
+      confirmPhrase: "CANCEL",
+      initialValues: {
+        cancel_reason: "operational_override",
+        remarks: "Unsafe current routing.",
+        confirm_cancel: "WRONG",
+      },
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.confirm_cancel !== "CANCEL") {
+          ctx.setErrors({ confirm_cancel: "Type CANCEL to confirm." });
+          return false;
+        }
+        return true;
+      },
+    });
+
+    reasonModal.open();
+    await wait(80);
+    Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /confirm/i.test(button.textContent || "")).click();
+    await wait(180);
+    const reasonValues = reasonModal.getValues();
+    const confirmError = document.querySelector('input[name="confirm_cancel"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+    const confirmInput = document.querySelector('input[name="confirm_cancel"]');
+    assert(reasonValues.cancel_reason === "operational_override", "reason preset should use remapped reason field name");
+    assert(reasonValues.remarks === "Unsafe current routing.", "reason preset should use remapped details field name");
+    assert(reasonModal.getState().open === true, "reason preset should keep modal open when confirmation phrase is invalid");
+    assert(Boolean(String(confirmError?.textContent || "").trim()), "reason preset should surface an error on the remapped confirmation field");
+    assert(confirmInput?.getAttribute("aria-invalid") === "true", "reason preset should mark the remapped confirmation field invalid");
+
+    reasonModal.destroy();
+    await wait(80);
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

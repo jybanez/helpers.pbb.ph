@@ -28,6 +28,7 @@ css/
     ui.modal.css
     ui.dialog.css
     ui.toast.css
+    ui.form.modal.css
     ui.select.css
     ui.toggle.css
     ui.datepicker.css
@@ -49,6 +50,7 @@ css/
     ui.audio.css
     ui.grid.css
     ui.tree.grid.css
+    ui.hierarchy.map.css
     ui.progress.css
     ui.virtual.list.css
     ui.scheduler.css
@@ -71,7 +73,10 @@ js/
     ui.search.js
     ui.modal.js
     ui.dialog.js
+    ui.semantic.icons.js
     ui.toast.js
+    ui.form.modal.js
+    ui.form.modal.presets.js
     ui.select.js
     ui.toggle.button.js
     ui.toggle.group.js
@@ -93,6 +98,7 @@ js/
     ui.media.viewer.js
     ui.grid.js
     ui.tree.grid.js
+    ui.hierarchy.map.js
     ui.progress.js
     ui.virtual.list.js
     ui.scheduler.js
@@ -117,6 +123,7 @@ index.html
 demo.team.assignments.html
 demo.incident.types.html
 demo.grid.html
+demo.hierarchy.map.html
 demo.progress.html
 demo.virtual.list.html
 demo.scheduler.html
@@ -131,9 +138,12 @@ demo.inspector.html
 demo.empty.state.html
 demo.skeleton.html
 samples/
+  samplehierarchy_cebu.json
   sampledata.json
   sampledata_*.json
   samplemedia.json
+scripts/
+  generate.hierarchy.sample.ps1
 boot.*.json
 ```
 
@@ -180,9 +190,18 @@ Reusable shared UI utilities live under `js/ui`:
   - `uiPrompt(message, options)` promise-based prompt modal
 - `ui.toast.js`
   - `createToastStack(options)` global toast notifications (info/success/warn/error), optional speech synthesis (`speak`, `speakTypes`, `speakRate`, `speakPitch`, `speakVolume`, `voiceName`, `speakFormatter`, `speakCooldownMs`)
+  - default semantic status icons are shown per toast variant; callers can suppress or override them with `showVariantIcon` / `variantIcon`
   - speech is opt-in (`speak: false` by default); can be overridden per-toast via `show(message, { speak: true | false })`
   - when speech is enabled, auto-dismiss countdown can start after speech ends via `waitForSpeechBeforeDismiss` (default `true`)
   - `getVoices()` returns available speech voices so UI can render a voice selector; per-toast `voiceName` override is supported in `show(message, { voiceName })`
+- `ui.form.modal.js`
+  - `createFormModal(options)` schema-driven modal form helper for short login/re-auth/CRUD flows using a strict row-based body model over `createActionModal(...)`
+  - exposes helper-owned values, field errors, form error, and busy submit lifecycle without widening the base modal shell contract
+- `ui.form.modal.presets.js`
+  - `createLoginFormModal(options)` opinionated login wrapper over `createFormModal(...)` with field-name remapping support
+  - `createReauthFormModal(options)` opinionated re-auth wrapper over `createFormModal(...)` with locked identifier support and field-name remapping
+  - `createStatusUpdateFormModal(options)` operational status-change wrapper over `createFormModal(...)` with app-supplied status options and field-name remapping
+  - `createReasonFormModal(options)` categorized reason-required wrapper over `createFormModal(...)` with app-supplied reason options and field-name remapping
 - `ui.select.js`
   - `createSelect(container, items, options)` single/multi select with optional search and keyboard navigation (`ArrowUp/ArrowDown/Home/End/Enter/Escape`, optional `selectOnTab`)
 - `ui.toggle.button.js`
@@ -226,6 +245,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, optional row virtualization, and optional chrome-less rendering
 - `ui.tree.grid.js`
   - `createTreeGrid(container, options)` tree grid with first-column hierarchy, aligned tabular columns, expand/collapse controls, tree-aware search, column resize, optional fixed-row-height virtualization, lazy child loading, and optional chrome-less rendering
+- `ui.hierarchy.map.js`
+  - `createHierarchyMap(container, options)` hierarchy-first visual explorer with external entity lane, overlay relationship links, search, zoom/pan, selection, and optional chrome-less rendering
 - `ui.progress.js`
   - `createProgress(container, data, options)` progress indicator with multiple styles (linear, segmented, steps, radial, ring, etc.)
 - `ui.virtual.list.js`
@@ -297,6 +318,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.audio.css` audio player, audiograph, and call session styles
 - `ui.grid.css` data-grid/table styles
 - `ui.tree.grid.css` tree-grid styles
+- `ui.hierarchy.map.css` hierarchy map styles
 - `ui.progress.css` progress styles
 - `ui.virtual.list.css` virtual-list styles
 - `ui.scheduler.css` scheduler styles
@@ -319,6 +341,23 @@ Application integrations should use the registry loader.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.
 - Prefer shared styling contracts before adding project-local CSS overrides.
+- Prefer documented helper components and preset wrappers before building app-local UI for the same workflow.
+- Common helper-first checks for repeated operational flows:
+  - `createFormModal(...)`
+  - `createLoginFormModal(...)`
+  - `createReauthFormModal(...)`
+  - `createStatusUpdateFormModal(...)`
+  - `createReasonFormModal(...)`
+  - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
+  - `createToastStack(...)`
+  - `createMediaViewer(...)`
+  - `createHierarchyMap(...)`
+- If the library is close but missing a repeated capability, do not patch the shared helper contract ad hoc from project work.
+- Submit a proposal or spec update first so the shared helper change can be reviewed for:
+  - cross-project reuse
+  - naming consistency
+  - contract boundaries
+  - demo and regression impact
 - Start with `css/ui/ui.components.css` primitives such as:
   - button variants: `.ui-button-primary`, `.ui-button-ghost`, `.ui-button-borderless`, `.ui-button-quiet`, `.ui-button-link`, `.ui-button-icon`
   - dense cell actions: `.ui-cell-actions`, `.ui-cell-action`
@@ -332,9 +371,10 @@ Recommended keys:
   - `ui.modal`
   - `ui.dialog`
   - `ui.toast`
-  - `ui.media.viewer`
-  - `ui.grid`
-  - `ui.timeline`
+- `ui.media.viewer`
+- `ui.grid`
+- `ui.hierarchy.map`
+- `ui.timeline`
   - `ui.file.uploader`
 - Incident helpers:
   - `incident.base`
@@ -392,6 +432,9 @@ Registry contract test:
 ```sh
 node tests/registry.contract.mjs
 node tests/tree.grid.regression.mjs
+node tests/modal.busy.regression.mjs
+node tests/form.modal.regression.mjs
+node tests/form.modal.presets.regression.mjs
 ```
 
 ## Chrome-less Components
@@ -1504,6 +1547,229 @@ Auto-busy behavior:
   - rejected promise keeps the modal open
   - resolved truthy value closes when `closeOnClick !== false`
 
+### `createFormModal(options)` (`js/ui/ui.form.modal.js`)
+
+Purpose:
+
+- Schema-driven helper for short modal-bound forms such as login, re-auth, and simple CRUD flows.
+
+Architecture:
+
+- Composes over `createActionModal(...)`
+- Reuses helper-owned modal busy-state, close, and focus behavior
+- Keeps the public action contract narrow to standard cancel/submit flows in V1
+
+Key options:
+
+- safe applicable modal options such as `title`, `size`, `className`, `showCloseButton`, `closeOnBackdrop`, `closeOnEscape`, `busyMessage`
+- `rows`: array of row arrays
+  - one item in a row => full width
+  - two items in a row => equal-width columns
+  - more than two items => rejected or normalized conservatively
+- `initialValues`
+- `submitLabel`
+- `cancelLabel`
+- `submitVariant`
+- `submitIcon`
+- `cancelIcon`
+- `closeOnSuccess` (default `true`)
+- `onSubmit(values, ctx)`
+- `onChange(values, ctx)` optional
+
+Supported V1 item types:
+
+- `text`
+- `alert`
+- `divider`
+- `input`
+- `textarea`
+- `select`
+- `checkbox`
+
+Supported V1 `input` types:
+
+- `text`
+- `email`
+- `password`
+- `number`
+- `date`
+- `url`
+- `search`
+
+Field properties:
+
+- `name`
+- `label`
+- `value`
+- `placeholder`
+- `required`
+- `disabled`
+- `readonly`
+- `autocomplete`
+- `min`
+- `max`
+- `step`
+- `options`
+- `help`
+
+Methods:
+
+- all modal-instance methods such as `open()`, `close()`, `destroy()`, `setBusy()`, `isBusy()`
+- `getValues()`
+- `setValues(values)`
+- `setErrors(fieldErrors)`
+- `clearErrors()`
+- `setFormError(message)`
+- `clearFormError()`
+
+Validation and submit behavior:
+
+- helper owns required/basic validation
+- app owns domain/business validation
+- first invalid field receives focus on helper validation failure
+- truthy async submit result closes by default
+- falsy or rejected submit keeps the modal open
+
+Example:
+
+```js
+import { createFormModal } from "./js/ui/ui.form.modal.js";
+
+const formModal = createFormModal({
+  title: "Operator Login",
+  rows: [
+    [{ type: "text", content: "Please sign in to continue." }],
+    [{ type: "input", input: "email", name: "email", label: "Email address", required: true }],
+    [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
+  ],
+  submitLabel: "Login",
+  busyMessage: "Signing in...",
+  async onSubmit(values, ctx) {
+    const ok = await apiLogin(values);
+    if (!ok) {
+      ctx.setErrors({ password: "Invalid password." });
+      return false;
+    }
+    return true;
+  },
+});
+
+formModal.open();
+```
+
+### `createLoginFormModal(options)`, `createReauthFormModal(options)`, `createStatusUpdateFormModal(options)`, `createReasonFormModal(options)` (`js/ui/ui.form.modal.presets.js`)
+
+Purpose:
+
+- Prebuilt auth wrappers over `createFormModal(...)` for shared cross-project consistency.
+
+Design rule:
+
+- wrappers own structure and defaults
+- engineers can still provide field-name mappings and submit behavior
+
+`createLoginFormModal(options)` supports:
+
+- `title`
+- `message`
+- `submitLabel`
+- `busyMessage`
+- `identifierKind: "email" | "username"`
+- `identifierLabel`
+- `identifierPlaceholder`
+- `identifierAutocomplete`
+- `passwordLabel`
+- `passwordPlaceholder`
+- `fields`
+  - `identifier`
+  - `password`
+- `initialValues`
+- `onSubmit(values, ctx)`
+
+`createReauthFormModal(options)` supports:
+
+- `title`
+- `message`
+- `submitLabel`
+- `busyMessage`
+- `identifierKind: "email" | "username"`
+- `identifierLabel`
+- `identifierValue`
+- `passwordLabel`
+- `passwordPlaceholder`
+- `fields`
+  - `identifier`
+  - `password`
+- `initialValues`
+- `onSubmit(values, ctx)`
+
+`createStatusUpdateFormModal(options)` supports:
+
+- `title`
+- `message`
+- `submitLabel`
+- `busyMessage`
+- `statusOptions`
+- `statusLabel`
+- `remarksLabel`
+- `remarksPlaceholder`
+- `showNotify`
+- `notifyLabel`
+- `fields`
+  - `status`
+  - `remarks`
+  - `notify`
+- `initialValues`
+- `onSubmit(values, ctx)`
+
+`createReasonFormModal(options)` supports:
+
+- `title`
+- `message`
+- `submitLabel`
+- `busyMessage`
+- `reasonOptions`
+- `reasonLabel`
+- `detailsLabel`
+- `detailsPlaceholder`
+- `confirmPhrase`
+- `confirmLabel`
+- `showNotify`
+- `notifyLabel`
+- `fields`
+  - `reasonCode`
+  - `reasonDetails`
+  - `confirmText`
+  - `notify`
+- `initialValues`
+- `onSubmit(values, ctx)`
+
+Example:
+
+```js
+import { createLoginFormModal } from "./js/ui/ui.form.modal.presets.js";
+
+const modal = createLoginFormModal({
+  fields: {
+    identifier: "user_email",
+    password: "user_password",
+  },
+  initialValues: {
+    user_email: "operator@pbb.ph",
+  },
+  async onSubmit(values, ctx) {
+    const ok = await apiLogin(values);
+    if (!ok) {
+      ctx.setErrors({ user_password: "Invalid password." });
+      return false;
+    }
+    return true;
+  },
+});
+
+modal.open();
+```
+
 ### `uiAlert(message, options)`, `uiConfirm(message, options)`, `uiPrompt(message, options)` (`js/ui/ui.dialog.js`)
 
 Purpose:
@@ -1514,6 +1780,22 @@ Shared options:
 
 - modal shell options such as `title`, `size`, `className`, `showCloseButton`, `allowBackdropClose`, `allowEscClose`
 - `headerActions`: declarative header action objects using the same contract as `createActionModal(...)`
+- `variant`: `default | success | info | warning | error`
+  - applies semantic dialog styling without changing the underlying modal shell contract
+  - `uiConfirm(...)` and `uiPrompt(...)` also use the dialog variant to choose a safer default emphasis for the primary action:
+    - `warning` / `error` => default primary action emphasis becomes `danger`
+    - `success` / `info` => default primary action emphasis remains `primary`
+- `description`: optional secondary guidance text shown below the main dialog message
+- semantic icon options:
+  - `showVariantIcon`: `false` to suppress the built-in status icon
+  - `variantIcon`: custom SVG markup to replace the built-in status icon for non-`default` variants
+- optional speech options:
+  - `speak`: `true` to read the dialog after open
+  - `speakText`: custom text to read instead of the default title/message/description composition
+  - `voiceName`: preferred speech-synthesis voice name
+  - `speakRate`
+  - `speakPitch`
+  - `speakVolume`
 
 Icon-capable action options:
 
@@ -1546,6 +1828,7 @@ Example:
 ```js
 const confirmed = await uiConfirm("Proceed with dispatch?", {
   title: "Confirm Dispatch",
+  variant: "warning",
   headerActions: [
     {
       id: "preview",
@@ -2307,15 +2590,15 @@ Recommended integration flow:
 
 ## Roadmap
 
-### Current Stable Line: `v0.18.x`
+### Current Stable Line: `v0.20.x`
 
-- Latest documented release: `v0.18.14`
+- Latest documented release: `v0.20.6`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
   - fixes/docs/internal cleanup -> `patch`
 
-### Next Planned Line: `v0.19.x`
+### Next Planned Line: `v0.21.x`
 
 - Dedicated accessibility hardening pass across all UI utilities
 - Additional data-entry primitives (mask/format helpers, richer validation wrappers)
@@ -2327,6 +2610,8 @@ For full release history, see `CHANGELOG.md`.
 
 ### Release Line Index
 
+- `v0.19.x`
+  - hierarchy map, real Cebu hierarchy sample generator, hierarchy demo
 - `v0.18.x`
   - media viewer, modal action/header consistency, `ui.tree.grid` search, regression harnesses
 - `v0.17.x`
@@ -2363,4 +2648,5 @@ For full release history, see `CHANGELOG.md`.
   - audio UI layer
 - `v0.1.x`
   - initial public prototype
+
 

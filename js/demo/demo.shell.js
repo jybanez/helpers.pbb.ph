@@ -4,6 +4,7 @@ const DEMO_LINKS = [
   { href: "./demo.incident.types.html", label: "Incident Types" },
   { href: "./demo.grid.html", label: "Grid" },
   { href: "./demo.tree.grid.html", label: "Tree Grid" },
+  { href: "./demo.hierarchy.map.html", label: "Hierarchy Map" },
   { href: "./demo.progress.html", label: "Progress" },
   { href: "./demo.virtual.list.html", label: "Virtual List" },
   { href: "./demo.scheduler.html", label: "Scheduler" },
@@ -16,6 +17,7 @@ const DEMO_LINKS = [
   { href: "./demo.inspector.html", label: "Inspector" },
   { href: "./demo.empty.state.html", label: "Empty State" },
   { href: "./demo.skeleton.html", label: "Skeleton" },
+  { href: "./demo.form.modal.html", label: "Form Modal" },
   { href: "./demo.ui.html", label: "UI Utilities" },
 ];
 const DOC_LINKS = [

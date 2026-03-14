@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchy Map Demo</title>
+  <link rel="stylesheet" href="./css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      align-items: start;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 260px;
+      overflow: auto;
+    }
+    .inspector {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 300px;
+      overflow: auto;
+    }
+    .map-panel {
+      min-height: 980px;
+    }
+    .side-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 300px) auto minmax(0, 260px);
+      align-content: start;
+      min-height: 980px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      display: grid;
+      gap: 4px;
+      padding: 10px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+    }
+    .stat strong {
+      font-size: 18px;
+    }
+    #mapHost {
+      min-height: 860px;
+    }
+    [data-theme="light"] body {
+      background: #eef3fb;
+      color: #15213a;
+    }
+    [data-theme="light"] .panel {
+      border-color: #cad4e7;
+      background: #ffffff;
+    }
+    [data-theme="light"] .muted {
+      color: #5d7399;
+    }
+    [data-theme="light"] .inspector,
+    [data-theme="light"] .log,
+    [data-theme="light"] .stat {
+      border-color: #cad4e7;
+      background: #f7faff;
+      color: #1d2e4d;
+    }
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.hierarchy.map"]);
+  </script>
+  <script type="module" src="./js/demo/demo.shell.js"></script>
+</head>
+<body>
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Hierarchy Map Demo</h1>
+      <p class="muted">Real Cebu hierarchy from MySQL with synthetic foundation support overlays. Tree relationships are primary; foundation links are secondary overlays.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <input id="searchInput" class="ui-input" type="search" placeholder="Search barangay, city, or foundation">
+        <button id="clearSearchBtn" class="ui-button" type="button">Clear Search</button>
+        <button id="overlayToggleBtn" class="ui-button ui-button-ghost" type="button" aria-pressed="true">Hide Overlay Links</button>
+        <button id="externalsToggleBtn" class="ui-button ui-button-ghost" type="button" aria-pressed="true">Hide Foundations</button>
+        <button id="expandAllBtn" class="ui-button" type="button">Expand All</button>
+        <button id="collapseAllBtn" class="ui-button" type="button">Collapse All</button>
+        <button id="fitBtn" class="ui-button" type="button">Fit To View</button>
+        <button id="resetBtn" class="ui-button" type="button">Reset View</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel map-panel">
+        <div class="stats">
+          <div class="stat"><span class="muted">Cities</span><strong id="cityCount">-</strong></div>
+          <div class="stat"><span class="muted">Barangays</span><strong id="barangayCount">-</strong></div>
+          <div class="stat"><span class="muted">Foundations</span><strong id="foundationCount">-</strong></div>
+          <div class="stat"><span class="muted">Overlay Links</span><strong id="overlayCount">-</strong></div>
+        </div>
+        <div id="mapHost"></div>
+      </section>
+
+      <section class="panel side-panel">
+        <h2 class="ui-title">Selection</h2>
+        <pre id="selection" class="inspector">No node or link selected.</pre>
+
+        <h2 class="ui-title">Event Log</h2>
+        <pre id="log" class="log">No events yet.</pre>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createHierarchyMap = await uiLoader.get("ui.hierarchy.map");
+
+    const page = document.querySelector("main.page");
+    const selectionEl = document.getElementById("selection");
+    const logEl = document.getElementById("log");
+    const cityCountEl = document.getElementById("cityCount");
+    const barangayCountEl = document.getElementById("barangayCount");
+    const foundationCountEl = document.getElementById("foundationCount");
+    const overlayCountEl = document.getElementById("overlayCount");
+
+    let showOverlayLinks = true;
+    let showExternalNodes = true;
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
+      writeLog("theme.toggle", { theme: page.dataset.theme });
+    });
+
+    const response = await fetch("./samples/samplehierarchy_cebu.json");
+    const hierarchyData = await response.json();
+
+    cityCountEl.textContent = String(hierarchyData.stats?.cityCount ?? "-");
+    barangayCountEl.textContent = String(hierarchyData.stats?.barangayCount ?? "-");
+    foundationCountEl.textContent = String(hierarchyData.stats?.foundationCount ?? "-");
+    overlayCountEl.textContent = String(hierarchyData.stats?.overlayLinkCount ?? "-");
+
+    const map = createHierarchyMap(document.getElementById("mapHost"), {
+      data: hierarchyData,
+      fitOnOpen: true,
+      ariaLabel: "Cebu administrative hierarchy with foundation support overlays",
+      onNodeClick({ node, path }) {
+        selectionEl.textContent = JSON.stringify(formatNodeSelection(node, path), null, 2);
+        writeLog("hierarchy.nodeClick", { id: node.id, label: node.label, type: node.type });
+      },
+      onNodeToggle({ node, expanded }) {
+        writeLog("hierarchy.nodeToggle", { id: node.id, label: node.label, expanded });
+      },
+      onLinkClick({ link }) {
+        selectionEl.textContent = JSON.stringify(formatLinkSelection(link), null, 2);
+        writeLog("hierarchy.linkClick", { id: link.id, from: link.from, to: link.to, type: link.type });
+      },
+      onSelectionChange({ selectedNode, selectedLink }) {
+        if (!selectedNode && !selectedLink) {
+          selectionEl.textContent = "No node or link selected.";
+        }
+      },
+    });
+
+    const overlayBtn = document.getElementById("overlayToggleBtn");
+    const externalsBtn = document.getElementById("externalsToggleBtn");
+    const searchInput = document.getElementById("searchInput");
+
+    overlayBtn.addEventListener("click", () => {
+      showOverlayLinks = !showOverlayLinks;
+      overlayBtn.textContent = showOverlayLinks ? "Hide Overlay Links" : "Show Overlay Links";
+      overlayBtn.setAttribute("aria-pressed", String(showOverlayLinks));
+      map.update({ showOverlayLinks });
+      writeLog("hierarchy.overlayToggle", { showOverlayLinks });
+    });
+
+    externalsBtn.addEventListener("click", () => {
+      showExternalNodes = !showExternalNodes;
+      externalsBtn.textContent = showExternalNodes ? "Hide Foundations" : "Show Foundations";
+      externalsBtn.setAttribute("aria-pressed", String(showExternalNodes));
+      map.update({ showExternalNodes });
+      writeLog("hierarchy.externalsToggle", { showExternalNodes });
+    });
+
+    searchInput.addEventListener("input", () => {
+      map.setSearchTerm(searchInput.value);
+      const state = map.getState();
+      writeLog("hierarchy.search", state.search);
+    });
+
+    document.getElementById("clearSearchBtn").addEventListener("click", () => {
+      searchInput.value = "";
+      map.clearSearch();
+      writeLog("hierarchy.searchClear", {});
+    });
+
+    document.getElementById("expandAllBtn").addEventListener("click", () => {
+      map.expandAll();
+      writeLog("hierarchy.expandAll", {});
+    });
+
+    document.getElementById("collapseAllBtn").addEventListener("click", () => {
+      map.collapseAll();
+      writeLog("hierarchy.collapseAll", {});
+    });
+
+    document.getElementById("fitBtn").addEventListener("click", () => {
+      map.fitToView();
+      writeLog("hierarchy.fitToView", map.getState());
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      map.resetView();
+      writeLog("hierarchy.resetView", map.getState());
+    });
+
+    writeLog("hierarchy.loaded", hierarchyData.stats);
+
+    function formatNodeSelection(node, path) {
+      const meta = node && typeof node.meta === "object" && node.meta ? { ...node.meta } : {};
+      return {
+        type: "node",
+        node: {
+          id: node.id,
+          label: node.label,
+          type: node.type,
+          meta,
+          childCount: Array.isArray(node.children) ? node.children.length : 0,
+        },
+        path: Array.isArray(path)
+          ? path.map((entry) => ({
+              id: entry.id,
+              label: entry.label,
+              type: entry.type,
+            }))
+          : [],
+      };
+    }
+
+    function formatLinkSelection(link) {
+      return {
+        type: "link",
+        link: {
+          id: link.id,
+          from: link.from,
+          to: link.to,
+          type: link.type,
+          label: link.label || "",
+          tone: link.tone || "",
+          dashed: Boolean(link.dashed),
+          meta: link && typeof link.meta === "object" && link.meta ? { ...link.meta } : {},
+        },
+      };
+    }
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      logEl.textContent = logEl.textContent === "No events yet." ? line : `${line}\n${logEl.textContent}`;
+    }
+  </script>
+</body>
+</html>

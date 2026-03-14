@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modal Busy Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createElement } from "../js/ui/ui.dom.js";
+    import { createModal } from "../js/ui/ui.modal.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const content = createElement("div", { className: "ui-stack" });
+    const input = createElement("input", {
+      attrs: {
+        type: "text",
+        value: "operator@pbb.ph",
+        placeholder: "Email",
+        "aria-label": "Email address"
+      }
+    });
+    const note = createElement("p", { text: "Testing modal busy-state preservation." });
+    content.append(input, note);
+
+    const footer = createElement("div", { className: "ui-inline" });
+    const cancel = createElement("button", {
+      className: "ui-button ui-button-ghost",
+      text: "Cancel",
+      attrs: { type: "button" }
+    });
+    const save = createElement("button", {
+      className: "ui-button ui-button-primary",
+      text: "Save",
+      attrs: { type: "button" }
+    });
+    footer.append(cancel, save);
+
+    const modal = createModal({
+      title: "Busy Regression",
+      content,
+      footer,
+      showCloseButton: false,
+      closeOnBackdrop: false,
+      closeOnEscape: false,
+      busy: false,
+      busyMessage: "Saving..."
+    });
+
+    modal.open();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const root = document.querySelector(".ui-modal-root");
+    const panel = document.querySelector(".ui-modal");
+    const getCloseButton = () => document.querySelector(".ui-modal-close");
+    const getBusyLayer = () => document.querySelector(".ui-modal-busy");
+    const getBusyMessage = () => document.querySelector(".ui-modal-busy-message");
+
+    assert(Boolean(root), "modal root should exist after open");
+    assert(root.classList.contains("is-mounted"), "modal should remain mounted after open");
+    assert(root.classList.contains("is-open"), "modal should remain open after open");
+    assert(panel.getAttribute("aria-busy") === "false", "aria-busy should be false before busy state");
+    assert(getCloseButton().hidden === true, "close button should remain hidden when showCloseButton is false");
+    assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should not be displayed");
+
+    modal.setBusy(true, { message: "Saving..." });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    assert(root.classList.contains("is-mounted"), "modal should stay mounted during busy state");
+    assert(root.classList.contains("is-open"), "modal should stay open during busy state");
+    assert(panel.classList.contains("is-busy"), "modal panel should expose busy class during busy state");
+    assert(panel.getAttribute("aria-busy") === "true", "aria-busy should be true during busy state");
+    assert(getBusyLayer().hidden === false, "busy layer should be visible during busy state");
+    assert(getBusyMessage().textContent.includes("Saving"), "busy message should render during busy state");
+    assert(getCloseButton().hidden === true, "close button should remain hidden during busy state");
+    assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should remain visually hidden during busy state");
+    assert(cancel.disabled === true, "footer actions should be disabled during busy state");
+    assert(save.disabled === true, "footer actions should be disabled during busy state");
+    assert(input.disabled === true, "body inputs should be disabled during busy state");
+
+    modal.setBusy(false);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    assert(root.classList.contains("is-mounted"), "modal should stay mounted after leaving busy state");
+    assert(root.classList.contains("is-open"), "modal should stay open after leaving busy state");
+    assert(panel.classList.contains("is-busy") === false, "busy class should be removed after leaving busy state");
+    assert(panel.getAttribute("aria-busy") === "false", "aria-busy should be false after leaving busy state");
+    assert(getBusyLayer().hidden === true, "busy layer should be hidden after leaving busy state");
+    assert(getCloseButton().hidden === true, "close button should remain hidden after leaving busy state");
+    assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should remain visually hidden after leaving busy state");
+    assert(cancel.disabled === false, "footer actions should be restored after busy state");
+    assert(save.disabled === false, "footer actions should be restored after busy state");
+    assert(input.disabled === false, "body inputs should be restored after busy state");
+
+    modal.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert(document.querySelector(".ui-modal-root") === null, "modal destroy should remove root from DOM");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
+import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -47,6 +48,14 @@ export function createToastStack(options = {}) {
       attrs: { role: "status", "data-toast-id": id },
     });
 
+    const iconMarkup = resolveVariantIcon(currentOptions, toastOptions, type);
+    if (iconMarkup) {
+      row.appendChild(createElement("div", {
+        className: "ui-toast-icon",
+        attrs: { "aria-hidden": "true" },
+        html: iconMarkup,
+      }));
+    }
     const content = createElement("div", { className: "ui-toast-content" });
     if (titleText) {
       content.appendChild(createElement("h4", { className: "ui-toast-title", text: titleText }));
@@ -298,6 +307,25 @@ function defaultSpeakFormatter(toast) {
     return `${title}. ${message}`;
   }
   return title || message;
+}
+
+function resolveVariantIcon(stackOptions, toastOptions, type) {
+  if (toastOptions && Object.prototype.hasOwnProperty.call(toastOptions, "showVariantIcon")) {
+    if (!toastOptions.showVariantIcon) {
+      return "";
+    }
+  } else if (stackOptions && Object.prototype.hasOwnProperty.call(stackOptions, "showVariantIcon")) {
+    if (!stackOptions.showVariantIcon) {
+      return "";
+    }
+  }
+  if (toastOptions && toastOptions.variantIcon) {
+    return String(toastOptions.variantIcon);
+  }
+  if (stackOptions && stackOptions.variantIcon) {
+    return String(stackOptions.variantIcon);
+  }
+  return getSemanticStatusIcon(type);
 }
 
 function clampNumber(value, min, max, fallback) {

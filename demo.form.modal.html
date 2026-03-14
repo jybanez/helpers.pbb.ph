@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schema Form Modal Demo</title>
+  <link rel='stylesheet' href='./css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .demo-matrix {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .demo-matrix-card {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+    }
+    .demo-matrix-card strong {
+      font-size: 13px;
+    }
+    .demo-matrix-meta {
+      display: grid;
+      gap: 4px;
+      font-size: 12px;
+      color: #9fb2d8;
+    }
+    .demo-matrix-meta code {
+      color: #d7e0f4;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      min-height: 180px;
+      max-height: 320px;
+      overflow: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany([
+      "ui.dom",
+      "ui.modal",
+      "ui.form.modal",
+      "ui.form.modal.login",
+      "ui.form.modal.reauth",
+      "ui.form.modal.status",
+      "ui.form.modal.reason",
+    ]);
+  </script>
+  <script type='module' src='./js/demo/demo.shell.js'></script>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+      </div>
+      <h1 style="margin:0;">Schema Form Modal Demo</h1>
+      <p style="margin:0;color:#9fb2d8;">Focused V1 coverage for <code>createFormModal(...)</code>. This page shows the narrow row model, helper validation, field errors, form-level error, busy submit, and close-on-success behavior.</p>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0;">Demo Matrix</h2>
+      <div class="demo-matrix">
+        <article class="demo-matrix-card">
+          <strong>Login Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>single-column</code></span>
+            <span>Error path: <code>field error</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Preset Login</strong>
+          <div class="demo-matrix-meta">
+            <span>Wrapper: <code>createLoginFormModal(...)</code></span>
+            <span>Field names: <code>custom</code></span>
+            <span>Busy: <code>yes</code></span>
+            <span>Payload: <code>{ user_email, user_password }</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Preset Re-auth</strong>
+          <div class="demo-matrix-meta">
+            <span>Wrapper: <code>createReauthFormModal(...)</code></span>
+            <span>Identifier: <code>locked</code></span>
+            <span>Busy: <code>yes</code></span>
+            <span>Payload: <code>{ account_email, reauth_password }</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Status Update</strong>
+          <div class="demo-matrix-meta">
+            <span>Wrapper: <code>createStatusUpdateFormModal(...)</code></span>
+            <span>Fields: <code>remapped</code></span>
+            <span>Options: <code>app-supplied status list</code></span>
+            <span>Payload: <code>{ incident_status, notes, notify_teams }</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Reason Required</strong>
+          <div class="demo-matrix-meta">
+            <span>Wrapper: <code>createReasonFormModal(...)</code></span>
+            <span>Fields: <code>remapped</code></span>
+            <span>Options: <code>app-supplied reason list</code></span>
+            <span>Payload: <code>{ cancel_reason, remarks, confirm_cancel, notify_clients }</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>CRUD Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>two-column</code></span>
+            <span>Error path: <code>form-level</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Success Form</strong>
+          <div class="demo-matrix-meta">
+            <span>Rows: <code>mixed</code></span>
+            <span>Close on success: <code>yes</code></span>
+            <span>Busy: <code>yes</code></span>
+          </div>
+        </article>
+      </div>
+      <div class="row">
+        <button id="loginDemoBtn" class="ui-button" type="button">Open Login Form</button>
+        <button id="presetLoginDemoBtn" class="ui-button" type="button">Open Preset Login</button>
+        <button id="reauthDemoBtn" class="ui-button" type="button">Open Re-auth Form</button>
+        <button id="statusDemoBtn" class="ui-button" type="button">Open Status Update</button>
+        <button id="reasonDemoBtn" class="ui-button ui-button-danger" type="button">Open Reason Form</button>
+        <button id="crudDemoBtn" class="ui-button" type="button">Open CRUD Form</button>
+        <button id="successDemoBtn" class="ui-button ui-button-primary" type="button">Open Success Form</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0;">Event Log</h2>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "./js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createFormModal = await uiLoader.get("ui.form.modal");
+    const createLoginFormModal = await uiLoader.get("ui.form.modal.login");
+    const createReauthFormModal = await uiLoader.get("ui.form.modal.reauth");
+    const createStatusUpdateFormModal = await uiLoader.get("ui.form.modal.status");
+    const createReasonFormModal = await uiLoader.get("ui.form.modal.reason");
+
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function openLoginFormModal(source = "formModal.login") {
+      const formModal = createFormModal({
+        title: "Operator Login",
+        size: "sm",
+        busyMessage: "Signing in...",
+        submitLabel: "Login",
+        rows: [
+          [{ type: "text", content: "This demo intentionally fails and keeps the modal open." }],
+          [{ type: "input", input: "email", name: "email", label: "Email address", value: "operator@pbb.ph", autocomplete: "username", required: true }],
+          [{ type: "input", input: "password", name: "password", label: "Password", value: "wrong-password", autocomplete: "current-password", required: true }],
+        ],
+        async onSubmit(values, ctx) {
+          writeLog(`${source}.submit.begin`, { email: values.email });
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (values.password !== "correct-password") {
+            ctx.setErrors({ password: "Invalid password." });
+            writeLog(`${source}.submit.failed`, { email: values.email });
+            return false;
+          }
+          writeLog(`${source}.submit.success`, { email: values.email });
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, { ok: true });
+    }
+
+    function openCrudFormModal(source = "formModal.crud") {
+      const formModal = createFormModal({
+        title: "Create User",
+        size: "md",
+        busyMessage: "Saving user...",
+        submitLabel: "Save User",
+        rows: [
+          [{ type: "text", content: "This example uses a two-column row and returns a form-level error from the submit handler." }],
+          [
+            { type: "input", input: "text", name: "firstname", label: "First Name", value: "Maria", required: true },
+            { type: "input", input: "text", name: "lastname", label: "Last Name", value: "Santos", required: true },
+          ],
+          [
+            { type: "input", input: "email", name: "email", label: "Email", value: "exists@pbb.ph", required: true, autocomplete: "email" },
+            {
+              type: "select",
+              name: "role",
+              label: "Role",
+              value: "operator",
+              options: [
+                { label: "Operator", value: "operator" },
+                { label: "Supervisor", value: "supervisor" },
+                { label: "Admin", value: "admin" },
+              ],
+            },
+          ],
+          [{ type: "checkbox", name: "notify", label: "Send welcome notification", value: true }],
+        ],
+        async onSubmit(values, ctx) {
+          writeLog(`${source}.submit.begin`, values);
+          await new Promise((resolve) => setTimeout(resolve, 1100));
+          if (String(values.email || "").toLowerCase() === "exists@pbb.ph") {
+            ctx.setFormError("Unable to save record. The email address is already assigned to another user.");
+            writeLog(`${source}.submit.failed`, { reason: "email-exists" });
+            return false;
+          }
+          writeLog(`${source}.submit.success`, values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, { ok: true });
+    }
+
+    function openSuccessFormModal(source = "formModal.success") {
+      const formModal = createFormModal({
+        title: "Create Barangay Mapping",
+        size: "sm",
+        busyMessage: "Creating mapping...",
+        submitLabel: "Create Mapping",
+        rows: [
+          [{ type: "alert", tone: "info", content: "This path demonstrates a successful async submit that closes the modal." }],
+          [{ type: "input", input: "text", name: "barangayCode", label: "Barangay Code", value: "072217001", required: true }],
+          [{ type: "input", input: "url", name: "endpoint", label: "Endpoint URL", value: "https://api.pbb.ph/relay/barangay", required: true, help: "Use the production endpoint for this demo." }],
+        ],
+        async onSubmit(values) {
+          writeLog(`${source}.submit.begin`, values);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          writeLog(`${source}.submit.complete`, values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, { ok: true });
+    }
+
+    document.getElementById("loginDemoBtn").addEventListener("click", () => openLoginFormModal());
+    document.getElementById("presetLoginDemoBtn").addEventListener("click", () => {
+      const formModal = createLoginFormModal({
+        title: "Preset Operator Login",
+        message: "This preset uses remapped field names while keeping the shared login layout and behavior.",
+        fields: {
+          identifier: "user_email",
+          password: "user_password",
+        },
+        initialValues: {
+          user_email: "operator@pbb.ph",
+          user_password: "wrong-password",
+        },
+        async onSubmit(values, ctx) {
+          writeLog("preset.login.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (values.user_password !== "correct-password") {
+            ctx.setErrors({ user_password: "Invalid password." });
+            writeLog("preset.login.submit.failed", values);
+            return false;
+          }
+          writeLog("preset.login.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.login.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("preset.login.open", { ok: true });
+    });
+    document.getElementById("reauthDemoBtn").addEventListener("click", () => {
+      const formModal = createReauthFormModal({
+        title: "Supervisor Re-authentication",
+        message: "This preset keeps the identifier visible and locked while re-authentication is in progress.",
+        fields: {
+          identifier: "account_email",
+          password: "reauth_password",
+        },
+        identifierValue: "supervisor@pbb.ph",
+        async onSubmit(values, ctx) {
+          writeLog("preset.reauth.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (values.reauth_password !== "correct-password") {
+            ctx.setErrors({ reauth_password: "Password does not match the active session." });
+            writeLog("preset.reauth.submit.failed", values);
+            return false;
+          }
+          writeLog("preset.reauth.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.reauth.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("preset.reauth.open", { ok: true });
+    });
+    document.getElementById("statusDemoBtn").addEventListener("click", () => {
+      const formModal = createStatusUpdateFormModal({
+        title: "Update Incident Status",
+        message: "This preset uses remapped field names and app-provided status options while keeping the shared operational layout.",
+        fields: {
+          status: "incident_status",
+          remarks: "notes",
+          notify: "notify_teams",
+        },
+        statusOptions: [
+          { label: "Pending", value: "pending" },
+          { label: "In Progress", value: "in_progress" },
+          { label: "Resolved", value: "resolved" },
+          { label: "Cancelled", value: "cancelled" },
+        ],
+        initialValues: {
+          incident_status: "in_progress",
+          notes: "Technician dispatched to the site.",
+          notify_teams: true,
+        },
+        async onSubmit(values) {
+          writeLog("preset.status.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          writeLog("preset.status.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.status.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("preset.status.open", { ok: true });
+    });
+    document.getElementById("reasonDemoBtn").addEventListener("click", () => {
+      const formModal = createReasonFormModal({
+        title: "Cancel Uplink",
+        message: "This action may affect downstream connectivity. Please provide a categorized reason before continuing.",
+        fields: {
+          reasonCode: "cancel_reason",
+          reasonDetails: "remarks",
+          confirmText: "confirm_cancel",
+          notify: "notify_clients",
+        },
+        reasonOptions: [
+          { label: "Duplicate Record", value: "duplicate_record" },
+          { label: "Bad Data", value: "bad_data" },
+          { label: "User Request", value: "user_request" },
+          { label: "Operational Override", value: "operational_override" },
+        ],
+        confirmPhrase: "CANCEL",
+        showNotify: true,
+        initialValues: {
+          cancel_reason: "operational_override",
+          remarks: "",
+          notify_clients: false,
+        },
+        async onSubmit(values, ctx) {
+          writeLog("preset.reason.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (values.confirm_cancel !== "CANCEL") {
+            ctx.setErrors({ confirm_cancel: "Type CANCEL to confirm." });
+            writeLog("preset.reason.submit.failed", { reason: "confirm-text" });
+            return false;
+          }
+          writeLog("preset.reason.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.reason.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("preset.reason.open", { ok: true });
+    });
+    document.getElementById("crudDemoBtn").addEventListener("click", () => openCrudFormModal());
+    document.getElementById("successDemoBtn").addEventListener("click", () => openSuccessFormModal());
+  </script>
+</body>
+</html>

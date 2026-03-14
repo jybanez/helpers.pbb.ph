@@ -87,6 +87,36 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createToastStack",
   },
+  "ui.form.modal": {
+    js: "./ui.form.modal.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
+    deps: ["ui.action.modal"],
+    export: "createFormModal",
+  },
+  "ui.form.modal.login": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
+    deps: ["ui.form.modal"],
+    export: "createLoginFormModal",
+  },
+  "ui.form.modal.reauth": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
+    deps: ["ui.form.modal"],
+    export: "createReauthFormModal",
+  },
+  "ui.form.modal.status": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
+    deps: ["ui.form.modal"],
+    export: "createStatusUpdateFormModal",
+  },
+  "ui.form.modal.reason": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
+    deps: ["ui.form.modal"],
+    export: "createReasonFormModal",
+  },
   "ui.select": {
     js: "./ui.select.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css"],
@@ -218,6 +248,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.tree.grid.css"],
     deps: [],
     export: "createTreeGrid",
+  },
+  "ui.hierarchy.map": {
+    js: "./ui.hierarchy.map.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.hierarchy.map.css"],
+    deps: [],
+    export: "createHierarchyMap",
   },
   "ui.virtual.list": {
     js: "./ui.virtual.list.js",
@@ -391,6 +427,11 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.breadcrumbs",
   ],
   forms: [
+    "ui.form.modal",
+    "ui.form.modal.login",
+    "ui.form.modal.reauth",
+    "ui.form.modal.status",
+    "ui.form.modal.reason",
     "ui.select",
     "ui.toggle.button",
     "ui.toggle.group",
@@ -400,6 +441,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
   data: [
     "ui.grid",
     "ui.tree.grid",
+    "ui.hierarchy.map",
     "ui.progress",
     "ui.virtual.list",
     "ui.scheduler",

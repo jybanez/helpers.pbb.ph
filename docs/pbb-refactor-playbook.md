@@ -53,6 +53,9 @@ Avoid simultaneous behavior changes and structural refactors in one PR.
 - Current explicit example:
   - `tests/tree.grid.regression.mjs`
   - this protects `ui.tree.grid` initial render, search filtering, empty-search state, and recovery path
+- Current explicit example:
+  - `tests/modal.busy.regression.mjs`
+  - this protects `ui.modal` busy-state transitions, runtime open-state class preservation, and hidden close-button behavior during `setBusy(...)`
 
 ## 5) Integration Pattern In pbb.ph Projects
 
@@ -62,11 +65,44 @@ Use adapter functions between helper callbacks and backend APIs.
 - Keep API payload mapping outside helpers.
 - App integrations should use `uiLoader` by registry key.
 - Direct path imports from `js/ui/*` and `js/incident/*` are internal-library usage, not app integration usage.
+- Before building app-local UI, check whether the helper library already provides the needed surface as:
+  - a shared component
+  - a preset wrapper
+  - a shared styling primitive
+  - a shared layout/shell primitive
+- Prefer helper-owned workflows before hand-built project flows for repeated operational UI such as:
+  - `createFormModal(...)`
+  - `createLoginFormModal(...)`
+  - `createReauthFormModal(...)`
+  - `createStatusUpdateFormModal(...)`
+  - `createReasonFormModal(...)`
+  - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
+  - `createToastStack(...)`
+  - `createMediaViewer(...)`
+  - `createHierarchyMap(...)`
+  - `createTreeGrid(...)`
 - Before adding project-local UI overrides, check whether the shared primitive layer already exposes a suitable contract:
   - button variants in `ui.components.css`
   - shell/layout primitives such as `ui-panel`, `ui-surface`, `ui-field`, `ui-label`, `ui-badge`, `ui-eyebrow`, `ui-shell-header`, `ui-shell-search`
 - Prefer shared variants first. Only add project-local overrides when the library contract is genuinely insufficient for the use case.
 - If a project needs the same override more than once, raise it back into the shared library instead of duplicating CSS across `*.pbb.ph` apps.
+
+## 5.1) Helper-First And Proposal-First Rules
+
+- Engineers integrating `*.pbb.ph` projects should maximize use of documented helper components, wrappers, and shared primitives before introducing app-local UI.
+- If the helper library is close but missing a repeated capability, do not directly extend the shared helper from project work as an ad hoc fix.
+- Instead, submit a proposal or spec update first. The proposal should state:
+  - the repeated use case
+  - why the current helper contract is insufficient
+  - the narrowest shared API or styling change that solves it
+  - expected demo and regression coverage
+- Repeated project-local workarounds are a signal to submit a helper proposal, not a signal to silently fork shared behavior inside an app.
+- App teams may compose existing helper APIs, map payloads, and configure options. They should not redefine shared helper contracts unilaterally from application code.
+- Helper-library changes should remain proposal-driven so maintainers can review:
+  - cross-project reuse
+  - naming consistency
+  - contract boundaries
+  - regression/test impact
 
 Example adapter boundary:
 
@@ -107,10 +143,15 @@ Never add backend-specific quirks inside helper rendering logic.
    - Avoid full rerender on collapse toggle; prefer in-place class/state updates to preserve transitions.
 10. Modal async safety regressions:
    - Preserve helper-owned busy-state handling in `createModal(...)` / `createActionModal(...)`.
+- When updating modal options while open, preserve runtime root state classes (`is-mounted`, `is-open`, `is-closing`). Option updates must not visually dismiss an open modal unless `close()` is actually invoked.
+- Hidden modal controls such as the close button must be hidden by shared CSS as well as DOM attributes; do not rely on `[hidden]` alone when author styles set `display` explicitly.
    - Do not reintroduce app-local duplicate-submit guards when the shared modal contract can own:
      - overlay lock
      - control disabling
      - close suppression while busy
+11. Hierarchy/demo data drift:
+   - When a demo is backed by real dataset extracts, keep the extractor script beside the sample payload.
+   - For `ui.hierarchy.map`, `samples/samplehierarchy_cebu.json` should be regenerated via `scripts/generate.hierarchy.sample.ps1` instead of being hand-edited when the data contract changes.
 
 ## 8) UI Utility Ownership
 
@@ -139,6 +180,7 @@ Shared UI layer:
 - `js/ui/ui.media.viewer.js`
 - `js/ui/ui.grid.js`
 - `js/ui/ui.tree.grid.js`
+- `js/ui/ui.hierarchy.map.js`
 - `js/ui/ui.progress.js`
 - `js/ui/ui.virtual.list.js`
 - `js/ui/ui.scheduler.js`
@@ -287,6 +329,26 @@ If changing callback signatures or removing methods, plan a major version.
 - `createActionModal(...)` may expose declarative `headerActions[]`; keep the header/footer action object contract identical when extending that helper.
 - If action buttons support icons, preserve the shared icon contract (`icon`, `iconPosition`, `iconOnly`, `ariaLabel`) across both header and footer actions.
 - `ui.dialog` helpers (`uiAlert`, `uiConfirm`, `uiPrompt`) must pass through the same header-action and icon-action options instead of inventing a separate action schema.
+- If `ui.dialog` exposes semantic variants (`success`, `info`, `warning`, `error`), keep them as dialog-level presentation and default-action-emphasis contracts layered on top of `ui.modal`; do not fork a second modal implementation to support status styling.
+- Default semantic status icons should also remain in `ui.dialog`, with explicit opt-out/override (`showVariantIcon`, `variantIcon`) rather than migrating status presentation into the neutral `ui.modal` shell.
+- `ui.toast` should use the same semantic status icon language as `ui.dialog`; if the icon set changes, update both layers together instead of letting status cues drift.
+- Shared semantic status icons should live in a single helper module when both `ui.dialog` and `ui.toast` consume them; do not let each component carry its own copy of the SVG map.
+- Secondary helper-managed dialog guidance should use the shared `description` option before apps switch to custom modal body markup.
+- Dialog speech should remain opt-in at the `ui.dialog` layer (`speak`, `speakText`, `voiceName`, `speakRate`, `speakPitch`, `speakVolume`); keep speech behavior out of the neutral `ui.modal` shell.
+- `createFormModal(...)` should compose over `createActionModal(...)`; do not fork a second modal-form shell to support schema-driven forms.
+- `createFormModal(...)` V1 should keep a strict row model:
+  - one item => full width
+  - two items => equal columns
+  - more than two items => reject or normalize conservatively
+- Modal-form validation should stay split:
+  - helper owns required/basic validation
+  - app owns domain/business validation
+- Preset wrappers over `createFormModal(...)` should keep helper-owned structure and ordering while allowing engineer-provided field-name mappings where cross-project backend names differ.
+- Preset wrappers that depend on business vocabularies should require app-supplied option lists instead of hardcoding shared operational categories:
+  - status values
+  - reason categories
+- When base `createFormModal(...)` behavior and preset-wrapper behavior both need browser regression coverage, keep them in separate harnesses so failures identify the correct layer immediately.
+- DOM-heavy `createFormModal(...)` changes should get a targeted browser regression harness when behavior depends on validation, busy submit lifecycle, or modal-close outcomes.
 - Required behaviors to preserve:
   - escape/backdrop close controls
   - focus trap and focus restore
@@ -384,3 +446,4 @@ If changing callback signatures or removing methods, plan a major version.
 - Skeleton behavior belongs in `demo.skeleton.html`.
 
 When introducing a substantial UI module, prefer a dedicated demo page and link it from `index.html`.
+

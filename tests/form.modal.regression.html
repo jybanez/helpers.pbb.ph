@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form Modal Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.form.modal.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createFormModal } from "../js/ui/ui.form.modal.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const loginModal = createFormModal({
+      title: "Login",
+      busyMessage: "Signing in...",
+      submitLabel: "Login",
+      rows: [
+        [{ type: "input", input: "email", name: "email", label: "Email", value: "operator@pbb.ph", required: true }],
+        [{ type: "input", input: "password", name: "password", label: "Password", value: "", required: true }],
+      ],
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.password !== "correct-password") {
+          ctx.setErrors({ password: "Invalid password." });
+          return false;
+        }
+        return true;
+      },
+    });
+
+    loginModal.open();
+    await wait(80);
+
+    const getPasswordInput = () => document.querySelector('input[name="password"]');
+    const getPrimaryButton = () => Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /login|submit|save/i.test(button.textContent || ""));
+    const getPasswordError = () => {
+      const field = getPasswordInput()?.closest(".ui-form-modal-field");
+      return field?.querySelector(".ui-form-modal-field-error");
+    };
+
+    getPrimaryButton().click();
+    await wait(120);
+
+    assert(loginModal.getState().open === true, "required validation should keep modal open");
+    assert(getPasswordError()?.textContent.includes("required"), "required validation should render field error");
+    assert(document.activeElement === getPasswordInput(), "first invalid field should receive focus");
+
+    loginModal.setValues({ password: "wrong-password" });
+    getPrimaryButton().click();
+    await wait(180);
+
+    assert(loginModal.getState().open === true, "falsy submit result should keep modal open");
+    assert(getPasswordError()?.textContent.includes("Invalid password."), "app-supplied field error should render");
+
+    loginModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove login modal from DOM");
+
+    const crudModal = createFormModal({
+      title: "Create User",
+      busyMessage: "Saving user...",
+      submitLabel: "Save User",
+      rows: [
+        [{ type: "input", input: "email", name: "email", label: "Email", value: "exists@pbb.ph", required: true }],
+        [{
+          type: "select",
+          name: "role",
+          label: "Role",
+          value: "operator",
+          options: [
+            { label: "Operator", value: "operator" },
+            { label: "Admin", value: "admin" },
+          ],
+        }],
+      ],
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.email === "exists@pbb.ph") {
+          ctx.setFormError("Unable to save record.");
+          return false;
+        }
+        return true;
+      },
+    });
+
+    crudModal.open();
+    await wait(80);
+    Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /save/i.test(button.textContent || "")).click();
+    await wait(180);
+
+    const formError = document.querySelector(".ui-form-modal-form-error");
+    assert(crudModal.getState().open === true, "form-level error should keep modal open");
+    assert(formError && formError.hidden === false, "form-level error should be visible");
+    assert(formError.textContent.includes("Unable to save record."), "form-level error should render helper-supplied text");
+
+    crudModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove CRUD modal from DOM");
+
+    const successModal = createFormModal({
+      title: "Create Mapping",
+      busyMessage: "Creating mapping...",
+      submitLabel: "Create",
+      rows: [
+        [{ type: "input", input: "text", name: "barangayCode", label: "Barangay Code", value: "072217001", required: true }],
+      ],
+      async onSubmit() {
+        await wait(80);
+        return true;
+      },
+    });
+
+    successModal.open();
+    await wait(80);
+    Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /create/i.test(button.textContent || "")).click();
+    await wait(500);
+
+    assert(document.querySelector(".ui-modal-root") === null, "truthy submit should close and remove modal root");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
