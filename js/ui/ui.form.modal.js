@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js";
+import { createPasswordField } from "./ui.password.js";
 import { createSelect } from "./ui.select.js";
 
 const DEFAULT_OPTIONS = {
@@ -62,6 +63,8 @@ export function createFormModal(options = {}) {
     fields.forEach((field) => {
       if (field?.type === "ui.select") {
         field.control?.__uiSelectInstance?.destroy?.();
+      } else if (field?.type === "input") {
+        field.control?.__uiPasswordInstance?.destroy?.();
       }
     });
   }
@@ -381,6 +384,29 @@ export function createFormModal(options = {}) {
     }
 
     if (type === "input") {
+      if (normalizeInputType(item.input) === "password") {
+        const host = createElement("div", {
+          className: "ui-form-modal-password-host",
+        });
+        const passwordInstance = createPasswordField(host, {
+          id,
+          name,
+          value: value == null ? "" : String(value),
+          placeholder: item.placeholder ? String(item.placeholder) : "",
+          autocomplete: item.autocomplete ? String(item.autocomplete) : "",
+          required: Boolean(item.required),
+          disabled: Boolean(item.disabled),
+          readonly: Boolean(item.readonly),
+          ariaLabel: item.ariaLabel || item.label || name,
+          describedBy,
+          onChange() {
+            handleFieldChange(name);
+          },
+        });
+        host.__uiPasswordInstance = passwordInstance;
+        control = host;
+        return control;
+      }
       control = createElement("input", {
         className: "ui-input",
         attrs: {
@@ -497,7 +523,7 @@ export function createFormModal(options = {}) {
         return;
       }
       let message = "";
-    if (field.type === "checkbox") {
+      if (field.type === "checkbox") {
         if (field.config.required && !control.checked) {
           message = "This field is required.";
         }
@@ -509,8 +535,11 @@ export function createFormModal(options = {}) {
         }
       } else if (field.config.required && !getFieldValue(field)) {
         message = "This field is required.";
-      } else if (typeof control.checkValidity === "function" && !control.checkValidity()) {
-        message = control.validationMessage || "Invalid value.";
+      } else {
+        const validationTarget = getFieldAriaTarget(field);
+        if (typeof validationTarget?.checkValidity === "function" && !validationTarget.checkValidity()) {
+          message = validationTarget.validationMessage || "Invalid value.";
+        }
       }
       if (message) {
         errors[name] = message;
@@ -550,7 +579,7 @@ export function createFormModal(options = {}) {
     }
     const focusTarget = field?.type === "ui.select"
       ? getFieldAriaTarget(field)
-      : field?.control;
+      : getFieldAriaTarget(field) || field?.control;
     if (focusTarget && typeof focusTarget.focus === "function") {
       focusTarget.focus();
     }
@@ -914,6 +943,9 @@ function getFieldValue(field) {
   if (field.type === "ui.select") {
     return field.control?.__uiSelectInstance?.getValue?.() ?? (field.config.multiple ? [] : null);
   }
+  if (field.type === "input" && field.control?.__uiPasswordInstance) {
+    return field.control.__uiPasswordInstance.getValue();
+  }
   if (field.type === "checkbox") {
     return Boolean(field.control.checked);
   }
@@ -929,6 +961,10 @@ function setFieldValue(field, value) {
     field.control?.__uiSelectInstance?.setValue?.(value);
     return;
   }
+  if (field.type === "input" && field.control?.__uiPasswordInstance) {
+    field.control.__uiPasswordInstance.setValue(value == null ? "" : String(value));
+    return;
+  }
   if (field.type === "checkbox") {
     field.control.checked = Boolean(value);
     return;
@@ -942,6 +978,9 @@ function getFieldAriaTarget(field) {
   }
   if (field.type === "ui.select") {
     return field.control?.querySelector?.(".ui-select-trigger") || null;
+  }
+  if (field.type === "input" && field.control?.__uiPasswordInstance) {
+    return field.control.__uiPasswordInstance.input || null;
   }
   return field.control || null;
 }

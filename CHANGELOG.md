@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.2`
+- Latest documented release: `v0.21.3`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,25 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.3
+
+- Added `ui.password` with `createPasswordField(container, options)` as a narrow reusable password-entry primitive:
+  - shared show/hide toggle
+  - standalone value/visibility API
+  - disabled/readonly support
+  - login/re-auth-aligned behavior
+- Updated `ui.form.modal` password rows to compose over `ui.password` so login and re-auth now inherit the same password toggle behavior as standalone usage.
+- Added dedicated demo coverage:
+  - `demos/demo.password.html`
+  - shared navigation entry under `Utilities`
+  - home catalog card on `demos/index.html`
+- Added dedicated browser regression coverage:
+  - `tests/password.regression.html`
+  - `tests/password.regression.mjs`
+- Updated public documentation and integration guidance in:
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+
 ### v0.21.2
 
 - Hardened `ui.media.viewer` against several real integration and demo-surface issues:

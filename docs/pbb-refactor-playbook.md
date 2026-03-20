@@ -74,6 +74,7 @@ Use adapter functions between helper callbacks and backend APIs.
   - `createFormModal(...)`
   - `createLoginFormModal(...)`
   - `createReauthFormModal(...)`
+  - `createPasswordField(...)`
   - `createStatusUpdateFormModal(...)`
   - `createReasonFormModal(...)`
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
@@ -101,6 +102,7 @@ Session and re-auth rule:
   - open the shared re-auth modal
   - on successful re-auth, retry or resume the blocked action if the project flow supports it
 - Do not embed timeout polling or session-watch logic inside the helper wrapper itself.
+- For password entry outside those wrappers, prefer the shared `createPasswordField(...)` primitive so teams reuse the same show/hide behavior instead of building project-local toggles.
 
 ## 5.1) Helper-First And Proposal-First Rules
 

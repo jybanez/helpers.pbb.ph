@@ -65,6 +65,7 @@ const DEMO_GROUPS = [
       { href: "./demo.command.palette.html", label: "Command Palette" },
       { href: "./demo.drawers.html", label: "Drawers" },
       { href: "./demo.window.html", label: "Window" },
+      { href: "./demo.password.html", label: "Password Field" },
       { href: "./demo.ui.html", label: "UI Utilities" },
       { href: "./demo.tabs.html", label: "Tabs" },
       { href: "./demo.strips.html", label: "Strips" },

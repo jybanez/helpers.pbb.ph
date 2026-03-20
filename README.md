@@ -187,6 +187,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createBottomDrawer(options)` reusable bottom drawer shell
 - `ui.search.js`
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
+- `ui.password.js`
+  - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
 - `ui.modal.js`
   - `createModal(options)` general-purpose modal shell (content/header/footer, sizing, focus trap, backdrop/escape close)
   - `createActionModal(options)` modal wrapper with declarative header/footer actions (`headerActions[]`, `actions[]`)
@@ -1462,6 +1464,72 @@ Related demos:
 
 - `demos/demo.drawers.html`
 
+### `createPasswordField(container, options)` (`js/ui/ui.password.js`)
+
+Purpose:
+
+- Shared password-entry primitive with a helper-owned show/hide toggle.
+- Used directly by teams and composed by `createFormModal(...)` password rows, including login and re-auth presets.
+
+Factory:
+
+```js
+import { createPasswordField } from "./js/ui/ui.password.js";
+
+const password = createPasswordField(container, options);
+```
+
+Options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `value` | `string` | `""` | Initial password value. |
+| `visible` | `boolean` | `false` | Initial visibility state for the password text. |
+| `placeholder` | `string` | `""` | Input placeholder text. |
+| `name` | `string` | `""` | Submitted field name. |
+| `id` | `string` | `""` | Input id for external labels. |
+| `autocomplete` | `string` | `""` | Password-manager hint such as `current-password` or `new-password`. |
+| `required` | `boolean` | `false` | Marks the input as required. |
+| `disabled` | `boolean` | `false` | Disables both the input and toggle button. |
+| `readonly` | `boolean` | `false` | Keeps the value visible/toggleable but non-editable. |
+| `ariaLabel` | `string` | `"Password"` | Direct aria-label for unlabeled standalone usage. |
+| `showLabel` | `string` | `"Show"` | Toggle label in hidden state. |
+| `hideLabel` | `string` | `"Hide"` | Toggle label in visible state. |
+| `onChange` | `function` | `null` | Called as `onChange(value, api)` when the value changes. |
+| `onToggle` | `function` | `null` | Called as `onToggle(visible, api)` when visibility changes. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `getValue()` | none | `string` | Returns the current password value. |
+| `setValue(value)` | `string` | `void` | Updates the current value. |
+| `isVisible()` | none | `boolean` | Returns whether the password is currently shown as text. |
+| `setVisible(visible)` | `boolean` | `void` | Forces the current visibility state. |
+| `focus()` | none | `void` | Focuses the underlying input. |
+| `update(options)` | partial options | `void` | Updates options such as disabled or visible state. |
+| `destroy()` | none | `void` | Removes the helper content from the host container. |
+
+Example:
+
+```js
+const password = createPasswordField(document.getElementById("passwordHost"), {
+  id: "operator-password",
+  name: "operator_password",
+  placeholder: "Enter password",
+  autocomplete: "current-password",
+  onToggle(visible) {
+    console.log("visible:", visible);
+  },
+});
+```
+
+Related demos:
+
+- `demos/demo.password.html`
+- `demos/demo.form.modal.login.html`
+- `demos/demo.form.modal.reauth.html`
+
 ### `createModal(options)` (`js/ui/ui.modal.js`)
 
 Purpose:
@@ -1820,6 +1888,10 @@ Supported V1 `input` types:
 - `date`
 - `url`
 - `search`
+
+Password-input note:
+
+- `input: "password"` rows now compose over the shared `createPasswordField(...)` primitive so login, re-auth, and standalone password entry all use the same show/hide behavior.
 
 Field properties:
 
@@ -3531,7 +3603,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.2`
+- Latest documented release: `v0.21.3`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
