@@ -197,6 +197,97 @@ export function createReasonFormModal(options = {}) {
   });
 }
 
+export function createAccountFormModal(options = {}) {
+  const fields = normalizeFieldMap(options.fields, {
+    name: "name",
+    email: "email",
+  });
+  const message = String(options.message || "").trim();
+  const extraRows = normalizeRows(options.extraRows);
+
+  return createFormModal({
+    ...options,
+    title: options.title || "Account",
+    size: options.size || "sm",
+    busyMessage: options.busyMessage || "Saving account...",
+    submitLabel: options.submitLabel || "Save",
+    rows: [
+      ...(message ? [[{ type: "text", content: message }]] : []),
+      [{
+        type: "input",
+        input: "text",
+        name: fields.name,
+        label: String(options.nameLabel || "Name"),
+        value: resolveInitialValue(options, fields.name),
+        placeholder: String(options.namePlaceholder || "Enter your name"),
+        autocomplete: String(options.nameAutocomplete || "name"),
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "email",
+        name: fields.email,
+        label: String(options.emailLabel || "Email"),
+        value: resolveInitialValue(options, fields.email),
+        placeholder: String(options.emailPlaceholder || "name@agency.gov.ph"),
+        autocomplete: String(options.emailAutocomplete || "email"),
+        required: true,
+      }],
+      ...extraRows,
+    ],
+  });
+}
+
+export function createChangePasswordFormModal(options = {}) {
+  const fields = normalizeFieldMap(options.fields, {
+    currentPassword: "current_password",
+    newPassword: "new_password",
+    confirmPassword: "confirm_password",
+  });
+  const message = String(options.message || "").trim();
+
+  return createFormModal({
+    ...options,
+    title: options.title || "Change Password",
+    size: options.size || "sm",
+    busyMessage: options.busyMessage || "Updating password...",
+    submitLabel: options.submitLabel || "Update Password",
+    rows: [
+      ...(message ? [[{ type: "text", content: message }]] : []),
+      [{
+        type: "input",
+        input: "password",
+        name: fields.currentPassword,
+        label: String(options.currentPasswordLabel || "Current Password"),
+        value: resolveInitialValue(options, fields.currentPassword),
+        placeholder: String(options.currentPasswordPlaceholder || "Enter current password"),
+        autocomplete: "current-password",
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.newPassword,
+        label: String(options.newPasswordLabel || "New Password"),
+        value: resolveInitialValue(options, fields.newPassword),
+        placeholder: String(options.newPasswordPlaceholder || "Enter new password"),
+        autocomplete: "new-password",
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.confirmPassword,
+        label: String(options.confirmPasswordLabel || "Confirm Password"),
+        value: resolveInitialValue(options, fields.confirmPassword),
+        placeholder: String(options.confirmPasswordPlaceholder || "Re-enter new password"),
+        autocomplete: "new-password",
+        required: true,
+      }],
+    ],
+  });
+}
+
 function normalizeFieldMap(value, fallback) {
   const input = value && typeof value === "object" ? value : {};
   return {
@@ -251,4 +342,13 @@ function resolveCheckboxValue(options, name, fallback) {
 
 function escapePattern(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeRows(rows) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  return rows
+    .map((row) => (Array.isArray(row) ? row.filter(Boolean) : []))
+    .filter((row) => row.length);
 }

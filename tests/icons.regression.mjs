@@ -14,18 +14,18 @@ const browserCandidates = [
 
 const browserPath = browserCandidates.find((candidate) => {
   try {
-    return candidate && requireExists(candidate);
+    return candidate && fs.existsSync(candidate);
   } catch {
     return false;
   }
 });
 
 if (!browserPath) {
-  console.error("Form-modal presets regression test failed: no supported browser executable found.");
+  console.error("Icons regression test failed: no supported browser executable found.");
   process.exit(1);
 }
 
-const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "form.modal.presets.regression.html");
+const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "icons.regression.html");
 const htmlUrl = pathToFileURL(htmlPath).href;
 
 const { stdout, stderr } = await execFileAsync(browserPath, [
@@ -39,13 +39,9 @@ const { stdout, stderr } = await execFileAsync(browserPath, [
 
 const output = `${stdout}\n${stderr}`;
 if (/data-status="pass"/.test(output) && /\bPASS\b/.test(output)) {
-  console.log("Form modal presets regression test passed.");
+  console.log("Icons regression test passed.");
 } else {
-  console.error("Form modal presets regression test failed.");
+  console.error("Icons regression test failed.");
   console.error(output);
   process.exitCode = 1;
-}
-
-function requireExists(targetPath) {
-  return Boolean(fs.existsSync(targetPath));
 }

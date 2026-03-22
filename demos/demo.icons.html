@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icons Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 160px; }
+    .icon-groups { display: grid; gap: 12px; }
+    .icon-group { display: grid; gap: 10px; padding: 12px; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; }
+    .icon-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .icon-card { display: grid; gap: 8px; padding: 12px; border: 1px solid #263146; border-radius: 8px; background: #111826; cursor: pointer; }
+    .icon-preview { display: flex; align-items: center; gap: 12px; color: #f2f6ff; }
+    .icon-preview .ui-icon { width: 20px; height: 20px; }
+    .icon-meta { font-size: 12px; color: #9fb2d8; font-family: Consolas, "Courier New", monospace; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.icons"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Icons",
+      overview: "Shared SVG icon registry with one outline visual language, categorized namespaced ids, and direct SVGElement creation for helper and app use.",
+      useWhen: [
+        "Use <code>createIcon(...)</code> when a PBB project needs a shared button, status, or navigation icon without copying inline SVG.",
+        "Use it when icon naming, sizing, and stroke style should remain consistent across helper demos and downstream apps."
+      ],
+      avoidWhen: [
+        "Do not use it for illustrations or large marketing artwork.",
+        "Do not inject arbitrary project-local SVG into the shared registry contract in V1."
+      ],
+      description: "The icon registry stays narrow: one outline pack, stable namespaced ids, currentColor inheritance, and plain DOM/SVG output.",
+      defaultSampleCode: `const closeIcon = createIcon(\"actions.close\", {\n  size: 16,\n  title: \"Close\",\n  decorative: false,\n});\n\nbutton.prepend(closeIcon);`,
+      constructor: [
+        { factory: "<code>createIcon(name, options)</code>", arguments: "icon id and icon options", returns: "<code>SVGElement</code>" }
+      ],
+      options: [
+        { option: "<code>size</code>", default: "<code>16</code>", description: "Rendered icon width/height in pixels." },
+        { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Optional SVG title content for non-decorative use." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Additional class name(s) on the SVG root." },
+        { option: "<code>strokeWidth</code>", default: "<code>1.8</code>", description: "Override for the outline stroke width." },
+        { option: "<code>decorative</code>", default: "<code>true</code>", description: "Decorative mode hides the icon from assistive tech unless a label/title is supplied.", values: ["true", "false"] },
+        { option: "<code>ariaLabel</code>", default: "<code>\"\"</code>", description: "Direct accessible label for a non-decorative icon." }
+      ],
+      propertiesText: "The icon registry is definition-based. Use <code>getIconDefinition(...)</code>, <code>listIcons()</code>, and <code>listIconCategories()</code> for lookup rather than reading internal maps directly.",
+      events: [],
+      methods: [
+        { method: "<code>getIconDefinition(name)</code>", arguments: "icon id", returns: "icon definition or <code>null</code>" },
+        { method: "<code>listIcons()</code>", arguments: "none", returns: "sorted icon id array" },
+        { method: "<code>listIconCategories()</code>", arguments: "none", returns: "sorted category array" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Icons Demo</h1>
+      <p class="muted">Dedicated catalog for the shared outline SVG icon registry.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Curated Icon Pack</h2>
+      <div id="iconGroups" class="icon-groups"></div>
+      <pre>const icon = createIcon("actions.search", {
+  size: 18,
+  title: "Search",
+  decorative: false,
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createIcon, listIcons, listIconCategories } = await uiLoader.get("ui.icons");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const groupsHost = document.getElementById("iconGroups");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    const names = listIcons();
+    const categories = listIconCategories();
+    categories.forEach((category) => {
+      const section = document.createElement("section");
+      section.className = "icon-group";
+      const title = document.createElement("h3");
+      title.className = "ui-title";
+      title.textContent = category;
+      const grid = document.createElement("div");
+      grid.className = "icon-grid";
+      names.filter((name) => name.startsWith(`${category}.`)).forEach((name) => {
+        const card = document.createElement("article");
+        card.className = "icon-card";
+        const preview = document.createElement("div");
+        preview.className = "icon-preview";
+        preview.appendChild(createIcon(name, { size: 20, title: name, decorative: false }));
+        const label = document.createElement("span");
+        label.textContent = name.split(".")[1];
+        preview.appendChild(label);
+        const meta = document.createElement("div");
+        meta.className = "icon-meta";
+        meta.textContent = name;
+        card.append(preview, meta);
+        card.addEventListener("click", () => writeLog("icon.select", { name, category }));
+        grid.appendChild(card);
+      });
+      section.append(title, grid);
+      groupsHost.appendChild(section);
+    });
+  </script>
+</body>
+</html>

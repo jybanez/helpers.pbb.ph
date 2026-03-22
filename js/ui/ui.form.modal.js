@@ -704,7 +704,7 @@ export function createFormModal(options = {}) {
           if (typeof action.onClick !== "function") {
             return false;
           }
-          return action.onClick(getValues(), createActionContext(action, eventContext?.event));
+          return action.onClick(getValues(), createActionContext(action, eventContext?.event), action.id || "");
         },
       };
     });

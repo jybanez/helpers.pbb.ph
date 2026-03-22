@@ -189,6 +189,9 @@ Reusable shared UI utilities live under `js/ui`:
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
 - `ui.password.js`
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
+- `ui.icons.js`
+  - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
+  - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
 - `ui.modal.js`
   - `createModal(options)` general-purpose modal shell (content/header/footer, sizing, focus trap, backdrop/escape close)
   - `createActionModal(options)` modal wrapper with declarative header/footer actions (`headerActions[]`, `actions[]`)
@@ -212,6 +215,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createReauthFormModal(options)` opinionated re-auth wrapper over `createFormModal(...)` with locked identifier support and field-name remapping
   - `createStatusUpdateFormModal(options)` operational status-change wrapper over `createFormModal(...)` with app-supplied status options and field-name remapping
   - `createReasonFormModal(options)` categorized reason-required wrapper over `createFormModal(...)` with app-supplied reason options and field-name remapping
+  - `createAccountFormModal(options)` opinionated account/profile wrapper over `createFormModal(...)` with helper-owned Name and Email rows plus additive `extraRows`
+  - `createChangePasswordFormModal(options)` opinionated password-change wrapper over `createFormModal(...)` with helper-owned current/new/confirm password rows
 - `ui.select.js`
   - `createSelect(container, items, options)` single/multi select with optional search and keyboard navigation (`ArrowUp/ArrowDown/Home/End/Enter/Escape`, optional `selectOnTab`)
 - `ui.toggle.button.js`
@@ -357,6 +362,9 @@ Application integrations should use the registry loader.
   - `createFormModal(...)`
   - `createLoginFormModal(...)`
   - `createReauthFormModal(...)`
+  - `createAccountFormModal(...)`
+  - `createChangePasswordFormModal(...)`
+  - `createIcon(...)`
   - `createStatusUpdateFormModal(...)`
   - `createReasonFormModal(...)`
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
@@ -1530,6 +1538,55 @@ Related demos:
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
 
+### `createIcon(name, options)`, `getIconDefinition(name)`, `listIcons()`, `listIconCategories()` (`js/ui/ui.icons.js`)
+
+Purpose:
+
+- Shared categorized SVG icon registry for helper and app usage.
+
+Design rule:
+
+- one outline visual language
+- namespaced stable icon ids
+- `SVGElement` output instead of raw HTML strings
+
+V1 categories:
+
+- `actions`
+- `navigation`
+- `status`
+- `media`
+- `data`
+
+Primary options:
+
+| Option | Default | Description |
+|---|---|---|
+| `size` | `16` | Icon width/height in pixels. |
+| `title` | `""` | Optional SVG title for non-decorative use. |
+| `className` | `""` | Additional SVG class name(s). |
+| `strokeWidth` | `1.8` | Outline stroke width override. |
+| `decorative` | `true` | Decorative icons are hidden from assistive tech unless a label/title is supplied. |
+| `ariaLabel` | `""` | Direct accessible label for non-decorative icons. |
+
+Example:
+
+```js
+import { createIcon } from "./js/ui/ui.icons.js";
+
+const closeIcon = createIcon("actions.close", {
+  size: 16,
+  title: "Close",
+  decorative: false,
+});
+
+button.prepend(closeIcon);
+```
+
+Related demos:
+
+- `demos/demo.icons.html`
+
 ### `createModal(options)` (`js/ui/ui.modal.js`)
 
 Purpose:
@@ -2021,7 +2078,7 @@ Related demos:
 - `demos/demo.dialog.confirm.html`
 - `demos/demo.dialog.prompt.html`
 
-### `createLoginFormModal(options)`, `createReauthFormModal(options)`, `createStatusUpdateFormModal(options)`, `createReasonFormModal(options)` (`js/ui/ui.form.modal.presets.js`)
+### `createLoginFormModal(options)`, `createReauthFormModal(options)`, `createStatusUpdateFormModal(options)`, `createReasonFormModal(options)`, `createAccountFormModal(options)`, `createChangePasswordFormModal(options)` (`js/ui/ui.form.modal.presets.js`)
 
 Purpose:
 
@@ -2040,6 +2097,8 @@ Preset summary:
 | `createReauthFormModal(...)` | Re-auth/session confirmation | no | `identifier`, `password` |
 | `createStatusUpdateFormModal(...)` | Operational status update | `statusOptions` | `status`, `remarks`, `notify` |
 | `createReasonFormModal(...)` | Categorized reason-required flow | `reasonOptions` | `reasonCode`, `reasonDetails`, `confirmText`, `notify` |
+| `createAccountFormModal(...)` | Shared account/profile edit flow | no | `name`, `email` |
+| `createChangePasswordFormModal(...)` | Shared password-change flow | no | `currentPassword`, `newPassword`, `confirmPassword` |
 
 Common preset rules:
 
@@ -2059,6 +2118,8 @@ Preset options:
 | `createReauthFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierValue`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createStatusUpdateFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `statusOptions`, `statusLabel`, `remarksLabel`, `remarksPlaceholder`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
 | `createReasonFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `reasonOptions`, `reasonLabel`, `detailsLabel`, `detailsPlaceholder`, `confirmPhrase`, `confirmLabel`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
+| `createAccountFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `nameLabel`, `namePlaceholder`, `emailLabel`, `emailPlaceholder`, `fields`, `initialValues`, `extraRows`, `extraActions`, `extraActionsPlacement`, `onSubmit` |
+| `createChangePasswordFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `currentPasswordLabel`, `currentPasswordPlaceholder`, `newPasswordLabel`, `newPasswordPlaceholder`, `confirmPasswordLabel`, `confirmPasswordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 
 Returned API:
 
@@ -2111,6 +2172,8 @@ Related demos:
 - `demos/demo.form.modal.html`
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
+- `demos/demo.form.modal.account.html`
+- `demos/demo.form.modal.change.password.html`
 - `demos/demo.form.modal.status.html`
 - `demos/demo.form.modal.reason.html`
 

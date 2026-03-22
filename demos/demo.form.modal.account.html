@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Form Modal Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+    .demo-matrix { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .demo-matrix-card { display: grid; gap: 8px; padding: 12px; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; }
+    .demo-matrix-meta { display: grid; gap: 4px; font-size: 12px; color: #9fb2d8; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.form.modal.account", "ui.form.modal.change.password"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Account Form Modal",
+      overview: "Narrow account/profile wrapper over createFormModal(...) with helper-owned Name and Email rows plus additive extraRows and extra footer actions.",
+      useWhen: [
+        "Use <code>createAccountFormModal(...)</code> for standard profile/account-edit flows that should stay consistent across PBB browser apps.",
+        "Use it when projects need the shared account baseline but still need additive instructions, warnings, or extra input rows.",
+        "Use it when a footer-side action such as <code>Change Password</code> should remain visually separate from the helper-owned save flow."
+      ],
+      avoidWhen: [
+        "Do not use it for first-time sign-up or large account-management screens with many sections.",
+        "Do not use it when the flow must upload avatars, handle password policy setup, or introduce multi-step onboarding.",
+        "Do not replace the whole footer from app code; prefer additive <code>extraActions</code> and <code>extraActionsPlacement</code>."
+      ],
+      description: "The account preset keeps the baseline account structure narrow: Name and Email stay helper-owned, while projects extend through <code>extraRows</code>, <code>extraActions</code>, and normal app-owned submit logic.",
+      defaultSampleCode: `const accountModal = createAccountFormModal({\n  fields: {\n    name: \"display_name\",\n    email: \"contact_email\",\n  },\n  initialValues: {\n    display_name: \"Operator One\",\n    contact_email: \"operator@pbb.ph\",\n    contact_number: \"+63 917 123 4567\",\n  },\n  extraRows: [\n    [{ type: \"text\", content: \"Keep contact details current for escalation routing.\" }],\n    [{\n      type: \"input\",\n      input: \"tel\",\n      name: \"contact_number\",\n      label: \"Contact Number\",\n      placeholder: \"+63 917 123 4567\",\n    }],\n  ],\n  extraActionsPlacement: \"start\",\n  extraActions: [{\n    id: \"change-password\",\n    label: \"Change Password\",\n    onClick(values) {\n      openChangePassword(values.contact_email);\n      return false;\n    },\n  }],\n  async onSubmit(values) {\n    return api.saveAccount(values);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createAccountFormModal(options)</code>", arguments: "preset options object", returns: "Form-modal instance" }
+      ],
+      options: [
+        { option: "<code>fields</code>", default: "name/email", description: "Payload field-name mapping for the baseline Name and Email rows." },
+        { option: "<code>message</code>", default: "<code>\"\"</code>", description: "Optional intro copy shown above the baseline rows." },
+        { option: "<code>nameLabel</code>", default: "<code>\"Name\"</code>", description: "Override for the baseline Name label." },
+        { option: "<code>namePlaceholder</code>", default: "component default", description: "Override for the baseline Name placeholder." },
+        { option: "<code>emailLabel</code>", default: "<code>\"Email\"</code>", description: "Override for the baseline Email label." },
+        { option: "<code>emailPlaceholder</code>", default: "component default", description: "Override for the baseline Email placeholder." },
+        { option: "<code>extraRows</code>", default: "<code>[]</code>", description: "Additional row arrays appended after the helper-owned Name and Email rows." },
+        { option: "<code>extraActions</code>", default: "<code>[]</code>", description: "Additive footer actions such as <code>Change Password</code>." },
+        { option: "<code>extraActionsPlacement</code>", default: "<code>\"end\"</code>", description: "Placement for additive footer actions.", values: ["start", "end"] }
+      ],
+      propertiesText: "Preset wrappers return the same instance API as <code>createFormModal(...)</code>. They do not add stable public instance properties.",
+      events: [
+        { event: "<code>onSubmit(values, ctx)</code>", arguments: "remapped values object and helper context", returns: "truthy closes, falsey keeps modal open" },
+        { event: "<code>extraActions[n].onClick(values, ctx, actionId)</code>", arguments: "current form values, helper context, action id", returns: "falsey keeps modal open unless <code>closeOnClick</code> is set" }
+      ],
+      methods: [
+        { method: "<code>open()</code>", arguments: "none", returns: "<code>Promise&lt;void&gt;</code>" },
+        { method: "<code>getValues()</code>", arguments: "none", returns: "current form values" },
+        { method: "<code>setErrors(map)</code>", arguments: "field-error map", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Account Form Modal Demo</h1>
+      <p class="muted">Dedicated account/profile preset over <code>createFormModal(...)</code> with helper-owned baseline rows and additive extension points.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Account Edit Flow</h2>
+      <div class="demo-matrix">
+        <article class="demo-matrix-card">
+          <strong>Baseline Rows</strong>
+          <div class="demo-matrix-meta">
+            <span><code>Name</code></span>
+            <span><code>Email</code></span>
+          </div>
+        </article>
+        <article class="demo-matrix-card">
+          <strong>Additive Extensions</strong>
+          <div class="demo-matrix-meta">
+            <span><code>extraRows</code></span>
+            <span><code>extraActions</code></span>
+          </div>
+        </article>
+      </div>
+      <div class="row">
+        <button id="accountPresetBtn" class="ui-button ui-button-primary" type="button">Open Account Preset</button>
+      </div>
+      <pre>const accountModal = createAccountFormModal({
+  fields: {
+    name: "display_name",
+    email: "contact_email",
+  },
+  extraRows: [
+    [{ type: "text", content: "Keep contact details current for escalation routing." }],
+    [{
+      type: "input",
+      input: "tel",
+      name: "contact_number",
+      label: "Contact Number",
+    }],
+  ],
+  extraActionsPlacement: "start",
+  extraActions: [{
+    id: "change-password",
+    label: "Change Password",
+    onClick(values) {
+      openChangePassword(values.contact_email);
+      return false;
+    },
+  }],
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createAccountFormModal = await uiLoader.get("ui.form.modal.account");
+    const createChangePasswordFormModal = await uiLoader.get("ui.form.modal.change.password");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function openChangePassword(emailValue) {
+      const modal = createChangePasswordFormModal({
+        message: `Update the password for ${emailValue}.`,
+        async onSubmit(values, ctx) {
+          writeLog("preset.change-password.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          if (values.new_password !== values.confirm_password) {
+            ctx.setErrors({ confirm_password: "Confirmation password does not match." });
+            writeLog("preset.change-password.submit.failed", values);
+            return false;
+          }
+          writeLog("preset.change-password.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.change-password.close", meta || {});
+        },
+      });
+      modal.open();
+      writeLog("preset.change-password.open", { email: emailValue });
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    document.getElementById("accountPresetBtn").addEventListener("click", () => {
+      const modal = createAccountFormModal({
+        title: "Account",
+        message: "Review account details and keep escalation contact information current.",
+        fields: {
+          name: "display_name",
+          email: "contact_email",
+        },
+        initialValues: {
+          display_name: "Operator One",
+          contact_email: "operator@pbb.ph",
+          contact_number: "+63 917 123 4567",
+        },
+        extraRows: [
+          [{ type: "text", content: "Keep contact details current for escalation routing." }],
+          [{
+            type: "input",
+            input: "tel",
+            name: "contact_number",
+            label: "Contact Number",
+            value: "+63 917 123 4567",
+            placeholder: "+63 917 123 4567",
+            autocomplete: "tel",
+          }],
+        ],
+        extraActionsPlacement: "start",
+        extraActions: [{
+          id: "change-password",
+          label: "Change Password",
+          onClick(values) {
+            writeLog("preset.account.extra-action", { actionId: "change-password", values });
+            openChangePassword(values.contact_email);
+            return false;
+          },
+        }],
+        async onSubmit(values) {
+          writeLog("preset.account.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          writeLog("preset.account.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.account.close", meta || {});
+        },
+      });
+      modal.open();
+      writeLog("preset.account.open", { ok: true });
+    });
+  </script>
+</body>
+</html>

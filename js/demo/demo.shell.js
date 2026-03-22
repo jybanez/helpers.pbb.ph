@@ -17,6 +17,8 @@ const DEMO_GROUPS = [
       { href: "./demo.form.modal.reauth.html", label: "Re-auth Preset" },
       { href: "./demo.form.modal.status.html", label: "Status Preset" },
       { href: "./demo.form.modal.reason.html", label: "Reason Preset" },
+      { href: "./demo.form.modal.account.html", label: "Account Preset" },
+      { href: "./demo.form.modal.change.password.html", label: "Change Password Preset" },
     ],
   },
   {
@@ -66,6 +68,7 @@ const DEMO_GROUPS = [
       { href: "./demo.drawers.html", label: "Drawers" },
       { href: "./demo.window.html", label: "Window" },
       { href: "./demo.password.html", label: "Password Field" },
+      { href: "./demo.icons.html", label: "Icons" },
       { href: "./demo.ui.html", label: "UI Utilities" },
       { href: "./demo.tabs.html", label: "Tabs" },
       { href: "./demo.strips.html", label: "Strips" },

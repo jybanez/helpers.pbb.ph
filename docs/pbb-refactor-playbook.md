@@ -73,8 +73,10 @@ Use adapter functions between helper callbacks and backend APIs.
 - Prefer helper-owned workflows before hand-built project flows for repeated operational UI such as:
   - `createFormModal(...)`
   - `createLoginFormModal(...)`
-  - `createReauthFormModal(...)`
-  - `createPasswordField(...)`
+- `createReauthFormModal(...)`
+- `createAccountFormModal(...)`
+- `createChangePasswordFormModal(...)`
+- `createPasswordField(...)`
   - `createStatusUpdateFormModal(...)`
   - `createReasonFormModal(...)`
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`

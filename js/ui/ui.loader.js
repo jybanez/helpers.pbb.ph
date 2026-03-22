@@ -105,6 +105,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createPasswordField",
   },
+  "ui.icons": {
+    js: "./ui.icons.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css"],
+    deps: [],
+    export: null,
+  },
   "ui.form.modal.login": {
     js: "./ui.form.modal.presets.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
@@ -128,6 +134,18 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
     deps: ["ui.form.modal"],
     export: "createReasonFormModal",
+  },
+  "ui.form.modal.account": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
+    deps: ["ui.form.modal"],
+    export: "createAccountFormModal",
+  },
+  "ui.form.modal.change.password": {
+    js: "./ui.form.modal.presets.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
+    deps: ["ui.form.modal"],
+    export: "createChangePasswordFormModal",
   },
   "ui.select": {
     js: "./ui.select.js",

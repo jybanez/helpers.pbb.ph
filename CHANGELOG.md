@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.4`
+- Latest documented release: `v0.21.6`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,48 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.6
+
+- Added `ui.icons` as a shared categorized SVG icon registry with:
+  - `createIcon(name, options)`
+  - `getIconDefinition(name)`
+  - `listIcons()`
+  - `listIconCategories()`
+- Added the initial curated outline icon pack across:
+  - `actions`
+  - `navigation`
+  - `status`
+  - `media`
+  - `data`
+- Added dedicated demo/catalog coverage:
+  - `demos/demo.icons.html`
+  - shared navigation entry under `Utilities`
+  - home catalog card on `demos/index.html`
+- Added baseline regression coverage for registry integrity and SVG creation:
+  - `tests/icons.regression.html`
+  - `tests/icons.regression.mjs`
+
+### v0.21.5
+
+- Added `createAccountFormModal(options)` as a narrow account/profile wrapper over `createFormModal(...)` with helper-owned baseline rows for:
+  - `Name`
+  - `Email`
+- Added `extraRows` support to the new account preset so projects can append instructions, warnings, and additional row content without forking the shared account structure.
+- Added `createChangePasswordFormModal(options)` as a narrow password-change wrapper with helper-owned rows for:
+  - `Current Password`
+  - `New Password`
+  - `Confirm Password`
+- Added dedicated demo coverage for both new presets:
+  - `demos/demo.form.modal.account.html`
+  - `demos/demo.form.modal.change.password.html`
+- Extended preset browser regression coverage to include:
+  - account preset additive `extraRows`
+  - account preset `extraActions` / `extraActionsPlacement`
+  - change-password preset remapped fields
+  - change-password preset successful native-submit close behavior
+  - `tests/form.modal.presets.regression.html`
+  - `tests/form.modal.presets.regression.mjs`
+
 ### v0.21.4
 
 - Added additive `extraActions` support to `createFormModal(...)` so teams can extend the helper-owned footer without replacing the standard cancel/submit contract.

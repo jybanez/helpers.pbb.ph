@@ -28,6 +28,8 @@
 
   <script type="module">
     import {
+      createAccountFormModal,
+      createChangePasswordFormModal,
       createLoginFormModal,
       createReauthFormModal,
       createStatusUpdateFormModal,
@@ -266,6 +268,110 @@
     reasonSuccessModal.refs.form.requestSubmit();
     await wait(500);
     assert(document.querySelector(".ui-modal-root") === null, "reason preset should close on successful native form submit");
+
+    const accountExtraActionCalls = [];
+    const accountModal = createAccountFormModal({
+      fields: {
+        name: "display_name",
+        email: "contact_email",
+      },
+      initialValues: {
+        display_name: "Operator One",
+        contact_email: "operator@pbb.ph",
+        contact_number: "+63 917 123 4567",
+      },
+      extraRows: [
+        [{ type: "text", content: "Keep contact details current for escalation routing." }],
+        [{
+          type: "input",
+          input: "tel",
+          name: "contact_number",
+          label: "Contact Number",
+        }],
+      ],
+      extraActionsPlacement: "start",
+      extraActions: [{
+        id: "change-password",
+        label: "Change Password",
+        onClick(values, _ctx, actionId) {
+          accountExtraActionCalls.push({ values, actionId });
+          return false;
+        },
+      }],
+      async onSubmit() {
+        await wait(80);
+        return true;
+      },
+    });
+
+    accountModal.open();
+    await wait(80);
+    assert(Boolean(document.querySelector('input[name="display_name"]')), "account preset should render remapped name field");
+    assert(Boolean(document.querySelector('input[name="contact_email"]')), "account preset should render remapped email field");
+    assert(Boolean(document.querySelector('input[name="contact_number"]')), "account preset should append additive extra rows");
+    const accountSplitAction = document.querySelector('.ui-action-modal-button.is-footer-split-start');
+    assert((accountSplitAction?.textContent || "").includes("Change Password"), "account preset should support split start extra actions");
+    accountSplitAction?.click();
+    await wait(80);
+    assert(accountExtraActionCalls.length === 1, "account preset should invoke extra action callback");
+    assert(accountExtraActionCalls[0]?.values?.contact_email === "operator@pbb.ph", "account preset should pass current remapped values to extra actions");
+    assert(accountExtraActionCalls[0]?.actionId === "change-password", "account preset should pass the extra action id to callbacks");
+    assert(document.querySelector(".ui-modal-root") !== null, "account preset extra action should keep modal open by default");
+
+    accountModal.destroy();
+    await wait(80);
+
+    const changePasswordModal = createChangePasswordFormModal({
+      fields: {
+        currentPassword: "current_password",
+        newPassword: "next_password",
+        confirmPassword: "confirm_password",
+      },
+      initialValues: {
+        current_password: "old-secret",
+        next_password: "new-secret",
+        confirm_password: "wrong-secret",
+      },
+      async onSubmit(values, ctx) {
+        await wait(80);
+        if (values.next_password !== values.confirm_password) {
+          ctx.setErrors({ confirm_password: "Confirmation password does not match." });
+          return false;
+        }
+        return true;
+      },
+    });
+
+    changePasswordModal.open();
+    await wait(80);
+    assert(Boolean(document.querySelector('input[name="current_password"]')), "change-password preset should render remapped current password field");
+    assert(Boolean(document.querySelector('input[name="next_password"]')), "change-password preset should render remapped new password field");
+    assert(Boolean(document.querySelector('input[name="confirm_password"]')), "change-password preset should render remapped confirm password field");
+    changePasswordModal.refs.form.requestSubmit();
+    await wait(180);
+    const confirmPasswordError = document.querySelector('input[name="confirm_password"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+    assert((confirmPasswordError?.textContent || "").includes("does not match"), "change-password preset should surface confirm-password validation errors");
+
+    changePasswordModal.destroy();
+    await wait(80);
+
+    const changePasswordSuccessModal = createChangePasswordFormModal({
+      initialValues: {
+        current_password: "old-secret",
+        new_password: "new-secret",
+        confirm_password: "new-secret",
+      },
+      async onSubmit() {
+        await wait(80);
+        return true;
+      },
+    });
+
+    changePasswordSuccessModal.open();
+    await wait(80);
+    changePasswordSuccessModal.refs.form.requestSubmit();
+    await wait(500);
+    assert(document.querySelector(".ui-modal-root") === null, "change-password preset should close on successful native form submit");
 
     if (failures.length) {
       document.body.dataset.status = "fail";
