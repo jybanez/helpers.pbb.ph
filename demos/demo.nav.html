@@ -3,102 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Navigation Demo</title>
+  <title>Navigation Overview</title>
   <link rel='stylesheet' href='../css/demo/demo.shell.css'>
   <style>
-    body {
-      margin: 0;
-      padding: 24px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      gap: 14px;
-    }
-    .panel {
-      border: 1px solid #263146;
-      border-radius: 10px;
-      background: #111826;
-      padding: 14px;
-      display: grid;
-      gap: 10px;
-    }
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 12px;
-    }
-    .layout.is-sidebar-collapsed {
-      grid-template-columns: 112px 1fr;
-    }
-    .layout-sidebar-panel {
-      transition: width 180ms ease, padding 180ms ease;
-    }
-    .back {
-      color: #b2c2e5;
-      text-decoration: none;
-      font-size: 13px;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-    .log {
-      margin: 0;
-      white-space: pre-wrap;
-      font-size: 12px;
-      color: #b2c2e5;
-      font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
-      border-radius: 8px;
-      background: #0b1220;
-      padding: 10px;
-      height: 220px;
-      overflow-y: auto;
-      overflow-x: auto;
-    }
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.5; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card { display: grid; gap: 8px; border: 1px solid #2b3750; border-radius: 10px; background: #0b1220; padding: 14px; text-decoration: none; color: inherit; }
+    .card:hover { border-color: #4a5f86; background: #101a2b; }
+    .card small { color: #b2c2e5; line-height: 1.45; }
   </style>
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany(["ui.navbar", "ui.sidebar", "ui.breadcrumbs", "ui.dropdown", "ui.dropup"]);
-  </script>
   <script>
     window.demoMeta = {
-      title: "Navigation",
-      overview: "Navigation-family playground for navbar, sidebar, breadcrumbs, dropdown, and dropup helpers.",
+      title: "Navigation Overview",
+      overview: "Directory page for the shared navigation helpers. Each component now has its own dedicated manual/demo page.",
       useWhen: [
-        "Use these helpers for shared navigation surfaces rather than app-local bespoke nav markup.",
-        "Use dropdown/dropup wrappers when anchored action menus are the real need."
+        "Use this page as the entry point when you need to compare the available navigation primitives.",
+        "Jump to the focused demo for the actual options, events, methods, and behavior contract."
       ],
       avoidWhen: [
-        "Do not use top-level nav helpers when a simple menu or button group is enough.",
-        "Do not overload the nav helpers with page-specific business logic."
+        "Do not treat this page as the component reference itself; the detailed contracts live on the dedicated pages.",
+        "Do not add new live examples here when they belong to a specific navigation helper."
       ],
-      description: "This demo covers the shared navigation vocabulary as a family. The point is consistency across top-level navigation, side navigation, breadcrumbs, and anchored menus.",
-      defaultSampleCode: `createNavbar(host, data, {\n  items,\n  actions,\n  onNavigate(item) {\n    writeLog("navbar.navigate", item);\n  },\n});`,
+      description: "Navigation helpers were previously overloaded into one page. This overview keeps the old route useful while directing engineers to the focused component manuals.",
+      defaultSampleCode: "Open one of the dedicated pages:\n- demo.navbar.html\n- demo.sidebar.html\n- demo.breadcrumbs.html\n- demo.dropdown.html\n- demo.dropup.html",
       constructor: [
-        { factory: "<code>createNavbar(...)</code>, <code>createSidebar(...)</code>, <code>createBreadcrumbs(...)</code>, <code>createDropdown(...)</code>, <code>createDropup(...)</code>", arguments: "container or trigger plus navigation data/options", returns: "Helper-specific navigation instances" }
+        { factory: "Focused manuals", arguments: "one page per helper", returns: "Accurate component-specific docs and live examples" }
       ],
-      propertiesText: "This page demonstrates a family of helpers. Public contracts should be read per helper, not as one shared instance.",
       methods: [
-        { method: "<code>Helper-specific methods</code>", arguments: "varies", returns: "varies" }
+        { method: "Navigate to component page", arguments: "none", returns: "Focused navigation helper reference" }
       ]
     };
   </script>
@@ -108,194 +45,20 @@
   <main class="page" data-theme="dark">
     <section class="panel">
       <div class="row">
-        <a class="back" href="./index.html">← Back to Home</a>
-        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+        <a class="back" href="./index.html">Back to Home</a>
       </div>
-      <h1 class="ui-title">Navigation Demo</h1>
-      <p>Navbar, Sidebar, Breadcrumbs, Dropdown, Dropup</p>
+      <h1 class="ui-title">Navigation Overview</h1>
+      <p class="muted">Use the focused pages below. Each one covers a single helper with real options, events, methods, and live behavior instead of forcing the whole navigation family into one page.</p>
     </section>
-
     <section class="panel">
-      <div id="navbarHost"></div>
-    </section>
-
-    <section id="navLayout" class="layout">
-      <article id="sidebarPanel" class="panel layout-sidebar-panel">
-        <div id="sidebarHost"></div>
-      </article>
-      <article class="panel">
-        <div id="breadcrumbsHost"></div>
-        <div class="row">
-          <label class="sr-only" for="crumbInput">New breadcrumb label</label>
-          <input id="crumbInput" class="ui-input" type="text" placeholder="New breadcrumb label">
-          <button id="crumbAddBtn" class="ui-button" type="button">Add Crumb</button>
-          <button id="crumbResetBtn" class="ui-button" type="button">Reset</button>
-        </div>
-        <div class="row">
-          <button id="dropdownBtn" class="ui-button" type="button">Open Dropdown</button>
-          <button id="dropupBtn" class="ui-button" type="button">Open Dropup</button>
-        </div>
-      </article>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Event Log</h2>
-      <pre id="log" class="log">No events yet.</pre>
+      <div class="grid">
+        <a class="card" href="./demo.navbar.html"><strong>Navbar</strong><small>Top-level app navigation with items, actions, and action menus.</small></a>
+        <a class="card" href="./demo.sidebar.html"><strong>Sidebar</strong><small>Side navigation with collapse state, active item handling, and icon support.</small></a>
+        <a class="card" href="./demo.breadcrumbs.html"><strong>Breadcrumbs</strong><small>Stateful breadcrumb trail with add/reset helpers and optional auto-truncate.</small></a>
+        <a class="card" href="./demo.dropdown.html"><strong>Dropdown</strong><small>Bottom-anchored menu wrapper over the shared menu core.</small></a>
+        <a class="card" href="./demo.dropup.html"><strong>Dropup</strong><small>Top-anchored menu wrapper over the shared menu core.</small></a>
+      </div>
     </section>
   </main>
-
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    await window.__demoLoaderReady;
-    const createNavbar = await uiLoader.get("ui.navbar");
-    const createSidebar = await uiLoader.get("ui.sidebar");
-    const createBreadcrumbs = await uiLoader.get("ui.breadcrumbs");
-    const createDropdown = await uiLoader.get("ui.dropdown");
-    const createDropup = await uiLoader.get("ui.dropup");
-
-    const page = document.querySelector("main.page");
-    const log = document.getElementById("log");
-    const crumbInput = document.getElementById("crumbInput");
-    const crumbAddBtn = document.getElementById("crumbAddBtn");
-    const crumbResetBtn = document.getElementById("crumbResetBtn");
-    const navLayout = document.getElementById("navLayout");
-    function writeLog(label, payload) {
-      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
-    }
-
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
-      writeLog("theme.toggle", { theme: page.dataset.theme });
-    });
-
-    createNavbar(document.getElementById("navbarHost"), {}, {
-      ariaLabel: "Top navigation",
-      brandText: "Hotline UI",
-      activeId: "incidents",
-      sticky: true,
-      iconPosition: "start",
-      items: [
-        { id: "dashboard", label: "Dashboard", icon: '<svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>' },
-        { id: "incidents", label: "Incidents", icon: '<svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2Zm1 14h-2v2h2v-2Zm0-6h-2v5h2V10Z"/></svg>' },
-        { id: "reports", label: "Reports", icon: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16l4-3 4 3 4-3 4 3V8l-6-6Z"/></svg>' },
-      ],
-      actions: [
-        { id: "help", label: "Help", icon: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 17h-2v-2h2v2Zm2.1-7.8-.9.9c-.7.7-1.2 1.4-1.2 2.9h-2v-.5c0-1.1.4-2.2 1.2-3l1.2-1.2a2 2 0 1 0-3.4-1.4H8a4 4 0 1 1 7.1 2.3Z"/></svg>' },
-        {
-          id: "profile",
-          label: "Profile",
-          icon: '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2-8 4.5V21h16v-2.5C20 16 16.4 14 12 14Z"/></svg>',
-          menuOptions: { align: "right" },
-          menuItems: [
-            { id: "manage", label: "Manage" },
-            { id: "clear-cache", label: "Clear Cache" },
-            { id: "logout", label: "Logout", danger: true },
-          ],
-        },
-      ],
-      onNavigate(item) {
-        writeLog("navbar.navigate", item);
-      },
-      onAction(action) {
-        writeLog("navbar.action", action);
-      },
-      onActionMenuSelect(action, item) {
-        writeLog("navbar.action.menu.select", { action, item });
-      },
-      onActionMenuOpenChange(action, open) {
-        writeLog("navbar.action.menu.open", { action, open });
-      },
-    });
-
-    createSidebar(document.getElementById("sidebarHost"), {}, {
-      ariaLabel: "Section navigation",
-      title: "Sections",
-      activeId: "calls",
-      items: [
-        { id: "calls", label: "Calls", icon: '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.2c1.1.4 2.2.6 3.4.6a1 1 0 0 1 1 1V21a1 1 0 0 1-1 1A18 18 0 0 1 2 4a1 1 0 0 1 1-1h3.4a1 1 0 0 1 1 1c0 1.2.2 2.3.6 3.4a1 1 0 0 1-.2 1l-2.2 2.4Z"/></svg>' },
-        { id: "dispatch", label: "Dispatch", icon: '<svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm0 9h6a8.7 8.7 0 0 1-6 8.3V11Z"/></svg>' },
-        { id: "teams", label: "Teams", icon: '<svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 1a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V20h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.7 0-1.1.1 1.2.9 2.1 2.1 2.1 3.4V20H23v-2.5c0-2.3-4.7-3.5-7-3.5Z"/></svg>' },
-        { id: "settings", label: "Settings", icon: '<svg viewBox="0 0 24 24"><path d="M19.4 12.9a7.7 7.7 0 0 0 .1-.9 7.7 7.7 0 0 0-.1-.9l2.1-1.6a.5.5 0 0 0 .1-.7l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.4 7.4 0 0 0-1.5-.9l-.4-2.7a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.7c-.5.2-1 .5-1.5.9l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.7l2.1 1.6a7.7 7.7 0 0 0-.1.9c0 .3 0 .6.1.9l-2.1 1.6a.5.5 0 0 0-.1.7l2 3.5a.5.5 0 0 0 .6.2l2.5-1c.5.4 1 .7 1.5.9l.4 2.7a.5.5 0 0 0 .5.4h4a.5.5 0 0 0 .5-.4l.4-2.7c.5-.2 1-.5 1.5-.9l2.5 1a.5.5 0 0 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.7l-2.1-1.6ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>' },
-      ],
-      onNavigate(item) {
-        writeLog("sidebar.navigate", item);
-      },
-      onToggleCollapsed(next) {
-        navLayout?.classList.toggle("is-sidebar-collapsed", Boolean(next));
-        writeLog("sidebar.collapse", { collapsed: next });
-      },
-    });
-
-    const breadcrumbsApi = createBreadcrumbs(document.getElementById("breadcrumbsHost"), {}, {
-      ariaLabel: "Incident breadcrumb trail",
-      autoTruncateOnNavigate: true,
-    });
-    const baseCrumbs = [
-      { id: "home", label: "Home", icon: '<svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v9h6v-6h2v6h6v-9h3L12 3Z"/></svg>' },
-      { id: "incidents", label: "Incidents", icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-3h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/></svg>' },
-      { id: "details", label: "Details", icon: '<svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2V7Zm0 4h2v6h-2v-6Zm1-9a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>' },
-    ];
-    breadcrumbsApi.setItems(baseCrumbs);
-    breadcrumbsApi.update({}, {
-      onNavigate(item, index, nextItems) {
-        writeLog("breadcrumbs.navigate", {
-          item,
-          index,
-          remaining: nextItems.map((crumb) => crumb.label),
-        });
-      },
-    });
-
-    crumbAddBtn.addEventListener("click", () => {
-      const currentItems = breadcrumbsApi.getItems();
-      const text = String(crumbInput.value || "").trim();
-      const label = text || `Step ${currentItems.length + 1}`;
-      const id = `crumb-${Date.now()}-${currentItems.length}`;
-      breadcrumbsApi.addCrumb({ id, label });
-      crumbInput.value = "";
-      writeLog("breadcrumbs.add", { id, label, total: breadcrumbsApi.getItems().length });
-    });
-
-    crumbInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        crumbAddBtn.click();
-      }
-    });
-
-    crumbResetBtn.addEventListener("click", () => {
-      breadcrumbsApi.reset();
-      writeLog("breadcrumbs.reset", { total: breadcrumbsApi.getItems().length });
-    });
-
-    const menuItems = [
-      { id: "new", label: "New Incident" },
-      { id: "assign", label: "Assign Team" },
-      { id: "archive", label: "Archive", danger: true },
-    ];
-    createDropdown(document.getElementById("dropdownBtn"), menuItems, {
-      onSelect(item) {
-        writeLog("dropdown.select", item);
-      },
-      onOpenChange(open) {
-        writeLog("dropdown.open", { open });
-      },
-    });
-
-    createDropup(document.getElementById("dropupBtn"), [
-      { id: "caller", label: "Caller View" },
-      { id: "operator", label: "Operator View" },
-      { id: "admin", label: "Admin View" },
-    ], {
-      onSelect(item) {
-        writeLog("dropup.select", item);
-      },
-      onOpenChange(open) {
-        writeLog("dropup.open", { open });
-      },
-    });
-  </script>
 </body>
 </html>
-

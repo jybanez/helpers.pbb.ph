@@ -1,9 +1,51 @@
 import { createElement } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
+import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js";
 
 export function uiAlert(message, options = {}) {
   return new Promise((resolve) => {
+    maybeDelegateWorkspaceDialog("alert", message, options).then((bridgeResult) => {
+      if (bridgeResult.delegated) {
+        resolve(Boolean(bridgeResult.result));
+        return;
+      }
+      openLocalAlert(resolve, message, options);
+    }).catch(() => {
+      openLocalAlert(resolve, message, options);
+    });
+  });
+}
+
+export function uiConfirm(message, options = {}) {
+  return new Promise((resolve) => {
+    maybeDelegateWorkspaceDialog("confirm", message, options).then((bridgeResult) => {
+      if (bridgeResult.delegated) {
+        resolve(Boolean(bridgeResult.result));
+        return;
+      }
+      openLocalConfirm(resolve, message, options);
+    }).catch(() => {
+      openLocalConfirm(resolve, message, options);
+    });
+  });
+}
+
+export function uiPrompt(message, options = {}) {
+  return new Promise((resolve) => {
+    maybeDelegateWorkspaceDialog("prompt", message, options).then((bridgeResult) => {
+      if (bridgeResult.delegated) {
+        resolve(bridgeResult.result == null ? null : String(bridgeResult.result));
+        return;
+      }
+      openLocalPrompt(resolve, message, options);
+    }).catch(() => {
+      openLocalPrompt(resolve, message, options);
+    });
+  });
+}
+
+function openLocalAlert(resolve, message, options = {}) {
     let settled = false;
     const dialogVariant = normalizeDialogVariant(options.variant);
     const content = createDialogContent(message, options, dialogVariant);
@@ -53,165 +95,160 @@ export function uiAlert(message, options = {}) {
       message,
       description: options.description || "",
     });
-  });
 }
 
-export function uiConfirm(message, options = {}) {
-  return new Promise((resolve) => {
-    let settled = false;
-    const dialogVariant = normalizeDialogVariant(options.variant);
-    const content = createDialogContent(message, options, dialogVariant);
+function openLocalConfirm(resolve, message, options = {}) {
+  let settled = false;
+  const dialogVariant = normalizeDialogVariant(options.variant);
+  const content = createDialogContent(message, options, dialogVariant);
 
-    const modal = createActionModal({
-      title: options.title || "Confirm",
-      content,
-      actions: [
-        {
-          id: "cancel",
-          label: options.cancelText || "Cancel",
-          variant: "default",
-          icon: options.cancelIcon || "",
-          iconPosition: options.cancelIconPosition || "start",
-          iconOnly: Boolean(options.cancelIconOnly),
-          ariaLabel: options.cancelAriaLabel || "",
-          onClick() {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            resolve(false);
-          },
+  const modal = createActionModal({
+    title: options.title || "Confirm",
+    content,
+    actions: [
+      {
+        id: "cancel",
+        label: options.cancelText || "Cancel",
+        variant: "default",
+        icon: options.cancelIcon || "",
+        iconPosition: options.cancelIconPosition || "start",
+        iconOnly: Boolean(options.cancelIconOnly),
+        ariaLabel: options.cancelAriaLabel || "",
+        onClick() {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve(false);
         },
-        {
-          id: "confirm",
-          label: options.confirmText || "Confirm",
-          variant: options.confirmVariant || getDefaultActionVariant(dialogVariant, "primary"),
-          icon: options.confirmIcon || "",
-          iconPosition: options.confirmIconPosition || "start",
-          iconOnly: Boolean(options.confirmIconOnly),
-          ariaLabel: options.confirmAriaLabel || "",
-          autoFocus: true,
-          onClick() {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            resolve(true);
-          },
-        },
-      ],
-      headerActions: Array.isArray(options.headerActions) ? options.headerActions : [],
-      size: options.size || "sm",
-      closeOnBackdrop: Boolean(options.allowBackdropClose),
-      closeOnEscape: options.allowEscClose !== false,
-      parent: options.parent || document.body,
-      className: buildDialogClassName(options.className, dialogVariant),
-      showCloseButton: options.showCloseButton !== false,
-      onClose() {
-        if (settled) {
-          modal.destroy();
-          return;
-        }
-        settled = true;
-        resolve(false);
-        modal.destroy();
       },
-    });
-    modal.open();
-    speakDialog(options, {
-      title: options.title || "Confirm",
-      message,
-      description: options.description || "",
-    });
-  });
-}
-
-export function uiPrompt(message, options = {}) {
-  return new Promise((resolve) => {
-    let settled = false;
-    const dialogVariant = normalizeDialogVariant(options.variant);
-    const input = createElement("input", {
-      className: "ui-input",
-      attrs: { type: "text", placeholder: options.placeholder || "" },
-    });
-    input.value = String(options.defaultValue || "");
-    const content = createDialogContent(message, options, dialogVariant, input);
-
-    const modal = createActionModal({
-      title: options.title || "Input",
-      content,
-      actions: [
-        {
-          id: "cancel",
-          label: options.cancelText || "Cancel",
-          variant: "default",
-          icon: options.cancelIcon || "",
-          iconPosition: options.cancelIconPosition || "start",
-          iconOnly: Boolean(options.cancelIconOnly),
-          ariaLabel: options.cancelAriaLabel || "",
-          onClick() {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            resolve(null);
-          },
+      {
+        id: "confirm",
+        label: options.confirmText || "Confirm",
+        variant: options.confirmVariant || getDefaultActionVariant(dialogVariant, "primary"),
+        icon: options.confirmIcon || "",
+        iconPosition: options.confirmIconPosition || "start",
+        iconOnly: Boolean(options.confirmIconOnly),
+        ariaLabel: options.confirmAriaLabel || "",
+        autoFocus: true,
+        onClick() {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve(true);
         },
-        {
-          id: "submit",
-          label: options.submitText || "Submit",
-          variant: options.submitVariant || getDefaultActionVariant(dialogVariant, "primary"),
-          icon: options.submitIcon || "",
-          iconPosition: options.submitIconPosition || "start",
-          iconOnly: Boolean(options.submitIconOnly),
-          ariaLabel: options.submitAriaLabel || "",
-          onClick() {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            resolve(input.value);
-          },
-        },
-      ],
-      headerActions: Array.isArray(options.headerActions) ? options.headerActions : [],
-      size: options.size || "sm",
-      closeOnBackdrop: Boolean(options.allowBackdropClose),
-      closeOnEscape: options.allowEscClose !== false,
-      parent: options.parent || document.body,
-      className: buildDialogClassName(options.className, dialogVariant),
-      showCloseButton: options.showCloseButton !== false,
-      initialFocus: input,
-      onClose() {
-        if (settled) {
-          modal.destroy();
-          return;
-        }
-        settled = true;
-        resolve(null);
-        modal.destroy();
       },
-    });
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        if (settled) {
-          return;
-        }
-        settled = true;
-        resolve(input.value);
-        modal.close({ reason: "prompt-enter", result: input.value }).then(() => modal.destroy());
+    ],
+    headerActions: Array.isArray(options.headerActions) ? options.headerActions : [],
+    size: options.size || "sm",
+    closeOnBackdrop: Boolean(options.allowBackdropClose),
+    closeOnEscape: options.allowEscClose !== false,
+    parent: options.parent || document.body,
+    className: buildDialogClassName(options.className, dialogVariant),
+    showCloseButton: options.showCloseButton !== false,
+    onClose() {
+      if (settled) {
+        modal.destroy();
+        return;
       }
-    });
-    modal.open();
-    speakDialog(options, {
-      title: options.title || "Input",
-      message,
-      description: options.description || "",
-    });
-    input.focus();
-    input.select();
+      settled = true;
+      resolve(false);
+      modal.destroy();
+    },
   });
+  modal.open();
+  speakDialog(options, {
+    title: options.title || "Confirm",
+    message,
+    description: options.description || "",
+  });
+}
+
+function openLocalPrompt(resolve, message, options = {}) {
+  let settled = false;
+  const dialogVariant = normalizeDialogVariant(options.variant);
+  const input = createElement("input", {
+    className: "ui-input",
+    attrs: { type: "text", placeholder: options.placeholder || "" },
+  });
+  input.value = String(options.defaultValue || "");
+  const content = createDialogContent(message, options, dialogVariant, input);
+
+  const modal = createActionModal({
+    title: options.title || "Input",
+    content,
+    actions: [
+      {
+        id: "cancel",
+        label: options.cancelText || "Cancel",
+        variant: "default",
+        icon: options.cancelIcon || "",
+        iconPosition: options.cancelIconPosition || "start",
+        iconOnly: Boolean(options.cancelIconOnly),
+        ariaLabel: options.cancelAriaLabel || "",
+        onClick() {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve(null);
+        },
+      },
+      {
+        id: "submit",
+        label: options.submitText || "Submit",
+        variant: options.submitVariant || getDefaultActionVariant(dialogVariant, "primary"),
+        icon: options.submitIcon || "",
+        iconPosition: options.submitIconPosition || "start",
+        iconOnly: Boolean(options.submitIconOnly),
+        ariaLabel: options.submitAriaLabel || "",
+        onClick() {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve(input.value);
+        },
+      },
+    ],
+    headerActions: Array.isArray(options.headerActions) ? options.headerActions : [],
+    size: options.size || "sm",
+    closeOnBackdrop: Boolean(options.allowBackdropClose),
+    closeOnEscape: options.allowEscClose !== false,
+    parent: options.parent || document.body,
+    className: buildDialogClassName(options.className, dialogVariant),
+    showCloseButton: options.showCloseButton !== false,
+    initialFocus: input,
+    onClose() {
+      if (settled) {
+        modal.destroy();
+        return;
+      }
+      settled = true;
+      resolve(null);
+      modal.destroy();
+    },
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(input.value);
+      modal.close({ reason: "prompt-enter", result: input.value }).then(() => modal.destroy());
+    }
+  });
+  modal.open();
+  speakDialog(options, {
+    title: options.title || "Input",
+    message,
+    description: options.description || "",
+  });
+  input.focus();
+  input.select();
 }
 
 function normalizeDialogVariant(variant) {

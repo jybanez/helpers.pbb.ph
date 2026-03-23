@@ -168,7 +168,7 @@ If this proposal is accepted, add:
 1. one taskbar-overflow demo
 2. one attention/dirty-state demo
 
-These should extend `demos/demo.window.html` rather than creating a second unrelated window surface.
+These should extend `demos/demo.window.manager.html` rather than creating a second unrelated window surface.
 
 ## Regression Scope
 
@@ -192,3 +192,16 @@ That keeps the subsystem disciplined:
 - V1 = correct base windowing
 - next stage = stronger taskbar usability
 - later stages = only if truly justified
+
+## Follow-On Spec
+
+The current implementation-facing follow-on doc for the next bounded stage is:
+
+- `docs/ui-window-taskbar-v2-spec.md`
+
+That V2 spec narrows this proposal into:
+
+- always-on taskbar support for workspace-style usage
+- all-open-window taskbar listing
+- active/minimized item state
+- taskbar-based focus switching

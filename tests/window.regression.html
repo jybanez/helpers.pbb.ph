@@ -14,16 +14,27 @@
 </head>
 <body data-status="pending">
   <div id="host"></div>
+  <div id="workspaceHost"></div>
   <pre id="results">Running...</pre>
 
   <script type="module">
     import { createWindowManager } from "../js/ui/ui.window.js";
 
     const host = document.getElementById("host");
+    const workspaceHost = document.getElementById("workspaceHost");
     const results = document.getElementById("results");
     const failures = [];
 
-    const manager = createWindowManager({ container: host, showTaskbar: true });
+    workspaceHost.style.position = "relative";
+    workspaceHost.style.width = "900px";
+    workspaceHost.style.height = "600px";
+    workspaceHost.style.border = "1px solid #263146";
+    workspaceHost.style.marginBottom = "12px";
+
+    const manager = createWindowManager({ container: host, showTaskbar: true, taskbarMode: "minimized-only" });
+    const taskbarEl = host.querySelector('.ui-window-manager-taskbar');
+    assert(taskbarEl.hidden === true, "taskbar should start hidden when no windows are minimized");
+    assert(getComputedStyle(taskbarEl).display === "none", "hidden taskbar should not still render visually");
     const inspector = manager.createWindow({
       id: "inspector",
       title: "Inspector",
@@ -120,6 +131,64 @@
     manager.destroy();
     await wait(20);
     assert(host.querySelector('.ui-window-manager') === null, "destroy should remove the manager DOM");
+
+    const workspaceManager = createWindowManager({
+      container: workspaceHost,
+      showTaskbar: true,
+      taskbarMode: "always",
+      taskbarItemOrder: "open-order",
+    });
+    const workspaceTaskbar = workspaceHost.querySelector(".ui-window-manager-taskbar");
+    assert(workspaceTaskbar.hidden === true, "always-on taskbar should stay hidden until a window exists");
+
+    const alpha = workspaceManager.createWindow({
+      id: "alpha",
+      title: "Alpha",
+      x: 24,
+      y: 24,
+      width: 300,
+      height: 220,
+      content: "<p>Alpha</p>",
+    });
+    const beta = workspaceManager.createWindow({
+      id: "beta",
+      title: "Beta",
+      x: 140,
+      y: 80,
+      width: 300,
+      height: 220,
+      content: "<p>Beta</p>",
+    });
+
+    await wait(40);
+    assert(workspaceTaskbar.hidden === false, "always-on taskbar should render while windows are open");
+    assert(workspaceManager.getTaskbarWindows().length === 2, "always-on taskbar should list all open windows");
+    const taskbarLabels = Array.from(workspaceTaskbar.querySelectorAll(".ui-window-taskbar-label")).map((node) => node.textContent.trim());
+    assert(taskbarLabels.join(",") === "Alpha,Beta", "open-order taskbar should preserve window creation order");
+
+    const betaTaskbarItem = Array.from(workspaceTaskbar.querySelectorAll(".ui-window-taskbar-item")).find((node) => node.textContent.includes("Beta"));
+    betaTaskbarItem.querySelector(".ui-window-taskbar-button").click();
+    await wait(30);
+    assert(beta.getState().minimized === false, "clicking open taskbar item should not minimize the window");
+    assert(beta.getState().active === true, "clicking open taskbar item should focus the window");
+    assert(betaTaskbarItem.classList.contains("is-active"), "active taskbar item should be marked active");
+
+    beta.minimize();
+    await wait(240);
+    const minimizedBetaItem = Array.from(workspaceTaskbar.querySelectorAll(".ui-window-taskbar-item")).find((node) => node.textContent.includes("Beta"));
+    assert(minimizedBetaItem.classList.contains("is-minimized"), "minimized taskbar item should be marked minimized");
+    minimizedBetaItem.querySelector(".ui-window-taskbar-button").click();
+    await wait(240);
+    assert(beta.getState().minimized === false, "clicking minimized taskbar item should restore the window");
+    assert(beta.getState().active === true, "restored taskbar item should focus the window");
+
+    alpha.maximize();
+    await wait(30);
+    assert(alpha.getState().height === workspaceHost.clientHeight - workspaceTaskbar.offsetHeight, "always-on taskbar should reserve height for maximized windows");
+
+    workspaceManager.destroy();
+    await wait(20);
+    assert(workspaceHost.querySelector('.ui-window-manager') === null, "destroy should remove the always-on workspace manager DOM");
 
     if (failures.length) {
       document.body.dataset.status = "fail";

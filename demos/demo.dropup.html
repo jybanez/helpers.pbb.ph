@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dropup Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 18px; background: #0b1220; min-height: 200px; display: grid; align-content: end; justify-content: start; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 220px; color: #b2c2e5; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.dropup"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Dropup",
+      overview: "Top-anchored menu wrapper over the shared menu core.",
+      useWhen: [
+        "Use <code>createDropup(...)</code> when the menu should open above the trigger, such as in dense footer or taskbar-style surfaces.",
+        "Use it instead of hand-flipping dropdown placement in app code."
+      ],
+      avoidWhen: [
+        "Do not use it if normal bottom placement is the intended default; use <code>createDropdown(...)</code>.",
+        "Do not treat it as a separate menu system; it is the same shared menu API with different default placement."
+      ],
+      description: "Dropup is the top-anchored twin of <code>createDropdown(...)</code>. It keeps the same item contract, callbacks, and methods because it is still just a wrapper over <code>createMenu(...)</code>.",
+      defaultSampleCode: `const dropup = createDropup(trigger, items, {
+  align: "left",
+  matchTriggerWidth: true,
+  onOpenChange(open) {
+    writeLog("dropup.openChange", { open });
+  },
+});`,
+      constructor: [
+        { factory: "<code>createDropup(triggerEl, items, options)</code>", arguments: "trigger element, menu items, menu options", returns: "Dropup instance" }
+      ],
+      options: [
+        { option: "<code>align</code>", default: "<code>\"left\"</code>", description: "Shortcut alignment for dropup placement.", values: ["left", "right"] },
+        { option: "<code>placement</code>", default: "<code>\"top-start\"</code>", description: "Explicit placement override passed through to the menu core." },
+        { option: "<code>offset</code>", default: "<code>6</code>", description: "Pixel gap between trigger and menu." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"Menu\"</code>", description: "Accessible label for the menu surface." },
+        { option: "<code>closeOnSelect</code>", default: "<code>true</code>", description: "Close after selecting an item.", values: ["true", "false"] },
+        { option: "<code>closeOnOutsideClick</code>", default: "<code>true</code>", description: "Close when the user clicks away.", values: ["true", "false"] },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Close on Escape.", values: ["true", "false"] },
+        { option: "<code>matchTriggerWidth</code>", default: "<code>false</code>", description: "Match menu width to trigger width.", values: ["true", "false"] },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra menu class name." },
+        { option: "<code>onOpenChange</code>", default: "<code>null</code>", description: "Called when the menu opens or closes." },
+        { option: "<code>onSelect</code>", default: "<code>null</code>", description: "Called when a menu item is selected." }
+      ],
+      propertiesText: "Menu items support <code>id</code>, <code>label</code>, optional <code>icon</code>, optional <code>shortcut</code>, <code>disabled</code>, and <code>danger</code>.",
+      events: [
+        { event: "<code>onOpenChange(open)</code>", arguments: "boolean open state", returns: "<code>void</code>" },
+        { event: "<code>onSelect(item, meta)</code>", arguments: "selected item and metadata with <code>index</code> and <code>source</code>", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>open()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>close()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>toggle()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>update(items?, options?)</code>", arguments: "new item array and/or partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "open state, active index, placement, and item snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Dropup Demo</h1>
+      <p class="muted">Dedicated helper page for the top-anchored menu wrapper.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Preview</h2>
+      <div class="preview">
+        <button id="dropupTrigger" class="ui-button" type="button">Open Dropup</button>
+      </div>
+      <div class="row">
+        <button id="openBtn" class="ui-button" type="button">Open</button>
+        <button id="toggleAlignBtn" class="ui-button ui-button-ghost" type="button">Toggle Align</button>
+        <button id="toggleWidthBtn" class="ui-button ui-button-ghost" type="button">Toggle Match Width</button>
+        <button id="toggleCloseOnSelectBtn" class="ui-button ui-button-ghost" type="button">Toggle Close On Select</button>
+      </div>
+      <pre>const dropup = createDropup(trigger, items, {
+  align: "left",
+  matchTriggerWidth: true,
+  onOpenChange(open) {
+    writeLog("dropup.openChange", { open });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createDropup = await uiLoader.get("ui.dropup");
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const trigger = document.getElementById("dropupTrigger");
+    const iconInfo = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8h.01M11 12h1v4h1M12 3a9 9 0 110 18 9 9 0 010-18z"/></svg>';
+    let align = "left";
+    let matchTriggerWidth = true;
+    let closeOnSelect = true;
+    const items = [
+      { id: "details", label: "View Details", icon: iconInfo },
+      { id: "duplicate", label: "Duplicate" },
+      { id: "archive", label: "Archive", shortcut: "A" },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const dropup = createDropup(trigger, items, {
+      align,
+      matchTriggerWidth,
+      closeOnSelect,
+      onOpenChange(open) {
+        writeLog("dropup.openChange", { open, state: dropup.getState() });
+      },
+      onSelect(item, meta) {
+        writeLog("dropup.select", { itemId: item.id, meta });
+      },
+    });
+
+    function sync() {
+      dropup.update(items, { align, matchTriggerWidth, closeOnSelect });
+      writeLog("dropup.update", { align, matchTriggerWidth, closeOnSelect, state: dropup.getState() });
+    }
+
+    document.getElementById("openBtn").addEventListener("click", () => dropup.open());
+    document.getElementById("toggleAlignBtn").addEventListener("click", () => {
+      align = align === "left" ? "right" : "left";
+      sync();
+    });
+    document.getElementById("toggleWidthBtn").addEventListener("click", () => {
+      matchTriggerWidth = !matchTriggerWidth;
+      sync();
+    });
+    document.getElementById("toggleCloseOnSelectBtn").addEventListener("click", () => {
+      closeOnSelect = !closeOnSelect;
+      sync();
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+  </script>
+</body>
+</html>

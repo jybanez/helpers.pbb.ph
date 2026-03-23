@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iframe Host Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.iframe.host.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createIframeHost } from "../js/ui/ui.iframe.host.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const fixtureDoc = "<!doctype html><html><body><main>fixture</main></body></html>";
+    const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent("<!doctype html><html><body><main>data-url</main></body></html>")}`;
+
+    window.addEventListener("error", (event) => {
+      failures.push(`error: ${event.message}`);
+      finish();
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      failures.push(`rejection: ${String(event.reason?.message || event.reason || "unknown")}`);
+      finish();
+    });
+
+    try {
+      const iframeHost = createIframeHost({
+        srcdoc: fixtureDoc,
+        title: "Fixture iframe",
+        loadingText: "Loading fixture...",
+      });
+      host.appendChild(iframeHost.root);
+
+      assert(iframeHost.root instanceof HTMLElement, "createIframeHost should return a root element");
+      assert(iframeHost.iframe instanceof HTMLIFrameElement, "createIframeHost should return an iframe element");
+      await wait(400);
+      assert(iframeHost.getState().status === "ready", "srcdoc load should transition to ready");
+      assert(iframeHost.iframe.title === "Fixture iframe", "iframe should receive accessible title");
+
+      iframeHost.setSrc("");
+      await wait(50);
+      assert(iframeHost.getState().error?.code === "invalid-source", "empty source should trigger deterministic invalid-source error state");
+
+      iframeHost.setSrc(dataUrl);
+      await wait(200);
+      assert(iframeHost.getSrc() === dataUrl, "setSrc should update current src");
+      assert(iframeHost.getState().status !== "error", "setSrc should keep the host in a non-error state for a valid URL");
+
+      iframeHost.reload();
+      await wait(200);
+      assert(document.body.contains(iframeHost.root), "reload should keep host attached");
+      assert(iframeHost.getState().status !== "error", "reload should not push the host into an error state");
+
+      iframeHost.destroy();
+      assert(!document.body.contains(iframeHost.root), "destroy should remove host DOM");
+    } catch (error) {
+      failures.push(`exception: ${String(error?.message || error)}`);
+    }
+
+    finish();
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function finish() {
+      if (failures.length) {
+        document.body.dataset.status = "fail";
+        results.textContent = `FAIL\n${failures.map((item) => `- ${item}`).join("\n")}`;
+      } else {
+        document.body.dataset.status = "pass";
+        results.textContent = "PASS";
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+  </script>
+</body>
+</html>

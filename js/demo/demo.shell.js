@@ -56,9 +56,23 @@ const DEMO_GROUPS = [
   {
     label: "Navigation",
     items: [
-      { href: "./demo.nav.html", label: "Navigation" },
+      { href: "./demo.nav.html", label: "Overview" },
+      { href: "./demo.navbar.html", label: "Navbar" },
+      { href: "./demo.sidebar.html", label: "Sidebar" },
+      { href: "./demo.breadcrumbs.html", label: "Breadcrumbs" },
+      { href: "./demo.dropdown.html", label: "Dropdown" },
+      { href: "./demo.dropup.html", label: "Dropup" },
       { href: "./demo.stepper.html", label: "Stepper" },
       { href: "./demo.splitter.html", label: "Splitter" },
+    ],
+  },
+  {
+    label: "Window",
+    items: [
+      { href: "./demo.window.html", label: "Window" },
+      { href: "./demo.window.manager.html", label: "Window Manager" },
+      { href: "./demo.iframe.host.html", label: "Iframe Host" },
+      { href: "./demo.workspace.bridge.html", label: "Workspace Bridge" },
     ],
   },
   {
@@ -66,7 +80,6 @@ const DEMO_GROUPS = [
     items: [
       { href: "./demo.command.palette.html", label: "Command Palette" },
       { href: "./demo.drawers.html", label: "Drawers" },
-      { href: "./demo.window.html", label: "Window" },
       { href: "./demo.password.html", label: "Password Field" },
       { href: "./demo.icons.html", label: "Icons" },
       { href: "./demo.ui.html", label: "UI Utilities" },
@@ -616,4 +629,5 @@ if (document.readyState === "loading") {
 } else {
   mountDemoShell();
 }
+
 

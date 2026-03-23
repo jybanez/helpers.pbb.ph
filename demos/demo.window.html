@@ -10,761 +10,277 @@
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
     .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
     .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
     .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .window-host { position: relative; min-height: 560px; border: 1px solid #2b3750; border-radius: 12px; background: radial-gradient(circle at top left, rgba(72, 108, 182, 0.14), transparent 24%), #0a111d; overflow: hidden; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
     .log { color: #b2c2e5; min-height: 200px; }
-    .window-host { position: relative; min-height: 560px; border: 1px solid #2b3750; border-radius: 12px; background: radial-gradient(circle at top left, rgba(72, 108, 182, 0.14), transparent 24%), #0a111d; overflow: hidden; }
-    #mediaWindowHost { min-height: 720px; }
-    .window-host-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .window-note { display: grid; gap: 10px; }
-    .window-note textarea { min-height: 180px; resize: vertical; }
-    .window-inspector { display: grid; gap: 10px; }
-    .window-inspector-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .window-inspector-card { border: 1px solid #263146; border-radius: 10px; background: #0b1220; padding: 10px; display: grid; gap: 4px; }
-    .window-inspector-card strong { font-size: 12px; color: #8db5ff; text-transform: uppercase; letter-spacing: 0.06em; }
-    .window-media {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-height: 0;
-      height: 100%;
-    }
-    .window-media-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .window-media-status { color: #9fb2d8; font-size: 12px; line-height: 1.4; }
-    .window-media-host {
-      position: relative;
-      flex: 1 1 auto;
-      min-height: 0;
-      border: 1px solid #2b3750;
-      border-radius: 12px;
-      background: linear-gradient(180deg, rgba(7, 11, 18, 0.92), rgba(0, 0, 0, 0.98));
-      overflow: hidden;
+    .window-card { display: grid; gap: 12px; padding: 16px; }
+    .window-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .window-stat { display: grid; gap: 4px; border: 1px solid #263146; border-radius: 10px; background: #0b1220; padding: 10px; }
+    .window-stat strong { font-size: 12px; color: #8db5ff; text-transform: uppercase; letter-spacing: 0.06em; }
+    .fill-surface {
       display: grid;
       place-items: center;
-      padding: 12px;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      background: linear-gradient(135deg, rgba(17, 24, 38, 0.9), rgba(26, 44, 76, 0.92));
     }
-    .window-media-host img,
-    .window-media-host video {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 10px;
-      background: #000;
+    .fill-card {
+      width: min(420px, calc(100% - 32px));
+      display: grid;
+      gap: 10px;
+      border: 1px solid #37507a;
+      border-radius: 14px;
+      background: rgba(7, 12, 20, 0.88);
+      padding: 18px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
     }
-    .window-queue { display: grid; gap: 10px; }
-    .window-queue ul { margin: 0; padding-left: 18px; color: #b2c2e5; }
-    .window-queue li { line-height: 1.45; }
-    .window-help { color: #8db5ff; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
-    .viewer-options { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; }
-    .viewer-option { display: grid; gap: 6px; min-width: 140px; }
-    .viewer-option label { font-size: 12px; color: #9fb2d8; }
-    .viewer-option input[type="range"] { width: 160px; }
-    .viewer-option-check { display: inline-flex; align-items: center; gap: 8px; color: #d7e0f4; font-size: 13px; }
+    .fill-card strong { font-size: 18px; color: #ffffff; }
+    .fill-card small { color: #9fb2d8; line-height: 1.45; }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany(["ui.window", "ui.data.inspector", "ui.media.viewer"]);
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.window"]);
   </script>
   <script>
     window.demoMeta = {
-      title: "Window",
-      overview: "Desktop-style shared window manager with drag, resize, stack ordering, minimize taskbar, and maximize/restore behavior.",
+      title: "Window Demo",
+      overview: "Single managed window shell behavior over the shared desktop-style subsystem: drag, resize, header actions, state controls, and full-body content fill.",
       useWhen: [
-        "Use <code>createWindowManager(...)</code> when the workflow needs multiple non-modal tools open at the same time.",
-        "Use it for detached inspectors, media review surfaces, and secondary utilities that should stay interactive in parallel."
+        "Use <code>manager.createWindow(...)</code> when the app needs one non-modal floating surface without committing to a larger workspace orchestration flow.",
+        "Use it for detached inspectors, editor shells, or embedded surfaces that should remain interactive while the rest of the page stays available."
       ],
       avoidWhen: [
-        "Do not use it for short blocking workflows; use dialogs or modals instead.",
-        "Do not treat V1 as a docking or tiling desktop framework; that scope is intentionally deferred."
+        "Do not use it for short blocking decisions; use dialogs or modals instead.",
+        "Do not use this page as the reference for multi-window coordination or workspace taskbars; use the dedicated Window Manager demo for that."
       ],
-      description: "This page now shows two wrapper-style workspaces built over the base manager: an incident review desktop and a media review desktop. The window helper should be judged by whether these composed flows stay clean and reusable, not only by raw drag/resize mechanics.",
-      defaultSampleCode: `const manager = createWindowManager({
-  container: host,
-  showTaskbar: true,
-});
+      description: "This page keeps the focus on one managed window instance. It demonstrates the window shell itself: open/close, focus, drag, resize, header actions, runtime content replacement, and the full-fill body path used by embedded surfaces.",
+      defaultSampleCode: `const manager = createWindowManager({ container: host });
 
-function openIncidentWorkspace(incident) {
-  const summary = manager.createWindow({
-    id: "incident-summary",
-    title: "Incident Summary",
-    content: buildSummaryPane(incident),
-  });
-  summary.open();
-}`,
+const win = manager.createWindow({
+  id: "sample-window",
+  title: "Sample Window",
+  width: 520,
+  height: 320,
+  content: buildWindowCard(),
+  headerActions: [{
+    id: "refresh",
+    label: "Refresh",
+    onClick() {
+      refreshWindowData();
+    },
+  }],
+});`,
       constructor: [
         { factory: "<code>createWindowManager(options)</code>", arguments: "manager options", returns: "Window-manager instance" },
         { factory: "<code>manager.createWindow(options)</code>", arguments: "window options", returns: "Window instance" }
       ],
       options: [
-        { option: "<code>bounds</code>", default: "<code>\"viewport\"</code>", description: "Movement and resize bounds.", values: ["viewport"] },
-        { option: "<code>showTaskbar</code>", default: "<code>true</code>", description: "Shows minimized-window recovery taskbar." },
-        { option: "<code>initialState</code>", default: "<code>\"normal\"</code>", description: "Initial window state.", values: ["normal", "maximized", "minimized"] },
+        { option: "<code>title</code>", default: "<code>\"Window\"</code>", description: "Title-bar label." },
+        { option: "<code>content</code>", default: "<code>null</code>", description: "Node, HTML string, or content factory for the body." },
+        { option: "<code>headerActions</code>", default: "<code>[]</code>", description: "Extra title-bar actions before the minimize/maximize/close controls." },
         { option: "<code>draggable</code>", default: "<code>true</code>", description: "Enables title-bar drag." },
         { option: "<code>resizable</code>", default: "<code>true</code>", description: "Enables edge and corner resize handles." },
         { option: "<code>minimizable</code>", default: "<code>true</code>", description: "Enables minimize and taskbar recovery." },
-        { option: "<code>maximizable</code>", default: "<code>true</code>", description: "Enables maximize and restore behavior." }
+        { option: "<code>maximizable</code>", default: "<code>true</code>", description: "Enables maximize and restore behavior." },
+        { option: "<code>initialState</code>", default: "<code>\"normal\"</code>", description: "Initial window state.", values: ["normal", "maximized", "minimized"] }
       ],
-      propertiesText: "No stable public instance properties are documented. Use the manager/window methods and <code>getState()</code> instead.",
+      propertiesText: "No stable public instance properties are documented. Use <code>getState()</code> plus the instance methods instead of reading DOM state directly.",
       events: [
-        { event: "<code>onWindowOpen</code>", arguments: "<code>({ id, window, state })</code>", returns: "<code>void</code>" },
-        { event: "<code>onWindowClose</code>", arguments: "<code>({ id, window, state, meta? })</code>", returns: "<code>void</code>" },
-        { event: "<code>onActiveChange</code>", arguments: "<code>({ id, window, state })</code>", returns: "<code>void</code>" },
+        { event: "<code>onOpen</code>", arguments: "<code>(state)</code>", returns: "<code>void</code>" },
+        { event: "<code>onClose</code>", arguments: "<code>(meta, state)</code>", returns: "<code>void</code>" },
+        { event: "<code>onFocus</code>", arguments: "<code>(state)</code>", returns: "<code>void</code>" },
         { event: "<code>onStateChange</code>", arguments: "<code>({ type, state })</code>", returns: "<code>void</code>" }
       ],
       methods: [
-        { method: "<code>createWindow(options)</code>", arguments: "window options", returns: "Window instance" },
-        { method: "<code>focusWindow(id)</code>", arguments: "window id", returns: "<code>boolean</code>" },
+        { method: "<code>open()</code> / <code>close(meta?)</code>", arguments: "optional close metadata", returns: "<code>boolean</code>" },
+        { method: "<code>focus()</code>", arguments: "none", returns: "<code>boolean</code>" },
         { method: "<code>minimize()</code> / <code>maximize()</code> / <code>restore()</code>", arguments: "none", returns: "<code>boolean</code>" },
-        { method: "<code>setPosition(...)</code> / <code>setSize(...)</code>", arguments: "rect values", returns: "<code>void</code>" },
-        { method: "<code>closeAll(meta?)</code>", arguments: "optional close metadata", returns: "<code>void</code>" },
-        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+        { method: "<code>setTitle(title)</code>", arguments: "new title string", returns: "<code>void</code>" },
+        { method: "<code>setContent(content)</code>", arguments: "Node, string, or factory result", returns: "<code>void</code>" },
+        { method: "<code>setPosition(...)</code> / <code>setSize(...)</code>", arguments: "rect values", returns: "<code>void</code>" }
       ]
     };
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
-      <div class="row">
-        <a class="back" href="./index.html">← Back to Home</a>
-        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
-      </div>
       <h1 class="ui-title">Window Demo</h1>
-      <p class="muted">Dedicated demo for the shared desktop-style window manager. This page is intentionally wrapper-oriented: it shows how <code>ui.window</code> behaves when it hosts real operational work surfaces instead of only placeholder panes.</p>
+      <p class="muted">Focused demo for the single managed window shell. Use the separate <code>Window Manager</code> page for multi-window workspaces, stacking, taskbars, and iframe-hosted workspace composition.</p>
     </section>
 
     <section class="panel">
-      <h2 class="ui-title">Incident Review Workspace</h2>
-      <p class="muted">Wrapper demo over <code>ui.window</code> + <code>ui.data.inspector</code>. This is the kind of non-modal analyst surface that benefits from stacked windows instead of modal churn.</p>
-      <div class="window-host-toolbar">
-        <button id="openIncidentWorkspaceBtn" class="ui-button ui-button-primary" type="button">Open Incident Workspace</button>
-        <button id="focusIncidentPayloadBtn" class="ui-button" type="button">Focus Payload Window</button>
-        <button id="resetIncidentWorkspaceBtn" class="ui-button" type="button">Reset Workspace</button>
+      <h2 class="ui-title">Single Window Shell</h2>
+      <p class="muted">This surface keeps one managed window alive and lets you drive it through the public API. The point here is the shell behavior itself, not workspace orchestration.</p>
+      <div class="row">
+        <button id="openWindowBtn" class="ui-button ui-button-primary" type="button">Open Window</button>
+        <button id="focusWindowBtn" class="ui-button" type="button">Focus</button>
+        <button id="minimizeWindowBtn" class="ui-button" type="button">Minimize</button>
+        <button id="maximizeWindowBtn" class="ui-button" type="button">Maximize</button>
+        <button id="restoreWindowBtn" class="ui-button" type="button">Restore</button>
+        <button id="renameWindowBtn" class="ui-button" type="button">Rename</button>
+        <button id="replaceContentBtn" class="ui-button" type="button">Replace Content</button>
+        <button id="toggleFillBtn" class="ui-button" type="button">Toggle Fill Content</button>
+        <button id="closeWindowBtn" class="ui-button ui-button-ghost" type="button">Close</button>
       </div>
-      <div id="incidentWindowHost" class="window-host"></div>
-      <pre>function openIncidentWorkspace(incident) {
-  ensureWindow(incidentManager, incidentWindows, "incident-summary", () =>
-    incidentManager.createWindow({
-      title: "Incident Summary",
-      content: buildIncidentSummaryContent(incident),
-    })
-  );
-
-  ensureWindow(incidentManager, incidentWindows, "incident-payload", () =>
-    incidentManager.createWindow({
-      title: "Incident Payload",
-      content: buildIncidentPayloadContent(incident),
-    })
-  );
-}</pre>
-      <pre id="incidentLog" class="log">No events yet.</pre>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Media Review Workspace</h2>
-      <p class="muted">Wrapper demo over <code>ui.window</code> + compact media preview + <code>ui.data.inspector</code>. The dedicated full viewer stays on the media-viewer page; this floating workspace keeps the preview intentionally compact and operational.</p>
-      <div class="window-host-toolbar">
-        <button id="openMediaWorkspaceBtn" class="ui-button ui-button-primary" type="button">Open Media Review</button>
-        <button id="openMediaStackBtn" class="ui-button" type="button">Open Full Review Stack</button>
-        <button id="resetMediaWorkspaceBtn" class="ui-button" type="button">Reset Workspace</button>
-      </div>
-      <div class="viewer-options">
-        <div class="viewer-option">
-          <label for="windowViewerFit">Full viewer fit</label>
-          <select id="windowViewerFit" class="ui-input">
-            <option value="contain" selected>Contain</option>
-            <option value="cover">Cover</option>
-            <option value="original">Original</option>
-          </select>
-        </div>
-        <div class="viewer-option">
-          <label for="windowViewerZoomStep">Zoom step</label>
-          <input id="windowViewerZoomStep" class="ui-input" type="range" min="0.1" max="1" step="0.05" value="0.2">
-        </div>
-        <div class="viewer-option">
-          <label for="windowViewerAudiograph">Video audiograph</label>
-          <label class="viewer-option-check"><input id="windowViewerAudiograph" type="checkbox"> Enable for video items</label>
-        </div>
-        <div class="viewer-option">
-          <label for="windowViewerFooter">Metadata footer</label>
-          <label class="viewer-option-check"><input id="windowViewerFooter" type="checkbox" checked> Show footer</label>
-        </div>
-        <div class="viewer-option">
-          <label for="windowViewerAutoplay">Autoplay video</label>
-          <label class="viewer-option-check"><input id="windowViewerAutoplay" type="checkbox" checked> Autoplay when opened</label>
-        </div>
-      </div>
-      <div id="mediaWindowHost" class="window-host"></div>
-      <pre id="mediaCode">const viewerWindow = mediaManager.createWindow({
-  title: "Media Review",
-  width: 640,
-  height: 480,
-  content: buildWindowedMediaPreview(items),
-});</pre>
-      <pre id="mediaLog" class="log">No events yet.</pre>
+      <div id="windowHost" class="window-host"></div>
+      <pre id="windowCode"></pre>
+      <pre id="windowLog" class="log">No events yet.</pre>
     </section>
   </main>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const createWindowManager = await uiLoader.get("ui.window");
-    const createDataInspector = await uiLoader.get("ui.data.inspector");
-    const createMediaViewer = await uiLoader.get("ui.media.viewer");
 
-    const page = document.querySelector("main.page");
-    const incidentLog = document.getElementById("incidentLog");
-    const mediaLog = document.getElementById("mediaLog");
-    const mediaCode = document.getElementById("mediaCode");
-    const incidentHost = document.getElementById("incidentWindowHost");
-    const mediaHost = document.getElementById("mediaWindowHost");
-    const mediaBaseUrl = new URL("../", window.location.href).href.replace(/\/+$/, "");
+    const host = document.getElementById("windowHost");
+    const log = document.getElementById("windowLog");
+    const code = document.getElementById("windowCode");
 
-    const incidentSample = {
-      id: 20260316102,
-      number: "#2026-0316-102",
-      status: "Investigating",
-      severity: "High",
-      category: "Transformer Fire",
-      caller: { id: 11, name: "Maria Santos", mobile: "+63 917 555 0102" },
-      location: {
-        region: "Region VII",
-        city: "Cebu City",
-        barangay: "Lahug",
-        landmark: "Near utility post 44-B",
-      },
-      assigned_team: {
-        id: 3,
-        name: "Utility Response Alpha",
-        eta_minutes: 14,
-      },
-      media: [
-        { id: "media-1", type: "video", operator: "OP-22", duration_seconds: 11 },
-        { id: "media-2", type: "image", operator: "OP-18", duration_seconds: null },
-      ],
-      audit: {
-        created_at: "2026-03-16T08:18:00Z",
-        updated_at: "2026-03-16T08:27:14Z",
-        created_by: "desk.supervisor",
-      },
-    };
-
-    let mediaItems = [];
-    let mediaMetadataInspector = null;
-    let mediaPreviewState = null;
-    const fullViewerOptions = {
-      fit: "contain",
-      zoomStep: 0.2,
-      showAudiograph: false,
-      showFooter: true,
-      autoplayVideo: true,
-    };
-    const fullViewerHost = document.createElement("div");
-    document.body.appendChild(fullViewerHost);
-    const fullMediaViewer = createMediaViewer(fullViewerHost, {
-      items: [],
-      baseUrl: mediaBaseUrl,
-      ...fullViewerOptions,
-      closeOnBackdrop: true,
-      closeOnEscape: true,
-      onOpen(item, index) {
-        writeLog(mediaLog, "media.fullViewer.open", { index, id: item?.id, type: item?.type });
-      },
-      onChange(item, index) {
-        writeLog(mediaLog, "media.fullViewer.change", { index, id: item?.id, type: item?.type });
-      },
-      onClose() {
-        writeLog(mediaLog, "media.fullViewer.close", {});
-      },
-    });
-
-    const incidentManager = createWindowManager({
-      container: incidentHost,
+    const manager = createWindowManager({
+      container: host,
       showTaskbar: true,
-      onWindowOpen(payload) {
-        writeLog(incidentLog, "incident.window.open", payload.state);
-      },
-      onWindowClose(payload) {
-        writeLog(incidentLog, "incident.window.close", { id: payload.id, meta: payload.meta || {} });
-      },
-      onActiveChange(payload) {
-        writeLog(incidentLog, "incident.window.active", payload.state);
-      },
+      taskbarMode: "minimized-only",
     });
 
-    const mediaManager = createWindowManager({
-      container: mediaHost,
-      showTaskbar: true,
-      onWindowOpen(payload) {
-        writeLog(mediaLog, "media.window.open", payload.state);
-      },
-      onWindowClose(payload) {
-        writeLog(mediaLog, "media.window.close", { id: payload.id, meta: payload.meta || {} });
-      },
-      onActiveChange(payload) {
-        writeLog(mediaLog, "media.window.active", payload.state);
-      },
-    });
+    let mode = "card";
+    let titleIndex = 1;
+    let win = null;
 
-    const incidentWindows = new Map();
-    const mediaWindows = new Map();
+    code.textContent = buildCodeSample();
 
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      const next = page.dataset.theme === "dark" ? "light" : "dark";
-      page.dataset.theme = next;
-      writeLog(incidentLog, "theme.toggle", { theme: next });
-      writeLog(mediaLog, "theme.toggle", { theme: next });
+    document.getElementById("openWindowBtn").addEventListener("click", () => {
+      ensureWindow().open();
+      ensureWindow().focus();
     });
-
-    document.getElementById("openIncidentWorkspaceBtn").addEventListener("click", () => {
-      openIncidentWorkspace();
+    document.getElementById("focusWindowBtn").addEventListener("click", () => ensureWindow().focus());
+    document.getElementById("minimizeWindowBtn").addEventListener("click", () => ensureWindow().minimize());
+    document.getElementById("maximizeWindowBtn").addEventListener("click", () => ensureWindow().maximize());
+    document.getElementById("restoreWindowBtn").addEventListener("click", () => ensureWindow().restore());
+    document.getElementById("renameWindowBtn").addEventListener("click", () => {
+      titleIndex += 1;
+      ensureWindow().setTitle(`Sample Window ${titleIndex}`);
+      writeLog("window.rename", { title: `Sample Window ${titleIndex}` });
     });
-    document.getElementById("focusIncidentPayloadBtn").addEventListener("click", () => {
-      incidentManager.focusWindow("incident-payload");
+    document.getElementById("replaceContentBtn").addEventListener("click", () => {
+      mode = "card";
+      ensureWindow().setContent(buildWindowCard());
+      code.textContent = buildCodeSample();
+      writeLog("window.content.replace", { mode });
     });
-    document.getElementById("resetIncidentWorkspaceBtn").addEventListener("click", () => {
-      incidentManager.closeAll({ reason: "reset" });
-      incidentWindows.clear();
-      writeLog(incidentLog, "incident.workspace.reset", { ok: true });
+    document.getElementById("toggleFillBtn").addEventListener("click", () => {
+      mode = mode === "fill" ? "card" : "fill";
+      ensureWindow().setContent(mode === "fill" ? buildFillSurface() : buildWindowCard());
+      code.textContent = buildCodeSample();
+      writeLog("window.content.toggle", { mode });
     });
-
-    document.getElementById("openMediaWorkspaceBtn").addEventListener("click", async () => {
-      await openMediaWorkspace({ includeQueue: false });
-    });
-    document.getElementById("openMediaStackBtn").addEventListener("click", async () => {
-      await openMediaWorkspace({ includeQueue: true });
-    });
-    document.getElementById("resetMediaWorkspaceBtn").addEventListener("click", () => {
-      mediaManager.closeAll({ reason: "reset" });
-      mediaWindows.clear();
-      mediaPreviewState = null;
-      mediaMetadataInspector = null;
-      fullMediaViewer.close();
-      writeLog(mediaLog, "media.workspace.reset", { ok: true });
-    });
-
-    const fitInput = document.getElementById("windowViewerFit");
-    const zoomStepInput = document.getElementById("windowViewerZoomStep");
-    const audiographInput = document.getElementById("windowViewerAudiograph");
-    const footerInput = document.getElementById("windowViewerFooter");
-    const autoplayInput = document.getElementById("windowViewerAutoplay");
-
-    fitInput.addEventListener("change", syncFullViewerOptions);
-    zoomStepInput.addEventListener("input", syncFullViewerOptions);
-    audiographInput.addEventListener("change", syncFullViewerOptions);
-    footerInput.addEventListener("change", syncFullViewerOptions);
-    autoplayInput.addEventListener("change", syncFullViewerOptions);
-    syncFullViewerOptions();
-
-    async function loadMediaItems() {
-      if (mediaItems.length) {
-        return mediaItems;
+    document.getElementById("closeWindowBtn").addEventListener("click", async () => {
+      if (!win) {
+        return;
       }
-      const response = await fetch("../samples/samplemedia.json", { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`Failed to load samples/samplemedia.json (${response.status})`);
-      }
-      const payload = await response.json();
-      mediaItems = normalizeMediaItems(payload);
-      writeLog(mediaLog, "media.dataset.loaded", {
-        source: "samples/samplemedia.json",
-        total: payload.length,
-        usable: mediaItems.length,
-      });
-      return mediaItems;
-    }
+      await win.close({ reason: "toolbar-close" });
+    });
 
-    function resolveDemoMediaUrl(value) {
-      const raw = String(value || "").trim();
-      if (!raw) {
-        return "";
+    function ensureWindow() {
+      if (win) {
+        return win;
       }
-      if (/^(https?:)?\/\//i.test(raw) || raw.startsWith("/")) {
-        return raw;
-      }
-      return new URL(raw.replace(/^\/+/, ""), `${mediaBaseUrl}/`).href;
-    }
-
-    function normalizeMediaItems(payload) {
-      return (Array.isArray(payload) ? payload : [])
-        .filter((item) => item?.type === "photo" || item?.type === "video")
-        .slice(0, 3)
-        .map((item, index) => ({
-          id: item.id ?? `media-${index + 1}`,
-          type: item.type === "photo" ? "image" : "video",
-          src: resolveDemoMediaUrl(item.path),
-          thumb: item.type === "photo" ? resolveDemoMediaUrl(item.path) : "",
-          poster: resolveDemoMediaUrl(item.poster || ""),
-          title: item.title || `${item.type === "photo" ? "Photo" : "Video"} ${index + 1}`,
-          alt: item.alt || item.title || `${item.type === "photo" ? "Photo" : "Video"} ${index + 1}`,
-          duration_seconds: item.duration_seconds ?? null,
-          metadata: {
-            incident_id: item.incident_id ?? "-",
-            uploaded_by_user_id: item.uploaded_by_user_id ?? "-",
-            type: item.type,
-            created_at: item.created_at || "-",
-            ready: item.ready === true ? "Yes" : "No",
-          },
-        }))
-        .sort((a, b) => {
-          if (a.type === b.type) {
-            return 0;
-          }
-          return a.type === "image" ? -1 : 1;
-        });
-    }
-
-    function ensureWindow(manager, registry, id, factory) {
-      const existing = registry.get(id);
-      if (existing) {
-        if (!existing.getState().open) {
-          existing.open();
-        } else if (existing.getState().minimized || existing.getState().maximized) {
-          existing.restore();
-        }
-        existing.focus();
-        return existing;
-      }
-      const win = factory();
-      registry.set(id, win);
-      return win;
-    }
-
-    function openIncidentWorkspace() {
-      ensureWindow(incidentManager, incidentWindows, "incident-summary", () => incidentManager.createWindow({
-        id: "incident-summary",
-        title: "Incident Summary",
-        x: 24,
-        y: 24,
-        width: 420,
-        height: 300,
-        content: buildIncidentSummaryContent(incidentSample),
+      win = manager.createWindow({
+        id: "sample-window",
+        title: "Sample Window 1",
+        x: 36,
+        y: 32,
+        width: 540,
+        height: 340,
+        content: buildWindowCard(),
         headerActions: [{
           id: "refresh",
           label: "Refresh",
           onClick() {
-            writeLog(incidentLog, "incident.summary.refresh", { incident: incidentSample.number });
+            writeLog("window.header.refresh", { ok: true });
           },
         }],
-        onStateChange(payload) {
-          writeLog(incidentLog, "incident.summary.state", payload);
+        onOpen(state) {
+          writeLog("window.open", state);
         },
-      }));
-
-      ensureWindow(incidentManager, incidentWindows, "incident-payload", () => incidentManager.createWindow({
-        id: "incident-payload",
-        title: "Incident Payload",
-        x: 300,
-        y: 104,
-        width: 460,
-        height: 360,
-        content() {
-          const host = document.createElement("div");
-          queueMicrotask(() => {
-            createDataInspector(host, incidentSample, {
-              expandDepth: 2,
-              onCopyPath(path) {
-                writeLog(incidentLog, "incident.payload.copyPath", { path });
-              },
-            });
-          });
-          return host;
+        onClose(meta, state) {
+          writeLog("window.close", { meta, state });
+        },
+        onFocus(state) {
+          writeLog("window.focus", state);
         },
         onStateChange(payload) {
-          writeLog(incidentLog, "incident.payload.state", payload);
+          writeLog("window.state", payload);
         },
-      }));
-
-      ensureWindow(incidentManager, incidentWindows, "incident-notes", () => incidentManager.createWindow({
-        id: "incident-notes",
-        title: "Response Notes",
-        x: 620,
-        y: 36,
-        width: 340,
-        height: 280,
-        content: buildIncidentNotesContent(),
-        onStateChange(payload) {
-          writeLog(incidentLog, "incident.notes.state", payload);
-        },
-      }));
+      });
+      return win;
     }
 
-    async function openMediaWorkspace({ includeQueue }) {
-      const items = await loadMediaItems();
-
-      ensureWindow(mediaManager, mediaWindows, "media-viewer", () => mediaManager.createWindow({
-        id: "media-viewer",
-        title: "Media Review",
-        x: 24,
-        y: 24,
-        width: 620,
-        height: 440,
-        content: buildWindowedMediaPreview(items),
-        onStateChange(payload) {
-          writeLog(mediaLog, "media.viewer.state", payload);
-        },
-      }));
-
-      ensureWindow(mediaManager, mediaWindows, "media-metadata", () => mediaManager.createWindow({
-        id: "media-metadata",
-        title: "Media Metadata",
-        x: 664,
-        y: 42,
-        width: 360,
-        height: 330,
-        content() {
-          const host = document.createElement("div");
-          queueMicrotask(() => {
-            mediaMetadataInspector = createDataInspector(host, {
-              index: 0,
-              title: items[0]?.title || "-",
-              type: items[0]?.type || "-",
-              metadata: items[0]?.metadata || {},
-              duration_seconds: items[0]?.duration_seconds ?? null,
-            }, {
-              expandDepth: 2,
-              onCopyPath(path) {
-                writeLog(mediaLog, "media.metadata.copyPath", { path });
-              },
-            });
-          });
-          return host;
-        },
-        onStateChange(payload) {
-          writeLog(mediaLog, "media.metadata.state", payload);
-        },
-      }));
-
-      if (includeQueue) {
-        ensureWindow(mediaManager, mediaWindows, "media-queue", () => mediaManager.createWindow({
-          id: "media-queue",
-          title: "Review Queue",
-          x: 660,
-          y: 390,
-          width: 320,
-          height: 220,
-          content: buildMediaQueueContent(items),
-          onStateChange(payload) {
-            writeLog(mediaLog, "media.queue.state", payload);
-          },
-        }));
-      }
-    }
-
-    function buildIncidentSummaryContent(incident) {
+    function buildWindowCard() {
       const wrapper = document.createElement("div");
-      wrapper.className = "window-inspector";
+      wrapper.className = "window-card";
       wrapper.innerHTML = `
-        <p class="muted">Active incident context kept visible while payload and notes remain interactive in sibling windows.</p>
-        <div class="window-inspector-grid">
-          <div class="window-inspector-card"><strong>Incident</strong><span>${incident.number}</span></div>
-          <div class="window-inspector-card"><strong>Status</strong><span>${incident.status}</span></div>
-          <div class="window-inspector-card"><strong>Severity</strong><span>${incident.severity}</span></div>
-          <div class="window-inspector-card"><strong>Team</strong><span>${incident.assigned_team.name}</span></div>
-          <div class="window-inspector-card"><strong>Barangay</strong><span>${incident.location.barangay}</span></div>
-          <div class="window-inspector-card"><strong>Caller</strong><span>${incident.caller.name}</span></div>
+        <p class="muted">Single-window shell example using regular padded body content. Drag, resize, maximize, minimize, and runtime content replacement are all driven through the shared public API.</p>
+        <div class="window-grid">
+          <div class="window-stat"><strong>Status</strong><span>Interactive</span></div>
+          <div class="window-stat"><strong>Shell</strong><span>Regular body content</span></div>
+          <div class="window-stat"><strong>Header Action</strong><span>Refresh</span></div>
+          <div class="window-stat"><strong>Taskbar Mode</strong><span>Minimized-only</span></div>
         </div>
       `;
       return wrapper;
     }
 
-    function buildIncidentNotesContent() {
-      const wrapper = document.createElement("div");
-      wrapper.className = "window-note";
-      wrapper.innerHTML = `
-        <label class="ui-label" for="window-note-input">Operator Notes</label>
-        <textarea id="window-note-input" class="ui-input">Field verification requested. Utility Response Alpha ETA 14 minutes. Caller remains on standby for callback.</textarea>
-        <button class="ui-button ui-button-primary" type="button">Save Notes</button>
+    function buildFillSurface() {
+      const root = document.createElement("div");
+      root.className = "fill-surface";
+      root.setAttribute("data-ui-window-fill", "true");
+      root.innerHTML = `
+        <div class="fill-card">
+          <strong>Full-Body Content Fill</strong>
+          <small>This mode demonstrates the shared <code>data-ui-window-fill="true"</code> path used by embedded surfaces such as <code>ui.iframe.host</code>. The window shell removes body padding and lets the child surface occupy the full body.</small>
+        </div>
       `;
-      wrapper.querySelector("button").addEventListener("click", () => {
-        writeLog(incidentLog, "incident.notes.save", { ok: true });
-      });
-      return wrapper;
+      return root;
     }
 
-    function buildMediaQueueContent(items) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "window-queue";
-      const heading = document.createElement("p");
-      heading.className = "muted";
-      heading.textContent = "Media review can keep the queue visible while the main viewer remains focused elsewhere.";
-      const list = document.createElement("ul");
-      items.forEach((item, index) => {
-        const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${item.title} (${item.type})`;
-        list.appendChild(li);
-      });
-      wrapper.append(heading, list);
-      return wrapper;
-    }
-
-    function buildWindowedMediaPreview(items) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "window-media";
-
-      const labelRow = document.createElement("div");
-      labelRow.className = "row";
-
-      const label = document.createElement("div");
-      label.className = "window-help";
-      label.textContent = "Detached viewer";
-
-      const openFullBtn = document.createElement("button");
-      openFullBtn.className = "ui-button";
-      openFullBtn.type = "button";
-      openFullBtn.textContent = "Open Full Viewer";
-      openFullBtn.addEventListener("click", () => openFullMediaPreview());
-
-      labelRow.append(label, openFullBtn);
-
-      const toolbar = document.createElement("div");
-      toolbar.className = "window-media-toolbar";
-
-      const prevBtn = document.createElement("button");
-      prevBtn.className = "ui-button";
-      prevBtn.type = "button";
-      prevBtn.textContent = "Prev";
-
-      const nextBtn = document.createElement("button");
-      nextBtn.className = "ui-button";
-      nextBtn.type = "button";
-      nextBtn.textContent = "Next";
-
-      const status = document.createElement("span");
-      status.className = "window-media-status";
-
-      toolbar.append(prevBtn, nextBtn, status);
-
-      const host = document.createElement("div");
-      host.className = "window-media-host";
-
-      mediaPreviewState = {
-        items,
-        index: 0,
-        host,
-        status,
-        prevBtn,
-        nextBtn,
-      };
-
-      prevBtn.addEventListener("click", () => stepMediaPreview(-1));
-      nextBtn.addEventListener("click", () => stepMediaPreview(1));
-
-      wrapper.append(labelRow, toolbar, host);
-      renderMediaPreview();
-      return wrapper;
-    }
-
-    function stepMediaPreview(direction) {
-      if (!mediaPreviewState) {
-        return;
-      }
-      const length = mediaPreviewState.items.length;
-      mediaPreviewState.index = (mediaPreviewState.index + direction + length) % length;
-      renderMediaPreview();
-    }
-
-    function renderMediaPreview() {
-      if (!mediaPreviewState) {
-        return;
-      }
-      const { items, index, host, status, prevBtn, nextBtn } = mediaPreviewState;
-      const item = items[index];
-      host.replaceChildren();
-      if (!item) {
-        status.textContent = "No media";
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        return;
-      }
-
-      let mediaEl;
-      if (item.type === "video") {
-        mediaEl = document.createElement("video");
-        mediaEl.src = item.src;
-        mediaEl.poster = item.poster || "";
-        mediaEl.controls = true;
-        mediaEl.preload = "metadata";
-        mediaEl.playsInline = true;
-      } else {
-        mediaEl = document.createElement("img");
-        mediaEl.src = item.src;
-        mediaEl.alt = item.alt || item.title || "Media preview";
-        mediaEl.loading = "eager";
-      }
-      host.appendChild(mediaEl);
-
-      status.textContent = `${index + 1} / ${items.length} · ${item.title}`;
-      prevBtn.disabled = items.length < 2;
-      nextBtn.disabled = items.length < 2;
-
-      mediaMetadataInspector?.update({
-        index,
-        title: item?.title || "-",
-        type: item?.type || "-",
-        metadata: item?.metadata || {},
-        duration_seconds: item?.duration_seconds ?? null,
-      });
-      writeLog(mediaLog, "media.viewer.change", { index, id: item?.id, type: item?.type });
-    }
-
-    function openFullMediaPreview() {
-      if (!mediaPreviewState || !mediaPreviewState.items.length) {
-        return;
-      }
-      syncFullViewerOptions(false);
-      fullMediaViewer.update({
-        items: mediaPreviewState.items,
-        baseUrl: mediaBaseUrl,
-        ...fullViewerOptions,
-      });
-      fullMediaViewer.open(mediaPreviewState.index);
-    }
-
-    function syncFullViewerOptions(emit = true) {
-      fullViewerOptions.fit = fitInput.value || "contain";
-      fullViewerOptions.zoomStep = Number(zoomStepInput.value) || 0.2;
-      fullViewerOptions.showAudiograph = audiographInput.checked;
-      fullViewerOptions.showFooter = footerInput.checked;
-      fullViewerOptions.autoplayVideo = autoplayInput.checked;
-      mediaCode.textContent = buildMediaWorkspaceSampleCode();
-      fullMediaViewer.update({
-        baseUrl: mediaBaseUrl,
-        ...fullViewerOptions,
-      });
-      if (emit) {
-        writeLog(mediaLog, "media.fullViewer.options", fullViewerOptions);
-      }
-    }
-
-    function buildMediaWorkspaceSampleCode() {
-      return `const viewerWindow = mediaManager.createWindow({
-  title: "Media Review",
-  width: 640,
-  height: 480,
-  content: buildWindowedMediaPreview(items),
+    function buildCodeSample() {
+      if (mode === "fill") {
+        return `const win = manager.createWindow({
+  id: "sample-window",
+  title: "Sample Window",
+  content: buildFillSurface(),
 });
 
-const fullViewer = createMediaViewer(document.body.appendChild(document.createElement("div")), {
-  items,
-  baseUrl: mediaBaseUrl,
-  fit: ${JSON.stringify(fullViewerOptions.fit)},
-  zoomStep: ${fullViewerOptions.zoomStep.toFixed(2)},
-  showAudiograph: ${String(fullViewerOptions.showAudiograph)},
-  showFooter: ${String(fullViewerOptions.showFooter)},
-  autoplayVideo: ${String(fullViewerOptions.autoplayVideo)},
-});
-
-openFullBtn.addEventListener("click", () => {
-  fullViewer.open(mediaPreviewState.index);
+function buildFillSurface() {
+  const root = document.createElement("div");
+  root.setAttribute("data-ui-window-fill", "true");
+  return root;
+}`;
+      }
+      return `const win = manager.createWindow({
+  id: "sample-window",
+  title: "Sample Window",
+  width: 540,
+  height: 340,
+  content: buildWindowCard(),
+  headerActions: [{
+    id: "refresh",
+    label: "Refresh",
+    onClick() {
+      refreshWindowData();
+    },
+  }],
 });`;
     }
 
-    function writeLog(target, label, payload) {
+    function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      target.textContent = target.textContent === "No events yet." ? line : `${line}\n${target.textContent}`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
     }
   </script>
 </body>

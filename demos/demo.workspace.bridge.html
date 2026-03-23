@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspace Bridge Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .window-surface { min-height: 560px; border: 1px solid #2b3750; border-radius: 10px; background: #0b1220; overflow: hidden; }
+    pre { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.window", "ui.iframe.host", "ui.workspace.bridge.host"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Workspace Bridge",
+      overview: "Explicit trusted bridge for iframe-hosted apps that need parent-owned toasts, dialogs, and simple action modals in a workspace shell.",
+      useWhen: [
+        "Use it when an app runs inside <code>ui.iframe.host</code> and top-level UI surfaces should render in the parent workspace instead of inside the iframe.",
+        "Use it with <code>ui.window</code> + <code>ui.iframe.host</code> for workspace-style launcher shells."
+      ],
+      avoidWhen: [
+        "Do not use it for generic DOM mirroring or arbitrary parent method execution.",
+        "Do not assume every iframe parent is trusted; rely on the explicit bridge host handshake."
+      ],
+      description: "The bridge keeps overlay ownership in the parent workspace shell while preserving local fallback for standalone app execution. V1 covers toasts, promise dialogs, and explicit simple action-modals.",
+      defaultSampleCode: `const host = installWorkspaceUiBridgeHost();\nconst iframeHost = createIframeHost({ src: \"../samples/iframe/workspace-ui-bridge.fixture.html\" });\nconst win = manager.createWindow({ title: \"Bridge Child\", content: iframeHost.root });`,
+      constructor: [
+        { factory: "<code>installWorkspaceUiBridgeHost(options)</code>", arguments: "bridge-host options", returns: "workspace bridge host" },
+        { factory: "<code>getWorkspaceUiBridge(options)</code>", arguments: "bridge-client options", returns: "child bridge helper" },
+      ],
+      options: [
+        { option: "<code>trustedOrigins</code>", default: "<code>[window.location.origin, \"null\"]</code>", description: "Allowed child origins for parent-side bridge requests." },
+        { option: "<code>toastOptions</code>", default: "<code>{}</code>", description: "Passed to the parent-owned toast stack." },
+        { option: "<code>timeoutMs</code>", default: "<code>900</code>", description: "Child-side handshake and request timeout." },
+        { option: "<code>targetOrigin</code>", default: "<code>\"*\"</code>", description: "Child-side <code>postMessage</code> target origin." },
+      ],
+      propertiesText: "The host exposes <code>destroy()</code> and <code>getState()</code>. The child bridge exposes async methods for toast, dialog, and action-modal delegation.",
+      events: [
+        { event: "<code>bridge request/response</code>", arguments: "postMessage payloads", returns: "delegated result payload" },
+      ],
+      methods: [
+        { method: "<code>bridge.isAvailable()</code>", arguments: "none", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>bridge.showToast(payload)</code>", arguments: "toast payload", returns: "<code>Promise&lt;string|null&gt;</code>" },
+        { method: "<code>bridge.alert(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>bridge.confirm(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>bridge.prompt(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;string|null&gt;</code>" },
+        { method: "<code>showWorkspaceActionModal(payload)</code>", arguments: "simple action-modal payload", returns: "<code>Promise&lt;object&gt;</code>" },
+      ],
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Workspace Bridge Demo</h1>
+      <p class="muted">Parent workspace host is installed on this page. The child app runs inside an iframe hosted by <code>ui.window</code> and should delegate helper-owned toasts, dialogs, and the explicit action-modal request to the parent shell.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Window Composition</h2>
+      <div class="row">
+        <button id="openWindowBtn" class="ui-button" type="button">Open Bridge Child</button>
+        <button id="reloadWindowBtn" class="ui-button ui-button-ghost" type="button">Reload Child</button>
+      </div>
+      <div id="windowSurface" class="window-surface"></div>
+      <pre>installWorkspaceUiBridgeHost();
+const iframeHost = createIframeHost({
+  src: "../samples/iframe/workspace-ui-bridge.fixture.html",
+  title: "Workspace Bridge Child",
+});
+manager.createWindow({ title: "Bridge Child", content: iframeHost.root });</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createWindowManager = await uiLoader.get("ui.window");
+    const createIframeHost = await uiLoader.get("ui.iframe.host");
+    const installWorkspaceUiBridgeHost = await uiLoader.get("ui.workspace.bridge.host");
+
+    installWorkspaceUiBridgeHost();
+
+    const manager = createWindowManager({
+      container: document.getElementById("windowSurface"),
+      taskbarMode: "always",
+    });
+    const iframeHost = createIframeHost({
+      src: "../samples/iframe/workspace-ui-bridge.fixture.html",
+      title: "Workspace Bridge Child",
+      loadingText: "Loading workspace bridge fixture...",
+    });
+    let windowRef = null;
+
+    document.getElementById("openWindowBtn").addEventListener("click", () => {
+      if (!windowRef) {
+        windowRef = manager.createWindow({
+          id: "workspace-bridge-demo-window",
+          title: "Bridge Child",
+          width: 860,
+          height: 520,
+          content: iframeHost.root,
+        });
+        return;
+      }
+      windowRef.open();
+      windowRef.focus();
+    });
+
+    document.getElementById("reloadWindowBtn").addEventListener("click", () => {
+      iframeHost.reload();
+      windowRef?.focus();
+    });
+  </script>
+</body>
+</html>

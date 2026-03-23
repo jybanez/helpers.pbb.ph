@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iframe Host Sample</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eef5ff, #d7e6ff);
+      color: #173152;
+    }
+    .shell {
+      display: grid;
+      gap: 12px;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #adc6ef;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 14px 34px rgba(18, 40, 72, 0.12);
+    }
+    h1, p {
+      margin: 0;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .badges span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #dce9ff;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <section class="shell">
+    <h1>PBB Embedded Sample</h1>
+    <p>This local page exists only to prove the shared iframe-host lifecycle and window composition.</p>
+    <div class="badges">
+      <span>local sample</span>
+      <span>iframe-safe</span>
+      <span>window-ready</span>
+    </div>
+  </section>
+</body>
+</html>

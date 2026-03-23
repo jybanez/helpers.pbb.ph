@@ -27,6 +27,7 @@ css/
     ui.components.css
     ui.modal.css
     ui.dialog.css
+    ui.iframe.host.css
     ui.toast.css
     ui.form.modal.css
     ui.select.css
@@ -75,6 +76,7 @@ js/
     ui.dialog.js
     ui.semantic.icons.js
     ui.toast.js
+    ui.workspace.bridge.js
     ui.form.modal.js
     ui.form.modal.presets.js
     ui.select.js
@@ -132,10 +134,19 @@ demos/
   demo.virtual.list.html
   demo.scheduler.html
   demo.timeline.html
+  demo.window.html
+  demo.window.manager.html
+  demo.iframe.host.html
+  demo.workspace.bridge.html
   demo.ui.html
   demo.audio.html
   demo.media.viewer.html
   demo.nav.html
+  demo.navbar.html
+  demo.sidebar.html
+  demo.breadcrumbs.html
+  demo.dropdown.html
+  demo.dropup.html
   demo.stepper.html
   demo.splitter.html
   demo.inspector.html
@@ -148,6 +159,9 @@ samples/
   sampledata.json
   sampledata_*.json
   samplemedia.json
+  iframe/
+    iframe-host.fixture.html
+    workspace-ui-bridge.fixture.html
 scripts/
   generate.hierarchy.sample.ps1
 boot.*.json
@@ -196,7 +210,13 @@ Reusable shared UI utilities live under `js/ui`:
   - `createModal(options)` general-purpose modal shell (content/header/footer, sizing, focus trap, backdrop/escape close)
   - `createActionModal(options)` modal wrapper with declarative header/footer actions (`headerActions[]`, `actions[]`)
 - `ui.window.js`
-  - `createWindowManager(options)` desktop-style window manager with draggable/resizable stacked windows, minimize taskbar, and maximize/restore behavior
+  - `createWindowManager(options)` desktop-style window manager with draggable/resizable stacked windows, configurable taskbar modes, and maximize/restore behavior
+- `ui.iframe.host.js`
+  - `createIframeHost(options)` helper-owned iframe surface with loading/error states, narrow source controls, and clean composition with `ui.window`
+- `ui.workspace.bridge.js`
+  - `installWorkspaceUiBridgeHost(options)` trusted parent-side bridge for iframe-hosted apps
+  - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, and explicit action-modals
+  - `showWorkspaceActionModal(payload, options)` narrow child-side request helper for parent-owned simple action-modals
 - `ui.dialog.js`
   - `uiAlert(message, options)` promise-based alert modal
   - `uiConfirm(message, options)` promise-based confirm modal
@@ -359,6 +379,8 @@ Application integrations should use the registry loader.
 - Prefer documented helper components and preset wrappers before building app-local UI for the same workflow.
 - Common helper-first checks for repeated operational flows:
   - `createWindowManager(...)`
+  - `installWorkspaceUiBridgeHost(...)`
+  - `getWorkspaceUiBridge(...)`
   - `createFormModal(...)`
   - `createLoginFormModal(...)`
   - `createReauthFormModal(...)`
@@ -1000,9 +1022,15 @@ Methods:
 
 - Top navigation with `items[]` and `actions[]`.
 - `items[]` and `actions[]` support the same icon contract (`icon`, `iconPosition`, `iconOnly`).
+- `items[]` can render dropdown menus by providing:
+  - `menuItems: []`
+  - optional `menuOptions: {}`
 - `actions[]` can render dropdown menus by providing:
   - `menuItems: []`
   - optional `menuOptions: {}`
+- item-menu callbacks:
+  - `onItemMenuSelect(item, menuItem, meta)`
+  - `onItemMenuOpenChange(item, open)`
 - menu callbacks:
   - `onActionMenuSelect(action, item, meta)`
   - `onActionMenuOpenChange(action, open)`
@@ -1080,15 +1108,23 @@ import { createNavbar } from "./js/ui/ui.navbar.js";
 
 createNavbar(document.getElementById("navbarHost"), {}, {
   brandText: "Hotline UI",
-  activeId: "incidents",
+  activeId: "dashboard",
   items: [
     { id: "dashboard", label: "Dashboard" },
-    { id: "incidents", label: "Incidents" },
+    {
+      id: "apps",
+      label: "Apps",
+      menuItems: [
+        { id: "app:relay", label: "Relay" },
+        { id: "app:workspace", label: "Workspace" },
+      ],
+    },
   ],
   actions: [
     { id: "help", label: "Help", icon: "<svg viewBox='0 0 24 24'><path d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z'/></svg>" },
   ],
   onNavigate(item) { console.log("navbar.navigate", item); },
+  onItemMenuSelect(item, menuItem) { console.log("navbar.itemMenu.select", item, menuItem); },
   onAction(action) { console.log("navbar.action", action); },
 });
 ```
@@ -1185,8 +1221,12 @@ Open from a local server (Apache/WAMP/Nginx):
   - graph style selector
   - sensitivity slider
   - theme toggle
-- `demos/demo.nav.html` -> navigation/menu utilities playground
-  - navbar, sidebar, breadcrumbs, dropdown, dropup
+- `demos/demo.nav.html` -> navigation overview and routing page
+- `demos/demo.navbar.html` -> dedicated navbar manual/demo
+- `demos/demo.sidebar.html` -> dedicated sidebar manual/demo
+- `demos/demo.breadcrumbs.html` -> dedicated breadcrumbs manual/demo
+- `demos/demo.dropdown.html` -> dedicated dropdown manual/demo
+- `demos/demo.dropup.html` -> dedicated dropup manual/demo
 - `demos/demo.stepper.html` -> dedicated stepper playground
   - workflow progression states
   - orientation toggle + step navigation
@@ -1788,7 +1828,10 @@ Manager options:
 |---|---|---:|---|---|
 | `container` | `HTMLElement \| null` | `document.body` | no | Host surface for the manager layer and taskbar. |
 | `bounds` | `"viewport"` | `"viewport"` | no | Clamps movement and resize to the manager viewport. |
-| `showTaskbar` | `boolean` | `true` | no | Shows the recovery strip for minimized windows. |
+| `showTaskbar` | `boolean` | `true` | no | Enables manager-owned taskbar rendering. |
+| `taskbarMode` | `"auto" \| "always" \| "minimized-only"` | `"auto"` | no | Controls whether the taskbar behaves like a workspace window list or a minimized-only recovery strip. |
+| `showTaskbarClose` | `boolean` | `true` | no | Shows inline close affordances on taskbar items for closable windows. |
+| `taskbarItemOrder` | `"open-order" \| "z-order"` | `"open-order"` | no | Controls taskbar item ordering. |
 | `className` | `string` | `""` | no | Extra class names applied to the manager root. |
 | `onWindowOpen` | `({ id, window, state }) => void` | `null` | no | Fires after a window opens. |
 | `onWindowClose` | `({ id, window, state, meta? }) => void` | `null` | no | Fires after a window closes. |
@@ -1845,10 +1888,21 @@ Returned manager API:
 |---|---|---|---|
 | `createWindow` | `options` | `WindowInstance` | Creates and registers a managed window. |
 | `getWindows` | none | `WindowInstance[]` | Returns the current window instances. |
+| `getTaskbarWindows` | none | `WindowInstance[]` | Returns windows currently represented in the taskbar in rendered order. |
 | `focusWindow` | `id` | `boolean` | Brings the matching window to front. |
 | `closeWindow` | `id, meta?` | `boolean` | Closes one window by id. |
 | `closeAll` | `meta?` | `void` | Closes all windows. |
 | `destroy` | none | `void` | Removes the manager layer, taskbar, and window DOM. |
+
+Taskbar behavior:
+
+- `taskbarMode: "auto"` resolves to:
+  - `"minimized-only"` for body-level managers
+  - `"always"` for contained workspace-style managers
+- `taskbarMode: "always"` keeps all open windows in the taskbar for desktop-style switching
+- clicking a non-minimized taskbar item focuses it
+- clicking a minimized taskbar item restores and focuses it
+- if taskbar items exceed available width, the taskbar scrolls horizontally instead of shrinking items into unreadable pills
 
 Returned window API:
 
@@ -1884,6 +1938,164 @@ Behavior notes:
 Related demos:
 
 - `demos/demo.window.html`
+- `demos/demo.window.manager.html`
+
+### `createIframeHost(options)` (`js/ui/ui.iframe.host.js`)
+
+Purpose:
+
+- Shared iframe surface for embedded PBB applications or local helper-owned fixtures, designed to compose over `ui.window` without widening the window subsystem.
+- When used as window content, the iframe host can occupy the full window body instead of inheriting generic body padding.
+
+Factory:
+
+```js
+import { createIframeHost } from "./js/ui/ui.iframe.host.js";
+
+const iframeHost = createIframeHost(options);
+```
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `src` | `string` | `""` | no | URL loaded into the iframe. |
+| `srcdoc` | `string` | `""` | no | Inline document markup used instead of `src` when provided. |
+| `title` | `string` | `"Embedded content"` | no | Accessible iframe title. |
+| `loadingText` | `string` | `"Loading embedded page..."` | no | Helper-owned loading message. |
+| `errorTitle` | `string` | `"Unable to load embedded page"` | no | Helper-owned error heading. |
+| `errorMessage` | `string` | `"Check the requested URL or embedded app availability."` | no | Helper-owned error message body. |
+| `sandbox` | `string` | documented default | no | Raw iframe sandbox attribute. |
+| `referrerPolicy` | `string` | `"strict-origin-when-cross-origin"` | no | Referrer policy applied to the iframe. |
+| `allow` | `string` | `""` | no | Raw iframe `allow` attribute. |
+| `allowFullscreen` | `boolean` | `false` | no | Adds `allowfullscreen` when needed. |
+| `className` | `string` | `""` | no | Extra classes applied to the host root. |
+| `onLoad` | `(state) => void` | `null` | no | Fires after a successful iframe load. |
+| `onError` | `(state) => void` | `null` | no | Fires when the helper enters an error state. |
+
+Returned API:
+
+| Property / Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `root` | - | `HTMLElement` | Root host surface. |
+| `iframe` | - | `HTMLIFrameElement` | Managed iframe element. |
+| `getSrc` | none | `string` | Current `src` value. |
+| `setSrc` | `url` | `void` | Replaces the current iframe URL and clears `srcdoc`. |
+| `reload` | none | `void` | Reloads the current source. |
+| `update` | `options` | `void` | Applies partial option updates. |
+| `getState` | none | `object` | Returns current source, title, status, and error state. |
+| `destroy` | none | `void` | Removes helper-owned DOM and listeners. |
+
+Behavior notes:
+
+- V1 owns:
+  - iframe DOM creation
+  - loading surface
+  - deterministic error surface for empty/invalid source
+  - narrow source changes via `setSrc(...)` and `update(...)`
+  - full-bleed composition inside `ui.window` through helper-owned content-fill markers
+- V1 intentionally does not own:
+  - cross-frame messaging
+  - auth brokering
+  - Workspace launcher logic
+  - automatic embedded title sync
+- The dedicated demo uses a same-origin fixture file for deterministic browser behavior:
+  - `samples/iframe/iframe-host.fixture.html`
+
+Composition example:
+
+```js
+const iframeHost = createIframeHost({
+  src: "/pbb/hq/",
+  title: "PBB HQ",
+});
+
+const win = manager.createWindow({
+  title: "PBB HQ",
+  content: iframeHost.root,
+});
+```
+
+Related demos:
+
+- `demos/demo.iframe.host.html`
+
+### `installWorkspaceUiBridgeHost(options)`, `getWorkspaceUiBridge(options)`, `showWorkspaceActionModal(payload, options)` (`js/ui/ui.workspace.bridge.js`)
+
+Purpose:
+
+- Explicit trusted bridge between a parent workspace shell and iframe-hosted child apps so helper-owned overlays can render in the parent document instead of being trapped inside the iframe.
+
+Design rule:
+
+- parent host owns the rendered overlay surfaces
+- child helpers delegate only when a trusted bridge is available
+- local iframe rendering remains the fallback
+
+Parent host:
+
+```js
+import { installWorkspaceUiBridgeHost } from "./js/ui/ui.workspace.bridge.js";
+
+const host = installWorkspaceUiBridgeHost({
+  trustedOrigins: [window.location.origin],
+});
+```
+
+Child helper:
+
+```js
+import { getWorkspaceUiBridge } from "./js/ui/ui.workspace.bridge.js";
+
+const bridge = getWorkspaceUiBridge();
+const available = await bridge.isAvailable();
+```
+
+Parent options:
+
+| Option | Type | Default | Description |
+|---|---|---:|---|
+| `trustedOrigins` | `string[]` | `[window.location.origin, "null"]` | Allowed child origins for bridge requests. |
+| `toastOptions` | `object` | `{}` | Passed to the parent-owned toast stack. |
+| `parent` | `HTMLElement` | `document.body` | Parent document node used for delegated modal/dialog rendering. |
+
+Child options:
+
+| Option | Type | Default | Description |
+|---|---|---:|---|
+| `timeoutMs` | `number` | `900` | Bridge request timeout in milliseconds. |
+| `targetOrigin` | `string` | `"*"` | `postMessage` target origin. |
+
+Child API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `isAvailable` | none | `Promise<boolean>` | Probes for a trusted parent bridge host. |
+| `showToast` | `payload` | `Promise<string \| null>` | Requests parent-owned toast rendering. |
+| `dismissToast` | `id` | `Promise<boolean>` | Dismisses a delegated toast by id. |
+| `clearToasts` | none | `Promise<boolean>` | Clears delegated toasts. |
+| `alert` | `payload` | `Promise<any>` | Delegates `uiAlert(...)` behavior to the parent host. |
+| `confirm` | `payload` | `Promise<any>` | Delegates `uiConfirm(...)` behavior to the parent host. |
+| `prompt` | `payload` | `Promise<any>` | Delegates `uiPrompt(...)` behavior to the parent host. |
+| `showActionModal` | `payload` | `Promise<object>` | Requests a parent-owned simple action modal. |
+
+V1 scope:
+
+- delegated toast delivery
+- delegated alert / confirm / prompt dialogs
+- explicit parent-owned simple action modal
+
+V1 non-goals:
+
+- automatic `createModal(...)` delegation
+- automatic `createFormModal(...)` delegation
+- arbitrary parent command execution
+- auth brokering or iframe/session ownership
+
+Related demos:
+
+- `demos/demo.workspace.bridge.html`
+- `demos/demo.iframe.host.html`
 
 ### `createFormModal(options)` (`js/ui/ui.form.modal.js`)
 
@@ -3671,7 +3883,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.4`
+- Latest documented release: `v0.21.11`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
@@ -3727,5 +3939,6 @@ For full release history, see `CHANGELOG.md`.
   - audio UI layer
 - `v0.1.x`
   - initial public prototype
+
 
 

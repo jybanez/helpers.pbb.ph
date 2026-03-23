@@ -191,6 +191,7 @@ Shared UI layer:
 - `js/ui/ui.modal.js`
 - `js/ui/ui.dialog.js`
 - `js/ui/ui.toast.js`
+- `js/ui/ui.workspace.bridge.js`
 - `js/ui/ui.select.js`
 - `js/ui/ui.toggle.button.js`
 - `js/ui/ui.toggle.group.js`
@@ -288,6 +289,11 @@ Run this checklist:
    - `demos/demo.audio.html`
    - `demos/demo.media.viewer.html`
    - `demos/demo.nav.html`
+   - `demos/demo.navbar.html`
+   - `demos/demo.sidebar.html`
+   - `demos/demo.breadcrumbs.html`
+   - `demos/demo.dropdown.html`
+   - `demos/demo.dropup.html`
    - `demos/demo.stepper.html`
    - `demos/demo.splitter.html`
    - `demos/demo.inspector.html`
@@ -397,13 +403,50 @@ If changing callback signatures or removing methods, plan a major version.
   - drag / resize
   - minimize / maximize / restore
   - manager-owned taskbar recovery
+  - workspace-style all-open-window taskbar when `taskbarMode: "always"` or contained `taskbarMode: "auto"` is used
 - Use `ui.window` instead of app-local draggable/resizable panels when the interaction is actually window-like.
+- Prefer:
+  - `taskbarMode: "always"` for contained workspace shells
+  - `taskbarMode: "minimized-only"` for conservative body-level usage
+- Do not implement app-local window lists or ad hoc desktop bars when the shared taskbar contract already fits the workflow.
 - Keep V1 narrow:
   - no docking
   - no snapping
   - no tiled layout manager
   - no saved workspace persistence
 - If repeated product work needs those behaviors, submit a proposal first instead of widening `ui.window` ad hoc from app code.
+
+### 11.3.1 Iframe Host (`ui.iframe.host`)
+
+- `createIframeHost(options)` is the shared direction for embedded iframe surfaces, especially when a project wants to host another PBB app inside `ui.window`.
+- Use `ui.iframe.host` instead of ad hoc iframe wiring when the integration needs helper-owned:
+  - loading state
+  - deterministic error state
+  - narrow reload/source controls
+- Keep V1 narrow:
+  - no cross-frame messaging
+  - no auth brokering
+  - no Workspace launcher logic
+  - no automatic embedded title sync
+- Compose it with `ui.window`; do not widen `ui.window` itself with iframe-specific lifecycle behavior.
+
+### 11.3.2 Workspace Bridge (`ui.workspace.bridge`)
+
+- `ui.workspace.bridge` is the shared direction when iframe-hosted apps need helper-owned overlays to render in the parent workspace shell instead of inside the iframe.
+- Use it for:
+  - delegated toasts
+  - delegated alert / confirm / prompt dialogs
+  - explicit simple action-modal requests
+- Keep the contract explicit:
+  - parent installs `installWorkspaceUiBridgeHost(...)`
+  - child uses `getWorkspaceUiBridge(...)`
+- Do not rely on silent iframe detection alone. Child apps must keep local fallback behavior when no trusted parent bridge is available.
+- Keep V1 narrow:
+  - no generic parent RPC
+  - no auth/session brokering
+  - no automatic `createFormModal(...)` delegation
+  - no arbitrary modal mirroring from child DOM into parent DOM
+- Prefer `trustedOrigins` over permissive cross-frame behavior. Workspace-owned surfaces should only be delegated to a known parent shell.
 
 ### 11.4 Grid Virtualization (`ui.grid`)
 
@@ -481,7 +524,12 @@ If changing callback signatures or removing methods, plan a major version.
   - vertical/horizontal timeline
   - scrubber interaction (seek/range/zoom)
 - Media-viewer-focused behavior belongs in `demos/demo.media.viewer.html`.
-- Navigation-focused behavior belongs in `demos/demo.nav.html`.
+- Navigation-focused behavior belongs in the dedicated navigation demos:
+  - `demos/demo.navbar.html`
+  - `demos/demo.sidebar.html`
+  - `demos/demo.breadcrumbs.html`
+  - `demos/demo.dropdown.html`
+  - `demos/demo.dropup.html`
 - Virtual-list-focused behavior belongs in `demos/demo.virtual.list.html`.
 - Scheduler/calendar-focused behavior belongs in `demos/demo.scheduler.html`.
 - Stepper behavior belongs in `demos/demo.stepper.html`.
@@ -491,4 +539,5 @@ If changing callback signatures or removing methods, plan a major version.
 - Skeleton behavior belongs in `demos/demo.skeleton.html`.
 
 When introducing a substantial UI module, prefer a dedicated demo page and link it from `demos/index.html`.
+
 

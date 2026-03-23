@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iframe Host Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 160px; }
+    .iframe-demo-host { min-height: 360px; }
+    .window-surface { min-height: 520px; border: 1px solid #2b3750; border-radius: 10px; background: #0b1220; overflow: hidden; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.iframe.host", "ui.window"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Iframe Host",
+      overview: "Helper-owned iframe surface with loading and deterministic error states, designed to compose cleanly with ui.window and future Workspace flows.",
+      useWhen: [
+        "Use <code>createIframeHost(...)</code> when a project needs a stable embedded-app surface instead of raw one-off iframe wiring.",
+        "Use it with <code>createWindowManager(...)</code> when app windows should host an iframe without moving iframe lifecycle logic into <code>ui.window</code>."
+      ],
+      avoidWhen: [
+        "Do not widen it into a cross-frame messaging or auth-broker subsystem in V1.",
+        "Do not bake iframe-specific logic into <code>ui.window</code>; keep the abstractions separate."
+      ],
+      description: "This helper owns iframe setup, helper-owned loading/error states, and narrow source controls. It is intended as the reusable embedded-app primitive that future workspace shells can compose over.",
+      defaultSampleCode: `const iframeHost = createIframeHost({\n  src: \"about:blank\",\n  title: \"PBB HQ\",\n  loadingText: \"Loading PBB HQ...\",\n});\n\nconst win = manager.createWindow({\n  title: \"PBB HQ\",\n  content: iframeHost.root,\n});`,
+      constructor: [
+        { factory: "<code>createIframeHost(options)</code>", arguments: "iframe-host <code>options</code>", returns: "Iframe-host instance" }
+      ],
+      options: [
+        { option: "<code>src</code>", default: "<code>\"\"</code>", description: "URL loaded into the iframe." },
+        { option: "<code>srcdoc</code>", default: "<code>\"\"</code>", description: "Inline document markup used instead of <code>src</code> when provided." },
+        { option: "<code>title</code>", default: "<code>\"Embedded content\"</code>", description: "Accessible iframe title." },
+        { option: "<code>loadingText</code>", default: "<code>\"Loading embedded page...\"</code>", description: "Helper-owned loading copy." },
+        { option: "<code>errorTitle</code>", default: "<code>\"Unable to load embedded page\"</code>", description: "Helper-owned error heading." },
+        { option: "<code>errorMessage</code>", default: "<code>\"Check the requested URL or embedded app availability.\"</code>", description: "Helper-owned error message body." },
+        { option: "<code>sandbox</code>", default: "documented default", description: "Raw iframe sandbox attribute. Caller should widen capability deliberately." },
+        { option: "<code>referrerPolicy</code>", default: "<code>\"strict-origin-when-cross-origin\"</code>", description: "Referrer policy applied to the iframe." },
+        { option: "<code>allow</code>", default: "<code>\"\"</code>", description: "Raw iframe <code>allow</code> attribute." },
+        { option: "<code>allowFullscreen</code>", default: "<code>false</code>", description: "Adds <code>allowfullscreen</code> when needed.", values: ["true", "false"] },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra classes applied to the host root." },
+        { option: "<code>onLoad</code>", default: "<code>null</code>", description: "Called after a successful iframe load." },
+        { option: "<code>onError</code>", default: "<code>null</code>", description: "Called when the helper enters an error state." }
+      ],
+      propertiesText: "Returned instance exposes DOM references through <code>root</code> and <code>iframe</code>. Use <code>getState()</code> for helper-owned state instead of reading DOM classes directly.",
+      events: [
+        { event: "<code>onLoad(state)</code>", arguments: "current iframe-host state", returns: "<code>void</code>" },
+        { event: "<code>onError(state)</code>", arguments: "current iframe-host state with error payload", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>getSrc()</code>", arguments: "none", returns: "current <code>src</code> string" },
+        { method: "<code>setSrc(url)</code>", arguments: "string", returns: "<code>void</code>" },
+        { method: "<code>reload()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "host state object" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Iframe Host Demo</h1>
+      <p class="muted">Dedicated helper page for the shared iframe host that future workspace shells can compose with <code>ui.window</code>.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Standalone Iframe Host</h2>
+      <div class="row">
+        <button id="loadFixtureBtn" class="ui-button" type="button">Load Fixture</button>
+        <button id="loadBlankBtn" class="ui-button ui-button-ghost" type="button">Load About Blank</button>
+        <button id="loadErrorBtn" class="ui-button ui-button-ghost" type="button">Trigger Error</button>
+        <button id="reloadBtn" class="ui-button ui-button-ghost" type="button">Reload</button>
+      </div>
+      <div id="iframeHost" class="iframe-demo-host"></div>
+      <pre>const fixtureUrl = "../samples/iframe/iframe-host.fixture.html";
+const iframeHost = createIframeHost({
+  src: fixtureUrl,
+  title: "Embedded fixture",
+  loadingText: "Loading embedded fixture...",
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Window Composition</h2>
+      <p class="muted">This section proves the intended composition: keep <code>ui.window</code> generic and host embedded content through <code>createIframeHost(...)</code>.</p>
+      <div class="row">
+        <button id="openWindowBtn" class="ui-button" type="button">Open Workspace Preview</button>
+        <button id="reloadWindowBtn" class="ui-button ui-button-ghost" type="button">Reload Window Content</button>
+      </div>
+      <div id="windowSurface" class="window-surface"></div>
+      <pre>const iframeHost = createIframeHost({ src: fixtureUrl, title: "Workspace Preview" });
+const manager = createWindowManager({ container: surface });
+manager.createWindow({ title: "Workspace Preview", content: iframeHost.root });</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createIframeHost = await uiLoader.get("ui.iframe.host");
+    const createWindowManager = await uiLoader.get("ui.window");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+
+    const fixtureUrl = "../samples/iframe/iframe-host.fixture.html";
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    const standaloneHost = createIframeHost({
+      src: fixtureUrl,
+      title: "Embedded fixture",
+      loadingText: "Loading embedded fixture...",
+      onLoad(state) {
+        writeLog("standalone.load", state);
+      },
+      onError(state) {
+        writeLog("standalone.error", state);
+      },
+    });
+    document.getElementById("iframeHost").appendChild(standaloneHost.root);
+
+    document.getElementById("loadFixtureBtn").addEventListener("click", () => {
+      standaloneHost.setSrc(fixtureUrl);
+      writeLog("standalone.update", { mode: "fixture" });
+    });
+    document.getElementById("loadBlankBtn").addEventListener("click", () => {
+      standaloneHost.setSrc("about:blank");
+      writeLog("standalone.update", { mode: "about:blank" });
+    });
+    document.getElementById("loadErrorBtn").addEventListener("click", () => {
+      standaloneHost.setSrc("");
+      writeLog("standalone.update", { mode: "error" });
+    });
+    document.getElementById("reloadBtn").addEventListener("click", () => {
+      standaloneHost.reload();
+      writeLog("standalone.reload", standaloneHost.getState());
+    });
+
+    const manager = createWindowManager({ container: document.getElementById("windowSurface") });
+    const windowHost = createIframeHost({
+      src: fixtureUrl,
+      title: "Workspace Preview",
+      loadingText: "Loading workspace preview...",
+    });
+    let windowRef = null;
+
+    document.getElementById("openWindowBtn").addEventListener("click", () => {
+      if (!windowRef) {
+        windowRef = manager.createWindow({
+          id: "iframe-host-demo-window",
+          title: "Workspace Preview",
+          width: 760,
+          height: 420,
+          content: windowHost.root,
+        });
+      } else {
+        windowRef.open();
+        windowRef.focus();
+      }
+      writeLog("window.open", windowHost.getState());
+    });
+
+    document.getElementById("reloadWindowBtn").addEventListener("click", () => {
+      windowHost.reload();
+      windowRef?.focus();
+      writeLog("window.reload", windowHost.getState());
+    });
+  </script>
+</body>
+</html>

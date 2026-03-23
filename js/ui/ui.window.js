@@ -2,6 +2,9 @@ const DEFAULT_MANAGER_OPTIONS = {
   container: null,
   bounds: "viewport",
   showTaskbar: true,
+  taskbarMode: "auto",
+  showTaskbarClose: true,
+  taskbarItemOrder: "open-order",
   className: "",
   onWindowOpen: null,
   onWindowClose: null,
@@ -40,6 +43,7 @@ export function createWindowManager(options = {}) {
   const managerOptions = normalizeManagerOptions(options);
   const container = managerOptions.container || document.body;
   const containerIsBody = container === document.body;
+  const effectiveTaskbarMode = resolveTaskbarMode(managerOptions.taskbarMode, containerIsBody);
   const previousPosition = !containerIsBody ? window.getComputedStyle(container).position : "";
   if (!containerIsBody && previousPosition === "static") {
     container.style.position = "relative";
@@ -52,6 +56,7 @@ export function createWindowManager(options = {}) {
   }
   const layer = createNode("div", "ui-window-manager-layer");
   const taskbar = createNode("div", "ui-window-manager-taskbar");
+  taskbar.hidden = true;
   root.append(layer, taskbar);
   container.appendChild(root);
 
@@ -98,12 +103,14 @@ export function createWindowManager(options = {}) {
     win.setActive(true);
     managerOptions.onActiveChange?.({ id: win.id, window: win.api, state: win.getState() });
     win.options.onFocus?.(win.getState());
+    syncTaskbar();
     return true;
   }
 
   function syncTaskbar() {
+    const taskbarWindows = getTaskbarEntries();
     const wasHidden = taskbar.hidden;
-    taskbar.hidden = managerOptions.showTaskbar === false || !Array.from(windows.values()).some((entry) => entry.state.minimized && !entry.state.destroyed);
+    taskbar.hidden = managerOptions.showTaskbar === false || taskbarWindows.length === 0;
     taskbar.replaceChildren();
     if (taskbar.hidden) {
       if (wasHidden !== taskbar.hidden) {
@@ -111,11 +118,24 @@ export function createWindowManager(options = {}) {
       }
       return;
     }
-    Array.from(windows.values())
-      .filter((entry) => entry.state.minimized && !entry.state.destroyed)
-      .sort((a, b) => windowOrder.indexOf(a.id) - windowOrder.indexOf(b.id))
-      .forEach((entry) => taskbar.appendChild(entry.buildTaskbarItem()));
+    taskbarWindows.forEach((entry) => taskbar.appendChild(entry.buildTaskbarItem()));
     windows.forEach((entry) => entry.syncMaximizedLayout?.());
+  }
+
+  function getOrderedEntries() {
+    const entries = Array.from(windows.values()).filter((entry) => !entry.state.destroyed && entry.state.open);
+    if (managerOptions.taskbarItemOrder === "z-order") {
+      return entries.sort((a, b) => a.state.zIndex - b.state.zIndex);
+    }
+    return entries.sort((a, b) => windowOrder.indexOf(a.id) - windowOrder.indexOf(b.id));
+  }
+
+  function getTaskbarEntries() {
+    const entries = getOrderedEntries();
+    if (effectiveTaskbarMode === "always") {
+      return entries;
+    }
+    return entries.filter((entry) => entry.state.minimized);
   }
 
   function unregisterWindow(id) {
@@ -209,6 +229,9 @@ export function createWindowManager(options = {}) {
     createWindow,
     getWindows() {
       return Array.from(windows.values()).map((entry) => entry.api);
+    },
+    getTaskbarWindows() {
+      return getTaskbarEntries().map((entry) => entry.api);
     },
     focusWindow,
     closeWindow,
@@ -407,8 +430,12 @@ function createManagedWindow(context) {
 
   function renderContent(contentValue) {
     body.replaceChildren();
+    body.classList.remove("is-content-fill");
     const resolved = typeof contentValue === "function" ? contentValue(api) : contentValue;
     if (resolved instanceof Node) {
+      if (resolved.nodeType === 1 && resolved.getAttribute?.("data-ui-window-fill") === "true") {
+        body.classList.add("is-content-fill");
+      }
       body.appendChild(resolved);
       return;
     }
@@ -653,14 +680,22 @@ function createManagedWindow(context) {
 
   function buildTaskbarItem() {
     taskbarItem = createNode("div", "ui-window-taskbar-item");
+    taskbarItem.classList.toggle("is-active", state.active && !state.minimized);
+    taskbarItem.classList.toggle("is-minimized", state.minimized);
     const button = createNode("button", "ui-window-taskbar-button");
     button.type = "button";
     const label = createNode("span", "ui-window-taskbar-label");
     label.textContent = options.title;
     button.appendChild(label);
-    button.addEventListener("click", () => api.restore());
+    button.addEventListener("click", () => {
+      if (state.minimized) {
+        api.restore();
+        return;
+      }
+      api.focus();
+    });
     taskbarItem.appendChild(button);
-    if (options.closable) {
+    if (options.closable && managerOptions.showTaskbarClose) {
       const closeButton = createNode("button", "ui-window-taskbar-close");
       closeButton.type = "button";
       closeButton.setAttribute("aria-label", `Close ${options.title}`);
@@ -811,8 +846,22 @@ function normalizeManagerOptions(options = {}) {
     ...DEFAULT_MANAGER_OPTIONS,
     ...(options || {}),
     bounds: "viewport",
+    taskbarMode: ["auto", "always", "minimized-only"].includes(String(options.taskbarMode || "").toLowerCase())
+      ? String(options.taskbarMode || "").toLowerCase()
+      : DEFAULT_MANAGER_OPTIONS.taskbarMode,
+    taskbarItemOrder: ["open-order", "z-order"].includes(String(options.taskbarItemOrder || "").toLowerCase())
+      ? String(options.taskbarItemOrder || "").toLowerCase()
+      : DEFAULT_MANAGER_OPTIONS.taskbarItemOrder,
+    showTaskbarClose: options.showTaskbarClose !== false,
     className: String(options.className || "").trim(),
   };
+}
+
+function resolveTaskbarMode(mode, containerIsBody) {
+  if (mode === "always" || mode === "minimized-only") {
+    return mode;
+  }
+  return containerIsBody ? "minimized-only" : "always";
 }
 
 function normalizeWindowOptions(options = {}) {

@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
+import { createWorkspaceToastDelegate } from "./ui.workspace.bridge.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -16,6 +17,9 @@ const DEFAULT_OPTIONS = {
   speakFormatter: null, // (toast) => string
   speakCooldownMs: 0,
   waitForSpeechBeforeDismiss: true,
+  workspaceBridge: "auto",
+  workspaceBridgeTimeoutMs: 900,
+  workspaceBridgeTargetOrigin: "*",
 };
 
 export function createToastStack(options = {}) {
@@ -32,12 +36,26 @@ export function createToastStack(options = {}) {
   const states = [];
   let destroyed = false;
   let lastSpokenAt = 0;
+  const workspaceToastDelegate = createWorkspaceToastDelegate(currentOptions);
 
   document.body.appendChild(root);
 
   function show(message, toastOptions = {}) {
     if (destroyed) {
       return null;
+    }
+    const delegatedId = workspaceToastDelegate?.show(message, toastOptions);
+    if (delegatedId) {
+      states.push({
+        id: delegatedId,
+        type: normalizeType(toastOptions.type),
+        message: String(message ?? ""),
+        title: toastOptions.title == null ? "" : String(toastOptions.title),
+        createdAt: Date.now(),
+        remote: true,
+      });
+      trimToMax();
+      return delegatedId;
     }
     const type = normalizeType(toastOptions.type);
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -140,6 +158,12 @@ export function createToastStack(options = {}) {
 
   function dismiss(id) {
     const key = String(id);
+    const remoteStateIndex = states.findIndex((item) => String(item.id) === key && item.remote);
+    if (remoteStateIndex >= 0) {
+      states.splice(remoteStateIndex, 1);
+      workspaceToastDelegate?.dismiss(key);
+      return;
+    }
     const timer = timers.get(key);
     if (timer) {
       clearTimeout(timer);
@@ -174,9 +198,13 @@ export function createToastStack(options = {}) {
   }
 
   function clear() {
+    states
+      .filter((item) => item.remote)
+      .forEach((item) => workspaceToastDelegate?.dismiss(item.id));
     Array.from(states).forEach((item) => dismiss(item.id));
     states.length = 0;
     clearNode(root);
+    workspaceToastDelegate?.clear();
   }
 
   function destroy() {

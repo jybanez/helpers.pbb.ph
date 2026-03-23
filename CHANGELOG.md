@@ -5,12 +5,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.6`
+- Latest documented release: `v0.21.11`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
 
-- `v0.21.x`: shared window manager and dedicated window demo
+- `v0.21.x`: shared window manager, iframe host, and desktop-style workspace foundations
 - `v0.20.x`: schema form modal helper and modal-form demos
 - `v0.19.x`: hierarchy map, real Cebu hierarchy sample generator, hierarchy demo
 - `v0.18.x`: media viewer, modal action consistency, tree-grid search, regression harnesses
@@ -33,6 +33,110 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.11
+
+- Extended `ui.navbar` so primary navigation items can now host shared menu dropdowns, not only right-side actions.
+- Added item-level menu support through:
+  - `items[].menuItems`
+  - `items[].menuOptions`
+  - `onItemMenuSelect(item, menuItem, meta)`
+  - `onItemMenuOpenChange(item, open)`
+- Kept backward compatibility:
+  - plain `items[]` still use `onNavigate(item)`
+  - existing `actions[].menuItems` behavior remains unchanged
+- Updated `demos/demo.navbar.html` to demonstrate a Workspace-style primary-nav `Apps` menu alongside the existing right-side profile menu.
+- Split the overloaded navigation documentation surface into focused demos:
+  - `demos/demo.navbar.html`
+  - `demos/demo.sidebar.html`
+  - `demos/demo.breadcrumbs.html`
+  - `demos/demo.dropdown.html`
+  - `demos/demo.dropup.html`
+- Repurposed `demos/demo.nav.html` into a lightweight navigation overview/router page instead of a five-helper catch-all.
+
+### v0.21.10
+
+- Reorganized the demo/catalog navigation so the window subsystem now lives under its own `Window` group instead of being mixed into generic `Utilities`.
+- Split the former combined `Window` demo into:
+  - `demos/demo.window.html` for the single managed window shell
+  - `demos/demo.window.manager.html` for multi-window workspace and taskbar behavior
+- Updated the demo catalog in `demos/index.html` so window-related pages are grouped as:
+  - `Window`
+  - `Window Manager`
+  - `Iframe Host`
+  - `Workspace Bridge`
+- Updated public docs/spec references so `demo.window.manager.html` is treated as the manager/workspace reference page while `demo.window.html` remains the focused shell demo.
+
+### v0.21.9
+
+- Upgraded `ui.window` taskbar behavior to support both the original minimized-only recovery strip and a workspace-style all-open-window taskbar.
+- Added manager options:
+  - `taskbarMode`
+  - `showTaskbarClose`
+  - `taskbarItemOrder`
+- Added manager method:
+  - `getTaskbarWindows()`
+- `taskbarMode: "auto"` now resolves to:
+  - `"minimized-only"` for body-level managers
+  - `"always"` for contained managers used as workspace surfaces
+- In workspace-style taskbars:
+  - all open windows now render taskbar items
+  - active window items are highlighted
+  - minimized window items remain visible with minimized state styling
+  - clicking an open item focuses it
+  - clicking a minimized item restores and focuses it
+  - overflowing taskbar items now scroll horizontally instead of collapsing the item pills
+- Updated contained window demos to use the workspace-style taskbar:
+  - `demos/demo.window.manager.html`
+  - `demos/demo.workspace.bridge.html`
+- Expanded window browser regression coverage to explicitly verify:
+  - minimized-only hidden taskbar behavior
+  - always-on taskbar behavior
+  - taskbar-based focus switching
+  - minimized restore from the taskbar
+  - maximized windows reserving visible taskbar height
+
+### v0.21.8
+
+- Added `ui.workspace.bridge` as an explicit trusted parent/child bridge for iframe-hosted apps that need parent-owned helper surfaces instead of local iframe overlays.
+- Added parent-side host installation via:
+  - `installWorkspaceUiBridgeHost(options)`
+- Added child-side bridge access via:
+  - `getWorkspaceUiBridge(options)`
+  - `showWorkspaceActionModal(payload, options)`
+- Integrated delegated workspace fallback into shared helpers:
+  - `createToastStack(...)` can delegate toast delivery to the parent workspace host when available
+  - `uiAlert(...)`, `uiConfirm(...)`, and `uiPrompt(...)` can delegate dialog rendering to the parent workspace host when available
+- Kept `createModal(...)` and `createFormModal(...)` local in V1 to avoid widening the bridge before the workspace contract is proven.
+- Added dedicated demo and fixture coverage:
+  - `demos/demo.workspace.bridge.html`
+  - `samples/iframe/workspace-ui-bridge.fixture.html`
+- Added dedicated browser regression coverage for:
+  - bridge handshake
+  - delegated toast rendering in the parent document
+  - local fallback when no host is installed
+  - `tests/workspace.bridge.regression.html`
+  - `tests/workspace.bridge.regression.mjs`
+
+### v0.21.7
+
+- Added `ui.iframe.host` with `createIframeHost(options)` as a narrow shared iframe surface for embedded apps and local helper-owned fixtures.
+- Helper-owned iframe host now standardizes:
+  - iframe creation and lifecycle
+  - loading state
+  - deterministic error state for empty or invalid source
+  - narrow source controls via `setSrc(...)`, `reload()`, and `update(...)`
+- Added dedicated demo coverage:
+  - `demos/demo.iframe.host.html`
+  - shared navigation entry under `Utilities`
+  - home catalog card on `demos/index.html`
+- Added dedicated browser regression coverage:
+  - `tests/iframe.host.regression.html`
+  - `tests/iframe.host.regression.mjs`
+- Fixed iframe-host status-surface visibility so helper-owned loading/error panels correctly honor hidden-state toggles instead of visually overriding ready iframe content.
+- Updated the dedicated iframe-host demo to use a same-origin fixture file for deterministic browser behavior:
+  - `samples/iframe/iframe-host.fixture.html`
+- Added full-bleed `ui.window` composition for iframe-hosted content so embedded surfaces can occupy the full window body rather than inheriting generic padded content styling.
+
 ### v0.21.6
 
 - Added `ui.icons` as a shared categorized SVG icon registry with:
@@ -130,7 +234,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ### v0.21.1
 
-- Reworked `demos/demo.window.html` so the page now proves `ui.window` through actual wrapper-style workspaces instead of a generic pane-only shell:
+- Reworked `demos/demo.window.manager.html` so the page now proves `ui.window` through actual wrapper-style workspaces instead of a generic pane-only shell:
   - incident review workspace over `ui.window` + `ui.data.inspector`
   - media review workspace over `ui.window` + `ui.media.viewer` + `ui.data.inspector`
 - Added the next bounded follow-on proposal for the subsystem:
@@ -151,6 +255,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
   - `docs/ui-window-v1-checklist.md`
 - Added dedicated demo coverage:
   - `demos/demo.window.html`
+  - `demos/demo.window.manager.html`
   - shared navigation entry under `Utilities`
   - demo-catalog card on `demos/index.html`
 - Added targeted browser regression coverage:
@@ -1064,5 +1169,6 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Incident helper set (`teams.assignments`, `types`, details editor/viewer)
 - Shared UI utility layer (`ui.dom`, `ui.events`, `ui.drawer`, `ui.search`, `ui.dialog`, `ui.tabs`, `ui.strips`)
 - Demo pages published via GitHub Pages
+
 
 

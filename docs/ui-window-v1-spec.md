@@ -183,11 +183,12 @@ V1 expectations:
 
 ## Demo Scope
 
-Dedicated page:
+Dedicated pages:
 
 - `demos/demo.window.html`
+- `demos/demo.window.manager.html`
 
-The demo must prove:
+The manager/workspace demo must prove:
 
 - open multiple windows
 - drag and resize

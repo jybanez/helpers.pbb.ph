@@ -9,54 +9,54 @@ This checklist implements only the V1 contract in:
 
 ## Runtime
 
-- [ ] add `js/ui/ui.window.js`
-- [ ] add `css/ui/ui.window.css`
-- [ ] implement `createWindowManager(options)`
-- [ ] implement `manager.createWindow(options)`
-- [ ] implement window open / close / focus
-- [ ] implement z-index stack management
-- [ ] implement title-bar drag
-- [ ] implement edge / corner resize
-- [ ] implement minimize / restore
-- [ ] implement maximize / restore
-- [ ] implement taskbar for minimized windows
-- [ ] clamp movement and resize to viewport bounds
-- [ ] implement `setTitle`, `setContent`, `setPosition`, `setSize`, `getState`, `destroy`
+- [x] add `js/ui/ui.window.js`
+- [x] add `css/ui/ui.window.css`
+- [x] implement `createWindowManager(options)`
+- [x] implement `manager.createWindow(options)`
+- [x] implement window open / close / focus
+- [x] implement z-index stack management
+- [x] implement title-bar drag
+- [x] implement edge / corner resize
+- [x] implement minimize / restore
+- [x] implement maximize / restore
+- [x] implement taskbar for minimized windows
+- [x] clamp movement and resize to viewport bounds
+- [x] implement `setTitle`, `setContent`, `setPosition`, `setSize`, `getState`, `destroy`
 
 ## Loader
 
-- [ ] register `ui.window` in `js/ui/ui.loader.js`
-- [ ] add `ui.window` to an appropriate loader group
+- [x] register `ui.window` in `js/ui/ui.loader.js`
+- [x] add `ui.window` to an appropriate loader group
 
 ## Demo
 
-- [ ] add `demos/demo.window.html`
-- [ ] prove multiple windows
-- [ ] prove focus / stacking
-- [ ] prove drag and resize
-- [ ] prove minimize / restore via taskbar
-- [ ] prove maximize / restore
-- [ ] add demo metadata for right-column manual rendering
-- [ ] add nav/catalog links
+- [x] add `demos/demo.window.manager.html`
+- [x] prove multiple windows
+- [x] prove focus / stacking
+- [x] prove drag and resize
+- [x] prove minimize / restore via taskbar
+- [x] prove maximize / restore
+- [x] add demo metadata for right-column manual rendering
+- [x] add nav/catalog links
 
 ## Docs
 
-- [ ] document `createWindowManager(options)` in `README.md`
-- [ ] document manager and window option tables in `README.md`
-- [ ] document returned APIs in `README.md`
-- [ ] update project structure in `README.md`
-- [ ] update `CHANGELOG.md`
-- [ ] update `docs/pbb-refactor-playbook.md` with window-system ownership rules
+- [x] document `createWindowManager(options)` in `README.md`
+- [x] document manager and window option tables in `README.md`
+- [x] document returned APIs in `README.md`
+- [x] update project structure in `README.md`
+- [x] update `CHANGELOG.md`
+- [x] update `docs/pbb-refactor-playbook.md` with window-system ownership rules
 
 ## Regression
 
-- [ ] add `tests/window.regression.html`
-- [ ] add `tests/window.regression.mjs`
-- [ ] cover stack order
-- [ ] cover minimize / restore
-- [ ] cover maximize / restore
-- [ ] cover minimum resize bounds
-- [ ] cover destroy cleanup
+- [x] add `tests/window.regression.html`
+- [x] add `tests/window.regression.mjs`
+- [x] cover stack order
+- [x] cover minimize / restore
+- [x] cover maximize / restore
+- [x] cover minimum resize bounds
+- [x] cover destroy cleanup
 
 ## Completion Gate
 

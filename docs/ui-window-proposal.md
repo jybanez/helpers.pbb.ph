@@ -308,6 +308,7 @@ It should still match the helper library tokens and existing shell language.
 A dedicated demo page should exist:
 
 - `demos/demo.window.html`
+- `demos/demo.window.manager.html`
 
 The demo should prove:
 

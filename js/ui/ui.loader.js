@@ -45,6 +45,30 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createBottomDrawer",
   },
+  "ui.iframe.host": {
+    js: "./ui.iframe.host.js?v=0.21.8",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.iframe.host.css?v=0.21.8"],
+    deps: [],
+    export: "createIframeHost",
+  },
+  "ui.workspace.bridge": {
+    js: "./ui.workspace.bridge.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    deps: [],
+    export: "getWorkspaceUiBridge",
+  },
+  "ui.workspace.bridge.host": {
+    js: "./ui.workspace.bridge.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    deps: [],
+    export: "installWorkspaceUiBridgeHost",
+  },
+  "ui.workspace.bridge.modal": {
+    js: "./ui.workspace.bridge.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    deps: [],
+    export: "showWorkspaceActionModal",
+  },
   "ui.window": {
     js: "./ui.window.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.window.css"],
@@ -899,4 +923,5 @@ function cssEscape(value) {
 function isPlainObject(value) {
   return value != null && typeof value === "object" && !Array.isArray(value);
 }
+
 

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workspace UI Bridge Fixture</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eff5ff, #dfe9ff);
+      color: #173055;
+    }
+    main {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .hero,
+    .panel {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #b9c9ef;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid #3f5f96;
+      background: #173055;
+      color: #eef4ff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: 600 14px/1.2 "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #ffffff;
+      color: #173055;
+    }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: #0b1220;
+      color: #d7e0f4;
+      overflow: auto;
+      min-height: 80px;
+    }
+    p, h1, h2 {
+      margin: 0;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../../js/ui/ui.loader.js";
+    import { showWorkspaceActionModal, getWorkspaceUiBridge } from "../../js/ui/ui.workspace.bridge.js";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await uiLoader.loadMany(["ui.toast", "ui.dialog.alert", "ui.dialog.confirm", "ui.dialog.prompt"]);
+      const createToastStack = await uiLoader.get("ui.toast");
+      const toastStack = createToastStack({ workspaceBridge: "auto" });
+      const uiAlert = await uiLoader.get("ui.dialog.alert");
+      const uiConfirm = await uiLoader.get("ui.dialog.confirm");
+      const uiPrompt = await uiLoader.get("ui.dialog.prompt");
+
+      const log = document.getElementById("log");
+      const bridge = getWorkspaceUiBridge();
+
+      function writeLog(label, payload) {
+        const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+        log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+      }
+
+      async function runToast() {
+        const id = toastStack.success("Delegated toast from iframe child.", { title: "Workspace Bridge" });
+        writeLog("toast.show", { id });
+        return id;
+      }
+
+      async function runAlert() {
+        const result = await uiAlert("The child iframe requested a parent-owned alert.", {
+          title: "Workspace Alert",
+        });
+        writeLog("dialog.alert", { result });
+        return result;
+      }
+
+      async function runConfirm() {
+        const result = await uiConfirm("Continue with the delegated action?", {
+          title: "Workspace Confirm",
+          confirmText: "Continue",
+        });
+        writeLog("dialog.confirm", { result });
+        return result;
+      }
+
+      async function runPrompt() {
+        const result = await uiPrompt("Provide an operator note.", {
+          title: "Workspace Prompt",
+          placeholder: "Operator note",
+          submitText: "Save",
+        });
+        writeLog("dialog.prompt", { result });
+        return result;
+      }
+
+      async function runActionModal() {
+        const result = await showWorkspaceActionModal({
+          title: "Workspace Action Modal",
+          message: "This modal is rendered by the parent workspace shell, not inside the iframe.",
+          description: "Choose the next action.",
+          actions: [
+            { id: "dismiss", label: "Dismiss" },
+            { id: "acknowledge", label: "Acknowledge", variant: "primary", autoFocus: true },
+          ],
+        });
+        writeLog("modal.action", result);
+        return result;
+      }
+
+      document.getElementById("toastBtn").addEventListener("click", () => void runToast());
+      document.getElementById("alertBtn").addEventListener("click", () => void runAlert());
+      document.getElementById("confirmBtn").addEventListener("click", () => void runConfirm());
+      document.getElementById("promptBtn").addEventListener("click", () => void runPrompt());
+      document.getElementById("modalBtn").addEventListener("click", () => void runActionModal());
+      document.getElementById("probeBtn").addEventListener("click", async () => {
+        writeLog("bridge.available", { available: await bridge.isAvailable() });
+      });
+
+      window.__workspaceBridgeFixture = {
+        runToast,
+        runAlert,
+        runConfirm,
+        runPrompt,
+        runActionModal,
+        async isBridgeAvailable() {
+          return bridge.isAvailable();
+        },
+      };
+    });
+  </script>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Workspace UI Bridge Fixture</h1>
+      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="probeBtn" class="secondary" type="button">Probe Bridge</button>
+        <button id="toastBtn" type="button">Show Toast</button>
+        <button id="alertBtn" type="button">Alert</button>
+        <button id="confirmBtn" type="button">Confirm</button>
+        <button id="promptBtn" type="button">Prompt</button>
+        <button id="modalBtn" type="button">Action Modal</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Iframe Event Log</h2>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </main>
+</body>
+</html>

@@ -353,9 +353,25 @@
         <h2>Structural UI Primitives</h2>
       </div>
       <div class="grid">
-        <a class="card" href="./demo.nav.html">
-          <strong>Navigation</strong>
-          <small>Navbar, sidebar, breadcrumbs, and related navigation primitives.</small>
+        <a class="card" href="./demo.navbar.html">
+          <strong>Navbar</strong>
+          <small>Top-level app navigation with primary items and right-side actions.</small>
+        </a>
+        <a class="card" href="./demo.sidebar.html">
+          <strong>Sidebar</strong>
+          <small>Side navigation with active-state and collapse handling.</small>
+        </a>
+        <a class="card" href="./demo.breadcrumbs.html">
+          <strong>Breadcrumbs</strong>
+          <small>Path/orientation helper with stateful breadcrumb updates.</small>
+        </a>
+        <a class="card" href="./demo.dropdown.html">
+          <strong>Dropdown</strong>
+          <small>Bottom-anchored menu wrapper over the shared menu core.</small>
+        </a>
+        <a class="card" href="./demo.dropup.html">
+          <strong>Dropup</strong>
+          <small>Top-anchored menu wrapper over the shared menu core.</small>
         </a>
         <a class="card" href="./demo.command.palette.html">
           <strong>Command Palette</strong>
@@ -364,10 +380,6 @@
         <a class="card" href="./demo.drawers.html">
           <strong>Drawers</strong>
           <small>Anchored overlay panels for bottom, top, left, and right contextual flows.</small>
-        </a>
-        <a class="card" href="./demo.window.html">
-          <strong>Window</strong>
-          <small>Desktop-style floating work surface with drag, resize, stack ordering, and taskbar recovery.</small>
         </a>
         <a class="card" href="./demo.password.html">
           <strong>Password Field</strong>
@@ -410,6 +422,31 @@
 
     <section class="panel">
       <div class="section-head">
+        <div class="eyebrow">Windowing</div>
+        <h2>Workspace And Embedded App Surfaces</h2>
+      </div>
+      <div class="grid">
+        <a class="card" href="./demo.window.html">
+          <strong>Window</strong>
+          <small>Single managed window shell behavior with drag, resize, header actions, state controls, and body-fill content.</small>
+        </a>
+        <a class="card" href="./demo.window.manager.html">
+          <strong>Window Manager</strong>
+          <small>Multi-window workspace behavior with stacking, taskbar switching, and operational composition.</small>
+        </a>
+        <a class="card" href="./demo.iframe.host.html">
+          <strong>Iframe Host</strong>
+          <small>Helper-owned iframe surface with loading and error states designed to compose inside windowed app shells.</small>
+        </a>
+        <a class="card" href="./demo.workspace.bridge.html">
+          <strong>Workspace Bridge</strong>
+          <small>Trusted parent/iframe bridge for top-level toasts, dialogs, and simple action modals in workspace shells.</small>
+        </a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
         <div class="eyebrow">Incident Helpers</div>
         <h2>Existing Incident-Focused Surfaces</h2>
       </div>
@@ -427,4 +464,5 @@
   </main>
 </body>
 </html>
+
 

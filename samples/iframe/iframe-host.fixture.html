@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PBB Workspace Fixture</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eff5ff, #dfe9ff);
+      color: #173055;
+    }
+
+    main {
+      padding: 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero {
+      padding: 18px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid #b9c9ef;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #c4d2ef;
+    }
+
+    strong,
+    p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <strong>PBB Workspace Fixture</strong>
+      <p>Helper-owned iframe host rendering a deterministic local document.</p>
+    </section>
+    <section class="grid">
+      <article class="card"><strong>HQ</strong><p>Registry and session surfaces.</p></article>
+      <article class="card"><strong>Relay</strong><p>Queues and hub transport.</p></article>
+      <article class="card"><strong>Maestro</strong><p>Worker visibility.</p></article>
+    </section>
+  </main>
+</body>
+</html>

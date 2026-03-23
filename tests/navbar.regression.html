@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Navbar Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.nav.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createNavbar } from "../js/ui/ui.navbar.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const events = [];
+
+    window.addEventListener("error", (event) => {
+      failures.push(`error: ${event.message}`);
+      finish();
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      failures.push(`rejection: ${String(event.reason?.message || event.reason || "unknown")}`);
+      finish();
+    });
+
+    try {
+      const navbar = createNavbar(host, {}, {
+        brandText: "Workspace",
+        items: [
+          { id: "dashboard", label: "Dashboard" },
+          {
+            id: "apps",
+            label: "Apps",
+            menuItems: [
+              { id: "app:relay", label: "Relay" },
+              { id: "app:workspace", label: "Workspace" },
+            ],
+          },
+        ],
+        actions: [
+          {
+            id: "profile",
+            label: "Profile",
+            menuItems: [
+              { id: "logout", label: "Logout" },
+            ],
+          },
+        ],
+        onNavigate(item) {
+          events.push({ type: "navigate", id: item?.id || null });
+        },
+        onItemMenuSelect(item, menuItem, meta) {
+          events.push({ type: "item-menu-select", itemId: item.id, menuItemId: menuItem.id, source: meta.source });
+        },
+        onItemMenuOpenChange(item, open) {
+          events.push({ type: "item-menu-open", itemId: item.id, open });
+        },
+        onActionMenuSelect(action, menuItem, meta) {
+          events.push({ type: "action-menu-select", actionId: action.id, menuItemId: menuItem.id, source: meta.source });
+        },
+      });
+
+      const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
+      assert(navButtons.length === 2, "navbar should render 2 primary items");
+
+      navButtons[0].click();
+      assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "plain primary items should still navigate");
+
+      navButtons[1].click();
+      await wait(50);
+      assert(events.some((event) => event.type === "item-menu-open" && event.itemId === "apps" && event.open === true), "menu-backed primary item should emit open state");
+
+      const relayMenuButton = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Relay"));
+      assert(Boolean(relayMenuButton), "menu-backed primary item should render a menu");
+      relayMenuButton.click();
+      await wait(50);
+
+      assert(events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:relay"), "menu-backed primary item should emit selection callback");
+      assert(events.filter((event) => event.type === "navigate" && event.id === "apps").length === 0, "menu-backed primary item should not also emit onNavigate");
+
+      const actionButton = host.querySelector(".ui-navbar-action");
+      actionButton.click();
+      await wait(50);
+      const logoutMenuButton = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Logout"));
+      assert(Boolean(logoutMenuButton), "menu-backed action should still render a menu");
+      logoutMenuButton.click();
+      await wait(50);
+      assert(events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout"), "existing action-menu behavior should remain intact");
+
+      navbar.destroy();
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Navbar item dropdown regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

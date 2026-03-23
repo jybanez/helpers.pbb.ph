@@ -13,6 +13,8 @@ const DEFAULT_OPTIONS = {
   iconPosition: "start", // start | end
   iconOnly: false,
   onNavigate: null,
+  onItemMenuSelect: null,
+  onItemMenuOpenChange: null,
   onAction: null,
   onActionMenuSelect: null,
   onActionMenuOpenChange: null,
@@ -21,11 +23,11 @@ const DEFAULT_OPTIONS = {
 export function createNavbar(container, data = {}, options = {}) {
   const events = createEventBag();
   let currentOptions = { ...DEFAULT_OPTIONS, ...(options || {}) };
-  let actionMenus = [];
+  let navMenus = [];
 
-  function destroyActionMenus() {
-    actionMenus.forEach((menuApi) => menuApi?.destroy?.());
-    actionMenus = [];
+  function destroyMenus() {
+    navMenus.forEach((menuApi) => menuApi?.destroy?.());
+    navMenus = [];
   }
 
   function appendIconLabel(target, item = {}) {
@@ -56,7 +58,7 @@ export function createNavbar(container, data = {}, options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
-    destroyActionMenus();
+    destroyMenus();
     events.clear();
     clearNode(container);
 
@@ -86,7 +88,22 @@ export function createNavbar(container, data = {}, options = {}) {
         },
       });
       appendIconLabel(btn, item);
-      events.on(btn, "click", () => currentOptions.onNavigate?.(item));
+      const menuItems = Array.isArray(item?.menuItems) ? item.menuItems : [];
+      if (menuItems.length) {
+        const menuApi = createMenu(btn, menuItems, {
+          placement: "bottom-start",
+          ...((item?.menuOptions && typeof item.menuOptions === "object") ? item.menuOptions : {}),
+          onSelect: (menuItem, meta) => {
+            currentOptions.onItemMenuSelect?.(item, menuItem, meta);
+          },
+          onOpenChange: (open) => {
+            currentOptions.onItemMenuOpenChange?.(item, open);
+          },
+        });
+        navMenus.push(menuApi);
+      } else {
+        events.on(btn, "click", () => currentOptions.onNavigate?.(item));
+      }
       list.appendChild(btn);
     });
 
@@ -109,7 +126,7 @@ export function createNavbar(container, data = {}, options = {}) {
             currentOptions.onActionMenuOpenChange?.(action, open);
           },
         });
-        actionMenus.push(menuApi);
+        navMenus.push(menuApi);
       } else {
         events.on(btn, "click", () => currentOptions.onAction?.(action));
       }
@@ -126,7 +143,7 @@ export function createNavbar(container, data = {}, options = {}) {
   }
 
   function destroy() {
-    destroyActionMenus();
+    destroyMenus();
     events.clear();
     clearNode(container);
   }

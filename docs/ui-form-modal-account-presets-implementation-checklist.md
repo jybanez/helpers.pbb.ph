@@ -9,38 +9,38 @@
 
 ## Runtime
 
-- [ ] Add `createAccountFormModal(options)` to `js/ui/ui.form.modal.presets.js`
-- [ ] Add `createChangePasswordFormModal(options)` to `js/ui/ui.form.modal.presets.js`
-- [ ] Add field-map support for both presets
-- [ ] Add additive `extraRows` support to the account preset
-- [ ] Reuse `input: "password"` rows so `ui.password` behavior comes through automatically
+- [x] Add `createAccountFormModal(options)` to `js/ui/ui.form.modal.presets.js`
+- [x] Add `createChangePasswordFormModal(options)` to `js/ui/ui.form.modal.presets.js`
+- [x] Add field-map support for both presets
+- [x] Add additive `extraRows` support to the account preset
+- [x] Reuse `input: "password"` rows so `ui.password` behavior comes through automatically
 
 ## Demos
 
-- [ ] Add dedicated account preset demo page
-- [ ] Add dedicated change-password preset demo page
-- [ ] Show HQ-style account footer flow:
+- [x] Add dedicated account preset demo page
+- [x] Add dedicated change-password preset demo page
+- [x] Show HQ-style account footer flow:
   - `Change Password`
   - `Cancel`
   - `Save`
-- [ ] Show an `extraRows` example with a warning row and one extra field
+- [x] Show an `extraRows` example with a warning row and one extra field
 
 ## Docs
 
 - [x] Add helper-side response memo
 - [x] Add V1 spec
-- [ ] Update `README.md`
-- [ ] Update `CHANGELOG.md`
-- [ ] Update `docs/pbb-refactor-playbook.md`
+- [x] Update `README.md`
+- [x] Update `CHANGELOG.md`
+- [x] Update `docs/pbb-refactor-playbook.md`
 
 ## Regression
 
-- [ ] Add browser regression for account preset baseline rows
-- [ ] Add browser regression for `extraRows`
-- [ ] Add browser regression for change-password preset rows
-- [ ] Add browser regression for shared password toggle behavior in change-password preset
+- [x] Add browser regression for account preset baseline rows
+- [x] Add browser regression for `extraRows`
+- [x] Add browser regression for change-password preset rows
+- [x] Add browser regression for shared password toggle behavior in change-password preset
 
 ## Cross-Project Communication
 
-- [ ] Add helper-side review note to `C:\wamp64\www\pbb\chat_log.md`
-- [ ] State the helper-side priority decision relative to `ui.icons`
+- [x] Add helper-side review note to `C:\wamp64\www\pbb\chat_log.md`
+- [x] State the helper-side priority decision relative to `ui.icons`
