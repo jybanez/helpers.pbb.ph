@@ -52,6 +52,10 @@
   grid-column: 1 / -1;
 }
 
+.ui-fieldset-field {
+  align-content: start;
+}
+
 .ui-fieldset-text {
   margin: 0;
   color: #9fb2d8;
@@ -62,6 +66,20 @@
   margin: 0;
   color: #8ea4cb;
   font: 400 12px/1.4 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+}
+
+.ui-fieldset-form-error,
+.ui-fieldset-field-error {
+  min-height: 18px;
+}
+
+.ui-fieldset-form-error[hidden] {
+  display: none;
+}
+
+.ui-fieldset-field-error[hidden] {
+  display: block;
+  visibility: hidden;
 }
 
 .ui-fieldset-display-value {

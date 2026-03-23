@@ -91,6 +91,43 @@
     assert(Array.isArray(updatedValues.roles) && updatedValues.roles[0] === "user", "setValue should update ui.select values");
     assert(updatedValues.embeddable === false, "setValue should update checkbox state");
 
+    fieldset.setErrors({
+      app_code: "App code is required.",
+      "service_token.value": "Service token is required."
+    });
+    const appCodeInput = fieldset.root.querySelector('input[name="app_code"]');
+    const passwordInput = fieldset.root.querySelector('.ui-password-input');
+    assert(fieldset.getErrors().app_code === "App code is required.", "getErrors should expose the current field errors");
+    assert(fieldset.root.querySelector(".ui-fieldset-field-error:not([hidden])")?.textContent.includes("required"), "setErrors should render field-level messages");
+    assert(appCodeInput?.getAttribute("aria-invalid") === "true", "setErrors should set aria-invalid on standard inputs");
+    assert(passwordInput?.getAttribute("aria-invalid") === "true", "setErrors should resolve dotted keys to the base password field");
+
+    fieldset.clearErrors();
+    assert(Object.keys(fieldset.getErrors()).length === 0, "clearErrors should clear stored field errors");
+    assert(!fieldset.root.querySelector(".ui-fieldset-field-error:not([hidden])"), "clearErrors should hide field-level messages");
+    assert(!appCodeInput?.hasAttribute("aria-invalid"), "clearErrors should remove aria-invalid from standard inputs");
+    assert(!passwordInput?.hasAttribute("aria-invalid"), "clearErrors should remove aria-invalid from password inputs");
+
+    fieldset.setFormError("Unable to save the app.");
+    assert(fieldset.getFormError() === "Unable to save the app.", "setFormError should persist the form-level error");
+    assert(fieldset.root.querySelector(".ui-fieldset-form-error:not([hidden])")?.textContent.includes("Unable to save"), "setFormError should render the form-level error");
+
+    const mappedErrors = fieldset.applyApiErrors({
+      message: "The given data was invalid.",
+      errors: {
+        category: ["Choose a valid category."]
+      }
+    });
+    const categorySelect = fieldset.root.querySelector('select[name="category"]');
+    assert(mappedErrors.fieldErrors.category === "Choose a valid category.", "applyApiErrors should return normalized field errors");
+    assert(mappedErrors.formError === "The given data was invalid.", "applyApiErrors should return normalized form error");
+    assert(fieldset.getFormError() === "The given data was invalid.", "applyApiErrors should update the form-level error");
+    assert(categorySelect?.getAttribute("aria-invalid") === "true", "applyApiErrors should mark native select fields invalid");
+
+    fieldset.clearFormError();
+    assert(fieldset.getFormError() === "", "clearFormError should clear the stored form-level error");
+    assert(!fieldset.root.querySelector(".ui-fieldset-form-error:not([hidden])"), "clearFormError should hide the form-level error");
+
     fieldset.update({ legend: "Workspace Security Settings", description: "Updated description" });
     assert(fieldset.legend.textContent === "Workspace Security Settings", "update should refresh legend");
     assert(fieldset.description.textContent === "Updated description", "update should refresh description");

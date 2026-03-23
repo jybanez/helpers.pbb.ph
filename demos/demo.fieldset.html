@@ -115,8 +115,15 @@
       propertiesText: "Returned instance exposes DOM references through <code>root</code>, <code>legend</code>, <code>description</code>, <code>rows</code>, and <code>refs</code>.",
       methods: [
         { method: "<code>getValues()</code>", arguments: "none", returns: "plain object keyed by row field names" },
+        { method: "<code>getErrors()</code>", arguments: "none", returns: "current field-error map" },
+        { method: "<code>getFormError()</code>", arguments: "none", returns: "current form-level error string" },
         { method: "<code>setValue(name, value)</code>", arguments: "field name and next value", returns: "<code>void</code>" },
         { method: "<code>setValues(values)</code>", arguments: "partial object of values", returns: "<code>void</code>" },
+        { method: "<code>setErrors(errors)</code>", arguments: "field-error object keyed by field name", returns: "<code>void</code>" },
+        { method: "<code>clearErrors()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>setFormError(message)</code>", arguments: "form-level error message", returns: "<code>void</code>" },
+        { method: "<code>clearFormError()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>applyApiErrors(response)</code>", arguments: "API-style error payload", returns: "normalized error result" },
         { method: "<code>setRows(rows)</code>", arguments: "new rows array", returns: "<code>void</code>" },
         { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
@@ -143,6 +150,10 @@
           <div id="fieldsetHost"></div>
           <div class="row">
             <button id="setDemoValuesBtn" class="ui-button" type="button">Set Demo Values</button>
+            <button id="showFieldErrorsBtn" class="ui-button ui-button-ghost" type="button">Show Field Errors</button>
+            <button id="showFormErrorBtn" class="ui-button ui-button-ghost" type="button">Show Form Error</button>
+            <button id="applyApiErrorsBtn" class="ui-button ui-button-ghost" type="button">Apply API Errors</button>
+            <button id="clearErrorsBtn" class="ui-button ui-button-ghost" type="button">Clear Errors</button>
             <button id="replaceRowsBtn" class="ui-button ui-button-ghost" type="button">Swap Rows</button>
             <button id="renameLegendBtn" class="ui-button ui-button-ghost" type="button">Rename Legend</button>
           </div>
@@ -271,6 +282,39 @@
         description: "Queue orchestration and hub transport.",
       });
       writeLog("fieldset.setValues", fieldset.getValues());
+    });
+
+    document.getElementById("showFieldErrorsBtn").addEventListener("click", () => {
+      fieldset.setErrors({
+        app_code: "App code is required.",
+        base_url: "Base URL must be reachable over HTTPS.",
+      });
+      writeLog("fieldset.setErrors", fieldset.getErrors());
+    });
+
+    document.getElementById("showFormErrorBtn").addEventListener("click", () => {
+      fieldset.setFormError("Unable to save the app yet. Fix the highlighted fields and try again.");
+      writeLog("fieldset.setFormError", { formError: fieldset.getFormError() });
+    });
+
+    document.getElementById("applyApiErrorsBtn").addEventListener("click", () => {
+      const mapped = fieldset.applyApiErrors({
+        message: "The given data was invalid.",
+        errors: {
+          app_code: ["The app code has already been taken."],
+          "base_url.origin": ["The base URL must be a valid HTTPS origin."],
+        },
+      });
+      writeLog("fieldset.applyApiErrors", mapped);
+    });
+
+    document.getElementById("clearErrorsBtn").addEventListener("click", () => {
+      fieldset.clearErrors();
+      fieldset.clearFormError();
+      writeLog("fieldset.clearErrors", {
+        errors: fieldset.getErrors(),
+        formError: fieldset.getFormError(),
+      });
     });
 
     document.getElementById("replaceRowsBtn").addEventListener("click", () => {

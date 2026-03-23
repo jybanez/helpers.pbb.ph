@@ -17,6 +17,8 @@ export function createFieldset(container, options = {}) {
   let currentOptions = normalizeOptions(options);
   const fields = new Map();
   const displays = new Map();
+  let fieldErrors = {};
+  let formError = "";
 
   const refs = {
     root: createElement("fieldset", { className: "ui-fieldset" }),
@@ -26,13 +28,17 @@ export function createFieldset(container, options = {}) {
       attrs: { hidden: "hidden" },
     }),
     rows: createElement("div", { className: "ui-fieldset-rows" }),
+    formError: createElement("p", {
+      className: "ui-form-error ui-fieldset-form-error",
+      attrs: { hidden: "hidden", role: "alert" },
+    }),
     hiddenFields: createElement("div", {
       className: "ui-fieldset-hidden-fields",
       attrs: { hidden: "hidden", "aria-hidden": "true" },
     }),
   };
 
-  refs.root.append(refs.legend, refs.description, refs.rows, refs.hiddenFields);
+  refs.root.append(refs.legend, refs.description, refs.formError, refs.rows, refs.hiddenFields);
   container.appendChild(refs.root);
 
   render();
@@ -46,6 +52,12 @@ export function createFieldset(container, options = {}) {
       update({ rows });
     },
     getValues,
+    getErrors() {
+      return { ...fieldErrors };
+    },
+    getFormError() {
+      return formError;
+    },
     setValue(name, value) {
       const field = fields.get(String(name || "").trim());
       if (!field) {
@@ -62,6 +74,11 @@ export function createFieldset(container, options = {}) {
         this.setValue(name, values[name]);
       });
     },
+    setErrors,
+    clearErrors,
+    setFormError,
+    clearFormError,
+    applyApiErrors,
     update,
     destroy() {
       destroyHostedFieldInstances();
@@ -132,6 +149,9 @@ export function createFieldset(container, options = {}) {
         refs.rows.appendChild(rowEl);
       }
     });
+
+    applyErrors(fieldErrors);
+    setFormError(formError);
   }
 
   function applyShell() {
@@ -288,7 +308,14 @@ export function createFieldset(container, options = {}) {
       }));
     }
 
-    fields.set(name, { name, type, config: { ...item }, wrapper, control });
+    const errorId = `${id}-error`;
+    const errorEl = createElement("p", {
+      className: "ui-form-error ui-fieldset-field-error",
+      attrs: { hidden: "hidden", id: errorId },
+    });
+    wrapper.appendChild(errorEl);
+
+    fields.set(name, { name, type, config: { ...item }, wrapper, control, errorEl, errorId });
     return wrapper;
   }
 
@@ -433,6 +460,98 @@ export function createFieldset(container, options = {}) {
       }
     });
   }
+
+  function resolveErrorField(name) {
+    const normalized = String(name || "").trim();
+    if (!normalized) {
+      return null;
+    }
+    if (fields.has(normalized)) {
+      return fields.get(normalized);
+    }
+    if (normalized.includes(".")) {
+      const baseName = normalized.split(".")[0];
+      if (fields.has(baseName)) {
+        return fields.get(baseName);
+      }
+    }
+    return null;
+  }
+
+  function applyErrors(nextErrors = {}) {
+    Object.keys(nextErrors).forEach((name) => {
+      const field = resolveErrorField(name);
+      const message = String(nextErrors[name] || "").trim();
+      if (!field || !field.errorEl || !message) {
+        return;
+      }
+      field.errorEl.textContent = message;
+      field.errorEl.hidden = false;
+      const ariaTarget = getFieldAriaTarget(field);
+      if (!ariaTarget) {
+        return;
+      }
+      ariaTarget.setAttribute("aria-invalid", "true");
+      addDescribedBy(ariaTarget, field.errorId);
+    });
+  }
+
+  function setErrors(nextErrors = {}) {
+    clearErrors();
+    if (!nextErrors || typeof nextErrors !== "object" || Array.isArray(nextErrors)) {
+      fieldErrors = {};
+      return;
+    }
+    fieldErrors = Object.keys(nextErrors).reduce((result, key) => {
+      const message = Array.isArray(nextErrors[key])
+        ? String(nextErrors[key][0] || "").trim()
+        : String(nextErrors[key] || "").trim();
+      if (message) {
+        result[key] = message;
+      }
+      return result;
+    }, {});
+    applyErrors(fieldErrors);
+  }
+
+  function clearErrors() {
+    fields.forEach((field) => {
+      if (field?.errorEl) {
+        field.errorEl.hidden = true;
+        field.errorEl.textContent = "";
+      }
+      const ariaTarget = getFieldAriaTarget(field);
+      if (!ariaTarget) {
+        return;
+      }
+      ariaTarget.removeAttribute("aria-invalid");
+      if (field?.errorId) {
+        removeDescribedBy(ariaTarget, field.errorId);
+      }
+    });
+    fieldErrors = {};
+  }
+
+  function setFormError(message) {
+    formError = String(message || "").trim();
+    refs.formError.textContent = formError;
+    refs.formError.hidden = !formError;
+  }
+
+  function clearFormError() {
+    setFormError("");
+  }
+
+  function applyApiErrors(response) {
+    const mapped = normalizeApiErrors(response);
+    setErrors(mapped.fieldErrors);
+    if (mapped.formError) {
+      setFormError(mapped.formError);
+      return mapped;
+    }
+    clearFormError();
+    return mapped;
+  }
 }
 
 function normalizeOptions(options = {}) {
@@ -574,4 +693,78 @@ function setSlot(target, value) {
     return;
   }
   target.appendChild(document.createTextNode(String(value)));
+}
+
+function getFieldAriaTarget(field) {
+  if (!field || !field.control) {
+    return null;
+  }
+  if (field.type === "ui.select") {
+    return field.control.__uiSelectInstance?.refs?.trigger || field.control.querySelector("button,[role='combobox']") || field.control;
+  }
+  if (field.type === "input" && field.control.__uiPasswordInstance) {
+    return field.control.__uiPasswordInstance.refs?.input || field.control.querySelector("input");
+  }
+  return field.control;
+}
+
+function addDescribedBy(target, id) {
+  if (!target || !id) {
+    return;
+  }
+  const tokens = new Set(String(target.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+  tokens.add(id);
+  target.setAttribute("aria-describedby", Array.from(tokens).join(" "));
+}
+
+function removeDescribedBy(target, id) {
+  if (!target || !id) {
+    return;
+  }
+  const tokens = String(target.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean).filter((token) => token !== id);
+  if (!tokens.length) {
+    target.removeAttribute("aria-describedby");
+    return;
+  }
+  target.setAttribute("aria-describedby", tokens.join(" "));
+}
+
+function normalizeApiErrors(response) {
+  const source = response?.data && typeof response.data === "object" ? response.data : response;
+  const fieldErrors = {};
+  let formError = "";
+
+  const candidates = [
+    source?.errors,
+    source?.fieldErrors,
+    source?.validation?.errors,
+  ];
+
+  candidates.forEach((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      return;
+    }
+    Object.keys(candidate).forEach((key) => {
+      const value = candidate[key];
+      const message = Array.isArray(value) ? String(value[0] || "").trim() : String(value || "").trim();
+      if (!message) {
+        return;
+      }
+      if (key === "_form" || key === "form" || key === "non_field_errors") {
+        if (!formError) {
+          formError = message;
+        }
+        return;
+      }
+      fieldErrors[key] = message;
+    });
+  });
+
+  if (!formError && source && typeof source === "object") {
+    formError = String(source.formError || source.error || source.message || "").trim();
+  } else if (!formError && typeof source === "string") {
+    formError = source.trim();
+  }
+
+  return { fieldErrors, formError };
 }

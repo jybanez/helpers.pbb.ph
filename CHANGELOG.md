@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.14`
+- Latest documented release: `v0.21.15`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,26 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.15
+
+- Added narrow validation parity to `ui.fieldset` so grouped page forms can now render field-level and form-level errors without widening the component into a second submit engine.
+- Added `createFieldset(...)` methods:
+  - `getErrors()`
+  - `getFormError()`
+  - `setErrors(errors)`
+  - `clearErrors()`
+  - `setFormError(message)`
+  - `clearFormError()`
+  - `applyApiErrors(response)`
+- Fieldset validation now:
+  - renders inline error messages
+  - sets and clears `aria-invalid` on matching controls
+  - resolves dotted API error keys back to the base field name
+- Updated:
+  - `demos/demo.fieldset.html`
+  - `tests/fieldset.regression.html`
+  - `README.md`
+
 ### v0.21.14
 
 - Promoted `ui.fieldset` into the documented/shared helper surface with loader registration, demo coverage, and regression coverage.

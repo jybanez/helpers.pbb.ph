@@ -1646,11 +1646,27 @@ Returned API:
 | Method | Arguments | Returns | Description |
 |---|---|---|---|
 | `getValues()` | none | `object` | Returns current values keyed by field name. |
+| `getErrors()` | none | `object` | Returns the current field-error map keyed by field name. |
+| `getFormError()` | none | `string` | Returns the current form-level error string. |
 | `setValue(name, value)` | field name, next value | `void` | Updates one field value. |
 | `setValues(values)` | object | `void` | Updates multiple field values. |
+| `setErrors(errors)` | field-error object | `void` | Applies field-level errors, renders inline error text, and marks matching controls invalid. |
+| `clearErrors()` | none | `void` | Clears field-level errors and removes invalid state from controls. |
+| `setFormError(message)` | string | `void` | Shows a form-level error message above the row grid. |
+| `clearFormError()` | none | `void` | Clears the form-level error message. |
+| `applyApiErrors(response)` | API-style error payload | `object` | Normalizes common API validation payloads and applies field/form errors. |
 | `setRows(rows)` | rows array | `void` | Replaces the rendered row set. |
 | `update(options)` | partial options | `void` | Updates legend, description, rows, or class name. |
 | `destroy()` | none | `void` | Removes the fieldset from the host container and tears down hosted controls. |
+
+Validation note:
+
+- `ui.fieldset` now supports narrow validation parity for grouped page forms:
+  - field-level error text
+  - form-level error text
+  - `aria-invalid` state on matching controls
+  - API error mapping through `applyApiErrors(...)`
+- It still does not become a submit engine or full form framework. App code continues to own submit lifecycle and server calls.
 
 Example:
 
