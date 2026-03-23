@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fieldset Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.select.css">
+  <link rel="stylesheet" href="../css/ui/ui.password.css">
+  <link rel="stylesheet" href="../css/ui/ui.fieldset.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createFieldset } from "../js/ui/ui.fieldset.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const host = document.getElementById("host");
+
+    const fieldset = createFieldset(host, {
+      legend: "Workspace App Settings",
+      description: "Grouped rows for app launch metadata.",
+      rows: [
+        [
+          { type: "input", name: "app_code", label: "App code", value: "workspace" },
+          { type: "input", input: "password", name: "service_token", label: "Service token", value: "secret-token" }
+        ],
+        [
+          { type: "select", name: "category", label: "Category", value: "operations", options: ["operations", "public"] },
+          { type: "ui.select", name: "roles", label: "Roles", multiple: true, items: [
+            { label: "Administrator", value: "administrator" },
+            { label: "User", value: "user" }
+          ], value: ["administrator"] }
+        ],
+        [
+          { type: "checkbox", name: "embeddable", label: "Embeddable", value: true },
+          { type: "display", name: "shape", label: "Shape", value: "workspace-ready" }
+        ],
+        [
+          { type: "alert", tone: "info", span: 2, content: "Access-check endpoints should be documented." }
+        ],
+        [
+          { type: "image", span: 2, src: "../samples/media/photos/pbb-preview-graphic-2x.png", alt: "Workspace graphic", caption: "Image rows should render inside the fieldset." }
+        ],
+        [
+          { type: "hidden", name: "active", value: "1" }
+        ]
+      ]
+    });
+
+    assert(fieldset.root.tagName === "FIELDSET", "root should render as semantic fieldset");
+    assert(fieldset.legend.textContent === "Workspace App Settings", "legend should render provided text");
+    assert(fieldset.description.textContent === "Grouped rows for app launch metadata.", "description should render provided text");
+    assert(Boolean(fieldset.root.querySelector(".ui-password-toggle")), "password rows should render the shared password toggle");
+    assert(Boolean(fieldset.root.querySelector(".ui-fieldset-alert")), "alert rows should render");
+    assert(Boolean(fieldset.root.querySelector(".ui-fieldset-image img")), "image rows should render");
+
+    const initialValues = fieldset.getValues();
+    assert(initialValues.app_code === "workspace", "getValues should return input field values");
+    assert(initialValues.service_token === "secret-token", "getValues should return password field values");
+    assert(initialValues.category === "operations", "getValues should return native select value");
+    assert(Array.isArray(initialValues.roles) && initialValues.roles[0] === "administrator", "getValues should return hosted ui.select values");
+    assert(initialValues.embeddable === true, "getValues should return checkbox state");
+    assert(initialValues.active === "1", "getValues should include hidden field values");
+
+    fieldset.setValue("app_code", "relay");
+    fieldset.setValue("service_token", "new-token");
+    fieldset.setValue("roles", ["user"]);
+    fieldset.setValue("embeddable", false);
+    const updatedValues = fieldset.getValues();
+    assert(updatedValues.app_code === "relay", "setValue should update input values");
+    assert(updatedValues.service_token === "new-token", "setValue should update password values");
+    assert(Array.isArray(updatedValues.roles) && updatedValues.roles[0] === "user", "setValue should update ui.select values");
+    assert(updatedValues.embeddable === false, "setValue should update checkbox state");
+
+    fieldset.update({ legend: "Workspace Security Settings", description: "Updated description" });
+    assert(fieldset.legend.textContent === "Workspace Security Settings", "update should refresh legend");
+    assert(fieldset.description.textContent === "Updated description", "update should refresh description");
+
+    fieldset.setRows([
+      [
+        { type: "text", span: 2, content: "Security grouping" }
+      ],
+      [
+        { type: "input", name: "token_header", label: "Token header", value: "X-Service-Token" },
+        { type: "checkbox", name: "required", label: "Required", value: true }
+      ]
+    ]);
+
+    const replacedValues = fieldset.getValues();
+    assert(Boolean(fieldset.root.querySelector(".ui-fieldset-text")), "setRows should re-render text rows");
+    assert(replacedValues.token_header === "X-Service-Token", "setRows should replace form values with the new rows");
+    assert(replacedValues.required === true, "setRows should support checkbox values in replacement rows");
+    assert(typeof replacedValues.app_code === "undefined", "setRows should drop fields from the previous row set");
+
+    fieldset.destroy();
+    assert(host.innerHTML.trim() === "", "destroy should remove fieldset content from the host container");
+
+    finish();
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function finish() {
+      if (failures.length) {
+        document.body.dataset.status = "fail";
+        results.textContent = `FAIL\n${failures.map((item) => `- ${item}`).join("\n")}`;
+        return;
+      }
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

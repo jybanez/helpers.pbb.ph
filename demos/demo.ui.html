@@ -3,174 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UI Utilities Demo</title>
+  <title>UI Utilities Overview</title>
   <link rel='stylesheet' href='../css/demo/demo.shell.css'>
   <style>
-    body {
-      margin: 0;
-      padding: 24px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .page {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      gap: 14px;
-    }
-    .panel {
-      border: 1px solid #263146;
-      border-radius: 10px;
-      background: #111826;
-      padding: 14px;
-      display: grid;
-      gap: 10px;
-    }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .back {
-      color: #b2c2e5;
-      text-decoration: none;
-      font-size: 13px;
-    }
-    .log {
-      margin: 0;
-      white-space: pre-wrap;
-      font-size: 12px;
-      color: #b2c2e5;
-      font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
-      border-radius: 8px;
-      background: #0b1220;
-      padding: 10px;
-      min-height: 90px;
-    }
-    #log {
-      height: 220px;
-      overflow-y: auto;
-      overflow-x: auto;
-    }
-    #toggleButtonHost,
-    #toggleGroupMultiHost,
-    #toggleGroupSingleHost {
-      border: 1px solid #2b3750;
-      border-radius: 8px;
-      padding: 10px;
-      background: #0b1220;
-    }
-    .toggle-stack {
-      display: grid;
-      gap: 12px;
-    }
-    .toggle-demo-block {
-      display: grid;
-      gap: 8px;
-    }
-    .demo-matrix {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-    .demo-matrix-card {
-      display: grid;
-      gap: 8px;
-      padding: 12px;
-      border: 1px solid #2b3750;
-      border-radius: 8px;
-      background: #0b1220;
-    }
-    .demo-matrix-card strong {
-      font-size: 13px;
-    }
-    .demo-matrix-meta {
-      display: grid;
-      gap: 4px;
-      font-size: 12px;
-      color: #9fb2d8;
-    }
-    .demo-matrix-meta code {
-      color: #d7e0f4;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-    .guidance {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 10px;
-    }
-    .guidance-card {
-      border: 1px solid #2b3750;
-      border-radius: 8px;
-      background: #0b1220;
-      padding: 12px;
-      display: grid;
-      gap: 6px;
-    }
-    .guidance-card h3,
-    .guidance-card p {
-      margin: 0;
-    }
-    .guidance-card p {
-      color: #9fb2d8;
-      font-size: 13px;
-      line-height: 1.45;
-    }
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.5; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card { display: grid; gap: 8px; border: 1px solid #2b3750; border-radius: 10px; background: #0b1220; padding: 14px; text-decoration: none; color: inherit; }
+    .card:hover { border-color: #4a5f86; background: #101a2b; }
+    .card small { color: #b2c2e5; line-height: 1.45; }
   </style>
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany([
-      "ui.toast",
-      "ui.select",
-      "ui.toggle.button",
-      "ui.toggle.group",
-    ]);
-  </script>
   <script>
     window.demoMeta = {
-      title: "UI Utilities",
-      overview: "General playground for shared primitives and feedback helpers that do not yet warrant a dedicated page of their own.",
+      title: "UI Utilities Overview",
+      overview: "Directory page for shared utility helpers that now have their own focused manuals.",
       useWhen: [
-        "Use this page to inspect shared primitives such as toasts, select, toggles, and button styling.",
-        "Use it when you need a broad tour of the helper surface instead of a task-specific demo."
+        "Use this page as the entry point when you need toast, select, toggle, or shared button references.",
+        "Jump to the focused page for the actual options, events, methods, and behavior contract."
       ],
       avoidWhen: [
-        "Do not keep adding substantial workflow demos here by default; large helpers should get dedicated pages.",
-        "Do not treat this page as the detailed API manual for every sub-helper at once."
+        "Do not treat this page as the component reference itself; the detailed contracts live on the dedicated pages.",
+        "Do not add new live examples here when they belong to a specific utility helper."
       ],
-      description: "This page is intentionally a utility playground rather than a single-component contract page. It now focuses on shared toast, selection, toggle, and button surfaces that still make sense together.",
-      sectionSamples: {
-        "toast": `const toast = createToastStack({ placement: "top-right" });\ntoast.show("Saved successfully.", {\n  type: "success",\n  speak: false,\n});`,
-        "select": `const select = createSelect(host, items, {\n  searchable: true,\n  multiple: true,\n  clearable: true,\n});`,
-        "toggle": `createToggleButton(host, {\n  pressed: true,\n  label: "Alerts Enabled",\n  onChange(pressed) {\n    writeLog("toggle.change", { pressed });\n  },\n});`,
-        "buttons": `<button class="ui-button ui-button-primary">Primary</button>\n<button class="ui-button ui-button-danger">Danger</button>`,
-      },
+      description: "Utilities were previously overloaded into one broad playground. This overview keeps the route useful while directing engineers to focused pages.",
+      defaultSampleCode: "Open one of the dedicated pages:\n- demo.toast.html\n- demo.select.html\n- demo.toggle.button.html\n- demo.toggle.group.html\n- demo.buttons.html",
       constructor: [
-        { factory: "<code>Multiple helpers</code>", arguments: "Loaded via <code>uiLoader.loadMany([...])</code>", returns: "Utility-specific instances depending on the example" }
-      ],
-      options: [
-        { option: "<code>Toasts</code>", default: "varies", description: "Semantic variants, descriptions, icons, and optional speech behavior including <code>voiceName</code> selection for spoken toasts." },
-        { option: "<code>Select / Toggles</code>", default: "varies", description: "Input primitives for reusable interaction patterns." }
-      ],
-      propertiesText: "This page demonstrates many helpers. Read each helper through its own returned API instead of treating the page itself as one public object.",
-      events: [
-        { event: "<code>Utility-specific callbacks</code>", arguments: "varies by helper", returns: "varies", },
+        { factory: "Focused manuals", arguments: "one page per helper", returns: "Accurate component-specific docs and live examples" }
       ],
       methods: [
-        { method: "<code>Utility-specific instance methods</code>", arguments: "varies by helper", returns: "varies" }
+        { method: "Navigate to component page", arguments: "none", returns: "Focused utility helper reference" }
       ]
     };
   </script>
@@ -179,337 +44,19 @@
 <body class="demo-shell-sidebar">
   <main class="page" data-theme="dark">
     <section class="panel">
-      <div class="row">
-        <a class="back" href="./index.html">← Back to Home</a>
-        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
-      </div>
-      <h1 class="ui-title">UI Utilities Demo</h1>
-      <p>Playground for reusable `ui` modules: toast, select, toggle, and button primitives.</p>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Use This When</h2>
-      <div class="guidance">
-        <article class="guidance-card">
-          <h3>Use this when</h3>
-          <p>Use this page to inspect shared primitives and feedback components such as modals, dialogs, toasts, select, and toggles.</p>
-        </article>
-        <article class="guidance-card">
-          <h3>Do not use this when</h3>
-          <p>Do not keep adding substantial workflow demos here by default. When a helper becomes large or task-specific, give it a dedicated page instead of overloading the general utilities playground.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Toast</h2>
-      <p style="margin:0 0 12px;color:#9fb2d8;">Toasts now share the same semantic icon language as dialogs. This section also shows the icon suppression and override paths.</p>
-      <div class="demo-matrix">
-        <article class="demo-matrix-card">
-          <strong>Info Toast</strong>
-          <div class="demo-matrix-meta">
-            <span>Variant: <code>info</code></span>
-            <span>Variant icon: <code>default</code></span>
-            <span>Speech: <code>optional</code></span>
-          </div>
-        </article>
-        <article class="demo-matrix-card">
-          <strong>Success Toast</strong>
-          <div class="demo-matrix-meta">
-            <span>Variant: <code>success</code></span>
-            <span>Variant icon: <code>default</code></span>
-            <span>Speech: <code>optional</code></span>
-          </div>
-        </article>
-        <article class="demo-matrix-card">
-          <strong>No Icon Toast</strong>
-          <div class="demo-matrix-meta">
-            <span>Variant: <code>warn</code></span>
-            <span>Variant icon: <code>suppressed</code></span>
-            <span>Speech: <code>optional</code></span>
-          </div>
-        </article>
-        <article class="demo-matrix-card">
-          <strong>Custom Icon Toast</strong>
-          <div class="demo-matrix-meta">
-            <span>Variant: <code>error</code></span>
-            <span>Variant icon: <code>custom</code></span>
-            <span>Speech: <code>optional</code></span>
-          </div>
-        </article>
-      </div>
-      <div class="row">
-        <button id="toastInfoBtn" class="ui-button" type="button">Info Toast</button>
-        <button id="toastSuccessBtn" class="ui-button" type="button">Success Toast</button>
-        <button id="toastWarnBtn" class="ui-button" type="button">Warn Toast</button>
-        <button id="toastErrorBtn" class="ui-button" type="button">Error Toast</button>
-        <button id="toastNoIconBtn" class="ui-button ui-button-ghost" type="button">No Icon Toast</button>
-        <button id="toastCustomIconBtn" class="ui-button ui-button-borderless" type="button">Custom Icon Toast</button>
-        <label>
-          <input id="toastSpeakToggle" type="checkbox">
-          Speak Toasts
-        </label>
-        <label>
-          Voice
-          <select id="toastVoiceSelect" class="ui-input" style="min-width: 220px;">
-            <option value="">Default Voice</option>
-          </select>
-        </label>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Select</h2>
-      <div class="row">
-        <div>
-          <p>Single Select</p>
-          <div id="selectHostSingle"></div>
-        </div>
-        <div>
-          <p>Multi Select</p>
-          <div id="selectHostMulti"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Toggle</h2>
-      <div class="toggle-stack">
-        <div class="toggle-demo-block">
-          <p>Standalone Toggle Button</p>
-          <div id="toggleButtonHost"></div>
-        </div>
-        <div class="toggle-demo-block">
-          <p>Multi Toggle Group</p>
-          <div id="toggleGroupMultiHost"></div>
-        </div>
-        <div class="toggle-demo-block">
-          <p>Single Toggle Group</p>
-          <div id="toggleGroupSingleHost"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Buttons</h2>
-      <div class="row">
-        <button class="ui-button" type="button">Default</button>
-        <button class="ui-button ui-button-primary" type="button">Primary</button>
-        <button class="ui-button ui-button-ghost" type="button">Ghost</button>
-        <button class="ui-button ui-button-borderless" type="button">Borderless</button>
-        <button class="ui-button ui-button-quiet" type="button">Quiet</button>
-        <button class="ui-button ui-button-link" type="button">Link</button>
-        <button class="ui-button ui-button-danger" type="button">Danger</button>
-        <button class="ui-button ui-button-icon ui-button-ghost" type="button" aria-label="Settings" title="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16">
-            <path d="M12 8.5a3.5 3.5 0 1 1 0 7a3.5 3.5 0 0 1 0-7zm8 3.5l-1.9-.6a6.9 6.9 0 0 0-.5-1.3l1-1.7l-1.8-1.8l-1.7 1a6.9 6.9 0 0 0-1.3-.5L12 4l-1.8.6a6.9 6.9 0 0 0-1.3.5l-1.7-1L5.4 5.9l1 1.7c-.2.4-.4.9-.5 1.3L4 12l.6 1.8c.1.4.3.9.5 1.3l-1 1.7l1.8 1.8l1.7-1c.4.2.9.4 1.3.5L12 20l1.8-.6c.4-.1.9-.3 1.3-.5l1.7 1l1.8-1.8l-1-1.7c.2-.4.4-.9.5-1.3L20 12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
+      <div class="row"><a class="back" href="./index.html">Back to Home</a></div>
+      <h1 class="ui-title">UI Utilities Overview</h1>
+      <p class="muted">Use the focused pages below. Each one documents a single helper or style surface instead of forcing toast, select, toggles, and buttons into one page.</p>
     </section>
     <section class="panel">
-      <h2 class="ui-title">Event Log</h2>
-      <pre id="log" class="log">No events yet.</pre>
+      <div class="grid">
+        <a class="card" href="./demo.toast.html"><strong>Toast</strong><small>Transient status feedback with semantic variants, icon override/suppression, and optional speech.</small></a>
+        <a class="card" href="./demo.select.html"><strong>Select</strong><small>Single-select and multi-select helper with searchable mode and shared floating menu behavior.</small></a>
+        <a class="card" href="./demo.toggle.button.html"><strong>Toggle Button</strong><small>Standalone pressed/not-pressed button primitive.</small></a>
+        <a class="card" href="./demo.toggle.group.html"><strong>Toggle Group</strong><small>Grouped toggles for multi-select and single-select state sets.</small></a>
+        <a class="card" href="./demo.buttons.html"><strong>Buttons</strong><small>Reference page for shared button style classes and emphasis variants.</small></a>
+      </div>
     </section>
   </main>
-
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    await window.__demoLoaderReady;
-    const createToastStack = await uiLoader.get("ui.toast");
-    const createSelect = await uiLoader.get("ui.select");
-    const createToggleButton = await uiLoader.get("ui.toggle.button");
-    const createToggleGroup = await uiLoader.get("ui.toggle.group");
-    const page = document.querySelector("main.page");
-    const log = document.getElementById("log");
-    function writeLog(label, payload) {
-      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
-    }
-
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      const next = page.dataset.theme === "dark" ? "light" : "dark";
-      page.dataset.theme = next;
-      writeLog("theme.toggle", { theme: next });
-    });
-
-    const toastSpeakToggle = document.getElementById("toastSpeakToggle");
-    const toastVoiceSelect = document.getElementById("toastVoiceSelect");
-    let toaster = null;
-
-    function populateVoiceSelect(selectEl) {
-      if (!selectEl || !toaster || typeof toaster.getVoices !== "function") {
-        return;
-      }
-      const selected = String(selectEl.value || "");
-      const voices = toaster.getVoices();
-      selectEl.innerHTML = "";
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "Default Voice";
-      selectEl.appendChild(defaultOption);
-      voices.forEach((voice) => {
-        const option = document.createElement("option");
-        option.value = voice.name;
-        option.textContent = voice.lang ? `${voice.name} (${voice.lang})` : voice.name;
-        selectEl.appendChild(option);
-      });
-      selectEl.value = voices.some((voice) => voice.name === selected) ? selected : "";
-    }
-
-    function mountToaster() {
-      if (toaster) {
-        toaster.destroy();
-      }
-      toaster = createToastStack({
-        position: "top-right",
-        defaultDuration: 2600,
-        max: 4,
-        speak: Boolean(toastSpeakToggle?.checked),
-        speakTypes: ["warn", "error"],
-        voiceName: String(toastVoiceSelect?.value || ""),
-      });
-      populateVoiceSelect(toastVoiceSelect);
-    }
-    mountToaster();
-    toastSpeakToggle?.addEventListener("change", () => {
-      mountToaster();
-      writeLog("toast.speak.toggle", { enabled: Boolean(toastSpeakToggle.checked) });
-    });
-    toastVoiceSelect?.addEventListener("change", () => {
-      mountToaster();
-      writeLog("toast.voice.change", { voiceName: toastVoiceSelect.value || "default" });
-    });
-    if (typeof window !== "undefined" && window.speechSynthesis && typeof window.speechSynthesis.addEventListener === "function") {
-      window.speechSynthesis.addEventListener("voiceschanged", () => {
-        populateVoiceSelect(toastVoiceSelect);
-      });
-    }
-    document.getElementById("toastInfoBtn").addEventListener("click", () => {
-      toaster.info("Data refresh started.", { title: "Info" });
-      writeLog("toast.info", { ok: true });
-    });
-    document.getElementById("toastSuccessBtn").addEventListener("click", () => {
-      toaster.success("Incident saved successfully.", { title: "Success" });
-      writeLog("toast.success", { ok: true });
-    });
-    document.getElementById("toastWarnBtn").addEventListener("click", () => {
-      toaster.warn("Network is unstable.", { title: "Warning" });
-      writeLog("toast.warn", { ok: true });
-    });
-    document.getElementById("toastErrorBtn").addEventListener("click", () => {
-      toaster.error("Failed to load dispatch resources.", { title: "Error" });
-      writeLog("toast.error", { ok: true });
-    });
-    document.getElementById("toastNoIconBtn").addEventListener("click", () => {
-      toaster.warn("This warning intentionally suppresses the shared semantic icon.", {
-        title: "Warning",
-        showVariantIcon: false,
-      });
-      writeLog("toast.warn.noIcon", { ok: true });
-    });
-    document.getElementById("toastCustomIconBtn").addEventListener("click", () => {
-      toaster.error("This toast overrides the default status icon with a custom maintenance glyph.", {
-        title: "Custom Error",
-        variantIcon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5V5.5h16v13H4Zm2-2h12v-9H6v9Zm5-1.5h2v-2h-2v2Zm0-3.5h2V9h-2v2.5Z" fill="currentColor"></path></svg>',
-      });
-      writeLog("toast.error.customIcon", { ok: true });
-    });
-
-    const selectItems = [
-      { value: "medical", label: "Medical & Rescue" },
-      { value: "fire", label: "Fire & Hazard" },
-      { value: "crime", label: "Crime & Security" },
-      { value: "weather", label: "Disaster & Weather" },
-      { value: "infra", label: "Infrastructure & Utilities" },
-    ];
-    createSelect(document.getElementById("selectHostSingle"), selectItems, {
-      ariaLabel: "Incident category select",
-      placeholder: "Choose a category",
-      searchable: true,
-      multiple: false,
-      selected: "medical",
-      onChange(value, item) {
-        writeLog("select.single.change", { value, item });
-      },
-    });
-    createSelect(document.getElementById("selectHostMulti"), selectItems, {
-      ariaLabel: "Incident categories multi-select",
-      placeholder: "Select categories",
-      searchable: true,
-      multiple: true,
-      selected: ["fire", "crime"],
-      onChange(values, selectedItems) {
-        writeLog("select.multi.change", { values, selectedItems });
-      },
-    });
-
-    createToggleButton(document.getElementById("toggleButtonHost"), {
-      id: "terrain",
-      label: "Terrain",
-      pressed: true,
-      variant: "pill",
-      tone: "success",
-      leadingDot: true,
-      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 4-6 5 9"/></svg>',
-      onChange(payload) {
-        writeLog("toggle.button.change", payload);
-      },
-    });
-
-    createToggleGroup(document.getElementById("toggleGroupMultiHost"), {
-      name: "map-overlays",
-      variant: "chip",
-      tone: "success",
-      multi: true,
-      leadingDot: true,
-      items: [
-        { id: "terrain", label: "Terrain", pressed: true },
-        { id: "poi", label: "POI", pressed: false },
-        { id: "traffic", label: "Traffic", pressed: true, tone: "info" },
-        { id: "hazards", label: "Hazards", pressed: false, tone: "warning", count: 3 },
-      ],
-      onChange(payload) {
-        writeLog("toggle.group.multi.change", payload);
-      },
-    });
-
-    createToggleGroup(document.getElementById("toggleGroupSingleHost"), {
-      name: "view-mode",
-      variant: "segmented",
-      tone: "neutral",
-      multi: false,
-      allowNone: false,
-      items: [
-        { id: "map", label: "Map", pressed: true },
-        { id: "satellite", label: "Satellite", pressed: false },
-        { id: "hybrid", label: "Hybrid", pressed: false },
-      ],
-      onChange(payload) {
-        writeLog("toggle.group.single.change", payload);
-      },
-    });
-
-  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

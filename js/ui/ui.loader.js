@@ -171,6 +171,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: ["ui.form.modal"],
     export: "createChangePasswordFormModal",
   },
+  "ui.fieldset": {
+    js: "./ui.fieldset.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.fieldset.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
+    deps: ["ui.select", "ui.password"],
+    export: "createFieldset",
+  },
   "ui.select": {
     js: "./ui.select.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css"],
@@ -488,6 +494,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.form.modal.status",
     "ui.form.modal.reason",
     "ui.password",
+    "ui.fieldset",
     "ui.select",
     "ui.toggle.button",
     "ui.toggle.group",

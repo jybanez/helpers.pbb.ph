@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 18px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { min-width: 280px; max-width: 360px; display: grid; gap: 8px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.select"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Select",
+      overview: "Shared select/dropdown input with single-select, multi-select, searchable mode, and hosted floating menu behavior.",
+      useWhen: [
+        "Use <code>createSelect(...)</code> for shared select behavior instead of ad hoc custom dropdowns.",
+        "Use it inside forms, modals, and drawers when you need a menu that can escape clipped containers."
+      ],
+      avoidWhen: [
+        "Do not use it for extremely large remote datasets without a real query strategy.",
+        "Do not fork a second select system inside form-modal or app-local UI."
+      ],
+      description: "This page focuses on the shared select helper itself: single and multi selection, searchable mode, placeholder handling, and change callbacks.",
+      defaultSampleCode: "const select = createSelect(host, items, {\n  searchable: true,\n  multiple: true,\n  clearable: true,\n  onChange(values, selectedItems) {\n    writeLog(\"select.change\", { values, selectedItems });\n  },\n});",
+      constructor: [
+        { factory: "<code>createSelect(container, items, options)</code>", arguments: "host node, item array, select options", returns: "Select instance" }
+      ],
+      options: [
+        { option: "<code>searchable</code>", default: "<code>false</code>", description: "Shows inline filtering input.", values: ["true", "false"] },
+        { option: "<code>multiple</code>", default: "<code>false</code>", description: "Enables multi-select mode.", values: ["true", "false"] },
+        { option: "<code>clearable</code>", default: "<code>false</code>", description: "Shows clear/reset affordance where supported.", values: ["true", "false"] },
+        { option: "<code>placeholder</code>", default: "<code>\"Select...\"</code>", description: "Trigger placeholder when nothing is selected." },
+        { option: "<code>selected</code>", default: "<code>null</code>", description: "Initial selected value or values." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Fires whenever selection changes." }
+      ],
+      propertiesText: "Use the returned API for values/open state instead of reading internal DOM.",
+      events: [
+        { event: "<code>onChange(valueOrValues, selectedItems)</code>", arguments: "selection payload", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>setValue(value)</code>", arguments: "single or multi value payload", returns: "<code>void</code>" },
+        { method: "<code>getValue()</code>", arguments: "none", returns: "current selection" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel"><div class="row"><a class="back" href="./index.html">← Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div><h1 class="ui-title">Select Demo</h1><p class="muted">Dedicated page for the shared select helper used directly and inside form-modal flows.</p></section>
+    <section class="panel">
+      <h2 class="ui-title">Single And Multi Select</h2>
+      <div class="row"><div class="host"><strong>Single Select</strong><div id="selectHostSingle"></div></div><div class="host"><strong>Multi Select</strong><div id="selectHostMulti"></div></div></div>
+      <pre>const select = createSelect(host, items, {
+  searchable: true,
+  multiple: true,
+  selected: ["fire", "crime"],
+  onChange(values, selectedItems) {
+    writeLog("select.multi.change", { values, selectedItems });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createSelect = await uiLoader.get("ui.select");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const selectItems = [
+      { value: "medical", label: "Medical & Rescue" },
+      { value: "fire", label: "Fire & Hazard" },
+      { value: "crime", label: "Crime & Security" },
+      { value: "weather", label: "Disaster & Weather" },
+      { value: "infra", label: "Infrastructure & Utilities" },
+    ];
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+    createSelect(document.getElementById("selectHostSingle"), selectItems, {
+      ariaLabel: "Incident category select",
+      placeholder: "Choose a category",
+      searchable: true,
+      multiple: false,
+      selected: "medical",
+      onChange(value, item) { writeLog("select.single.change", { value, item }); },
+    });
+    createSelect(document.getElementById("selectHostMulti"), selectItems, {
+      ariaLabel: "Incident categories multi-select",
+      placeholder: "Select categories",
+      searchable: true,
+      multiple: true,
+      selected: ["fire", "crime"],
+      onChange(values, selectedItems) { writeLog("select.multi.change", { values, selectedItems }); },
+    });
+  </script>
+</body>
+</html>

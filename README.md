@@ -139,6 +139,11 @@ demos/
   demo.iframe.host.html
   demo.workspace.bridge.html
   demo.ui.html
+  demo.toast.html
+  demo.select.html
+  demo.toggle.button.html
+  demo.toggle.group.html
+  demo.buttons.html
   demo.audio.html
   demo.media.viewer.html
   demo.nav.html
@@ -203,6 +208,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
 - `ui.password.js`
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
+- `ui.fieldset.js`
+  - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields with notes, alerts, images, and custom content
 - `ui.icons.js`
   - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
@@ -1205,8 +1212,8 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.scheduler.html` -> dedicated scheduler/calendar playground
   - month/week views
   - slot and event callback interactions
-- `demos/demo.ui.html` -> UI utilities playground
-  - modal, dialog, toast, select, datepicker, command palette, tree, kanban, file uploader, drawer, search, tabs, strips, media strip
+- `demos/demo.ui.html` -> UI utilities overview/router
+  - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
   - standalone image/video viewer
   - zoom/pan + fit modes
@@ -1248,6 +1255,10 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.form.modal.reauth.html` -> dedicated re-auth preset page
 - `demos/demo.form.modal.status.html` -> dedicated status-update preset page
 - `demos/demo.form.modal.reason.html` -> dedicated reason-required preset page
+- `demos/demo.fieldset.html` -> dedicated fieldset/grouped-form page
+  - semantic `fieldset` / `legend` grouping
+  - form-modal-style `rows[]` outside modal lifecycle
+  - mixed field/text/alert/image/custom-content rows
 
 Demo pages load:
 
@@ -1577,6 +1588,99 @@ Related demos:
 - `demos/demo.password.html`
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
+
+### `createFieldset(container, options)` (`js/ui/ui.fieldset.js`)
+
+Purpose:
+
+- Semantic grouped form section for page-sized or admin-sized forms.
+- Uses a form-modal-style `rows[]` contract so teams can mix fields with text, alerts, images, display values, and custom content without building ad hoc page markup around each section.
+
+Factory:
+
+```js
+import { createFieldset } from "./js/ui/ui.fieldset.js";
+
+const fieldset = createFieldset(container, options);
+```
+
+Options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `legend` | `string` | `""` | Semantic fieldset legend/title. |
+| `description` | `string` | `""` | Optional descriptive text shown under the legend. |
+| `rows` | `Array<Array<object>>` | `[]` | Page-level grouped-row model aligned with the practical item vocabulary used by `createFormModal(...)`, plus page-safe content items such as `image` and `custom`. |
+| `className` | `string` | `""` | Extra class name applied to the root fieldset. |
+
+Shared row types with `createFormModal(...)`:
+
+- `input`
+- `textarea`
+- `select`
+- `checkbox`
+- `ui.select`
+- `hidden`
+- `text`
+- `alert`
+- `divider`
+- `display`
+
+Fieldset-specific content emphasis:
+
+- `image`
+- `custom` / `content`
+
+Contract note:
+
+- `ui.fieldset` intentionally reuses the practical row vocabulary from `createFormModal(...)`, but it is not a modal-form engine.
+- Shared row types should stay semantically compatible across both helpers so engineers can move grouped content between page forms and modal forms without inventing a second schema.
+- `image` and `custom` / `content` are documented here as fieldset-friendly page content rows. Modal usage may still be possible in app code, but `ui.fieldset` is the public reference surface for those richer grouped-content rows.
+
+Password row note:
+
+- `input: "password"` rows compose over the shared `createPasswordField(...)` helper, so grouped page forms and modal forms use the same show/hide password behavior.
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `getValues()` | none | `object` | Returns current values keyed by field name. |
+| `setValue(name, value)` | field name, next value | `void` | Updates one field value. |
+| `setValues(values)` | object | `void` | Updates multiple field values. |
+| `setRows(rows)` | rows array | `void` | Replaces the rendered row set. |
+| `update(options)` | partial options | `void` | Updates legend, description, rows, or class name. |
+| `destroy()` | none | `void` | Removes the fieldset from the host container and tears down hosted controls. |
+
+Example:
+
+```js
+const fieldset = createFieldset(document.getElementById("appFieldset"), {
+  legend: "Workspace App Settings",
+  description: "Group access, launch, and display fields together.",
+  rows: [
+    [
+      { type: "input", name: "app_code", label: "App code" },
+      { type: "input", name: "name", label: "Name" },
+    ],
+    [
+      {
+        type: "alert",
+        tone: "info",
+        span: 2,
+        content: "Document the access-check endpoint before enabling the app in Workspace.",
+      },
+    ],
+    [
+      { type: "input", name: "base_url", label: "Base URL", span: 2 },
+    ],
+  ],
+});
+```
+
+Related demos:
+
+- `demos/demo.fieldset.html`
 
 ### `createIcon(name, options)`, `getIconDefinition(name)`, `listIcons()`, `listIconCategories()` (`js/ui/ui.icons.js`)
 
@@ -3711,7 +3815,7 @@ Note:
 
 Related demos:
 
-- `demos/demo.ui.html`
+- `demos/demo.file.uploader.html`
 
 ### `createMediaStrip(container, items, options)` (`js/ui/ui.media.strip.js`)
 
@@ -3784,7 +3888,7 @@ Behavior notes:
 
 Related demos:
 
-- `demos/demo.ui.html`
+- `demos/demo.media.strip.html`
 
 ### `createMediaViewer(container, options)` (`js/ui/ui.media.viewer.js`)
 
@@ -3884,7 +3988,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.12`
+- Latest documented release: `v0.21.13`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

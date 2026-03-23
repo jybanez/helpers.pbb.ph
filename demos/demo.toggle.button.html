@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toggle Button Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.toggle.button"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Toggle Button",
+      overview: "Standalone pressed/not-pressed button primitive with tone, variant, count, and icon support.",
+      useWhen: [
+        "Use <code>createToggleButton(...)</code> for one independent binary toggle.",
+        "Use it when a pressed state should stay visible as part of the button itself."
+      ],
+      avoidWhen: [
+        "Do not use it for mutually exclusive sets; use <code>createToggleGroup(...)</code> instead.",
+        "Do not fake toggle state with plain buttons and app-local class toggles."
+      ],
+      description: "This page focuses on one standalone toggle button, including helper-owned pressed-state styling and change callbacks.",
+      defaultSampleCode: "createToggleButton(host, {\n  id: \"terrain\",\n  label: \"Terrain\",\n  pressed: true,\n  variant: \"pill\",\n  tone: \"success\",\n  leadingDot: true,\n  onChange(payload) {\n    writeLog(\"toggle.button.change\", payload);\n  },\n});",
+      constructor: [
+        { factory: "<code>createToggleButton(container, options)</code>", arguments: "host node, toggle options", returns: "Toggle-button instance" }
+      ],
+      options: [
+        { option: "<code>pressed</code>", default: "<code>false</code>", description: "Initial pressed state.", values: ["true", "false"] },
+        { option: "<code>variant</code>", default: "<code>\"default\"</code>", description: "Shared visual treatment.", values: ["default", "pill", "chip", "segmented"] },
+        { option: "<code>tone</code>", default: "<code>\"neutral\"</code>", description: "Visual emphasis tone.", values: ["neutral", "success", "info", "warning", "danger"] },
+        { option: "<code>leadingDot</code>", default: "<code>false</code>", description: "Shows a leading status dot.", values: ["true", "false"] },
+        { option: "<code>count</code>", default: "<code>null</code>", description: "Optional numeric badge count." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Fires when pressed state changes." }
+      ],
+      methods: [
+        { method: "<code>setPressed(pressed)</code>", arguments: "boolean", returns: "<code>void</code>" },
+        { method: "<code>isPressed()</code>", arguments: "none", returns: "<code>boolean</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel"><div class="row"><a class="back" href="./index.html">← Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div><h1 class="ui-title">Toggle Button Demo</h1><p class="muted">Dedicated page for the standalone shared toggle button primitive.</p></section>
+    <section class="panel">
+      <h2 class="ui-title">Standalone Toggle</h2>
+      <div id="toggleButtonHost" class="host"></div>
+      <div class="row"><button id="setPressedBtn" class="ui-button" type="button">Set Pressed</button><button id="togglePressedBtn" class="ui-button ui-button-ghost" type="button">Toggle Pressed</button></div>
+      <pre>createToggleButton(host, {
+  id: "terrain",
+  label: "Terrain",
+  pressed: true,
+  variant: "pill",
+  tone: "success",
+  leadingDot: true,
+  onChange(payload) {
+    writeLog("toggle.button.change", payload);
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createToggleButton = await uiLoader.get("ui.toggle.button");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+    const toggleApi = createToggleButton(document.getElementById("toggleButtonHost"), {
+      id: "terrain",
+      label: "Terrain",
+      pressed: true,
+      variant: "pill",
+      tone: "success",
+      leadingDot: true,
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 4-6 5 9"/></svg>',
+      onChange(payload) { writeLog("toggle.button.change", payload); },
+    });
+    document.getElementById("setPressedBtn").addEventListener("click", () => {
+      toggleApi.setPressed(true);
+      writeLog("toggle.button.setPressed", { pressed: true });
+    });
+    document.getElementById("togglePressedBtn").addEventListener("click", () => {
+      toggleApi.setPressed(!toggleApi.isPressed());
+      writeLog("toggle.button.togglePressed", { pressed: toggleApi.isPressed() });
+    });
+  </script>
+</body>
+</html>

@@ -77,6 +77,7 @@ Use adapter functions between helper callbacks and backend APIs.
 - `createAccountFormModal(...)`
 - `createChangePasswordFormModal(...)`
 - `createPasswordField(...)`
+- `createFieldset(...)`
   - `createStatusUpdateFormModal(...)`
   - `createReasonFormModal(...)`
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
@@ -192,6 +193,7 @@ Shared UI layer:
 - `js/ui/ui.dialog.js`
 - `js/ui/ui.toast.js`
 - `js/ui/ui.workspace.bridge.js`
+- `js/ui/ui.fieldset.js`
 - `js/ui/ui.select.js`
 - `js/ui/ui.toggle.button.js`
 - `js/ui/ui.toggle.group.js`
@@ -286,6 +288,12 @@ Run this checklist:
    - `demos/demo.scheduler.html`
    - `demos/demo.timeline.html`
    - `demos/demo.ui.html`
+   - `demos/demo.toast.html`
+   - `demos/demo.select.html`
+   - `demos/demo.fieldset.html`
+   - `demos/demo.toggle.button.html`
+   - `demos/demo.toggle.group.html`
+   - `demos/demo.buttons.html`
    - `demos/demo.audio.html`
    - `demos/demo.media.viewer.html`
    - `demos/demo.nav.html`
@@ -515,7 +523,27 @@ If changing callback signatures or removing methods, plan a major version.
 
 ## 12) Demo Ownership Split
 
-- `demos/demo.ui.html` is for general UI playground and should avoid heavy domain/data-grid scenarios.
+- `demos/demo.ui.html` is now a lightweight utilities overview/router, not a catch-all contract page.
+- Toast, select, toggle, and button references belong on their dedicated pages:
+  - `demos/demo.toast.html`
+  - `demos/demo.select.html`
+  - `demos/demo.fieldset.html`
+  - `demos/demo.toggle.button.html`
+  - `demos/demo.toggle.group.html`
+  - `demos/demo.buttons.html`
+- `demos/demo.fieldset.html` is the grouped-form reference when a page needs semantic sections and form-modal-style rows outside modal lifecycle.
+- `createFieldset(...)` should share practical row semantics with `createFormModal(...)` for common row types such as:
+  - `input`
+  - `textarea`
+  - `select`
+  - `checkbox`
+  - `ui.select`
+  - `hidden`
+  - `text`
+  - `alert`
+  - `divider`
+  - `display`
+- richer grouped page-content rows such as `image` and `custom` / `content` are documented through `createFieldset(...)` first; do not assume every fieldset-oriented content row automatically belongs in modal flows without an explicit shared contract decision.
 - Grid-focused behavior belongs in `demos/demo.grid.html`:
   - local
   - remote

@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fieldset Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 14px;
+      align-items: start;
+    }
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+    .log,
+    pre:not(.log) {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    .log {
+      color: #b2c2e5;
+      min-height: 220px;
+    }
+    .custom-note {
+      padding: 10px 12px;
+      border: 1px dashed #3a4a69;
+      border-radius: 10px;
+      color: #c2d0ea;
+      background: rgba(18, 28, 44, 0.72);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.fieldset"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Fieldset",
+      overview: "Semantic field grouping helper for pages and admin forms. It accepts a form-modal-style rows array so engineers can mix fields with text, alerts, images, display rows, and custom content inside one grouped section.",
+      useWhen: [
+        "Use <code>createFieldset(container, options)</code> to break long forms into clear sections such as access settings, metadata, or security settings.",
+        "Use it when a page-level form needs the same row vocabulary as <code>createFormModal(...)</code> without pulling modal lifecycle into the page."
+      ],
+      avoidWhen: [
+        "Do not use it as a submit handler or schema form engine. It groups rows; app code still owns validation and submit flow.",
+        "Do not use it for collapsible/step logic in V1. Keep those concerns outside the fieldset."
+      ],
+      description: "The helper keeps field grouping narrow: semantic <code>fieldset</code>/<code>legend</code>, optional description, mixed row content, and a direct value API. The <code>rows[]</code> contract intentionally mirrors the practical row shapes already used by <code>createFormModal(...)</code>.",
+      defaultSampleCode: `const fieldset = createFieldset(host, {\n  legend: "Workspace App Settings",\n  description: "Group related fields, notes, and supporting content.",\n  rows: [\n    [\n      { type: "input", name: "app_code", label: "App code" },\n      { type: "input", name: "name", label: "Name" }\n    ],\n    [\n      { type: "alert", tone: "info", span: 2, content: "Access-check and health URLs should be documented in the app API surface." }\n    ],\n    [\n      { type: "input", name: "base_url", label: "Base URL", span: 2 }\n    ]\n  ]\n});`,
+      constructor: [
+        { factory: "<code>createFieldset(container, options)</code>", arguments: "host container and fieldset <code>options</code>", returns: "Fieldset instance" }
+      ],
+      options: [
+        { option: "<code>legend</code>", default: "<code>\"\"</code>", description: "Semantic fieldset legend/title." },
+        { option: "<code>description</code>", default: "<code>\"\"</code>", description: "Optional descriptive text rendered under the legend." },
+        { option: "<code>rows</code>", default: "<code>[]</code>", description: "Row array aligned with practical form-modal item types such as <code>input</code>, <code>textarea</code>, <code>select</code>, <code>checkbox</code>, <code>ui.select</code>, <code>alert</code>, <code>text</code>, <code>display</code>, <code>image</code>, and <code>custom</code>." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Additional class name applied to the root fieldset." }
+      ],
+      propertiesText: "Returned instance exposes DOM references through <code>root</code>, <code>legend</code>, <code>description</code>, <code>rows</code>, and <code>refs</code>.",
+      methods: [
+        { method: "<code>getValues()</code>", arguments: "none", returns: "plain object keyed by row field names" },
+        { method: "<code>setValue(name, value)</code>", arguments: "field name and next value", returns: "<code>void</code>" },
+        { method: "<code>setValues(values)</code>", arguments: "partial object of values", returns: "<code>void</code>" },
+        { method: "<code>setRows(rows)</code>", arguments: "new rows array", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Fieldset Demo</h1>
+      <p class="muted">Dedicated helper page for grouped form sections that can mix fields with text, warnings, images, and custom content using the same practical row vocabulary as form-modal bodies.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Workspace App Group</h2>
+      <div class="layout">
+        <div class="stack">
+          <div id="fieldsetHost"></div>
+          <div class="row">
+            <button id="setDemoValuesBtn" class="ui-button" type="button">Set Demo Values</button>
+            <button id="replaceRowsBtn" class="ui-button ui-button-ghost" type="button">Swap Rows</button>
+            <button id="renameLegendBtn" class="ui-button ui-button-ghost" type="button">Rename Legend</button>
+          </div>
+          <pre>const fieldset = createFieldset(host, {
+  legend: "Workspace App Settings",
+  description: "Group operational app settings and supporting notes.",
+  rows: [
+    [
+      { type: "input", name: "app_code", label: "App code" },
+      { type: "input", name: "name", label: "Name" }
+    ],
+    [
+      { type: "alert", tone: "info", span: 2, content: "Document the access-check endpoint before enabling the app in Workspace." }
+    ],
+    [
+      { type: "image", span: 2, src: "../samples/media/photos/pbb-preview-graphic-2x.png", alt: "Workspace preview graphic", caption: "Supporting image/media rows can live inside the same grouped section." }
+    ]
+  ]
+});</pre>
+        </div>
+        <div class="stack">
+          <pre id="valuesLog" class="log">No snapshots yet.</pre>
+          <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot Values</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createFieldset = await uiLoader.get("ui.fieldset");
+
+    const page = document.querySelector("main.page");
+    const valuesLog = document.getElementById("valuesLog");
+    const host = document.getElementById("fieldsetHost");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      valuesLog.textContent = valuesLog.textContent === "No snapshots yet." ? line : `${line}\n${valuesLog.textContent}`;
+    }
+
+    function buildRows(mode = "default") {
+      if (mode === "security") {
+        return [
+          [
+            { type: "text", span: 2, content: "Security-related settings can be grouped separately without changing the overall page shell." }
+          ],
+          [
+            { type: "input", name: "service_token_header", label: "Token header", value: "X-Service-Token" },
+            { type: "input", name: "icon", label: "Icon", value: "app-window" }
+          ],
+          [
+            { type: "input", input: "password", name: "service_token", label: "Service token", autocomplete: "new-password", help: "Password rows reuse the shared password field helper." },
+            { type: "checkbox", name: "embeddable", label: "Embeddable", value: true }
+          ],
+          [
+            { type: "display", name: "shape", label: "Shape", value: "workspace-ready", span: 2 }
+          ]
+        ];
+      }
+      return [
+        [
+          { type: "input", name: "app_code", label: "App code", value: "workspace" },
+          { type: "input", name: "name", label: "Name", value: "PBB Workspace" }
+        ],
+        [
+          { type: "alert", tone: "info", span: 2, content: "Document the access-check endpoint before enabling the app in Workspace." }
+        ],
+        [
+          { type: "input", name: "base_url", label: "Base URL", value: "https://workspace.pbb.ph", span: 2 }
+        ],
+        [
+          { type: "select", name: "category", label: "Category", value: "operations", options: ["operations", "admin", "public"] },
+          { type: "ui.select", name: "roles", label: "Roles", multiple: true, items: [
+            { label: "Administrator", value: "administrator" },
+            { label: "User", value: "user" },
+            { label: "Auditor", value: "auditor" }
+          ], value: ["administrator", "user"] }
+        ],
+        [
+          { type: "textarea", name: "description", label: "Description", value: "Workspace shell for launching embedded PBB apps.", span: 2 }
+        ],
+        [
+          { type: "image", span: 2, src: "../samples/media/photos/pbb-preview-graphic-2x.png", alt: "Workspace preview graphic", caption: "Supporting image/media rows can live inside the same grouped section." }
+        ],
+        [
+          {
+            type: "custom",
+            span: 2,
+            content: (() => {
+              const note = document.createElement("div");
+              note.className = "custom-note";
+              note.textContent = "Custom content rows can carry app-specific notes, inline actions, or diagnostic callouts without forcing teams into raw page-local markup around the field group.";
+              return note;
+            })(),
+          }
+        ]
+      ];
+    }
+
+    const fieldset = createFieldset(host, {
+      legend: "Workspace App Settings",
+      description: "Group operational app settings and supporting notes.",
+      rows: buildRows(),
+    });
+
+    let currentMode = "default";
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    document.getElementById("snapshotBtn").addEventListener("click", () => {
+      writeLog("fieldset.getValues", fieldset.getValues());
+    });
+
+    document.getElementById("setDemoValuesBtn").addEventListener("click", () => {
+      fieldset.setValues({
+        app_code: "relay",
+        name: "PBB Relay",
+        base_url: "https://relay.pbb.ph",
+        category: "operations",
+        description: "Queue orchestration and hub transport.",
+      });
+      writeLog("fieldset.setValues", fieldset.getValues());
+    });
+
+    document.getElementById("replaceRowsBtn").addEventListener("click", () => {
+      currentMode = currentMode === "default" ? "security" : "default";
+      fieldset.setRows(buildRows(currentMode));
+      writeLog("fieldset.setRows", { mode: currentMode });
+    });
+
+    document.getElementById("renameLegendBtn").addEventListener("click", () => {
+      fieldset.update({
+        legend: currentMode === "default" ? "Workspace App Settings" : "Workspace Security Settings",
+        description: currentMode === "default"
+          ? "Group operational app settings and supporting notes."
+          : "Separate security and access details without changing the outer page layout.",
+      });
+      writeLog("fieldset.update", { legend: fieldset.legend.textContent, mode: currentMode });
+    });
+  </script>
+</body>
+</html>

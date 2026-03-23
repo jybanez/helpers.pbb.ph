@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.12`
+- Latest documented release: `v0.21.14`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,27 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.14
+
+- Promoted `ui.fieldset` into the documented/shared helper surface with loader registration, demo coverage, and regression coverage.
+- `createFieldset(container, options)` now has a dedicated public contract for semantic grouped form sections using form-modal-style `rows[]`.
+- Added:
+  - `demos/demo.fieldset.html`
+  - `tests/fieldset.regression.html`
+  - `tests/fieldset.regression.mjs`
+- Updated the demo shell, catalog, README, and playbook so grouped form sections are discoverable alongside other form/shared UI primitives.
+
+### v0.21.13
+
+- Split the overloaded `demos/demo.ui.html` catch-all page into focused utility demos:
+  - `demos/demo.toast.html`
+  - `demos/demo.select.html`
+  - `demos/demo.toggle.button.html`
+  - `demos/demo.toggle.group.html`
+  - `demos/demo.buttons.html`
+- Repurposed `demos/demo.ui.html` into a lightweight utilities overview/router page.
+- Updated demo navigation, catalog, and helper docs so toast/select/toggle/button references point to focused pages instead of the old utility catch-all.
+
 ### v0.21.12
 
 - Changed the shared `ui.modal` shell so long content scrolls only inside the modal body region instead of scrolling the entire panel.
