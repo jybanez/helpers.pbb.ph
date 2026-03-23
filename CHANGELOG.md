@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.11`
+- Latest documented release: `v0.21.12`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.12
+
+- Changed the shared `ui.modal` shell so long content scrolls only inside the modal body region instead of scrolling the entire panel.
+- The modal header now stays fixed at the top of the shell and the footer stays fixed at the bottom while the body scrolls.
+- Added browser regression coverage proving tall modal content keeps the header and footer stationary while the body scrolls.
+
 ### v0.21.11
 
 - Extended `ui.navbar` so primary navigation items can now host shared menu dropdowns, not only right-side actions.

@@ -32,7 +32,9 @@
   position: relative;
   width: min(92vw, 560px);
   max-height: min(88vh, 920px);
-  overflow: auto;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   border: 1px solid var(--ui-border, #2b3750);
   border-radius: var(--ui-radius-md, 10px);
   background: var(--ui-bg, #0d1523);
@@ -83,6 +85,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-space-2, 8px);
+  min-height: 0;
   padding: var(--ui-space-3, 12px) var(--ui-space-4, 16px) var(--ui-space-2, 8px);
   border-bottom: 1px solid var(--ui-border, #2b3750);
 }
@@ -179,10 +182,14 @@
   padding: var(--ui-space-3, 12px) var(--ui-space-4, 16px);
   display: grid;
   gap: var(--ui-space-2, 8px);
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .ui-modal-footer {
   display: none;
+  min-height: 0;
 }
 
 .ui-modal-footer:not([hidden]) {

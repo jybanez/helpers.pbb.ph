@@ -43,6 +43,11 @@
     });
     const note = createElement("p", { text: "Testing modal busy-state preservation." });
     content.append(input, note);
+    for (let index = 0; index < 20; index += 1) {
+      content.appendChild(createElement("p", {
+        text: `Long content row ${index + 1}: modal body should scroll without moving the header or footer.`,
+      }));
+    }
 
     const footer = createElement("div", { className: "ui-inline" });
     const cancel = createElement("button", {
@@ -73,6 +78,9 @@
 
     const root = document.querySelector(".ui-modal-root");
     const panel = document.querySelector(".ui-modal");
+    const header = document.querySelector(".ui-modal-header");
+    const body = document.querySelector(".ui-modal-body");
+    const footerEl = document.querySelector(".ui-modal-footer");
     const getCloseButton = () => document.querySelector(".ui-modal-close");
     const getBusyLayer = () => document.querySelector(".ui-modal-busy");
     const getBusyMessage = () => document.querySelector(".ui-modal-busy-message");
@@ -81,6 +89,15 @@
     assert(root.classList.contains("is-mounted"), "modal should remain mounted after open");
     assert(root.classList.contains("is-open"), "modal should remain open after open");
     assert(panel.getAttribute("aria-busy") === "false", "aria-busy should be false before busy state");
+    assert(getComputedStyle(panel).overflow === "hidden", "modal shell should not scroll directly");
+    assert(getComputedStyle(body).overflowY === "auto", "modal body should own vertical scrolling");
+    assert(body.scrollHeight > body.clientHeight, "long modal content should overflow within the body");
+    const initialHeaderTop = header.getBoundingClientRect().top;
+    const initialFooterTop = footerEl.getBoundingClientRect().top;
+    body.scrollTop = 120;
+    await new Promise((resolve) => setTimeout(resolve, 32));
+    assert(Math.abs(header.getBoundingClientRect().top - initialHeaderTop) < 1, "header should stay fixed while body scrolls");
+    assert(Math.abs(footerEl.getBoundingClientRect().top - initialFooterTop) < 1, "footer should stay fixed while body scrolls");
     assert(getCloseButton().hidden === true, "close button should remain hidden when showCloseButton is false");
     assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should not be displayed");
 

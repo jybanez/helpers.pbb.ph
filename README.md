@@ -1704,6 +1704,7 @@ Returned refs:
 Busy-state behavior:
 
 - modal shell exposes a helper-owned busy overlay
+- long modal content now scrolls inside the body region only; the header stays fixed at the top of the shell and the footer stays fixed at the bottom
 - `setBusy(true, { message })`:
   - sets `aria-busy="true"` on the modal panel
   - disables body/footer/header actions
@@ -3883,7 +3884,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.11`
+- Latest documented release: `v0.21.12`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

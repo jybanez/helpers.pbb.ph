@@ -23,7 +23,7 @@
   <script>
     window.demoMeta = {
       title: "Modal",
-      overview: "General-purpose modal shell for custom content, header actions, footer content, busy state, and close lifecycle handling.",
+      overview: "General-purpose modal shell for custom content, header actions, footer content, busy state, close lifecycle handling, and fixed-header/footer body scrolling for long content.",
       useWhen: [
         "Use <code>createModal(...)</code> when you need a free-form shell around custom content.",
         "Use it when your modal body is too custom for the action or form wrappers."
@@ -32,7 +32,7 @@
         "Do not use it when footer actions are already known up front; use <code>createActionModal(...)</code> instead.",
         "Do not hand-build modal shell markup in app code when the shared shell already covers the interaction."
       ],
-      description: "This demo keeps the modal shell fully custom: arbitrary body content, custom header actions, custom footer content, and explicit open/close logging.",
+      description: "This demo keeps the modal shell fully custom: arbitrary body content, custom header actions, custom footer content, explicit open/close logging, and a long-content example where only the modal body scrolls.",
       defaultSampleCode: `const modal = createModal({\n  title: "Reusable Modal",\n  size: "md",\n  content: body,\n  headerActions: [refreshButton, helpButton],\n  footer,\n  onClose(meta) {\n    writeLog("modal.close", meta || {});\n  },\n});\n\nmodal.open();`,
       constructor: [
         { factory: "<code>createModal(options)</code>", arguments: "modal <code>options</code>", returns: "Modal instance" }
@@ -72,9 +72,10 @@
     </section>
     <section class="panel">
       <h2 class="ui-title">Reusable Modal Shell</h2>
-      <p class="muted">Open the modal to inspect general-purpose shell behavior with custom body content and footer controls.</p>
+      <p class="muted">Open either example to inspect the shared shell. The long-content example keeps the header pinned at the top and the footer pinned at the bottom while only the body scrolls.</p>
       <div class="row">
         <button id="modalBtn" class="ui-button" type="button">Open Modal</button>
+        <button id="longModalBtn" class="ui-button" type="button">Open Long Content Modal</button>
       </div>
       <pre>const modal = createModal({
   title: "Reusable Modal",
@@ -89,6 +90,17 @@
 });
 
 modal.open();</pre>
+      <pre>const longModal = createModal({
+  title: "Long Content Modal",
+  size: "md",
+  content: longBody,
+  footer,
+});
+
+longModal.open();
+// header stays fixed
+// footer stays fixed
+// only .ui-modal-body scrolls</pre>
       <pre id="log" class="log">No events yet.</pre>
     </section>
   </main>
@@ -175,6 +187,53 @@ modal.open();</pre>
       });
       modal.open();
       writeLog("modal.open", { size: "md" });
+    });
+
+    document.getElementById("longModalBtn").addEventListener("click", () => {
+      const body = createElement("div");
+      const intro = createElement("p", {
+        text: "This example forces the modal body to overflow. The header and footer stay fixed while only the body scrolls.",
+      });
+      body.appendChild(intro);
+      for (let index = 0; index < 24; index += 1) {
+        body.appendChild(createElement("label", {
+          html: `Field ${index + 1}<input type="text" class="ui-input" value="Sample value ${index + 1}" placeholder="Sample value ${index + 1}">`,
+        }));
+      }
+
+      const cancelBtn = createElement("button", {
+        className: "ui-button ui-button-ghost",
+        text: "Cancel",
+        attrs: { type: "button" },
+      });
+      const saveBtn = createElement("button", {
+        className: "ui-button ui-button-primary",
+        text: "Save",
+        attrs: { type: "button" },
+      });
+      const footer = createElement("div", { className: "ui-dialog-footer-actions" });
+      footer.append(cancelBtn, saveBtn);
+
+      const modal = createModal({
+        title: "Long Content Modal",
+        size: "md",
+        content: body,
+        footer,
+        onClose(meta) {
+          writeLog("modal.long.close", meta || {});
+          modal.destroy();
+        },
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        modal.close({ reason: "cancel" });
+      }, { once: true });
+      saveBtn.addEventListener("click", () => {
+        modal.close({ reason: "save" });
+      }, { once: true });
+
+      modal.open();
+      writeLog("modal.long.open", { rows: 24, size: "md" });
     });
   </script>
 </body>
