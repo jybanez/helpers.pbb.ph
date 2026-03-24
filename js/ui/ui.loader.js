@@ -1,6 +1,7 @@
 const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
+const UI_OVERLAY_ROUTING_REV = "0.21.17";
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
@@ -52,19 +53,19 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createIframeHost",
   },
   "ui.workspace.bridge": {
-    js: "./ui.workspace.bridge.js",
+    js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
     deps: [],
     export: "getWorkspaceUiBridge",
   },
   "ui.workspace.bridge.host": {
-    js: "./ui.workspace.bridge.js",
+    js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
     deps: [],
     export: "installWorkspaceUiBridgeHost",
   },
   "ui.workspace.bridge.modal": {
-    js: "./ui.workspace.bridge.js",
+    js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
     deps: [],
     export: "showWorkspaceActionModal",
@@ -76,37 +77,37 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createWindowManager",
   },
   "ui.modal": {
-    js: "./ui.modal.js",
+    js: `./ui.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css"],
     deps: [],
     export: "createModal",
   },
   "ui.action.modal": {
-    js: "./ui.modal.js",
+    js: `./ui.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css"],
     deps: ["ui.modal"],
     export: "createActionModal",
   },
   "ui.dialog": {
-    js: "./ui.dialog.js",
+    js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
     deps: ["ui.modal"],
     export: null,
   },
   "ui.dialog.alert": {
-    js: "./ui.dialog.js",
+    js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
     deps: ["ui.dialog"],
     export: "uiAlert",
   },
   "ui.dialog.confirm": {
-    js: "./ui.dialog.js",
+    js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
     deps: ["ui.dialog"],
     export: "uiConfirm",
   },
   "ui.dialog.prompt": {
-    js: "./ui.dialog.js",
+    js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
     deps: ["ui.dialog"],
     export: "uiPrompt",
@@ -118,7 +119,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createToastStack",
   },
   "ui.form.modal": {
-    js: "./ui.form.modal.js",
+    js: `./ui.form.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
     deps: ["ui.action.modal", "ui.password"],
     export: "createFormModal",
@@ -136,13 +137,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: null,
   },
   "ui.form.modal.login": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
     deps: ["ui.form.modal"],
     export: "createLoginFormModal",
   },
   "ui.form.modal.reauth": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
     deps: ["ui.form.modal"],
     export: "createReauthFormModal",
@@ -160,13 +161,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createReasonFormModal",
   },
   "ui.form.modal.account": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
     deps: ["ui.form.modal"],
     export: "createAccountFormModal",
   },
   "ui.form.modal.change.password": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.password.css"],
     deps: ["ui.form.modal"],
     export: "createChangePasswordFormModal",

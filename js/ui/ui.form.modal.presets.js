@@ -1,4 +1,4 @@
-import { createFormModal } from "./ui.form.modal.js";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.17";
 
 export function createLoginFormModal(options = {}) {
   const fields = normalizeFieldMap(options.fields, {

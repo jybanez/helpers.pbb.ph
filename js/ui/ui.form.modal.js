@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createActionModal } from "./ui.modal.js";
+import { createActionModal } from "./ui.modal.js?v=0.21.17";
 import { createPasswordField } from "./ui.password.js";
 import { createSelect } from "./ui.select.js";
 
