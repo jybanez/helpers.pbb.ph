@@ -70,6 +70,9 @@ export function installWorkspaceUiBridgeHost(options = {}) {
   window.addEventListener("message", onMessage);
 
   const api = {
+    getOverlayParent() {
+      return modalParent;
+    },
     destroy() {
       if (destroyed) {
         return;
@@ -124,6 +127,22 @@ export function getWorkspaceUiBridge(options = {}) {
       return requestWorkspaceUi("modal.action", payload, requestOptions);
     },
   };
+}
+
+export function resolveWorkspaceOverlayParent(options = {}) {
+  if (typeof window === "undefined" || !window.parent || window.parent === window) {
+    return null;
+  }
+  if (!shouldUseWorkspacePortal(options)) {
+    return null;
+  }
+  try {
+    const host = window.parent.__uiWorkspaceBridgeHost;
+    const overlayParent = typeof host?.getOverlayParent === "function" ? host.getOverlayParent() : null;
+    return isElementNode(overlayParent) ? overlayParent : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function showWorkspaceActionModal(payload = {}, options = {}) {
@@ -448,6 +467,7 @@ function normalizeActionVariant(variant) {
 function sanitizeDialogOptions(options = {}) {
   const copy = { ...(options || {}) };
   delete copy.parent;
+  delete copy.renderTarget;
   delete copy.workspaceBridge;
   delete copy.workspaceBridgeTimeoutMs;
   delete copy.workspaceBridgeTargetOrigin;
@@ -456,6 +476,7 @@ function sanitizeDialogOptions(options = {}) {
 
 function sanitizeToastOptions(options = {}) {
   const copy = { ...(options || {}) };
+  delete copy.renderTarget;
   delete copy.workspaceBridge;
   delete copy.workspaceBridgeTimeoutMs;
   delete copy.workspaceBridgeTargetOrigin;
@@ -464,6 +485,20 @@ function sanitizeToastOptions(options = {}) {
 
 function shouldUseWorkspaceBridge(options = {}) {
   if (typeof window === "undefined" || !window.parent || window.parent === window) {
+    return false;
+  }
+  if (normalizeRenderTarget(options?.renderTarget) === "local") {
+    return false;
+  }
+  const mode = options?.workspaceBridge;
+  if (mode === false) {
+    return false;
+  }
+  return true;
+}
+
+function shouldUseWorkspacePortal(options = {}) {
+  if (normalizeRenderTarget(options?.renderTarget) === "local") {
     return false;
   }
   const mode = options?.workspaceBridge;
@@ -510,6 +545,24 @@ function isTrustedOrigin(origin, trustedOrigins) {
 function resolveTimeout(value) {
   const next = Number(value);
   return Number.isFinite(next) && next > 0 ? next : DEFAULT_TIMEOUT_MS;
+}
+
+function normalizeRenderTarget(value) {
+  const normalized = String(value || "auto").trim().toLowerCase();
+  if (normalized === "local" || normalized === "parent" || normalized === "auto") {
+    return normalized;
+  }
+  return "auto";
+}
+
+function isElementNode(value) {
+  return Boolean(
+    value
+    && typeof value === "object"
+    && value.nodeType === 1
+    && typeof value.appendChild === "function"
+    && value.ownerDocument
+  );
 }
 
 function getDelegatedDialogFallbackResult(kind) {

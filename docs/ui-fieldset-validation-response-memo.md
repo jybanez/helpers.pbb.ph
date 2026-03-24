@@ -146,4 +146,35 @@ The correct response is:
 - yes to narrow validation support on `ui.fieldset`
 - no to broadening it into a second form engine
 
-This should move forward as a shared helper improvement because grouped page/admin forms are now a real cross-project pattern.
+This has now moved forward as a shared helper improvement because grouped page/admin forms are now a real cross-project pattern.
+
+## Implementation Status
+
+The narrow validation parity described above is now implemented in the helper repo.
+
+Current shipped `createFieldset(...)` validation methods:
+
+- `getErrors()`
+- `getFormError()`
+- `setErrors(fieldErrors)`
+- `clearErrors()`
+- `setFormError(message)`
+- `clearFormError()`
+- `applyApiErrors(response)`
+
+Current shipped behavior:
+
+- field-level error text renders inline under the matching field
+- one fieldset-level form error renders above the row grid
+- invalid controls receive `aria-invalid="true"`
+- helper-managed `aria-describedby` references are attached for visible field errors
+- dotted API keys such as `base_url.origin` resolve back to the base field where practical
+- grouped two-column rows keep alignment stable even when only one side is showing an error
+
+Related references:
+
+- `js/ui/ui.fieldset.js`
+- `css/ui/ui.fieldset.css`
+- `demos/demo.fieldset.html`
+- `tests/fieldset.regression.html`
+- `tests/fieldset.regression.mjs`

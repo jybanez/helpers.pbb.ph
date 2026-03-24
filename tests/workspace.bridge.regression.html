@@ -67,6 +67,11 @@
       await fallbackFrame.contentWindow.__workspaceBridgeFixture.runToast();
       await wait(300);
       assert(Boolean(fallbackFrame.contentDocument.querySelector(".ui-toast")), "toast should render locally inside iframe when no host is installed");
+      fallbackFrame.contentWindow.__workspaceBridgeFixture.runAutoActionModal();
+      await wait(300);
+      assert(Boolean(fallbackFrame.contentDocument.querySelector(".ui-modal-root")), "plain helper action modal should render locally inside iframe when no host is installed");
+      fallbackFrame.contentDocument.querySelector(".ui-action-modal-button.ui-button-primary")?.click();
+      await wait(450);
       fallbackFrame.remove();
 
       installWorkspaceUiBridgeHost();
@@ -95,6 +100,20 @@
       await wait(300);
       assert(Boolean(document.body.querySelector(".ui-toast")), "delegated toast should render in parent document");
       assert(!bridgeFrame.contentDocument.querySelector(".ui-toast"), "delegated toast should not render inside bridged iframe");
+
+      bridgeFrame.contentWindow.__workspaceBridgeFixture.runAutoActionModal();
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-modal-root")), "plain helper action modal should render in parent document when hosted in same-origin workspace");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-modal-root"), "plain helper action modal should not render inside the bridged iframe");
+      document.body.querySelector(".ui-action-modal-button.ui-button-primary")?.click();
+      await wait(450);
+
+      bridgeFrame.contentWindow.__workspaceBridgeFixture.runAutoFormModal();
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "plain helper form modal should render in parent document when hosted in same-origin workspace");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "plain helper form modal should not render inside the bridged iframe");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Save"))?.click();
+      await wait(450);
     } catch (error) {
       failures.push(`exception: ${String(error?.message || error)}`);
     }

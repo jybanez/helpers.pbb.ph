@@ -1666,6 +1666,7 @@ Validation note:
   - form-level error text
   - `aria-invalid` state on matching controls
   - API error mapping through `applyApiErrors(...)`
+- grouped two-column rows keep their control alignment stable when only one side is showing an error; hidden error slots remain reserved so adjacent controls do not jump vertically
 - It still does not become a submit engine or full form framework. App code continues to own submit lifecycle and server calls.
 
 Example:
@@ -1783,6 +1784,7 @@ Options:
 | `trapFocus` | `boolean` | `true` | no | Keeps keyboard focus inside the modal while open. |
 | `lockScroll` | `boolean` | `true` | no | Locks page scroll while open. |
 | `initialFocus` | `string \| HTMLElement \| ((panel) => HTMLElement)` | `null` | no | Initial focus target on open. |
+| `renderTarget` | `"auto" \| "local" \| "parent"` | `"auto"` | no | Overlay routing preference. `"auto"` prefers a trusted same-origin Workspace overlay parent when available. |
 | `className` | `string` | `""` | no | Extra panel/root classes. |
 | `onOpen` | `(ctx) => void` | `null` | no | Fires after open completes. |
 | `onBeforeClose` | `(meta) => boolean \| Promise<boolean>` | `null` | no | Can veto close by returning `false`. |
@@ -1825,6 +1827,7 @@ Busy-state behavior:
 
 - modal shell exposes a helper-owned busy overlay
 - long modal content now scrolls inside the body region only; the header stays fixed at the top of the shell and the footer stays fixed at the bottom
+- when a trusted same-origin Workspace host is installed, modal-family helpers now prefer mounting into the parent Workspace overlay surface automatically
 - `setBusy(true, { message })`:
   - sets `aria-busy="true"` on the modal panel
   - disables body/footer/header actions
@@ -2146,12 +2149,14 @@ Related demos:
 Purpose:
 
 - Explicit trusted bridge between a parent workspace shell and iframe-hosted child apps so helper-owned overlays can render in the parent document instead of being trapped inside the iframe.
+- Same-origin Workspace hosts now also act as an automatic parent overlay portal for modal-family helpers, so plain `createModal(...)`, `createActionModal(...)`, `createFormModal(...)`, and presets can mount into the parent shell without manual bridge code.
 
 Design rule:
 
 - parent host owns the rendered overlay surfaces
 - child helpers delegate only when a trusted bridge is available
 - local iframe rendering remains the fallback
+- automatic modal-family parent routing is same-origin only; cross-origin arbitrary form/modal DOM is still outside the helper contract
 
 Parent host:
 
@@ -2161,6 +2166,17 @@ import { installWorkspaceUiBridgeHost } from "./js/ui/ui.workspace.bridge.js";
 const host = installWorkspaceUiBridgeHost({
   trustedOrigins: [window.location.origin],
 });
+```
+
+Same-origin automatic parent routing:
+
+```js
+const modal = createActionModal({
+  title: "Workspace-owned modal",
+  content: "This plain helper modal will mount into the parent Workspace surface when a same-origin host is installed.",
+});
+
+modal.open();
 ```
 
 Child helper:
@@ -2205,13 +2221,17 @@ V1 scope:
 - delegated toast delivery
 - delegated alert / confirm / prompt dialogs
 - explicit parent-owned simple action modal
+- automatic same-origin parent routing for:
+  - `createModal(...)`
+  - `createActionModal(...)`
+  - `createFormModal(...)`
+  - presets built over `createFormModal(...)`
 
 V1 non-goals:
 
-- automatic `createModal(...)` delegation
-- automatic `createFormModal(...)` delegation
 - arbitrary parent command execution
 - auth brokering or iframe/session ownership
+- automatic cross-origin mirroring of arbitrary form or modal DOM
 
 Related demos:
 
@@ -2242,7 +2262,7 @@ Options:
 
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
-| Safe modal options | inherited | inherited | no | Accepts modal-shell options such as `title`, `size`, `className`, `showCloseButton`, `closeOnBackdrop`, `closeOnEscape`, `busyMessage`. |
+| Safe modal options | inherited | inherited | no | Accepts modal-shell options such as `title`, `size`, `className`, `showCloseButton`, `closeOnBackdrop`, `closeOnEscape`, `busyMessage`, and `renderTarget`. |
 | `rows` | `Array<Array<FormItem>>` | `[]` | yes | Strict V1 row model for form body layout. |
 | `initialValues` | `object` | `{}` | no | Initial field values keyed by field name. |
 | `context` | `{ badge?, summary?, kind? }` | `null` | no | Narrow top-level context strip for acceptance-target flows such as geodata-driven hub editing. |
@@ -4004,7 +4024,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.13`
+- Latest documented release: `v0.21.16`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

@@ -445,14 +445,19 @@ If changing callback signatures or removing methods, plan a major version.
   - delegated toasts
   - delegated alert / confirm / prompt dialogs
   - explicit simple action-modal requests
+- same-origin Workspace hosts may now also act as the automatic overlay parent for modal-family helpers such as:
+  - `createModal(...)`
+  - `createActionModal(...)`
+  - `createFormModal(...)`
+  - modal presets
 - Keep the contract explicit:
   - parent installs `installWorkspaceUiBridgeHost(...)`
   - child uses `getWorkspaceUiBridge(...)`
-- Do not rely on silent iframe detection alone. Child apps must keep local fallback behavior when no trusted parent bridge is available.
+- Do not treat this as generic cross-origin DOM mirroring. Automatic modal-family routing is same-origin only; cross-origin cases still rely on explicit bridge-aware surfaces or local fallback.
 - Keep V1 narrow:
   - no generic parent RPC
   - no auth/session brokering
-  - no automatic `createFormModal(...)` delegation
+  - no automatic cross-origin `createFormModal(...)` mirroring
   - no arbitrary modal mirroring from child DOM into parent DOM
 - Prefer `trustedOrigins` over permissive cross-frame behavior. Workspace-owned surfaces should only be delegated to a known parent shell.
 

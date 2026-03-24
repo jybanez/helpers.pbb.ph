@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
+import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -24,6 +25,8 @@ const DEFAULT_OPTIONS = {
   animationMs: 180,
   initialFocus: null, // selector | HTMLElement | function(panel) => HTMLElement
   parent: null,
+  renderTarget: "auto", // auto | local | parent
+  workspaceBridge: "auto",
   onOpen: null,
   onClose: null,
   onBeforeClose: null,
@@ -38,8 +41,7 @@ const tabbableSelector = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(", ");
 
-let bodyLockCount = 0;
-let previousBodyOverflow = "";
+const bodyLockState = new WeakMap();
 let modalIdSeed = 0;
 
 export function createModal(options = {}) {
@@ -50,6 +52,7 @@ export function createModal(options = {}) {
   let closeTimer = null;
   let lastResult = null;
   let lastFocusedElement = null;
+  let activeDocument = null;
   const titleId = `ui-modal-title-${++modalIdSeed}`;
 
   const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true" } });
@@ -175,25 +178,38 @@ export function createModal(options = {}) {
     target.appendChild(document.createTextNode(String(value)));
   }
 
-  function mount(parent = currentOptions.parent || document.body) {
+  function resolveMountParent() {
+    if (isElementNode(currentOptions.parent)) {
+      return currentOptions.parent;
+    }
+    return resolveWorkspaceOverlayParent(currentOptions) || document.body;
+  }
+
+  function getDocumentContext() {
+    return activeDocument || resolveMountParent()?.ownerDocument || root.ownerDocument || document;
+  }
+
+  function mount(parent = resolveMountParent()) {
     if (root.parentNode || !parent) {
       return;
     }
     parent.appendChild(root);
+    activeDocument = root.ownerDocument || parent.ownerDocument || document;
   }
 
   function unmount() {
     if (root.parentNode) {
       root.parentNode.removeChild(root);
     }
+    activeDocument = null;
   }
 
   function attachDocumentListeners() {
-    document.addEventListener("keydown", onDocumentKeyDown, true);
+    getDocumentContext().addEventListener("keydown", onDocumentKeyDown, true);
   }
 
   function detachDocumentListeners() {
-    document.removeEventListener("keydown", onDocumentKeyDown, true);
+    getDocumentContext().removeEventListener("keydown", onDocumentKeyDown, true);
   }
 
   function onDocumentKeyDown(event) {
@@ -223,7 +239,7 @@ export function createModal(options = {}) {
     }
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
+    const active = getDocumentContext().activeElement;
     if (event.shiftKey) {
       if (active === first || !panel.contains(active)) {
         event.preventDefault();
@@ -246,7 +262,7 @@ export function createModal(options = {}) {
       if (el.getAttribute("aria-hidden") === "true") {
         return false;
       }
-      return el.offsetParent !== null || el === document.activeElement;
+      return el.offsetParent !== null || el === getDocumentContext().activeElement;
     });
   }
 
@@ -284,23 +300,43 @@ export function createModal(options = {}) {
     if (!currentOptions.lockScroll) {
       return;
     }
-    if (bodyLockCount === 0) {
-      previousBodyOverflow = document.body.style.overflow || "";
-      document.body.style.overflow = "hidden";
-      document.body.classList.add("ui-modal-body-lock");
+    const body = getDocumentContext().body;
+    if (!body) {
+      return;
     }
-    bodyLockCount += 1;
+    const state = bodyLockState.get(body) || {
+      count: 0,
+      previousOverflow: body.style.overflow || "",
+    };
+    if (state.count === 0) {
+      state.previousOverflow = body.style.overflow || "";
+      body.style.overflow = "hidden";
+      body.classList.add("ui-modal-body-lock");
+    }
+    state.count += 1;
+    bodyLockState.set(body, state);
   }
 
   function unlockBodyScroll() {
     if (!currentOptions.lockScroll) {
       return;
     }
-    bodyLockCount = Math.max(0, bodyLockCount - 1);
-    if (bodyLockCount === 0) {
-      document.body.style.overflow = previousBodyOverflow;
-      document.body.classList.remove("ui-modal-body-lock");
+    const body = getDocumentContext().body;
+    if (!body) {
+      return;
     }
+    const state = bodyLockState.get(body);
+    if (!state) {
+      return;
+    }
+    state.count = Math.max(0, state.count - 1);
+    if (state.count === 0) {
+      body.style.overflow = state.previousOverflow;
+      body.classList.remove("ui-modal-body-lock");
+      bodyLockState.delete(body);
+      return;
+    }
+    bodyLockState.set(body, state);
   }
 
   function restoreFocus() {
@@ -403,8 +439,11 @@ export function createModal(options = {}) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }
-    mount();
-    lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const mountParent = resolveMountParent();
+    mount(mountParent);
+    const doc = getDocumentContext();
+    const HTMLElementCtor = doc.defaultView?.HTMLElement || HTMLElement;
+    lastFocusedElement = doc.activeElement instanceof HTMLElementCtor ? doc.activeElement : null;
 
     root.setAttribute("aria-hidden", "false");
     root.classList.remove("is-closing");
@@ -413,7 +452,8 @@ export function createModal(options = {}) {
     attachDocumentListeners();
 
     open = true;
-    requestAnimationFrame(() => {
+    const raf = doc.defaultView?.requestAnimationFrame?.bind(doc.defaultView) || requestAnimationFrame;
+    raf(() => {
       if (!open) {
         return;
       }
@@ -765,5 +805,15 @@ function getActionButtonClass(action) {
 
 function isPromiseLike(value) {
   return Boolean(value) && (typeof value === "object" || typeof value === "function") && typeof value.then === "function";
+}
+
+function isElementNode(value) {
+  return Boolean(
+    value
+    && typeof value === "object"
+    && value.nodeType === 1
+    && typeof value.appendChild === "function"
+    && value.ownerDocument
+  );
 }
 

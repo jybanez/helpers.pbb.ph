@@ -21,7 +21,7 @@
   <script>
     window.demoMeta = {
       title: "Workspace Bridge",
-      overview: "Explicit trusted bridge for iframe-hosted apps that need parent-owned toasts, dialogs, and simple action modals in a workspace shell.",
+      overview: "Trusted workspace bridge plus same-origin parent overlay routing for iframe-hosted apps that need helper-owned overlays to rise above the iframe surface.",
       useWhen: [
         "Use it when an app runs inside <code>ui.iframe.host</code> and top-level UI surfaces should render in the parent workspace instead of inside the iframe.",
         "Use it with <code>ui.window</code> + <code>ui.iframe.host</code> for workspace-style launcher shells."
@@ -30,7 +30,7 @@
         "Do not use it for generic DOM mirroring or arbitrary parent method execution.",
         "Do not assume every iframe parent is trusted; rely on the explicit bridge host handshake."
       ],
-      description: "The bridge keeps overlay ownership in the parent workspace shell while preserving local fallback for standalone app execution. V1 covers toasts, promise dialogs, and explicit simple action-modals.",
+      description: "The bridge keeps overlay ownership in the parent workspace shell while preserving local fallback for standalone app execution. Current behavior includes explicit bridge primitives for toast/dialog/simple action-modal plus automatic same-origin parent routing for plain helper modal-family overlays.",
       defaultSampleCode: `const host = installWorkspaceUiBridgeHost();\nconst iframeHost = createIframeHost({ src: \"../samples/iframe/workspace-ui-bridge.fixture.html\" });\nconst win = manager.createWindow({ title: \"Bridge Child\", content: iframeHost.root });`,
       constructor: [
         { factory: "<code>installWorkspaceUiBridgeHost(options)</code>", arguments: "bridge-host options", returns: "workspace bridge host" },
@@ -42,7 +42,7 @@
         { option: "<code>timeoutMs</code>", default: "<code>900</code>", description: "Child-side handshake and request timeout." },
         { option: "<code>targetOrigin</code>", default: "<code>\"*\"</code>", description: "Child-side <code>postMessage</code> target origin." },
       ],
-      propertiesText: "The host exposes <code>destroy()</code> and <code>getState()</code>. The child bridge exposes async methods for toast, dialog, and action-modal delegation.",
+      propertiesText: "The host exposes <code>destroy()</code>, <code>getState()</code>, and an overlay parent used by same-origin child helpers. The child bridge exposes async methods for toast, dialog, and action-modal delegation.",
       events: [
         { event: "<code>bridge request/response</code>", arguments: "postMessage payloads", returns: "delegated result payload" },
       ],
@@ -53,6 +53,8 @@
         { method: "<code>bridge.confirm(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;boolean&gt;</code>" },
         { method: "<code>bridge.prompt(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;string|null&gt;</code>" },
         { method: "<code>showWorkspaceActionModal(payload)</code>", arguments: "simple action-modal payload", returns: "<code>Promise&lt;object&gt;</code>" },
+        { method: "<code>createActionModal(...).open()</code>", arguments: "plain helper modal in child", returns: "renders in parent workspace when a same-origin host is installed" },
+        { method: "<code>createFormModal(...).open()</code>", arguments: "plain helper form modal in child", returns: "renders in parent workspace when a same-origin host is installed" },
       ],
     };
   </script>
@@ -62,7 +64,7 @@
   <main class="page">
     <section class="panel">
       <h1 class="ui-title">Workspace Bridge Demo</h1>
-      <p class="muted">Parent workspace host is installed on this page. The child app runs inside an iframe hosted by <code>ui.window</code> and should delegate helper-owned toasts, dialogs, and the explicit action-modal request to the parent shell.</p>
+      <p class="muted">Parent workspace host is installed on this page. The child app runs inside an iframe hosted by <code>ui.window</code>. Explicit bridge primitives still exist, and plain helper modal-family overlays now auto-route to the parent shell when the host is same-origin.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Window Composition</h2>

@@ -76,7 +76,7 @@ function openLocalAlert(resolve, message, options = {}) {
       size: options.size || "sm",
       closeOnBackdrop: Boolean(options.allowBackdropClose),
       closeOnEscape: options.allowEscClose !== false,
-      parent: options.parent || document.body,
+      parent: options.parent || null,
       className: buildDialogClassName(options.className, dialogVariant),
       showCloseButton: options.showCloseButton !== false,
       onClose() {
@@ -144,7 +144,7 @@ function openLocalConfirm(resolve, message, options = {}) {
     size: options.size || "sm",
     closeOnBackdrop: Boolean(options.allowBackdropClose),
     closeOnEscape: options.allowEscClose !== false,
-    parent: options.parent || document.body,
+    parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
     showCloseButton: options.showCloseButton !== false,
     onClose() {
@@ -216,7 +216,7 @@ function openLocalPrompt(resolve, message, options = {}) {
     size: options.size || "sm",
     closeOnBackdrop: Boolean(options.allowBackdropClose),
     closeOnEscape: options.allowEscClose !== false,
-    parent: options.parent || document.body,
+    parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
     showCloseButton: options.showCloseButton !== false,
     initialFocus: input,

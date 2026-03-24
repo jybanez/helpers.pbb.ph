@@ -64,12 +64,14 @@
     import { showWorkspaceActionModal, getWorkspaceUiBridge } from "../../js/ui/ui.workspace.bridge.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
-      await uiLoader.loadMany(["ui.toast", "ui.dialog.alert", "ui.dialog.confirm", "ui.dialog.prompt"]);
+      await uiLoader.loadMany(["ui.toast", "ui.dialog.alert", "ui.dialog.confirm", "ui.dialog.prompt", "ui.action.modal", "ui.form.modal"]);
       const createToastStack = await uiLoader.get("ui.toast");
       const toastStack = createToastStack({ workspaceBridge: "auto" });
       const uiAlert = await uiLoader.get("ui.dialog.alert");
       const uiConfirm = await uiLoader.get("ui.dialog.confirm");
       const uiPrompt = await uiLoader.get("ui.dialog.prompt");
+      const createActionModal = await uiLoader.get("ui.action.modal");
+      const createFormModal = await uiLoader.get("ui.form.modal");
 
       const log = document.getElementById("log");
       const bridge = getWorkspaceUiBridge();
@@ -126,11 +128,56 @@
         return result;
       }
 
+      function runAutoActionModal() {
+        const modal = createActionModal({
+          title: "Auto Action Modal",
+          content: "This action modal uses the plain helper API inside the child iframe and should render in the parent workspace when a same-origin host is installed.",
+          actions: [
+            { id: "cancel", label: "Cancel" },
+            { id: "continue", label: "Continue", variant: "primary", autoFocus: true },
+          ],
+          onClose(meta) {
+            writeLog("modal.autoAction.close", meta);
+            modal.destroy();
+          },
+        });
+        modal.open();
+        writeLog("modal.autoAction.open", { open: true });
+        return modal;
+      }
+
+      function runAutoFormModal() {
+        const modal = createFormModal({
+          title: "Auto Form Modal",
+          rows: [
+            [
+              { type: "input", name: "app_code", label: "App code", value: "workspace" },
+              { type: "input", name: "name", label: "Name", value: "PBB Workspace" },
+            ],
+            [
+              { type: "text", span: 2, content: "This form modal uses the plain helper API inside the child iframe and should render in the parent workspace when a same-origin host is installed." },
+            ],
+          ],
+          submitLabel: "Save",
+          onSubmit() {
+            return true;
+          },
+          onClose(meta) {
+            writeLog("modal.autoForm.close", meta);
+          },
+        });
+        modal.open();
+        writeLog("modal.autoForm.open", { open: true });
+        return modal;
+      }
+
       document.getElementById("toastBtn").addEventListener("click", () => void runToast());
       document.getElementById("alertBtn").addEventListener("click", () => void runAlert());
       document.getElementById("confirmBtn").addEventListener("click", () => void runConfirm());
       document.getElementById("promptBtn").addEventListener("click", () => void runPrompt());
       document.getElementById("modalBtn").addEventListener("click", () => void runActionModal());
+      document.getElementById("autoActionBtn").addEventListener("click", () => void runAutoActionModal());
+      document.getElementById("autoFormBtn").addEventListener("click", () => void runAutoFormModal());
       document.getElementById("probeBtn").addEventListener("click", async () => {
         writeLog("bridge.available", { available: await bridge.isAvailable() });
       });
@@ -141,6 +188,8 @@
         runConfirm,
         runPrompt,
         runActionModal,
+        runAutoActionModal,
+        runAutoFormModal,
         async isBridgeAvailable() {
           return bridge.isAvailable();
         },
@@ -152,7 +201,7 @@
   <main>
     <section class="hero">
       <h1>Workspace UI Bridge Fixture</h1>
-      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe.</p>
+      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, and plain helper modal-family overlays should auto-route to the parent when the host is same-origin.</p>
     </section>
     <section class="panel">
       <div class="row">
@@ -162,6 +211,8 @@
         <button id="confirmBtn" type="button">Confirm</button>
         <button id="promptBtn" type="button">Prompt</button>
         <button id="modalBtn" type="button">Action Modal</button>
+        <button id="autoActionBtn" type="button">Auto Action Modal</button>
+        <button id="autoFormBtn" type="button">Auto Form Modal</button>
       </div>
     </section>
     <section class="panel">

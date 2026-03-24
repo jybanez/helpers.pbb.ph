@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.15`
+- Latest documented release: `v0.21.16`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,28 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.16
+
+- Added automatic same-origin Workspace overlay routing for modal-family helpers.
+- When a trusted same-origin Workspace host is installed, plain helper overlays can now mount into the parent Workspace surface without manual bridge code:
+  - `createModal(...)`
+  - `createActionModal(...)`
+  - `createFormModal(...)`
+  - presets built over `createFormModal(...)`
+- Added shared `renderTarget` support on the modal shell with:
+  - `"auto"`
+  - `"local"`
+  - `"parent"`
+- Kept existing explicit bridge behavior for:
+  - delegated toast delivery
+  - delegated alert / confirm / prompt dialogs
+  - explicit simple `showWorkspaceActionModal(...)`
+- Extended the Workspace bridge fixture/demo and browser regression harness to verify:
+  - local plain-helper modal fallback with no host installed
+  - parent rendering for plain action modals in a same-origin Workspace host
+  - parent rendering for plain form modals in a same-origin Workspace host
+  - no duplicate child modal copy when parent routing is active
+
 ### v0.21.15
 
 - Added narrow validation parity to `ui.fieldset` so grouped page forms can now render field-level and form-level errors without widening the component into a second submit engine.
@@ -48,6 +70,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
   - renders inline error messages
   - sets and clears `aria-invalid` on matching controls
   - resolves dotted API error keys back to the base field name
+  - keeps grouped two-column field alignment stable when one side shows an error and the other does not
 - Updated:
   - `demos/demo.fieldset.html`
   - `tests/fieldset.regression.html`
