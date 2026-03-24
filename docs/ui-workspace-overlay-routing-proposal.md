@@ -129,3 +129,7 @@ This proposal does not introduce:
 4. implement same-origin parent overlay routing for modal-family helpers
 5. extend demo and regression coverage
 6. update public docs
+
+## Operational Follow-Through
+
+Because the overlay-routing behavior depends on the live ES-module import graph, downstream apps should refresh vendored helper copies and hard-refresh the browser after rollout so stale cached modal/bridge modules do not mask the new behavior.

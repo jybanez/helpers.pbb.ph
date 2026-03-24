@@ -110,6 +110,15 @@ Add browser coverage for:
 - automatic parent rendering for plain `createFormModal(...)`
 - no duplicate child copy when parent rendering is used
 
+## Operational Note
+
+Because this feature changed the live modal/bridge ES-module chain, downstream apps may need both:
+
+- a refreshed vendored helper copy
+- a hard browser refresh
+
+to ensure stale cached modules do not keep older local-rendering behavior alive after rollout.
+
 ## Non-Goals
 
 This V1 does not add automatic cross-origin routing for arbitrary form or modal DOM.

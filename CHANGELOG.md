@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.16`
+- Latest documented release: `v0.21.17`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,19 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.17
+
+- Added a cache-busting follow-up for the new same-origin Workspace overlay routing chain.
+- Versioned the live loader/import graph for:
+  - `ui.workspace.bridge`
+  - `ui.modal`
+  - `ui.dialog`
+  - `ui.form.modal`
+  - `ui.form.modal.presets`
+- This release exists to prevent stale browser ES-module caches from reusing pre-routing builds after teams refresh vendored helper copies.
+- Practical effect:
+  - Workspace-hosted child apps such as HQ should fetch the current modal/bridge modules after a helper refresh and hard browser reload, instead of continuing to render modal-family overlays inside the child iframe because of cached older modules.
+
 ### v0.21.16
 
 - Added automatic same-origin Workspace overlay routing for modal-family helpers.

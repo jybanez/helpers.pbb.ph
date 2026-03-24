@@ -454,6 +454,7 @@ If changing callback signatures or removing methods, plan a major version.
   - parent installs `installWorkspaceUiBridgeHost(...)`
   - child uses `getWorkspaceUiBridge(...)`
 - Do not treat this as generic cross-origin DOM mirroring. Automatic modal-family routing is same-origin only; cross-origin cases still rely on explicit bridge-aware surfaces or local fallback.
+- After helper-side routing changes land, downstream apps should refresh vendored helper assets and hard-refresh the browser so stale cached ES modules do not keep older local-rendering behavior alive.
 - Keep V1 narrow:
   - no generic parent RPC
   - no auth/session brokering

@@ -38,6 +38,7 @@
 
 ## Cross-Project Follow-Through
 
-- [ ] Announce the new automatic overlay-routing behavior in `C:\\wamp64\\www\\pbb\\chat_log.md`
-- [ ] Include the helper-refresh reminder pointing teams to:
+- [x] Announce the new automatic overlay-routing behavior in `C:\\wamp64\\www\\pbb\\chat_log.md`
+- [x] Include the helper-refresh reminder pointing teams to:
   - `https://github.com/jybanez/helpers.pbb.ph.git`
+- [x] Announce the cache-busting follow-up for Workspace-hosted child apps that still reused stale modal/bridge modules
