@@ -1032,6 +1032,9 @@ Methods:
 #### `createNavbar(container, data, options)`
 
 - Top navigation with `items[]` and `actions[]`.
+- Brand region supports:
+  - `brandText`
+  - optional `brandSubtitle`
 - `items[]` and `actions[]` support the same icon contract (`icon`, `iconPosition`, `iconOnly`).
 - `items[]` can render dropdown menus by providing:
   - `menuItems: []`
@@ -1119,6 +1122,7 @@ import { createNavbar } from "./js/ui/ui.navbar.js";
 
 createNavbar(document.getElementById("navbarHost"), {}, {
   brandText: "Hotline UI",
+  brandSubtitle: "Build app-DWv_LvMM",
   activeId: "dashboard",
   items: [
     { id: "dashboard", label: "Dashboard" },

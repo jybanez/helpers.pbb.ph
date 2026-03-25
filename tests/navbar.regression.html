@@ -46,6 +46,7 @@
     try {
       const navbar = createNavbar(host, {}, {
         brandText: "Workspace",
+        brandSubtitle: "Build app-DWv_LvMM",
         items: [
           { id: "dashboard", label: "Dashboard" },
           {
@@ -80,6 +81,13 @@
         },
       });
 
+      const brandButton = host.querySelector(".ui-navbar-brand");
+      const brandLabel = host.querySelector(".ui-navbar-brand-label");
+      const brandSubtitle = host.querySelector(".ui-navbar-brand-subtitle");
+      assert(Boolean(brandButton), "brand button should render");
+      assert(Boolean(brandLabel) && brandLabel.textContent.trim() === "Workspace", "brand label should render");
+      assert(Boolean(brandSubtitle) && brandSubtitle.textContent.trim() === "Build app-DWv_LvMM", "brand subtitle should render");
+
       const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
       assert(navButtons.length === 2, "navbar should render 2 primary items");
 
@@ -106,6 +114,10 @@
       logoutMenuButton.click();
       await wait(50);
       assert(events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout"), "existing action-menu behavior should remain intact");
+
+      navbar.update({}, { brandSubtitle: "" });
+      await wait(10);
+      assert(!host.querySelector(".ui-navbar-brand-subtitle"), "brand subtitle should not render after clearing");
 
       navbar.destroy();
       finish();

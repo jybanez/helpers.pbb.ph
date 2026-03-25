@@ -6,6 +6,7 @@ const DEFAULT_OPTIONS = {
   className: "",
   ariaLabel: "Primary navigation",
   brandText: "App",
+  brandSubtitle: "",
   items: [],
   actions: [],
   sticky: false,
@@ -72,9 +73,20 @@ export function createNavbar(container, data = {}, options = {}) {
 
     const brand = createElement("button", {
       className: "ui-navbar-brand",
-      text: currentOptions.brandText,
       attrs: { type: "button" },
     });
+    const brandLabel = createElement("span", {
+      className: "ui-navbar-brand-label",
+      text: currentOptions.brandText,
+    });
+    brand.appendChild(brandLabel);
+    if (String(currentOptions.brandSubtitle || "").trim()) {
+      brand.classList.add("has-subtitle");
+      brand.appendChild(createElement("span", {
+        className: "ui-navbar-brand-subtitle",
+        text: String(currentOptions.brandSubtitle).trim(),
+      }));
+    }
     events.on(brand, "click", () => currentOptions.onNavigate?.({ id: "brand", label: currentOptions.brandText }));
 
     const list = createElement("div", { className: "ui-navbar-items" });

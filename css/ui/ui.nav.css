@@ -16,11 +16,40 @@
 }
 
 .ui-navbar-brand {
+  display: grid;
+  gap: 2px;
+  align-items: start;
+  justify-items: start;
   border: 0;
   background: transparent;
   color: var(--ui-text, #d7e0f4);
   font-weight: 700;
   cursor: pointer;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.ui-navbar-brand-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-navbar-brand-subtitle {
+  display: block;
+  max-width: 220px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--ui-text-muted, #9fb2d8);
+  opacity: 0.9;
 }
 
 .ui-navbar-items {

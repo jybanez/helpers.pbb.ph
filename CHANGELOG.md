@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.27`
+- Latest documented release: `v0.21.28`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,16 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.28
+
+- Added optional `brandSubtitle` support to `ui.navbar` so apps can render one compact muted metadata line below the main brand text without replacing the shared navbar shell.
+- Kept single-line brand rendering unchanged when `brandSubtitle` is omitted.
+- Updated:
+  - `demos/demo.navbar.html`
+  - `tests/navbar.regression.html`
+  - `README.md`
+- This covers Workspace-style build stamps such as `Build app-DWv_LvMM` while keeping the full brand region as one click target.
 
 ### v0.21.27
 
