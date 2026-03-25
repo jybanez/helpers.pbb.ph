@@ -1,5 +1,5 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.18";
-import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.18";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.19";
+import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.19";
 
 export function createLoginFormModal(options = {}) {
   if (shouldUseCrossOriginFormBridge(options)) {

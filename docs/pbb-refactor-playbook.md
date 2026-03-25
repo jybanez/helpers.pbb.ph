@@ -461,6 +461,10 @@ If changing callback signatures or removing methods, plan a major version.
   - current shipped `intent` values:
     - `login`
     - `reauth`
+- Keep timeout semantics straight:
+  - `timeoutMs` is for bridge availability / transport only
+  - once the parent accepts and renders the interactive login or re-auth modal, the request should remain pending until the user responds
+  - do not re-open a local modal just because the user took longer than the old transport timeout
 - After helper-side routing changes land, downstream apps should refresh vendored helper assets and hard-refresh the browser so stale cached ES modules do not keep older local-rendering behavior alive.
 - Keep V1 narrow:
   - no generic parent RPC

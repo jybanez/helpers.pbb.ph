@@ -39,7 +39,7 @@
       options: [
         { option: "<code>trustedOrigins</code>", default: "<code>[window.location.origin, \"null\"]</code>", description: "Allowed child origins for parent-side bridge requests." },
         { option: "<code>toastOptions</code>", default: "<code>{}</code>", description: "Passed to the parent-owned toast stack." },
-        { option: "<code>timeoutMs</code>", default: "<code>900</code>", description: "Child-side handshake and request timeout." },
+        { option: "<code>timeoutMs</code>", default: "<code>900</code>", description: "Child-side bridge availability / transport timeout. Accepted interactive parent-owned dialogs and form-modals stay open until the user responds." },
         { option: "<code>targetOrigin</code>", default: "<code>\"*\"</code>", description: "Child-side <code>postMessage</code> target origin." },
       ],
       propertiesText: "The host exposes <code>destroy()</code>, <code>getState()</code>, and an overlay parent used by same-origin child helpers. The child bridge exposes async methods for toast, dialog, and action-modal delegation.",

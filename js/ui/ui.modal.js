@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
-import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.18";
+import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.19";
 
 const DEFAULT_OPTIONS = {
   className: "",

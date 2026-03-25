@@ -52,6 +52,12 @@ Primary method:
 }
 ```
 
+## Timeout Behavior
+
+- `timeoutMs` applies to bridge availability probing and initial request transport only.
+- Once the parent Workspace host accepts an interactive `modal.form.open` request and renders the helper-owned login or re-auth modal, the request must remain pending until the user responds.
+- The child app must not start a second local helper modal solely because the user took longer than the transport timeout to interact with the parent-owned modal.
+
 ## Payload Shape
 
 ```ts

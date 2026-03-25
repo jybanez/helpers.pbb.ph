@@ -1,7 +1,17 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createActionModal } from "./ui.modal.js?v=0.21.18";
+import { createActionModal } from "./ui.modal.js?v=0.21.19";
 import { createPasswordField } from "./ui.password.js";
 import { createSelect } from "./ui.select.js";
+
+const FORM_MODAL_STYLE_PATHS = [
+  "../../css/ui/ui.tokens.css",
+  "../../css/ui/ui.components.css",
+  "../../css/ui/ui.modal.css",
+  "../../css/ui/ui.form.modal.css",
+  "../../css/ui/ui.select.css",
+  "../../css/ui/ui.password.css",
+];
+const FORM_MODAL_STYLE_HREFS = FORM_MODAL_STYLE_PATHS.map((path) => new URL(path, import.meta.url).href);
 
 const DEFAULT_OPTIONS = {
   title: "",
@@ -28,6 +38,7 @@ const DEFAULT_OPTIONS = {
 
 export function createFormModal(options = {}) {
   const currentOptions = normalizeOptions(options);
+  ensureFormModalStyles(resolveTargetDocument(currentOptions.parent));
   const refs = {
     shell: createElement("div", { className: "ui-form-modal" }),
     form: createElement("form", {
@@ -754,6 +765,7 @@ export function createFormModal(options = {}) {
       initialValues: Object.prototype.hasOwnProperty.call(nextOptions, "initialValues") ? nextOptions.initialValues : currentOptions.initialValues,
     });
     Object.assign(currentOptions, merged);
+    ensureFormModalStyles(resolveTargetDocument(currentOptions.parent));
     render();
     setValues({
       ...(currentOptions.initialValues || {}),
@@ -821,6 +833,38 @@ export function createFormModal(options = {}) {
       displays,
     },
   };
+}
+
+function resolveTargetDocument(parent) {
+  if (parent && typeof parent === "object" && parent.ownerDocument) {
+    return parent.ownerDocument;
+  }
+  return document;
+}
+
+function ensureFormModalStyles(targetDocument) {
+  const doc = targetDocument && typeof targetDocument.querySelector === "function" ? targetDocument : document;
+  const head = doc.head || doc.documentElement;
+  if (!head) {
+    return;
+  }
+  FORM_MODAL_STYLE_HREFS.forEach((href) => {
+    if (doc.querySelector(`link[data-ui-loader-href="${escapeCssAttribute(href)}"]`)) {
+      return;
+    }
+    const link = doc.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.uiLoaderHref = href;
+    head.appendChild(link);
+  });
+}
+
+function escapeCssAttribute(value) {
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(value);
+  }
+  return String(value).replace(/["\\]/g, "\\$&");
 }
 
 function normalizeOptions(options = {}) {

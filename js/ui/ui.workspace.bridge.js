@@ -118,19 +118,19 @@ export function getWorkspaceUiBridge(options = {}) {
       return requestWorkspaceUi("toast.clear", {}, requestOptions);
     },
     async alert(payload = {}) {
-      return requestWorkspaceUi("dialog.alert", payload, requestOptions);
+      return requestInteractiveWorkspaceUi("dialog.alert", payload, requestOptions);
     },
     async confirm(payload = {}) {
-      return requestWorkspaceUi("dialog.confirm", payload, requestOptions);
+      return requestInteractiveWorkspaceUi("dialog.confirm", payload, requestOptions);
     },
     async prompt(payload = {}) {
-      return requestWorkspaceUi("dialog.prompt", payload, requestOptions);
+      return requestInteractiveWorkspaceUi("dialog.prompt", payload, requestOptions);
     },
     async showActionModal(payload = {}) {
-      return requestWorkspaceUi("modal.action", payload, requestOptions);
+      return requestInteractiveWorkspaceUi("modal.action", payload, requestOptions);
     },
     async showFormModal(payload = {}) {
-      return requestWorkspaceUi("modal.form.open", payload, {
+      return requestInteractiveWorkspaceUi("modal.form.open", payload, {
         ...requestOptions,
         namespace: BRIDGE_NAMESPACE_V2,
       });
@@ -295,10 +295,12 @@ function requestWorkspaceUi(method, payload, options) {
     }
 
     window.addEventListener("message", onMessage);
-    timer = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("Workspace UI bridge request timed out."));
-    }, timeoutMs);
+    if (timeoutMs > 0) {
+      timer = window.setTimeout(() => {
+        cleanup();
+        reject(new Error("Workspace UI bridge request timed out."));
+      }, timeoutMs);
+    }
 
     window.parent.postMessage({
       namespace,
@@ -307,6 +309,17 @@ function requestWorkspaceUi(method, payload, options) {
       method,
       payload,
     }, targetOrigin);
+  });
+}
+
+async function requestInteractiveWorkspaceUi(method, payload, options = {}) {
+  const available = await probeWorkspaceUiBridge(options);
+  if (!available) {
+    throw new Error("Workspace UI bridge is unavailable.");
+  }
+  return requestWorkspaceUi(method, payload, {
+    ...options,
+    timeoutMs: 0,
   });
 }
 
@@ -341,7 +354,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.18");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.19");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -349,7 +362,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.18");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.19");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -357,7 +370,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.18");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.19");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -377,7 +390,7 @@ function openWorkspaceActionModal(payload = {}, parent) {
   return new Promise((resolve) => {
     let settled = false;
     let modal = null;
-    import("./ui.modal.js?v=0.21.18").then(({ createActionModal }) => {
+    import("./ui.modal.js?v=0.21.19").then(({ createActionModal }) => {
       modal = createActionModal({
       title: String(payload.title || "Notice"),
       content: buildActionModalContent(payload),
@@ -435,7 +448,7 @@ function openWorkspaceFormModal(payload = {}, parent) {
     let settled = false;
     let modal = null;
 
-    import("./ui.form.modal.js?v=0.21.18").then(({ createFormModal }) => {
+    import("./ui.form.modal.js?v=0.21.19").then(({ createFormModal }) => {
       const formConfig = {
         title: normalized.title,
         size: normalized.size,
@@ -767,6 +780,9 @@ function isTrustedOrigin(origin, trustedOrigins) {
 }
 
 function resolveTimeout(value) {
+  if (value === 0 || value === false || value == null) {
+    return 0;
+  }
   const next = Number(value);
   return Number.isFinite(next) && next > 0 ? next : DEFAULT_TIMEOUT_MS;
 }
