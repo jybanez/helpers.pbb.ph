@@ -224,7 +224,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `installWorkspaceUiBridgeHost(options)` trusted parent-side bridge for iframe-hosted apps
   - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, explicit action-modals, and explicit cross-origin form-modal requests
   - `showWorkspaceActionModal(payload, options)` narrow child-side request helper for parent-owned simple action-modals
-  - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login and re-auth form-modals through `modal.form.open`
+  - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login, re-auth, account, and change-password form-modals through `modal.form.open`
 - `ui.dialog.js`
   - `uiAlert(message, options)` promise-based alert modal
   - `uiConfirm(message, options)` promise-based confirm modal
@@ -1768,11 +1768,13 @@ Options:
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
 | `title` | `string` | `""` | no | Header title text. |
+| `ownerTitle` | `string` | `""` | no | Optional secondary ownership/context text rendered below the main title. Useful for Workspace-bridged parent-owned modals. |
 | `content` | `string \| HTMLElement \| (() => HTMLElement)` | `""` | no | Body content source. |
 | `headerActions` | `string \| HTMLElement \| HTMLElement[] \| (() => HTMLElement)` | `null` | no | Custom header action content. |
 | `footer` | `string \| HTMLElement \| (() => HTMLElement)` | `null` | no | Custom footer content. |
 | `size` | `"sm" \| "md" \| "lg" \| "xl" \| "full"` | `"md"` | no | Modal width preset. |
 | `position` | `"center" \| "top"` | `"center"` | no | Vertical placement. |
+| `draggable` | `boolean` | `true` | no | Enables header-only dragging so the modal can be moved aside. |
 | `showHeader` | `boolean` | `true` | no | Shows modal header shell. |
 | `showCloseButton` | `boolean` | `true` | no | Shows header close button. |
 | `closeOnBackdrop` | `boolean` | `true` | no | Allows backdrop click close. |
@@ -1821,12 +1823,15 @@ Returned refs:
 - `body`
 - `header`
 - `title`
+- `ownerTitle`
 - `closeButton`
 - `backdrop`
 
 Busy-state behavior:
 
 - modal shell exposes a helper-owned busy overlay
+- modal headers are draggable by default; drag starts only from the header itself, not from close buttons or other interactive header controls
+- `ownerTitle` renders as a secondary ownership line below the main title when provided
 - long modal content now scrolls inside the body region only; the header stays fixed at the top of the shell and the footer stays fixed at the bottom
 - when a trusted same-origin Workspace host is installed, modal-family helpers now prefer mounting into the parent Workspace overlay surface automatically
 - `setBusy(true, { message })`:
@@ -1846,6 +1851,8 @@ import { createModal } from "./js/ui/ui.modal.js";
 
 const modal = createModal({
   title: "Reusable Modal",
+  ownerTitle: "PBB HQ",
+  draggable: true,
   size: "md",
   content: "Hello from modal body",
   headerActions: [
@@ -2159,7 +2166,7 @@ Design rule:
 - local iframe rendering remains the fallback
 - automatic modal-family parent routing is same-origin only
 - cross-origin arbitrary form/modal DOM is still outside the helper contract
-- cross-origin login and re-auth rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
+- cross-origin login, re-auth, account, and change-password rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
 
 Parent host:
 
@@ -2235,7 +2242,7 @@ Child API:
 | `confirm` | `payload` | `Promise<any>` | Delegates `uiConfirm(...)` behavior to the parent host. |
 | `prompt` | `payload` | `Promise<any>` | Delegates `uiPrompt(...)` behavior to the parent host. |
 | `showActionModal` | `payload` | `Promise<object>` | Requests a parent-owned simple action modal. |
-| `showFormModal` | `payload` | `Promise<object>` | Requests a parent-owned cross-origin login or re-auth form modal through `modal.form.open`. |
+| `showFormModal` | `payload` | `Promise<object>` | Requests a parent-owned cross-origin login, re-auth, account, or change-password form modal through `modal.form.open`. |
 
 V1 scope:
 
@@ -2250,6 +2257,8 @@ V1 scope:
 - explicit cross-origin form bridge for:
   - `intent: "login"`
   - `intent: "reauth"`
+  - `intent: "account"`
+  - `intent: "change-password"`
 
 Cross-origin form-bridge contract:
 
@@ -2259,7 +2268,7 @@ Cross-origin form-bridge contract:
   - `modal.form.open`
 - request timeout behavior:
   - `timeoutMs` applies to bridge availability probing and transport setup
-  - accepted interactive parent-owned login and re-auth modals stay open until the user responds
+  - accepted interactive parent-owned login, re-auth, account, and change-password modals stay open until the user responds
 - result shape:
   - `{ reason, values }`
   - where `reason` is `submit | cancel | dismiss`
@@ -2504,6 +2513,7 @@ Common preset rules:
 | Busy behavior | Presets reuse `createFormModal(...)` busy submit handling. |
 | Submit behavior | App code still owns the actual `onSubmit(values, ctx)` implementation. |
 | Session expiry detection | Re-auth auto-launch is app-owned. `createReauthFormModal(...)` does not monitor timeout state or open itself. |
+| Cross-origin Workspace bridge | Login, re-auth, account, and change-password presets can delegate through `modal.form.open` when running in a cross-origin Workspace iframe and same-origin parent mounting is unavailable. |
 
 Preset options:
 
@@ -4066,7 +4076,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.19`
+- Latest documented release: `v0.21.21`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

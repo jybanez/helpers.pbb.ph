@@ -64,6 +64,7 @@
 
     const modal = createModal({
       title: "Busy Regression",
+      ownerTitle: "Regression Fixture",
       content,
       footer,
       showCloseButton: false,
@@ -79,6 +80,7 @@
     const root = document.querySelector(".ui-modal-root");
     const panel = document.querySelector(".ui-modal");
     const header = document.querySelector(".ui-modal-header");
+    const ownerTitle = document.querySelector(".ui-modal-owner-title");
     const body = document.querySelector(".ui-modal-body");
     const footerEl = document.querySelector(".ui-modal-footer");
     const getCloseButton = () => document.querySelector(".ui-modal-close");
@@ -88,6 +90,10 @@
     assert(Boolean(root), "modal root should exist after open");
     assert(root.classList.contains("is-mounted"), "modal should remain mounted after open");
     assert(root.classList.contains("is-open"), "modal should remain open after open");
+    assert(ownerTitle?.textContent === "Regression Fixture", "owner title should render below the modal title when provided");
+    assert(header.classList.contains("is-draggable"), "modal header should expose draggable affordance by default");
+    assert(panel.classList.contains("is-draggable"), "modal panel should expose draggable state by default");
+    assert(getComputedStyle(header).cursor === "move", "draggable modal headers should expose move cursor styling");
     assert(panel.getAttribute("aria-busy") === "false", "aria-busy should be false before busy state");
     assert(getComputedStyle(panel).overflow === "hidden", "modal shell should not scroll directly");
     assert(getComputedStyle(body).overflowY === "auto", "modal body should own vertical scrolling");
@@ -95,7 +101,7 @@
     const initialHeaderTop = header.getBoundingClientRect().top;
     const initialFooterTop = footerEl.getBoundingClientRect().top;
     body.scrollTop = 120;
-    await new Promise((resolve) => setTimeout(resolve, 32));
+    await new Promise((resolve) => setTimeout(resolve, 240));
     assert(Math.abs(header.getBoundingClientRect().top - initialHeaderTop) < 1, "header should stay fixed while body scrolls");
     assert(Math.abs(footerEl.getBoundingClientRect().top - initialFooterTop) < 1, "footer should stay fixed while body scrolls");
     assert(getCloseButton().hidden === true, "close button should remain hidden when showCloseButton is false");
@@ -133,6 +139,48 @@
     modal.destroy();
     await new Promise((resolve) => setTimeout(resolve, 80));
     assert(document.querySelector(".ui-modal-root") === null, "modal destroy should remove root from DOM");
+
+    const reopened = createModal({
+      title: "Drag Reset Regression",
+      ownerTitle: "Regression Fixture",
+      content: createElement("p", { text: "Reopen drag reset." }),
+    });
+    reopened.open();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    const reopenedPanel = document.querySelector(".ui-modal");
+    const reopenedHeader = document.querySelector(".ui-modal-header");
+    assert(reopenedHeader.classList.contains("is-draggable"), "reopened modal header should still expose draggable affordance");
+    reopenedPanel.style.setProperty("--ui-modal-drag-x", "48px");
+    reopenedPanel.style.setProperty("--ui-modal-drag-y", "28px");
+    await reopened.close();
+    await new Promise((resolve) => setTimeout(resolve, 320));
+    reopened.open();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    const reopenedAgainPanel = document.querySelector(".ui-modal");
+    assert(reopenedAgainPanel.style.getPropertyValue("--ui-modal-drag-x") === "0px", "modal drag X offset should reset on reopen");
+    assert(reopenedAgainPanel.style.getPropertyValue("--ui-modal-drag-y") === "0px", "modal drag Y offset should reset on reopen");
+    reopened.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert(document.querySelector(".ui-modal-root") === null, "reopened modal destroy should remove root from DOM");
+
+    const interactiveHeaderModal = createModal({
+      title: "Interactive Header Regression",
+      content: createElement("p", { text: "Header button should not drag." }),
+      showCloseButton: true,
+    });
+    interactiveHeaderModal.open();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    const interactivePanel = document.querySelector(".ui-modal");
+    const interactiveClose = document.querySelector(".ui-modal-close");
+    interactiveClose.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+    document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, buttons: 1 }));
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+    await new Promise((resolve) => setTimeout(resolve, 32));
+    assert(interactivePanel.style.getPropertyValue("--ui-modal-drag-x") === "" || interactivePanel.style.getPropertyValue("--ui-modal-drag-x") === "0px", "close button interaction should not start a drag");
+    assert(interactivePanel.style.getPropertyValue("--ui-modal-drag-y") === "" || interactivePanel.style.getPropertyValue("--ui-modal-drag-y") === "0px", "close button interaction should not change modal position");
+    interactiveHeaderModal.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert(document.querySelector(".ui-modal-root") === null, "interactive header modal destroy should remove root from DOM");
 
     if (failures.length) {
       document.body.dataset.status = "fail";

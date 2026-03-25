@@ -23,7 +23,7 @@
   <script>
     window.demoMeta = {
       title: "Modal",
-      overview: "General-purpose modal shell for custom content, header actions, footer content, busy state, close lifecycle handling, and fixed-header/footer body scrolling for long content.",
+      overview: "General-purpose modal shell for custom content, header actions, footer content, busy state, draggable header movement, owner context text, and fixed-header/footer body scrolling for long content.",
       useWhen: [
         "Use <code>createModal(...)</code> when you need a free-form shell around custom content.",
         "Use it when your modal body is too custom for the action or form wrappers."
@@ -32,16 +32,18 @@
         "Do not use it when footer actions are already known up front; use <code>createActionModal(...)</code> instead.",
         "Do not hand-build modal shell markup in app code when the shared shell already covers the interaction."
       ],
-      description: "This demo keeps the modal shell fully custom: arbitrary body content, custom header actions, custom footer content, explicit open/close logging, and a long-content example where only the modal body scrolls.",
-      defaultSampleCode: `const modal = createModal({\n  title: "Reusable Modal",\n  size: "md",\n  content: body,\n  headerActions: [refreshButton, helpButton],\n  footer,\n  onClose(meta) {\n    writeLog("modal.close", meta || {});\n  },\n});\n\nmodal.open();`,
+      description: "This demo keeps the modal shell fully custom: arbitrary body content, custom header actions, custom footer content, explicit open/close logging, a Workspace-style owner-title example, and a long-content example where only the modal body scrolls.",
+      defaultSampleCode: `const modal = createModal({\n  title: "Reusable Modal",\n  ownerTitle: "PBB HQ",\n  draggable: true,\n  size: "md",\n  content: body,\n  headerActions: [refreshButton, helpButton],\n  footer,\n  onClose(meta) {\n    writeLog("modal.close", meta || {});\n  },\n});\n\nmodal.open();`,
       constructor: [
         { factory: "<code>createModal(options)</code>", arguments: "modal <code>options</code>", returns: "Modal instance" }
       ],
       options: [
         { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Header title text." },
+        { option: "<code>ownerTitle</code>", default: "<code>\"\"</code>", description: "Optional secondary ownership/context text rendered below the title." },
         { option: "<code>content</code>", default: "<code>\"\"</code>", description: "Body content source: string, node, or factory." },
         { option: "<code>headerActions</code>", default: "<code>null</code>", description: "Custom header actions." },
         { option: "<code>footer</code>", default: "<code>null</code>", description: "Custom footer content." },
+        { option: "<code>draggable</code>", default: "<code>true</code>", description: "Enables header-only dragging for the modal shell." },
         { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "Width preset.", values: ["sm", "md", "lg", "xl", "full"] }
       ],
       propertiesText: "No stable public instance properties are documented. Use methods such as <code>open()</code>, <code>close()</code>, <code>update()</code>, and <code>setBusy()</code>.",
@@ -68,17 +70,19 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Modal Demo</h1>
-      <p class="muted">Dedicated shell demo for free-form modal content, header actions, footer content, and explicit lifecycle logging.</p>
+      <p class="muted">Dedicated shell demo for free-form modal content, owner-title context, draggable headers, footer content, and explicit lifecycle logging.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Reusable Modal Shell</h2>
-      <p class="muted">Open either example to inspect the shared shell. The long-content example keeps the header pinned at the top and the footer pinned at the bottom while only the body scrolls.</p>
+      <p class="muted">Open either example to inspect the shared shell. The reusable example shows the owner-title line and default header dragging. The long-content example keeps the header pinned at the top and the footer pinned at the bottom while only the body scrolls.</p>
       <div class="row">
         <button id="modalBtn" class="ui-button" type="button">Open Modal</button>
         <button id="longModalBtn" class="ui-button" type="button">Open Long Content Modal</button>
       </div>
       <pre>const modal = createModal({
   title: "Reusable Modal",
+  ownerTitle: "PBB HQ",
+  draggable: true,
   size: "md",
   content: body,
   headerActions: [headerRefreshBtn, headerHelpBtn],
@@ -167,6 +171,8 @@ longModal.open();
 
       const modal = createModal({
         title: "Reusable Modal",
+        ownerTitle: "PBB HQ",
+        draggable: true,
         size: "md",
         content: body,
         headerActions: [headerRefreshBtn, headerHelpBtn],
@@ -186,7 +192,7 @@ longModal.open();
         writeLog("modal.header.help", { ok: true });
       });
       modal.open();
-      writeLog("modal.open", { size: "md" });
+      writeLog("modal.open", { size: "md", ownerTitle: "PBB HQ", draggable: true });
     });
 
     document.getElementById("longModalBtn").addEventListener("click", () => {

@@ -132,6 +132,7 @@
         const result = await showWorkspaceFormModal({
           intent: "login",
           title: "Login",
+          ownerTitle: "Bridge Child",
           size: "sm",
           submitLabel: "Login",
           cancelLabel: "Cancel",
@@ -152,6 +153,7 @@
         const result = await showWorkspaceFormModal({
           intent: "reauth",
           title: "Session Expired",
+          ownerTitle: "Bridge Child",
           size: "sm",
           submitLabel: "Continue",
           cancelLabel: "Cancel",
@@ -172,6 +174,47 @@
           ],
         });
         writeLog("modal.form.reauth", result);
+        return result;
+      }
+
+      async function runBridgeAccountForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "account",
+          title: "Account",
+          ownerTitle: "Bridge Child",
+          size: "sm",
+          submitLabel: "Save",
+          cancelLabel: "Cancel",
+          busyMessage: "Saving account...",
+          initialValues: {
+            name: "Operator One",
+            email: "operator@pbb.ph",
+          },
+          rows: [
+            [{ type: "input", input: "text", name: "name", label: "Name", required: true }],
+            [{ type: "input", input: "email", name: "email", label: "Email", required: true }],
+          ],
+        });
+        writeLog("modal.form.account", result);
+        return result;
+      }
+
+      async function runBridgeChangePasswordForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "change-password",
+          title: "Change Password",
+          ownerTitle: "Bridge Child",
+          size: "sm",
+          submitLabel: "Update Password",
+          cancelLabel: "Cancel",
+          busyMessage: "Updating password...",
+          rows: [
+            [{ type: "input", input: "password", name: "current_password", label: "Current Password", required: true }],
+            [{ type: "input", input: "password", name: "new_password", label: "New Password", required: true }],
+            [{ type: "input", input: "password", name: "confirm_password", label: "Confirm Password", required: true }],
+          ],
+        });
+        writeLog("modal.form.changePassword", result);
         return result;
       }
 
@@ -261,6 +304,8 @@
       document.getElementById("modalBtn").addEventListener("click", () => void runActionModal());
       document.getElementById("bridgeLoginBtn").addEventListener("click", () => void runBridgeLoginForm());
       document.getElementById("bridgeReauthBtn").addEventListener("click", () => void runBridgeReauthForm());
+      document.getElementById("bridgeAccountBtn").addEventListener("click", () => void runBridgeAccountForm());
+      document.getElementById("bridgeChangePasswordBtn").addEventListener("click", () => void runBridgeChangePasswordForm());
       document.getElementById("autoActionBtn").addEventListener("click", () => void runAutoActionModal());
       document.getElementById("autoFormBtn").addEventListener("click", () => void runAutoFormModal());
       document.getElementById("probeBtn").addEventListener("click", async () => {
@@ -275,6 +320,8 @@
         runActionModal,
         runBridgeLoginForm,
         runBridgeReauthForm,
+        runBridgeAccountForm,
+        runBridgeChangePasswordForm,
         runInvalidBridgeForm,
         runUnsupportedBridgeForm,
         runAutoActionModal,
@@ -290,7 +337,7 @@
   <main>
     <section class="hero">
       <h1>Workspace UI Bridge Fixture</h1>
-      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, plain helper modal-family overlays should auto-route to the parent when the host is same-origin, and the explicit form-bridge contract can render narrow cross-origin login/reauth forms in the parent shell.</p>
+      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, plain helper modal-family overlays should auto-route to the parent when the host is same-origin, and the explicit form-bridge contract can render narrow cross-origin login, reauth, account, and change-password forms in the parent shell.</p>
     </section>
     <section class="panel">
       <div class="row">
@@ -302,6 +349,8 @@
         <button id="modalBtn" type="button">Action Modal</button>
         <button id="bridgeLoginBtn" type="button">Bridge Login Form</button>
         <button id="bridgeReauthBtn" type="button">Bridge Reauth Form</button>
+        <button id="bridgeAccountBtn" type="button">Bridge Account Form</button>
+        <button id="bridgeChangePasswordBtn" type="button">Bridge Change Password</button>
         <button id="autoActionBtn" type="button">Auto Action Modal</button>
         <button id="autoFormBtn" type="button">Auto Form Modal</button>
       </div>

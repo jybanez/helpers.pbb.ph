@@ -21,7 +21,7 @@
   <script>
     window.demoMeta = {
       title: "Workspace Bridge",
-      overview: "Trusted workspace bridge plus same-origin parent overlay routing and explicit cross-origin login/reauth form bridging for iframe-hosted apps that need helper-owned overlays to rise above the iframe surface.",
+      overview: "Trusted workspace bridge plus same-origin parent overlay routing and explicit cross-origin login, reauth, account, and change-password form bridging for iframe-hosted apps that need helper-owned overlays to rise above the iframe surface.",
       useWhen: [
         "Use it when an app runs inside <code>ui.iframe.host</code> and top-level UI surfaces should render in the parent workspace instead of inside the iframe.",
         "Use it with <code>ui.window</code> + <code>ui.iframe.host</code> for workspace-style launcher shells."
@@ -30,7 +30,7 @@
         "Do not use it for generic DOM mirroring or arbitrary parent method execution.",
         "Do not assume every iframe parent is trusted; rely on the explicit bridge host handshake."
       ],
-      description: "The bridge keeps overlay ownership in the parent workspace shell while preserving local fallback for standalone app execution. Current behavior includes explicit bridge primitives for toast, dialog, simple action-modal, and cross-origin login/reauth form-modal flows, plus automatic same-origin parent routing for plain helper modal-family overlays.",
+      description: "The bridge keeps overlay ownership in the parent workspace shell while preserving local fallback for standalone app execution. Current behavior includes explicit bridge primitives for toast, dialog, simple action-modal, and cross-origin login, reauth, account, and change-password form-modal flows, plus automatic same-origin parent routing for plain helper modal-family overlays.",
       defaultSampleCode: `const host = installWorkspaceUiBridgeHost();\nconst iframeHost = createIframeHost({ src: \"../samples/iframe/workspace-ui-bridge.fixture.html\" });\nconst win = manager.createWindow({ title: \"Bridge Child\", content: iframeHost.root });`,
       constructor: [
         { factory: "<code>installWorkspaceUiBridgeHost(options)</code>", arguments: "bridge-host options", returns: "workspace bridge host" },
@@ -53,7 +53,7 @@
         { method: "<code>bridge.confirm(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;boolean&gt;</code>" },
         { method: "<code>bridge.prompt(payload)</code>", arguments: "dialog payload", returns: "<code>Promise&lt;string|null&gt;</code>" },
         { method: "<code>showWorkspaceActionModal(payload)</code>", arguments: "simple action-modal payload", returns: "<code>Promise&lt;object&gt;</code>" },
-        { method: "<code>showWorkspaceFormModal(payload)</code>", arguments: "serializable login/reauth payload", returns: "<code>Promise&lt;{ reason, values }&gt;</code>" },
+        { method: "<code>showWorkspaceFormModal(payload)</code>", arguments: "serializable login/reauth/account/change-password payload", returns: "<code>Promise&lt;{ reason, values }&gt;</code>" },
         { method: "<code>createActionModal(...).open()</code>", arguments: "plain helper modal in child", returns: "renders in parent workspace when a same-origin host is installed" },
         { method: "<code>createFormModal(...).open()</code>", arguments: "plain helper form modal in child", returns: "renders in parent workspace when a same-origin host is installed" },
       ],
@@ -65,7 +65,7 @@
   <main class="page">
     <section class="panel">
       <h1 class="ui-title">Workspace Bridge Demo</h1>
-      <p class="muted">Parent workspace host is installed on this page. The child app runs inside an iframe hosted by <code>ui.window</code>. Explicit bridge primitives still exist, plain helper modal-family overlays auto-route to the parent shell when the host is same-origin, and explicit cross-origin login/reauth form requests can use <code>modal.form.open</code>.</p>
+      <p class="muted">Parent workspace host is installed on this page. The child app runs inside an iframe hosted by <code>ui.window</code>. Explicit bridge primitives still exist, plain helper modal-family overlays auto-route to the parent shell when the host is same-origin, and explicit cross-origin login, reauth, account, and change-password form requests can use <code>modal.form.open</code>.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Window Composition</h2>

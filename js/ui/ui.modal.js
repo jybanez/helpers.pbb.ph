@@ -1,10 +1,11 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
-import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.19";
+import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.21";
 
 const DEFAULT_OPTIONS = {
   className: "",
   title: "",
+  ownerTitle: "",
   ariaLabel: "Modal dialog",
   content: null,
   headerActions: null,
@@ -23,6 +24,7 @@ const DEFAULT_OPTIONS = {
   size: "md", // sm | md | lg | xl | full
   position: "center", // center | top
   animationMs: 180,
+  draggable: true,
   initialFocus: null, // selector | HTMLElement | function(panel) => HTMLElement
   parent: null,
   renderTarget: "auto", // auto | local | parent
@@ -53,6 +55,7 @@ export function createModal(options = {}) {
   let lastResult = null;
   let lastFocusedElement = null;
   let activeDocument = null;
+  let dragState = null;
   const titleId = `ui-modal-title-${++modalIdSeed}`;
 
   const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true" } });
@@ -62,7 +65,12 @@ export function createModal(options = {}) {
     attrs: { role: "dialog", "aria-modal": "true", tabindex: "-1" },
   });
   const header = createElement("header", { className: "ui-modal-header" });
+  const titleBlock = createElement("div", { className: "ui-modal-title-block" });
   const titleEl = createElement("h3", { className: "ui-title ui-modal-title" });
+  const ownerTitleEl = createElement("div", {
+    className: "ui-modal-owner-title",
+    attrs: { hidden: "hidden" },
+  });
   const headerActions = createElement("div", { className: "ui-modal-header-actions" });
   const closeButton = createElement("button", {
     className: "ui-button ui-modal-close",
@@ -85,7 +93,8 @@ export function createModal(options = {}) {
     attrs: { role: "status", "aria-live": "polite" },
   });
 
-  header.append(titleEl, headerActions, closeButton);
+  titleBlock.append(titleEl, ownerTitleEl);
+  header.append(titleBlock, headerActions, closeButton);
   busyLayer.append(busyOverlay, busySpinner, busyMessage);
   panel.append(header, body, footer, busyLayer);
   root.append(backdrop, panel);
@@ -108,6 +117,8 @@ export function createModal(options = {}) {
     }
     close({ reason: "close-button" });
   });
+  events.on(header, "pointerdown", onHeaderPointerDown);
+  events.on(header, "mousedown", onHeaderMouseDown);
 
   function normalizeOptions(nextOptions) {
     return {
@@ -130,14 +141,19 @@ export function createModal(options = {}) {
     panel.className = "ui-modal";
     panel.classList.add(`is-size-${normalizeSize(currentOptions.size)}`);
     panel.classList.add(`is-pos-${normalizePosition(currentOptions.position)}`);
+    panel.classList.toggle("is-draggable", Boolean(currentOptions.draggable));
+    header.classList.toggle("is-draggable", Boolean(currentOptions.draggable));
   }
 
   function applySlots() {
     const showHeader = Boolean(currentOptions.showHeader);
     const showCloseButton = Boolean(currentOptions.showCloseButton);
     const titleText = currentOptions.title == null ? "" : String(currentOptions.title);
+    const ownerTitleText = currentOptions.ownerTitle == null ? "" : String(currentOptions.ownerTitle).trim();
     titleEl.textContent = titleText;
     titleEl.id = titleId;
+    ownerTitleEl.textContent = ownerTitleText;
+    ownerTitleEl.hidden = !ownerTitleText;
     setSlot(headerActions, currentOptions.headerActions);
     headerActions.hidden = !headerActions.childNodes.length;
 
@@ -193,6 +209,7 @@ export function createModal(options = {}) {
     if (root.parentNode || !parent) {
       return;
     }
+    resetDragPosition();
     parent.appendChild(root);
     activeDocument = root.ownerDocument || parent.ownerDocument || document;
   }
@@ -228,6 +245,119 @@ export function createModal(options = {}) {
     if (event.key === "Tab" && currentOptions.trapFocus) {
       trapFocusInPanel(event);
     }
+  }
+
+  function onHeaderPointerDown(event) {
+    if (!shouldStartHeaderDrag(event)) {
+      return;
+    }
+    const doc = getDocumentContext();
+    const view = doc.defaultView || window;
+    const rect = panel.getBoundingClientRect();
+    dragState = createDragState(event.pointerId, event.clientX, event.clientY, getDragOffsetX(), getDragOffsetY(), rect.width, rect.height, view.innerWidth, view.innerHeight);
+    header.setPointerCapture?.(event.pointerId);
+    doc.addEventListener("pointermove", onHeaderPointerMove, true);
+    doc.addEventListener("pointerup", onHeaderPointerEnd, true);
+    doc.addEventListener("pointercancel", onHeaderPointerEnd, true);
+    event.preventDefault();
+  }
+
+  function onHeaderMouseDown(event) {
+    if (!shouldStartHeaderDrag(event)) {
+      return;
+    }
+    const doc = getDocumentContext();
+    const view = doc.defaultView || window;
+    const rect = panel.getBoundingClientRect();
+    dragState = createDragState("mouse", event.clientX, event.clientY, getDragOffsetX(), getDragOffsetY(), rect.width, rect.height, view.innerWidth, view.innerHeight);
+    doc.addEventListener("mousemove", onHeaderMouseMove, true);
+    doc.addEventListener("mouseup", onHeaderMouseEnd, true);
+    event.preventDefault();
+  }
+
+  function onHeaderPointerMove(event) {
+    if (!dragState || event.pointerId !== dragState.pointerId) {
+      return;
+    }
+    const nextX = dragState.originX + (event.clientX - dragState.startX);
+    const nextY = dragState.originY + (event.clientY - dragState.startY);
+    const clamped = clampDragOffsets(nextX, nextY, dragState.panelWidth, dragState.panelHeight, dragState.viewportWidth, dragState.viewportHeight);
+    applyDragPosition(clamped.x, clamped.y);
+    event.preventDefault();
+  }
+
+  function onHeaderMouseMove(event) {
+    if (!dragState || dragState.pointerId !== "mouse") {
+      return;
+    }
+    const nextX = dragState.originX + (event.clientX - dragState.startX);
+    const nextY = dragState.originY + (event.clientY - dragState.startY);
+    const clamped = clampDragOffsets(nextX, nextY, dragState.panelWidth, dragState.panelHeight, dragState.viewportWidth, dragState.viewportHeight);
+    applyDragPosition(clamped.x, clamped.y);
+    event.preventDefault();
+  }
+
+  function onHeaderPointerEnd(event) {
+    if (!dragState || event.pointerId !== dragState.pointerId) {
+      return;
+    }
+    header.releasePointerCapture?.(event.pointerId);
+    clearDragListeners();
+    dragState = null;
+  }
+
+  function onHeaderMouseEnd() {
+    if (!dragState || dragState.pointerId !== "mouse") {
+      return;
+    }
+    clearDragListeners();
+    dragState = null;
+  }
+
+  function clearDragListeners() {
+    const doc = getDocumentContext();
+    doc.removeEventListener("pointermove", onHeaderPointerMove, true);
+    doc.removeEventListener("pointerup", onHeaderPointerEnd, true);
+    doc.removeEventListener("pointercancel", onHeaderPointerEnd, true);
+    doc.removeEventListener("mousemove", onHeaderMouseMove, true);
+    doc.removeEventListener("mouseup", onHeaderMouseEnd, true);
+  }
+
+  function applyDragPosition(x, y) {
+    panel.style.setProperty("--ui-modal-drag-x", `${Math.round(x)}px`);
+    panel.style.setProperty("--ui-modal-drag-y", `${Math.round(y)}px`);
+  }
+
+  function resetDragPosition() {
+    panel.style.setProperty("--ui-modal-drag-x", "0px");
+    panel.style.setProperty("--ui-modal-drag-y", "0px");
+  }
+
+  function getDragOffsetX() {
+    return Number.parseFloat(panel.style.getPropertyValue("--ui-modal-drag-x")) || 0;
+  }
+
+  function getDragOffsetY() {
+    return Number.parseFloat(panel.style.getPropertyValue("--ui-modal-drag-y")) || 0;
+  }
+
+  function shouldStartHeaderDrag(event) {
+    if (!open || !currentOptions.draggable) {
+      return false;
+    }
+    if (!(event.target instanceof HTMLElement)) {
+      return false;
+    }
+    if (event.button !== 0) {
+      return false;
+    }
+    if (isBusy()) {
+      return false;
+    }
+    if (event.target.closest("button, input, select, textarea, a, [role='button']")) {
+      return false;
+    }
+    return true;
   }
 
   function trapFocusInPanel(event) {
@@ -520,6 +650,8 @@ export function createModal(options = {}) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }
+    clearDragListeners();
+    dragState = null;
     detachDocumentListeners();
     unlockBodyScroll();
     events.clear();
@@ -569,6 +701,7 @@ export function createModal(options = {}) {
       panel,
       header,
       headerActions,
+      ownerTitle: ownerTitleEl,
       title: titleEl,
       body,
       footer,
@@ -578,6 +711,33 @@ export function createModal(options = {}) {
       busySpinner,
       busyMessage,
     },
+  };
+}
+
+function clampDragOffsets(x, y, panelWidth, panelHeight, viewportWidth, viewportHeight) {
+  const maxX = Math.max(0, (viewportWidth - panelWidth) / 2);
+  const maxY = Math.max(0, (viewportHeight - panelHeight) / 2);
+  return {
+    x: clamp(x, -maxX, maxX),
+    y: clamp(y, -maxY, maxY),
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function createDragState(pointerId, startX, startY, originX, originY, panelWidth, panelHeight, viewportWidth, viewportHeight) {
+  return {
+    pointerId,
+    startX,
+    startY,
+    originX,
+    originY,
+    panelWidth,
+    panelHeight,
+    viewportWidth,
+    viewportHeight,
   };
 }
 

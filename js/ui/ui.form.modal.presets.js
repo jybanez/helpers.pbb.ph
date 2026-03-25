@@ -1,5 +1,5 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.19";
-import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.19";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.21";
+import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.21";
 
 export function createLoginFormModal(options = {}) {
   if (shouldUseCrossOriginFormBridge(options)) {
@@ -270,6 +270,7 @@ function buildLoginBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Operator Login",
+    ownerTitle: String(options.ownerTitle || "").trim(),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Login",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -324,6 +325,7 @@ function buildReauthBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Session Expired",
+    ownerTitle: String(options.ownerTitle || "").trim(),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Continue",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -358,6 +360,110 @@ function buildReauthBridgePayload(options, state) {
         label: passwordLabel,
         placeholder: passwordPlaceholder,
         autocomplete: "current-password",
+        required: true,
+      }],
+    ],
+  };
+}
+
+function buildAccountBridgePayload(options, state) {
+  const fields = normalizeFieldMap(options.fields, {
+    name: "name",
+    email: "email",
+  });
+  const message = String(options.message || "").trim();
+  const extraRows = normalizeRows(options.extraRows);
+
+  return {
+    intent: state.intent,
+    title: options.title || "Account",
+    ownerTitle: String(options.ownerTitle || "").trim(),
+    size: options.size || "sm",
+    submitLabel: options.submitLabel || "Save",
+    cancelLabel: options.cancelLabel || "Cancel",
+    busyMessage: options.busyMessage || "Saving account...",
+    closeOnBackdrop: options.closeOnBackdrop !== false,
+    closeOnEscape: options.closeOnEscape !== false,
+    initialValues: {
+      ...state.initialValues,
+    },
+    fieldErrors: state.fieldErrors,
+    formError: state.formError,
+    rows: [
+      ...(message ? [[{ type: "text", content: message }]] : []),
+      [{
+        type: "input",
+        input: "text",
+        name: fields.name,
+        label: String(options.nameLabel || "Name"),
+        placeholder: String(options.namePlaceholder || "Enter your name"),
+        autocomplete: String(options.nameAutocomplete || "name"),
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "email",
+        name: fields.email,
+        label: String(options.emailLabel || "Email"),
+        placeholder: String(options.emailPlaceholder || "name@agency.gov.ph"),
+        autocomplete: String(options.emailAutocomplete || "email"),
+        required: true,
+      }],
+      ...extraRows,
+    ],
+  };
+}
+
+function buildChangePasswordBridgePayload(options, state) {
+  const fields = normalizeFieldMap(options.fields, {
+    currentPassword: "current_password",
+    newPassword: "new_password",
+    confirmPassword: "confirm_password",
+  });
+  const message = String(options.message || "").trim();
+
+  return {
+    intent: state.intent,
+    title: options.title || "Change Password",
+    ownerTitle: String(options.ownerTitle || "").trim(),
+    size: options.size || "sm",
+    submitLabel: options.submitLabel || "Update Password",
+    cancelLabel: options.cancelLabel || "Cancel",
+    busyMessage: options.busyMessage || "Updating password...",
+    closeOnBackdrop: options.closeOnBackdrop !== false,
+    closeOnEscape: options.closeOnEscape !== false,
+    initialValues: {
+      ...state.initialValues,
+    },
+    fieldErrors: state.fieldErrors,
+    formError: state.formError,
+    rows: [
+      ...(message ? [[{ type: "text", content: message }]] : []),
+      [{
+        type: "input",
+        input: "password",
+        name: fields.currentPassword,
+        label: String(options.currentPasswordLabel || "Current Password"),
+        placeholder: String(options.currentPasswordPlaceholder || "Enter current password"),
+        autocomplete: "current-password",
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.newPassword,
+        label: String(options.newPasswordLabel || "New Password"),
+        placeholder: String(options.newPasswordPlaceholder || "Enter new password"),
+        autocomplete: "new-password",
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.confirmPassword,
+        label: String(options.confirmPasswordLabel || "Confirm Password"),
+        placeholder: String(options.confirmPasswordPlaceholder || "Re-enter new password"),
+        autocomplete: "new-password",
         required: true,
       }],
     ],
@@ -538,6 +644,9 @@ export function createReasonFormModal(options = {}) {
 }
 
 export function createAccountFormModal(options = {}) {
+  if (shouldUseCrossOriginFormBridge(options)) {
+    return createDelegatedPresetFormModal("account", options, buildAccountBridgePayload);
+  }
   const fields = normalizeFieldMap(options.fields, {
     name: "name",
     email: "email",
@@ -579,6 +688,9 @@ export function createAccountFormModal(options = {}) {
 }
 
 export function createChangePasswordFormModal(options = {}) {
+  if (shouldUseCrossOriginFormBridge(options)) {
+    return createDelegatedPresetFormModal("change-password", options, buildChangePasswordBridgePayload);
+  }
   const fields = normalizeFieldMap(options.fields, {
     currentPassword: "current_password",
     newPassword: "new_password",

@@ -14,6 +14,7 @@ Primary method:
 - keep the contract understandable across teams
 - keep payloads close to the existing helper form-modal shape
 - keep business logic in the child app
+- let child apps pass explicit ownership context for parent-owned bridged modal shells
 
 ## Method
 
@@ -62,8 +63,9 @@ Primary method:
 
 ```ts
 {
-  intent: "login" | "reauth";
+  intent: "login" | "reauth" | "account" | "change-password";
   title?: string;
+  ownerTitle?: string;
   size?: "sm" | "md" | "lg";
   submitLabel?: string;
   cancelLabel?: string;
@@ -234,7 +236,7 @@ The request payload may also include:
 }
 ```
 
-These fields support the V1 retry/reopen model for `login` and `reauth`.
+These fields support the retry/reopen model for the currently shipped bridged preset intents.
 
 ## Result Shape
 
@@ -288,6 +290,7 @@ These fields support the V1 retry/reopen model for `login` and `reauth`.
   "payload": {
     "intent": "login",
     "title": "Login",
+    "ownerTitle": "PBB HQ",
     "size": "sm",
     "submitLabel": "Login",
     "cancelLabel": "Cancel",
@@ -349,6 +352,7 @@ These fields support the V1 retry/reopen model for `login` and `reauth`.
   "payload": {
     "intent": "reauth",
     "title": "Session Expired",
+    "ownerTitle": "PBB HQ",
     "size": "sm",
     "submitLabel": "Login",
     "cancelLabel": "Reload",
@@ -403,6 +407,99 @@ These fields support the V1 retry/reopen model for `login` and `reauth`.
     "values": null
   },
   "error": null
+}
+```
+
+### Account request
+
+```json
+{
+  "namespace": "pbb.workspace.ui.bridge.v2",
+  "phase": "request",
+  "id": "msg_account_001",
+  "method": "modal.form.open",
+  "payload": {
+    "intent": "account",
+    "title": "Account",
+    "ownerTitle": "PBB HQ",
+    "size": "sm",
+    "submitLabel": "Save",
+    "cancelLabel": "Cancel",
+    "busyMessage": "Saving account...",
+    "initialValues": {
+      "name": "Operator One",
+      "email": "operator@pbb.ph"
+    },
+    "rows": [
+      [
+        {
+          "type": "input",
+          "input": "text",
+          "name": "name",
+          "label": "Name",
+          "required": true
+        }
+      ],
+      [
+        {
+          "type": "input",
+          "input": "email",
+          "name": "email",
+          "label": "Email",
+          "required": true
+        }
+      ]
+    ]
+  }
+}
+```
+
+### Change-password request
+
+```json
+{
+  "namespace": "pbb.workspace.ui.bridge.v2",
+  "phase": "request",
+  "id": "msg_change_password_001",
+  "method": "modal.form.open",
+  "payload": {
+    "intent": "change-password",
+    "title": "Change Password",
+    "ownerTitle": "PBB HQ",
+    "size": "sm",
+    "submitLabel": "Update Password",
+    "cancelLabel": "Cancel",
+    "busyMessage": "Updating password...",
+    "rows": [
+      [
+        {
+          "type": "input",
+          "input": "password",
+          "name": "current_password",
+          "label": "Current Password",
+          "required": true
+        }
+      ],
+      [
+        {
+          "type": "input",
+          "input": "password",
+          "name": "new_password",
+          "label": "New Password",
+          "required": true
+        }
+      ],
+      [
+        {
+          "type": "input",
+          "input": "password",
+          "name": "confirm_password",
+          "label": "Confirm Password",
+          "required": true
+        }
+      ]
+    ]
+  }
 }
 ```
 
@@ -571,15 +668,19 @@ Not allowed:
 
 - cross-origin login modal rendering
 - cross-origin re-auth modal rendering
+- cross-origin account modal rendering
+- cross-origin change-password modal rendering
 
 ## First Runtime Slice
 
-The first runtime implementation should support only:
+The currently shipped runtime supports:
 
 - `intent: "login"`
 - `intent: "reauth"`
+- `intent: "account"`
+- `intent: "change-password"`
 
-`generic-form` remains future-capable at the contract level but should not be treated as part of the first shipped runtime slice.
+`generic-form` remains future-capable at the contract level but should not be treated as part of the currently shipped runtime slice.
 
 ## Non-Goals
 

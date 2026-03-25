@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.19`
+- Latest documented release: `v0.21.21`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,37 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.21
+
+- Extended the explicit cross-origin Workspace form bridge beyond auth-only flows so `modal.form.open` now supports:
+  - `intent: "account"`
+  - `intent: "change-password"`
+- Updated `createAccountFormModal(...)` and `createChangePasswordFormModal(...)` so cross-origin iframe apps can delegate those preset flows to the parent Workspace shell when same-origin parent mounting is unavailable.
+- Kept the transport model unchanged:
+  - parent Workspace renders the helper-owned modal shell
+  - child apps still own API submission, password/account business rules, and follow-up state handling
+- Added bridge fixture and browser regression coverage for:
+  - accepted bridged account form requests
+  - accepted bridged change-password form requests
+  - cancel/result round-trip for both new intents
+- Bumped the overlay-routing revision chain again so downstream Workspace/child app refreshes fetch the widened bridge/preset modules instead of stale cached builds.
+
+### v0.21.20
+
+- Improved the shared `ui.modal` shell with default header-only dragging (`draggable: true`) so modals can be moved aside while inspecting content behind them.
+- Added optional `ownerTitle` rendering below the main modal title so parent-owned bridged Workspace modals can keep visible ownership context such as `PBB HQ`.
+- Kept drag initiation narrow:
+  - only the modal header starts drag
+  - interactive header controls such as the close button and header actions do not start movement
+- Drag state is clamped to the viewport and resets on close/reopen so reopened modals return to their default centered position.
+- `createActionModal(...)` and `createFormModal(...)` now inherit the upgraded shell behavior automatically.
+- Workspace-bridged form modals can now pass `ownerTitle` through the normalized payload into the parent-owned modal shell.
+- Updated the modal demo and regression harness to cover:
+  - draggable header affordance
+  - owner-title rendering
+  - close-button non-drag behavior
+  - drag reset on reopen
+
 ### v0.21.19
 
 - Fixed the first shipped cross-origin Workspace form bridge so interactive parent-owned login and re-auth modals no longer fall back locally after the old 900ms request timeout.

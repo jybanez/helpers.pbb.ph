@@ -368,6 +368,8 @@ If changing callback signatures or removing methods, plan a major version.
 ### 11.1 Modal Foundation (`ui.modal`)
 
 - `createModal(options)` is now the base shell for overlay/dialog rendering.
+- `createModal(...)` now defaults to header-only dragging (`draggable: true`); keep drag initiation restricted to the header and do not let close buttons or header actions accidentally start movement.
+- `ownerTitle` is now the shared way to restore ownership context in parent-owned bridged modals; prefer it over app-local subtitle markup when the shell needs to identify the requesting window/app.
 - `ui.dialog` helpers (`uiAlert`, `uiConfirm`, `uiPrompt`) are expected to compose over `ui.modal`, not duplicate modal/backdrop/focus logic.
 - `createModal(...)` may expose header-level actions through `headerActions`; keep these as a slot-level contract, not a second footer-action API.
 - `createActionModal(...)` may expose declarative `headerActions[]`; keep the header/footer action object contract identical when extending that helper.
@@ -459,8 +461,10 @@ If changing callback signatures or removing methods, plan a major version.
   - `namespace: "pbb.workspace.ui.bridge.v2"`
   - `method: "modal.form.open"`
   - current shipped `intent` values:
-    - `login`
-    - `reauth`
+  - `login`
+  - `reauth`
+  - `account`
+  - `change-password`
 - Keep timeout semantics straight:
   - `timeoutMs` is for bridge availability / transport only
   - once the parent accepts and renders the interactive login or re-auth modal, the request should remain pending until the user responds
