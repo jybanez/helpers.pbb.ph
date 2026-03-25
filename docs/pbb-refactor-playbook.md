@@ -473,6 +473,15 @@ If changing callback signatures or removing methods, plan a major version.
   - `method: "modal.form.update"`
   - `method: "modal.form.close"`
   - keep API/business/session logic in the child app; Workspace should only render and update the parent modal surface
+- For cross-origin admin forms that should render in the Workspace parent, do not assume a plain local `createFormModal(...)` call will bridge automatically.
+  - Typical examples:
+    - `Add User`
+    - `Edit User`
+    - `Add App`
+    - `Edit App`
+  - those flows should move onto the helper-owned `generic-form` bridge/session path when parent-owned Workspace rendering is required
+- Use the plain operational routing guide when briefing downstream teams:
+  - `docs/ui-workspace-overlay-routing-guide.md`
 - Before asking downstream teams to validate a new cross-origin bridge change in real repos, use the local harness first:
   - `docs/ui-workspace-cross-origin-demo-harness.md`
   - `node scripts/run-workspace-bridge-cross-origin-demo.mjs`
@@ -485,7 +494,7 @@ If changing callback signatures or removing methods, plan a major version.
 - Keep V1 narrow:
   - no generic parent RPC
   - no auth/session brokering
-  - no automatic cross-origin `createFormModal(...)` mirroring beyond the explicit `login` / `reauth` form bridge contract
+  - no automatic cross-origin `createFormModal(...)` mirroring outside the explicit bridge-supported form intents
   - no arbitrary modal mirroring from child DOM into parent DOM
 - Child apps still own:
   - API submission

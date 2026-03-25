@@ -226,6 +226,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `showWorkspaceActionModal(payload, options)` narrow child-side request helper for parent-owned simple action-modals
   - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login, re-auth, account, change-password, and generic-form modals through `modal.form.open`
   - `bridge.openFormSession(payload)` long-lived child-side session helper for cross-origin preset submits that need parent-modal busy/error updates through `modal.form.session.open`, `modal.form.update`, and `modal.form.close`
+  - operational routing guide:
+    - `docs/ui-workspace-overlay-routing-guide.md`
 - `ui.dialog.js`
   - `uiAlert(message, options)` promise-based alert modal
   - `uiConfirm(message, options)` promise-based confirm modal
@@ -2168,6 +2170,12 @@ Design rule:
 - automatic modal-family parent routing is same-origin only
 - cross-origin arbitrary form/modal DOM is still outside the helper contract
 - cross-origin login, re-auth, account, change-password, and generic-form rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
+- long async cross-origin submit flows should use the session-style bridge through `bridge.openFormSession(payload)` so the parent-owned modal can stay open while the child pushes busy/error updates
+- if a cross-origin admin modal such as `Add User`, `Edit User`, `Add App`, or `Edit App` still renders inside the iframe, treat that as a child integration gap first: the flow likely has not been moved onto the helper-owned `generic-form` bridge/session path yet
+
+Operational guidance:
+
+- `docs/ui-workspace-overlay-routing-guide.md`
 
 Parent host:
 

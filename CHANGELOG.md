@@ -43,6 +43,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - shipped child-driven busy/error round-trip for cross-origin preset submit flows so parent-owned bridged login/reauth/account/change-password modals can stay open while the child app runs async submit logic
 - added explicit busy-submit coverage to the cross-origin harness and browser regressions
 - added a manual `Open Login Busy` trigger to `demos/demo.workspace.bridge.cross.origin.html`
+- added plain operational guidance in `docs/ui-workspace-overlay-routing-guide.md` so downstream teams have one helper-owned rule set for what auto-routes, what requires the explicit cross-origin bridge, and when admin forms such as `Add User` should move onto the `generic-form` bridge/session path
 - bumped overlay-routing revision chain to `v0.21.27`
 
 ## Release Notes
