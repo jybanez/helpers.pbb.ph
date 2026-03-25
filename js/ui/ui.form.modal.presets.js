@@ -1,5 +1,5 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.23";
-import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.23";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.27";
+import { resolveWorkspaceOverlayParent, getWorkspaceUiBridge } from "./ui.workspace.bridge.js?v=0.21.27";
 
 export function createLoginFormModal(options = {}) {
   if (shouldUseCrossOriginFormBridge(options)) {
@@ -125,43 +125,117 @@ function createDelegatedPresetFormModal(intent, options, buildPayload) {
           fieldErrors,
           formError,
         });
-        let response;
+        let session;
         try {
-          response = await showWorkspaceFormModal(payload, {
+          const bridge = getWorkspaceUiBridge({
             timeoutMs: currentOptions.workspaceBridgeTimeoutMs,
             targetOrigin: currentOptions.workspaceBridgeTargetOrigin,
           });
+          session = await bridge.openFormSession(payload);
         } catch {
           return openLocalFallback(intent, currentOptions);
         }
 
-        lastResult = response;
-        const reason = String(response?.reason || "dismiss");
-        if (reason === "action") {
-          const values = response?.values && typeof response.values === "object" ? response.values : {};
-          const actionId = String(response?.actionId || "");
-          const action = Array.isArray(currentOptions.extraActions)
-            ? currentOptions.extraActions.find((candidate) => String(candidate?.id || "") === actionId)
-            : null;
-          if (!action || typeof action.onClick !== "function") {
+        lastResult = session;
+        while (!destroyed) {
+          const response = await session.nextEvent();
+          const reason = String(response?.type || response?.reason || "dismiss");
+          if (reason === "action") {
+            const values = response?.values && typeof response.values === "object" ? response.values : {};
+            const actionId = String(response?.actionId || "");
+            const action = Array.isArray(currentOptions.extraActions)
+              ? currentOptions.extraActions.find((candidate) => String(candidate?.id || "") === actionId)
+              : null;
+            if (!action || typeof action.onClick !== "function") {
+              initialValues = {
+                ...initialValues,
+                ...values,
+              };
+              continue;
+            }
+
+            const bridgeContext = createDelegatedActionContext(action, session, currentOptions);
+            const actionResult = await action.onClick(values, bridgeContext, actionId);
+            if (action.closeOnClick === true && actionResult !== false) {
+              open = false;
+              currentOptions.onClose?.({
+                reason: "action",
+                actionId,
+                result: values,
+              });
+              return response;
+            }
+
+            await session.update({
+              values,
+              fieldErrors: bridgeContext.getErrors(),
+              formError: bridgeContext.getFormError(),
+              busy: false,
+            });
             initialValues = {
               ...initialValues,
               ...values,
             };
+            fieldErrors = bridgeContext.getErrors();
+            formError = bridgeContext.getFormError();
             continue;
           }
 
-          const bridgeContext = createDelegatedActionContext(action);
-          const actionResult = await action.onClick(values, bridgeContext, actionId);
-          if (action.closeOnClick === true && actionResult !== false) {
+          if (reason !== "submit") {
+            session.destroy?.();
             open = false;
             currentOptions.onClose?.({
-              reason: "action",
-              actionId,
+              reason,
+              actionId: reason === "cancel" ? "cancel" : null,
+              result: response?.values || null,
+            });
+            return response;
+          }
+
+          const values = response?.values && typeof response.values === "object" ? response.values : {};
+          if (typeof currentOptions.onSubmit !== "function") {
+            await session.close({
+              reason: "submit",
+            });
+            open = false;
+            currentOptions.onClose?.({
+              reason: "submit",
+              actionId: "submit",
               result: values,
             });
             return response;
           }
+
+          await session.update({
+            busy: true,
+            busyMessage: currentOptions.busyMessage,
+            values,
+            fieldErrors: {},
+            formError: "",
+          });
+
+          const bridgeContext = createDelegatedSubmitContext(session, currentOptions);
+          const accepted = await currentOptions.onSubmit(values, bridgeContext);
+          if (accepted) {
+            await session.close({
+              reason: "submit",
+            });
+            open = false;
+            currentOptions.onClose?.({
+              reason: "submit",
+              actionId: "submit",
+              result: values,
+            });
+            return response;
+          }
+
+          await session.update({
+            busy: bridgeContext.isBusy(),
+            busyMessage: bridgeContext.getBusyMessage(),
+            values,
+            fieldErrors: bridgeContext.getErrors(),
+            formError: bridgeContext.getFormError(),
+          });
 
           initialValues = {
             ...initialValues,
@@ -169,47 +243,7 @@ function createDelegatedPresetFormModal(intent, options, buildPayload) {
           };
           fieldErrors = bridgeContext.getErrors();
           formError = bridgeContext.getFormError();
-          continue;
         }
-        if (reason !== "submit") {
-          open = false;
-          currentOptions.onClose?.({
-            reason,
-            actionId: reason === "cancel" ? "cancel" : null,
-            result: response?.values || null,
-          });
-          return response;
-        }
-
-        const values = response?.values && typeof response.values === "object" ? response.values : {};
-        if (typeof currentOptions.onSubmit !== "function") {
-          open = false;
-          currentOptions.onClose?.({
-            reason: "submit",
-            actionId: "submit",
-            result: values,
-          });
-          return response;
-        }
-
-        const bridgeContext = createDelegatedSubmitContext();
-        const accepted = await currentOptions.onSubmit(values, bridgeContext);
-        if (accepted) {
-          open = false;
-          currentOptions.onClose?.({
-            reason: "submit",
-            actionId: "submit",
-            result: values,
-          });
-          return response;
-        }
-
-        initialValues = {
-          ...initialValues,
-          ...values,
-        };
-        fieldErrors = bridgeContext.getErrors();
-        formError = bridgeContext.getFormError();
       }
       return null;
     } finally {
@@ -218,7 +252,13 @@ function createDelegatedPresetFormModal(intent, options, buildPayload) {
   }
 
   function openLocalFallback(nextIntent, nextOptions) {
-    const localFactory = nextIntent === "reauth" ? createLocalReauthFormModal : createLocalLoginFormModal;
+    const factories = {
+      login: createLocalLoginFormModal,
+      reauth: createLocalReauthFormModal,
+      account: createLocalAccountFormModal,
+      "change-password": createLocalChangePasswordFormModal,
+    };
+    const localFactory = factories[nextIntent] || createLocalLoginFormModal;
     const modal = localFactory(nextOptions);
     lastResult = modal;
     return modal.open();
@@ -248,9 +288,11 @@ function createDelegatedPresetFormModal(intent, options, buildPayload) {
   };
 }
 
-function createDelegatedSubmitContext() {
+function createDelegatedSubmitContext(session = null, options = {}) {
   let fieldErrors = {};
   let formError = "";
+  let busy = true;
+  let busyMessage = String(options.busyMessage || "").trim();
 
   return {
     setErrors(nextErrors = {}) {
@@ -277,9 +319,23 @@ function createDelegatedSubmitContext() {
     getFormError() {
       return formError;
     },
-    setBusy() {},
+    setBusy(nextBusy, nextBusyMessage) {
+      busy = nextBusy !== false;
+      if (nextBusyMessage != null) {
+        busyMessage = String(nextBusyMessage || "").trim();
+      }
+      if (session) {
+        void session.update({
+          busy,
+          busyMessage,
+        });
+      }
+    },
     isBusy() {
-      return false;
+      return busy;
+    },
+    getBusyMessage() {
+      return busyMessage;
     },
     mode: "",
     modal: null,
@@ -287,8 +343,8 @@ function createDelegatedSubmitContext() {
   };
 }
 
-function createDelegatedActionContext(action) {
-  const base = createDelegatedSubmitContext();
+function createDelegatedActionContext(action, session = null, options = {}) {
+  const base = createDelegatedSubmitContext(session, options);
   return {
     ...base,
     action,
@@ -584,6 +640,22 @@ function createLocalReauthFormModal(options) {
         required: true,
       }],
     ],
+  });
+}
+
+function createLocalAccountFormModal(options) {
+  return createAccountFormModal({
+    ...(options || {}),
+    workspaceBridge: false,
+    renderTarget: "local",
+  });
+}
+
+function createLocalChangePasswordFormModal(options) {
+  return createChangePasswordFormModal({
+    ...(options || {}),
+    workspaceBridge: false,
+    renderTarget: "local",
   });
 }
 

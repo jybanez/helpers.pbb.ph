@@ -11,6 +11,9 @@ const HOST_METHODS = [
   "dialog.prompt",
   "modal.action",
   "modal.form.open",
+  "modal.form.session.open",
+  "modal.form.update",
+  "modal.form.close",
 ];
 
 let cachedAvailabilityPromise = null;
@@ -26,6 +29,7 @@ export function installWorkspaceUiBridgeHost(options = {}) {
   const trustedOrigins = normalizeTrustedOrigins(options.trustedOrigins);
   let toastStack = null;
   const modalParent = options.parent instanceof HTMLElement ? options.parent : document.body;
+  const formSessions = new Map();
   let destroyed = false;
 
   async function onMessage(event) {
@@ -38,6 +42,10 @@ export function installWorkspaceUiBridgeHost(options = {}) {
     }
     try {
       const result = await handleRequest(message.method, message.payload || {}, modalParent, {
+        namespace: normalizeBridgeNamespace(message.namespace),
+        sourceWindow: event.source,
+        sourceOrigin: event.origin,
+        formSessions,
         getToastStack: async () => {
           if (toastStack) {
             return toastStack;
@@ -135,6 +143,9 @@ export function getWorkspaceUiBridge(options = {}) {
         namespace: BRIDGE_NAMESPACE_V2,
       });
     },
+    async openFormSession(payload = {}) {
+      return createWorkspaceFormSession(payload, requestOptions);
+    },
   };
 }
 
@@ -161,7 +172,7 @@ export async function showWorkspaceActionModal(payload = {}, options = {}) {
 
 export async function showWorkspaceFormModal(payload = {}, options = {}) {
   const bridge = getWorkspaceUiBridge(options);
-  return bridge.showFormModal(payload);
+  return bridge.showFormModal(normalizeOutgoingWorkspaceFormPayload(payload));
 }
 
 export async function maybeDelegateWorkspaceDialog(kind, message, options = {}) {
@@ -354,7 +365,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.23");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.27");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -362,7 +373,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.23");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.27");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -370,7 +381,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.23");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.27");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -381,6 +392,12 @@ async function handleRequest(method, payload, modalParent, context) {
       return openWorkspaceActionModal(payload, modalParent);
     case "modal.form.open":
       return openWorkspaceFormModal(payload, modalParent);
+    case "modal.form.session.open":
+      return openWorkspaceFormSession(payload, modalParent, context);
+    case "modal.form.update":
+      return updateWorkspaceFormSession(payload, context);
+    case "modal.form.close":
+      return closeWorkspaceFormSession(payload, context);
     default:
       throw new Error(`Unsupported workspace bridge method: ${String(method || "")}`);
   }
@@ -390,7 +407,7 @@ function openWorkspaceActionModal(payload = {}, parent) {
   return new Promise((resolve) => {
     let settled = false;
     let modal = null;
-    import("./ui.modal.js?v=0.21.23").then(({ createActionModal }) => {
+    import("./ui.modal.js?v=0.21.27").then(({ createActionModal }) => {
       modal = createActionModal({
       title: String(payload.title || "Notice"),
       content: buildActionModalContent(payload),
@@ -448,7 +465,7 @@ function openWorkspaceFormModal(payload = {}, parent) {
     let settled = false;
     let modal = null;
 
-    import("./ui.form.modal.js?v=0.21.23").then(({ createFormModal }) => {
+    import("./ui.form.modal.js?v=0.21.27").then(({ createFormModal }) => {
       const formConfig = {
         title: normalized.title,
         ownerTitle: normalized.ownerTitle,
@@ -511,6 +528,140 @@ function openWorkspaceFormModal(payload = {}, parent) {
       reject(error);
     });
   });
+}
+
+function openWorkspaceFormSession(payload = {}, parent, context) {
+  const normalized = normalizeBridgeFormPayload(payload);
+  const modalId = `workspace-form-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const session = {
+    id: modalId,
+    namespace: context.namespace,
+    sourceWindow: context.sourceWindow,
+    sourceOrigin: context.sourceOrigin === "null" ? "*" : context.sourceOrigin,
+    modal: null,
+    terminal: false,
+  };
+  context.formSessions.set(modalId, session);
+
+  return import("./ui.form.modal.js?v=0.21.27").then(({ createFormModal }) => {
+    session.modal = createFormModal({
+      title: normalized.title,
+      ownerTitle: normalized.ownerTitle,
+      size: normalized.size,
+      submitLabel: normalized.submitLabel,
+      cancelLabel: normalized.cancelLabel,
+      busyMessage: normalized.busyMessage,
+      manageBusyOnSubmit: false,
+      closeOnBackdrop: normalized.closeOnBackdrop,
+      closeOnEscape: normalized.closeOnEscape,
+      mode: normalized.mode,
+      context: normalized.context,
+      rows: normalized.rows,
+      extraActionsPlacement: normalized.extraActionsPlacement,
+      extraActions: normalized.extraActions.map((action) => ({
+        ...action,
+        async onClick() {
+          if (action.closeOnClick === true) {
+            return true;
+          }
+          postWorkspaceBridgeEvent(session, "action", {
+            actionId: action.id,
+            values: session.modal?.getValues?.() || null,
+          });
+          return false;
+        },
+      })),
+      initialValues: normalized.initialValues,
+      parent,
+      workspaceBridge: false,
+      async onSubmit() {
+        postWorkspaceBridgeEvent(session, "submit", {
+          values: session.modal?.getValues?.() || null,
+        });
+        return false;
+      },
+      onClose(meta = {}) {
+        context.formSessions.delete(modalId);
+        if (session.terminal) {
+          session.modal?.destroy?.();
+          return;
+        }
+        session.terminal = true;
+        const values = meta?.reason === "action" ? session.modal?.getValues?.() || null : null;
+        postWorkspaceBridgeEvent(session, normalizeBridgeSessionEventType(meta), {
+          reason: normalizeBridgeFormCloseReason(meta),
+          actionId: meta?.actionId || null,
+          values,
+        });
+        session.modal?.destroy?.();
+      },
+    });
+
+    if (normalized.fieldErrors && Object.keys(normalized.fieldErrors).length) {
+      session.modal.setErrors(normalized.fieldErrors);
+    }
+    if (normalized.formError) {
+      session.modal.setFormError(normalized.formError);
+    }
+    session.modal.open();
+    return { modalId };
+  }).catch((error) => {
+    context.formSessions.delete(modalId);
+    throw error;
+  });
+}
+
+function updateWorkspaceFormSession(payload = {}, context) {
+  const modalId = String(payload?.modalId || "").trim();
+  const session = modalId ? context.formSessions.get(modalId) : null;
+  if (!session?.modal) {
+    throw new Error("Unknown workspace form session.");
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, "busyMessage")) {
+    session.modal.update({
+      busyMessage: String(payload.busyMessage || "").trim() || session.modal.getState().options.busyMessage,
+    });
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "values") && payload.values && typeof payload.values === "object") {
+    session.modal.setValues(payload.values);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "fieldErrors")) {
+    if (payload.fieldErrors && typeof payload.fieldErrors === "object") {
+      session.modal.setErrors(payload.fieldErrors);
+    } else {
+      session.modal.clearErrors();
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "formError")) {
+    const message = String(payload.formError || "").trim();
+    if (message) {
+      session.modal.setFormError(message);
+    } else {
+      session.modal.clearFormError();
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, "busy")) {
+    session.modal.setBusy(payload.busy === true);
+  }
+  return true;
+}
+
+async function closeWorkspaceFormSession(payload = {}, context) {
+  const modalId = String(payload?.modalId || "").trim();
+  const session = modalId ? context.formSessions.get(modalId) : null;
+  if (!session?.modal) {
+    throw new Error("Unknown workspace form session.");
+  }
+  session.terminal = true;
+  context.formSessions.delete(modalId);
+  await session.modal.close({
+    reason: payload?.reason === "submit" ? "submit" : "dismiss",
+    actionId: payload?.actionId || null,
+    result: true,
+  });
+  session.modal.destroy?.();
+  return true;
 }
 
 function buildActionModalContent(payload = {}) {
@@ -604,12 +755,12 @@ function normalizeBridgeFormPayload(payload = {}) {
 
   return {
     intent,
-    title: String(source.title || (intent === "reauth" ? "Session Expired" : "Login")).trim(),
+    title: String(source.title || getDefaultBridgeFormTitle(intent)).trim(),
     ownerTitle: String(source.ownerTitle || "").trim(),
     size: normalizeBridgeModalSize(source.size || "sm"),
-    submitLabel: String(source.submitLabel || (intent === "reauth" ? "Continue" : "Login")).trim(),
+    submitLabel: String(source.submitLabel || getDefaultBridgeFormSubmitLabel(intent)).trim(),
     cancelLabel: String(source.cancelLabel || "Cancel").trim(),
-    busyMessage: String(source.busyMessage || (intent === "reauth" ? "Re-authenticating..." : "Signing in...")).trim(),
+    busyMessage: String(source.busyMessage || getDefaultBridgeFormBusyMessage(intent)).trim(),
     closeOnBackdrop: source.closeOnBackdrop !== false,
     closeOnEscape: source.closeOnEscape !== false,
     mode: String(source.mode || "").trim(),
@@ -620,6 +771,24 @@ function normalizeBridgeFormPayload(payload = {}) {
     rows,
     fieldErrors,
     formError: String(source.formError || "").trim(),
+  };
+}
+
+function normalizeOutgoingWorkspaceFormPayload(payload = {}) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return payload;
+  }
+  const ownerTitle = String(payload.ownerTitle || "").trim();
+  if (ownerTitle) {
+    return payload;
+  }
+  const fallbackOwnerTitle = typeof document !== "undefined" ? String(document.title || "").trim() : "";
+  if (!fallbackOwnerTitle) {
+    return payload;
+  }
+  return {
+    ...payload,
+    ownerTitle: fallbackOwnerTitle,
   };
 }
 
@@ -654,13 +823,64 @@ function normalizeBridgeExtraActionsPlacement(value) {
 
 function normalizeBridgeFormIntent(value) {
   const normalized = String(value || "").trim().toLowerCase();
-  if (normalized === "login" || normalized === "reauth" || normalized === "account" || normalized === "change-password" || normalized === "change_password") {
+  if (normalized === "login" || normalized === "reauth" || normalized === "account" || normalized === "change-password" || normalized === "change_password" || normalized === "generic-form" || normalized === "generic_form") {
     if (normalized === "change_password") {
       return "change-password";
+    }
+    if (normalized === "generic_form") {
+      return "generic-form";
     }
     return normalized;
   }
   return "";
+}
+
+function getDefaultBridgeFormTitle(intent) {
+  switch (intent) {
+    case "reauth":
+      return "Session Expired";
+    case "account":
+      return "Account";
+    case "change-password":
+      return "Change Password";
+    case "generic-form":
+      return "Form";
+    case "login":
+    default:
+      return "Login";
+  }
+}
+
+function getDefaultBridgeFormSubmitLabel(intent) {
+  switch (intent) {
+    case "reauth":
+      return "Continue";
+    case "account":
+      return "Save";
+    case "change-password":
+      return "Update Password";
+    case "generic-form":
+      return "Submit";
+    case "login":
+    default:
+      return "Login";
+  }
+}
+
+function getDefaultBridgeFormBusyMessage(intent) {
+  switch (intent) {
+    case "reauth":
+      return "Re-authenticating...";
+    case "account":
+      return "Saving account...";
+    case "change-password":
+      return "Updating password...";
+    case "generic-form":
+      return "Saving...";
+    case "login":
+    default:
+      return "Signing in...";
+  }
 }
 
 function normalizeBridgeContext(value) {
@@ -760,8 +980,25 @@ function normalizeBridgeFormCloseReason(meta = {}) {
   if (meta.reason === "submit") {
     return "submit";
   }
+  if (meta.reason === "action" && meta.actionId && meta.actionId !== "cancel") {
+    return "action";
+  }
   if (meta.reason === "action" && meta.actionId === "cancel") {
     return "cancel";
+  }
+  return "dismiss";
+}
+
+function normalizeBridgeSessionEventType(meta = {}) {
+  const reason = normalizeBridgeFormCloseReason(meta);
+  if (reason === "action") {
+    return "action";
+  }
+  if (reason === "cancel") {
+    return "cancel";
+  }
+  if (reason === "submit") {
+    return "submit";
   }
   return "dismiss";
 }
@@ -812,6 +1049,17 @@ function isBridgeResponse(message) {
   );
 }
 
+function isBridgeEvent(message) {
+  return Boolean(
+    message
+    && typeof message === "object"
+    && BRIDGE_NAMESPACES.includes(String(message.namespace || ""))
+    && message.phase === "event"
+    && typeof message.modalId === "string"
+    && typeof message.eventType === "string"
+  );
+}
+
 function normalizeBridgeNamespace(value) {
   const namespace = String(value || "").trim();
   if (BRIDGE_NAMESPACES.includes(namespace)) {
@@ -831,6 +1079,125 @@ function normalizeTrustedOrigins(origins) {
 function isTrustedOrigin(origin, trustedOrigins) {
   const current = String(origin || "");
   return trustedOrigins.includes("*") || trustedOrigins.includes(current);
+}
+
+function postWorkspaceBridgeEvent(session, eventType, payload = {}) {
+  if (!session?.sourceWindow || typeof session.sourceWindow.postMessage !== "function") {
+    return;
+  }
+  session.sourceWindow.postMessage({
+    namespace: session.namespace,
+    phase: "event",
+    modalId: session.id,
+    eventType: String(eventType || ""),
+    payload,
+  }, session.sourceOrigin || "*");
+}
+
+async function createWorkspaceFormSession(payload = {}, options = {}) {
+  const available = await probeWorkspaceUiBridge(options);
+  if (!available) {
+    throw new Error("Workspace UI bridge is unavailable.");
+  }
+  const opened = await requestWorkspaceUi("modal.form.session.open", payload, {
+    ...options,
+    namespace: BRIDGE_NAMESPACE_V2,
+  });
+  const modalId = String(opened?.modalId || "").trim();
+  if (!modalId) {
+    throw new Error("Workspace form session did not return a modalId.");
+  }
+
+  const targetOrigin = typeof options?.targetOrigin === "string" && options.targetOrigin.trim() ? options.targetOrigin.trim() : "*";
+  const queue = [];
+  const waiters = [];
+  let destroyed = false;
+
+  function onMessage(event) {
+    if (destroyed) {
+      return;
+    }
+    if (targetOrigin !== "*" && event.origin !== targetOrigin) {
+      return;
+    }
+    const message = event.data;
+    if (!isBridgeEvent(message) || message.modalId !== modalId) {
+      return;
+    }
+    const next = {
+      type: String(message.eventType || ""),
+      ...(message.payload && typeof message.payload === "object" ? message.payload : {}),
+    };
+    const waiter = waiters.shift();
+    if (waiter) {
+      window.clearTimeout(waiter.timer);
+      waiter.resolve(next);
+      return;
+    }
+    queue.push(next);
+  }
+
+  window.addEventListener("message", onMessage);
+
+  function cleanup() {
+    if (destroyed) {
+      return;
+    }
+    destroyed = true;
+    window.removeEventListener("message", onMessage);
+    while (waiters.length) {
+      const waiter = waiters.shift();
+      window.clearTimeout(waiter.timer);
+      waiter.reject(new Error("Workspace form session was destroyed."));
+    }
+  }
+
+  return {
+    modalId,
+    nextEvent(timeoutMs = 0) {
+      if (queue.length) {
+        return Promise.resolve(queue.shift());
+      }
+      return new Promise((resolve, reject) => {
+        let timer = 0;
+        if (timeoutMs > 0) {
+          timer = window.setTimeout(() => {
+            const index = waiters.findIndex((item) => item.resolve === resolve);
+            if (index >= 0) {
+              waiters.splice(index, 1);
+            }
+            reject(new Error("Workspace form session event timed out."));
+          }, timeoutMs);
+        }
+        waiters.push({ resolve, reject, timer });
+      });
+    },
+    update(nextPayload = {}) {
+      return requestWorkspaceUi("modal.form.update", {
+        modalId,
+        ...nextPayload,
+      }, {
+        ...options,
+        namespace: BRIDGE_NAMESPACE_V2,
+      });
+    },
+    async close(nextPayload = {}) {
+      try {
+        await requestWorkspaceUi("modal.form.close", {
+          modalId,
+          ...nextPayload,
+        }, {
+          ...options,
+          namespace: BRIDGE_NAMESPACE_V2,
+        });
+      } finally {
+        cleanup();
+      }
+    },
+    destroy() {
+      cleanup();
+    },
+  };
 }
 
 function resolveTimeout(value) {

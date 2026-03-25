@@ -124,6 +124,30 @@
         return { started: true };
       }
 
+      function openLoginBusy() {
+        const modal = createLoginFormModal({
+          title: "Login",
+          initialValues: {
+            email: "name@agency.gov.ph",
+          },
+          async onSubmit(values, ctx) {
+            writeLog("loginBusy.submit.start", { values });
+            ctx.setBusy(true, "Signing in...");
+            await new Promise((resolve) => window.setTimeout(resolve, 500));
+            ctx.setFormError("Invalid demo credentials.");
+            ctx.setBusy(false);
+            writeLog("loginBusy.submit.end", {
+              accepted: false,
+              formError: "Invalid demo credentials.",
+            });
+            return false;
+          },
+        });
+        writeLog("loginBusy.open", { ownerTitle: document.title });
+        void bindModal(modal, "loginBusy.result");
+        return { started: true };
+      }
+
       function openReauth() {
         const modal = createReauthFormModal({
           title: "Session Expired",
@@ -171,11 +195,70 @@
         return { started: true };
       }
 
+      async function openGenericForm() {
+        const { showWorkspaceFormModal } = await import("../../js/ui/ui.workspace.bridge.js?v=0.21.27");
+        writeLog("genericForm.open", { ownerTitle: document.title });
+        void showWorkspaceFormModal({
+          intent: "generic-form",
+          title: "Add Hub (Geodata)",
+          size: "md",
+          submitLabel: "Create Hub",
+          cancelLabel: "Cancel",
+          busyMessage: "Creating hub...",
+          mode: "create",
+          context: {
+            badge: "CITY",
+            summary: "Philippines / Region VII / Cebu / Cebu City / Lahug",
+          },
+          formError: "The given data was invalid.",
+          fieldErrors: {
+            domain_name: "The domain name has already been taken.",
+          },
+          initialValues: {
+            generated_name: "LAHUG, CEBU CITY",
+            deployment: "city",
+            status: "planned",
+            hub_code: "lahug-cebu-city",
+            domain_name: "lahug-cebu-city.pbb.ph",
+          },
+          rows: [
+            [{ type: "display", name: "generated_name", label: "Generated Hub Name", help: "Auto-derived from the selected hierarchy.", span: 2 }],
+            [{ type: "hidden", name: "deployment" }],
+            [
+              {
+                type: "ui.select",
+                name: "status",
+                label: "Status",
+                items: [
+                  { label: "Planned", value: "planned" },
+                  { label: "Online", value: "online" },
+                  { label: "Offline", value: "offline" },
+                ],
+              },
+              {
+                type: "input",
+                input: "text",
+                name: "hub_code",
+                label: "Hub Code",
+                required: true,
+              },
+            ],
+            [{ type: "input", input: "text", name: "domain_name", label: "Domain Name", required: true }],
+          ],
+        }).then((result) => {
+          writeLog("genericForm.result", result || {});
+          return result;
+        });
+        return { started: true };
+      }
+
       const commands = {
         "login.open": openLogin,
+        "login-busy.open": openLoginBusy,
         "reauth.open": openReauth,
         "account.open": openAccount,
         "change-password.open": openChangePassword,
+        "generic-form.open": openGenericForm,
         "inspect.overlays": async () => inspectLocalOverlays(),
       };
 
@@ -212,9 +295,11 @@
       });
 
       document.getElementById("loginBtn").addEventListener("click", () => void openLogin());
+      document.getElementById("loginBusyBtn").addEventListener("click", () => void openLoginBusy());
       document.getElementById("reauthBtn").addEventListener("click", () => void openReauth());
       document.getElementById("accountBtn").addEventListener("click", () => void openAccount());
       document.getElementById("changePasswordBtn").addEventListener("click", () => void openChangePassword());
+      document.getElementById("genericFormBtn").addEventListener("click", () => void openGenericForm());
 
       emit("child.ready", {
         title: document.title,
@@ -234,9 +319,11 @@
       <h2>Preset Triggers</h2>
       <div class="row" style="margin-top: 12px;">
         <button id="loginBtn">Login</button>
+        <button id="loginBusyBtn">Login Busy</button>
         <button id="reauthBtn">Re-auth</button>
         <button id="accountBtn">Account</button>
         <button id="changePasswordBtn">Change Password</button>
+        <button id="genericFormBtn">Generic Form</button>
       </div>
     </section>
 

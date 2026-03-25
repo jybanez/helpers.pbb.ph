@@ -4,9 +4,12 @@
 
 This V1 defines a cross-origin Workspace bridge contract for helper-owned form-modal rendering through serializable `postMessage` payloads.
 
-Primary method:
+Primary methods:
 
 - `modal.form.open`
+- `modal.form.session.open`
+- `modal.form.update`
+- `modal.form.close`
 
 ## Goals
 
@@ -17,11 +20,14 @@ Primary method:
 - let child apps pass explicit ownership context for parent-owned bridged modal shells
 - preserve visible ownership context even when child apps rely on shared helper presets without manually setting `ownerTitle`
 
-## Method
+## Methods
 
 ### Request
 
 - `method: "modal.form.open"`
+- `method: "modal.form.session.open"`
+- `method: "modal.form.update"`
+- `method: "modal.form.close"`
 
 ### Response
 
@@ -54,17 +60,42 @@ Primary method:
 }
 ```
 
+## Event Envelope
+
+Session-based bridged preset submits stream user interaction events back to the child app through a dedicated bridge event envelope:
+
+```json
+{
+  "namespace": "pbb.workspace.ui.bridge.v2",
+  "phase": "event",
+  "modalId": "workspace-form-abc123",
+  "eventType": "submit",
+  "payload": {
+    "values": {
+      "email": "user@pbb.ph",
+      "password": "secret"
+    }
+  }
+}
+```
+
 ## Timeout Behavior
 
 - `timeoutMs` applies to bridge availability probing and initial request transport only.
 - Once the parent Workspace host accepts an interactive `modal.form.open` request and renders the helper-owned login or re-auth modal, the request must remain pending until the user responds.
 - The child app must not start a second local helper modal solely because the user took longer than the transport timeout to interact with the parent-owned modal.
+- Session-based bridged preset submits use a long-lived modal session:
+  - child opens the parent-owned modal
+  - parent emits `submit | action | cancel | dismiss` events
+  - child drives busy/error updates explicitly with `modal.form.update`
+  - child closes the parent-owned modal explicitly with `modal.form.close`
+- This is the shipped path for cross-origin preset submit flows that need visible busy/error state in the parent modal while child-owned async work is running.
 
 ## Payload Shape
 
 ```ts
 {
-  intent: "login" | "reauth" | "account" | "change-password";
+  intent: "login" | "reauth" | "account" | "change-password" | "generic-form";
   title?: string;
   ownerTitle?: string;
   size?: "sm" | "md" | "lg";
@@ -94,6 +125,41 @@ Primary method:
 ```
 
 `ownerTitle` is optional in the transport payload. For helper-owned preset flows, the child helper may default it from the child document title when the app does not pass an explicit value.
+
+## Session Payloads
+
+### `modal.form.session.open`
+
+Uses the same payload shape as `modal.form.open`, but returns:
+
+```json
+{
+  "modalId": "workspace-form-abc123"
+}
+```
+
+### `modal.form.update`
+
+```ts
+type BridgeFormSessionUpdatePayload = {
+  modalId: string;
+  values?: Record<string, unknown>;
+  busy?: boolean;
+  busyMessage?: string;
+  fieldErrors?: Record<string, string> | null;
+  formError?: string | null;
+};
+```
+
+### `modal.form.close`
+
+```ts
+type BridgeFormSessionClosePayload = {
+  modalId: string;
+  reason?: "submit" | "dismiss";
+  actionId?: string | null;
+};
+```
 
 ## Row Contract
 
@@ -302,6 +368,34 @@ These fields support the retry/reopen model for the currently shipped bridged pr
   }
 }
 ```
+
+## Session Event Shape
+
+```ts
+type BridgeFormSessionEvent = {
+  type: "submit" | "action" | "cancel" | "dismiss";
+  values?: Record<string, unknown> | null;
+  actionId?: string | null;
+  reason?: "submit" | "action" | "cancel" | "dismiss";
+};
+```
+
+## Busy/Error Update Semantics
+
+- Child apps still own the actual async submit work.
+- Parent Workspace owns the visual modal shell and form rendering.
+- For bridged preset submits, the child should:
+  1. open a session with `modal.form.session.open`
+  2. wait for a `submit` event
+  3. send `modal.form.update` with `busy: true`
+  4. run the async submit locally
+  5. send `modal.form.update` with:
+     - `busy: false`
+     - `fieldErrors`
+     - `formError`
+     when the submit is rejected
+  6. send `modal.form.close` when the submit is accepted
+- This keeps the same parent-owned modal open while the child app updates busy and validation state.
 
 ## Concrete Message Examples
 
@@ -537,7 +631,7 @@ These fields support the retry/reopen model for the currently shipped bridged pr
 }
 ```
 
-### Schema-style admin form request
+### Generic-form request
 
 ```json
 {
@@ -714,7 +808,7 @@ The currently shipped runtime supports:
 - `intent: "account"`
 - `intent: "change-password"`
 
-`generic-form` remains future-capable at the contract level but should not be treated as part of the currently shipped runtime slice.
+`generic-form` is now part of the shipped runtime slice, but it remains constrained by the existing JSON-safe row contract. It is not a license for arbitrary DOM mirroring or function-valued payloads.
 
 ## Non-Goals
 

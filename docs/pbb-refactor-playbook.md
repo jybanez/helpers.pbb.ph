@@ -466,6 +466,13 @@ If changing callback signatures or removing methods, plan a major version.
   - `reauth`
   - `account`
   - `change-password`
+  - `generic-form`
+- For cross-origin preset submits that need visible busy/error state in the parent-owned modal while child-owned async work runs, use the session-style bridge path:
+  - `getWorkspaceUiBridge(...).openFormSession(payload)`
+  - `method: "modal.form.session.open"`
+  - `method: "modal.form.update"`
+  - `method: "modal.form.close"`
+  - keep API/business/session logic in the child app; Workspace should only render and update the parent modal surface
 - Before asking downstream teams to validate a new cross-origin bridge change in real repos, use the local harness first:
   - `docs/ui-workspace-cross-origin-demo-harness.md`
   - `node scripts/run-workspace-bridge-cross-origin-demo.mjs`

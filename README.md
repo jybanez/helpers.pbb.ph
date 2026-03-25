@@ -222,9 +222,10 @@ Reusable shared UI utilities live under `js/ui`:
   - `createIframeHost(options)` helper-owned iframe surface with loading/error states, narrow source controls, and clean composition with `ui.window`
 - `ui.workspace.bridge.js`
   - `installWorkspaceUiBridgeHost(options)` trusted parent-side bridge for iframe-hosted apps
-  - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, explicit action-modals, and explicit cross-origin form-modal requests
+  - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, explicit action-modals, explicit cross-origin form-modal requests, and session-style bridged preset submit loops
   - `showWorkspaceActionModal(payload, options)` narrow child-side request helper for parent-owned simple action-modals
-  - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login, re-auth, account, and change-password form-modals through `modal.form.open`
+  - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login, re-auth, account, change-password, and generic-form modals through `modal.form.open`
+  - `bridge.openFormSession(payload)` long-lived child-side session helper for cross-origin preset submits that need parent-modal busy/error updates through `modal.form.session.open`, `modal.form.update`, and `modal.form.close`
 - `ui.dialog.js`
   - `uiAlert(message, options)` promise-based alert modal
   - `uiConfirm(message, options)` promise-based confirm modal
@@ -2166,7 +2167,7 @@ Design rule:
 - local iframe rendering remains the fallback
 - automatic modal-family parent routing is same-origin only
 - cross-origin arbitrary form/modal DOM is still outside the helper contract
-- cross-origin login, re-auth, account, and change-password rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
+- cross-origin login, re-auth, account, change-password, and generic-form rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
 
 Parent host:
 
@@ -2259,6 +2260,7 @@ V1 scope:
   - `intent: "reauth"`
   - `intent: "account"`
   - `intent: "change-password"`
+  - `intent: "generic-form"`
 
 Cross-origin form-bridge contract:
 
@@ -4086,7 +4088,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.24`
+- Latest documented release: `v0.21.27`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

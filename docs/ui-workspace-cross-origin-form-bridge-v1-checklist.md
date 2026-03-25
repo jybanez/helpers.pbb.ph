@@ -52,6 +52,72 @@
 - [x] Confirm whether parent-owned retry/error reopening is still acceptable for these presets or whether an explicit update/error-round-trip is needed first
 - [x] Keep schema-style `generic-form` out of the next runtime slice unless Workspace/HQ produce a stronger shared need and a narrower supported-row subset
 
+## Next Batch Scope
+
+- [x] Confirm `generic-form` should move from future-capable contract-only status into shipped runtime
+- [x] Keep `generic-form` under the existing JSON-safe row contract instead of introducing arbitrary DOM transport
+- [x] Confirm `generic-form` continues to use child-owned API/business logic with parent-owned rendering only
+
+## Next Batch Runtime
+
+- [x] Extend `modal.form.open` runtime to support:
+  - `intent: "generic-form"`
+- [x] Keep `generic-form` on the shared `createFormModal(...)` renderer in the parent host
+- [x] Preserve `fieldErrors` / `formError` rendering for bridged generic forms
+- [x] Preserve `ui.select.items` transport for bridged generic forms
+
+## Next Batch Demo Surface
+
+- [x] Add explicit bridge demo coverage for `generic-form`
+- [x] Add cross-origin harness coverage for `generic-form`
+
+## Next Batch Regression
+
+- [x] Add browser coverage for accepted bridged `generic-form` requests in the same-origin fixture harness
+- [x] Add browser coverage for accepted bridged `generic-form` requests in the cross-origin harness
+- [x] Verify bridged `generic-form` preserves owner-title subtitle, form-level error, field-level error, and no-child-fallback behavior
+
+## Session Update Scope
+
+- [x] Confirm the next contract slice should support parent-modal updates during child-owned async submit flows instead of forcing close-and-reopen retries
+- [x] Keep the session update scope narrow to:
+  - bridged preset submits
+  - busy state
+  - busy message
+  - field errors
+  - form error
+- [x] Keep Workspace parent ownership limited to rendering and state updates only
+- [x] Keep child ownership of:
+  - API submission
+  - auth/session rules
+  - CSRF sequencing
+  - business validation mapping
+
+## Session Update Runtime
+
+- [x] Add a session-style child bridge entrypoint:
+  - `modal.form.session.open`
+- [x] Add parent-side update handling:
+  - `modal.form.update`
+- [x] Add parent-side explicit close handling:
+  - `modal.form.close`
+- [x] Add event streaming back to the child through the same bridge namespace:
+  - `phase: "event"`
+- [x] Keep serialized preset footer actions working under the session contract
+- [x] Preserve child fallback when the session bridge cannot be opened
+
+## Session Update Demo Surface
+
+- [x] Add an explicit busy-submit demo trigger in the cross-origin child harness
+- [x] Add a matching parent-side cross-origin harness trigger for the async busy submit path
+
+## Session Update Regression
+
+- [x] Verify a bridged async login submit activates the parent modal busy state
+- [x] Verify the parent modal stays open while the child async submit is in flight
+- [x] Verify child-side form errors flow back into the already-open parent modal after busy clears
+- [x] Verify cancel still closes the parent modal cleanly after an async bridged retry path
+
 ## Next Wave Runtime
 
 - [x] Extend `modal.form.open` runtime to support:

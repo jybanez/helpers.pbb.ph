@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createActionModal } from "./ui.modal.js?v=0.21.23";
+import { createActionModal } from "./ui.modal.js?v=0.21.27";
 import { createPasswordField } from "./ui.password.js";
 import { createSelect } from "./ui.select.js";
 
@@ -31,6 +31,7 @@ const DEFAULT_OPTIONS = {
   cancelIcon: "",
   closeOnSuccess: true,
   busyMessage: "Saving...",
+  manageBusyOnSubmit: true,
   onSubmit: null,
   onChange: null,
   onClose: null,
@@ -508,7 +509,9 @@ export function createFormModal(options = {}) {
     if (typeof currentOptions.onSubmit !== "function") {
       return true;
     }
-    modal.setBusy(true, { message: currentOptions.busyMessage });
+    if (currentOptions.manageBusyOnSubmit !== false) {
+      modal.setBusy(true, { message: currentOptions.busyMessage });
+    }
     try {
       const result = await currentOptions.onSubmit(getValues(), createContext(null));
       if (result) {
@@ -518,7 +521,7 @@ export function createFormModal(options = {}) {
     } catch (_error) {
       return false;
     } finally {
-      if (modal.getState().open) {
+      if (currentOptions.manageBusyOnSubmit !== false && modal.getState().open) {
         modal.setBusy(false);
       }
     }
@@ -881,6 +884,7 @@ function normalizeOptions(options = {}) {
     cancelLabel: String(options.cancelLabel || DEFAULT_OPTIONS.cancelLabel),
     submitVariant: normalizeSubmitVariant(options.submitVariant),
     busyMessage: String(options.busyMessage || DEFAULT_OPTIONS.busyMessage),
+    manageBusyOnSubmit: options.manageBusyOnSubmit !== false,
   };
 }
 

@@ -226,6 +226,60 @@
         return result;
       }
 
+      async function runBridgeGenericForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "generic-form",
+          title: "Add Hub (Geodata)",
+          ownerTitle: "Bridge Child",
+          size: "md",
+          submitLabel: "Create Hub",
+          cancelLabel: "Cancel",
+          busyMessage: "Creating hub...",
+          mode: "create",
+          context: {
+            badge: "CITY",
+            summary: "Philippines / Region VII / Cebu / Cebu City / Lahug",
+          },
+          formError: "The given data was invalid.",
+          fieldErrors: {
+            domain_name: "The domain name has already been taken.",
+          },
+          initialValues: {
+            generated_name: "LAHUG, CEBU CITY",
+            deployment: "city",
+            status: "planned",
+            hub_code: "lahug-cebu-city",
+            domain_name: "lahug-cebu-city.pbb.ph",
+          },
+          rows: [
+            [{ type: "display", name: "generated_name", label: "Generated Hub Name", help: "Auto-derived from the selected hierarchy.", span: 2 }],
+            [{ type: "hidden", name: "deployment" }],
+            [
+              {
+                type: "ui.select",
+                name: "status",
+                label: "Status",
+                items: [
+                  { label: "Planned", value: "planned" },
+                  { label: "Online", value: "online" },
+                  { label: "Offline", value: "offline" },
+                ],
+              },
+              {
+                type: "input",
+                input: "text",
+                name: "hub_code",
+                label: "Hub Code",
+                required: true,
+              },
+            ],
+            [{ type: "input", input: "text", name: "domain_name", label: "Domain Name", required: true }],
+          ],
+        });
+        writeLog("modal.form.generic", result);
+        return result;
+      }
+
       async function runInvalidBridgeForm() {
         try {
           await showWorkspaceFormModal({
@@ -314,6 +368,7 @@
       document.getElementById("bridgeReauthBtn").addEventListener("click", () => void runBridgeReauthForm());
       document.getElementById("bridgeAccountBtn").addEventListener("click", () => void runBridgeAccountForm());
       document.getElementById("bridgeChangePasswordBtn").addEventListener("click", () => void runBridgeChangePasswordForm());
+      document.getElementById("bridgeGenericBtn").addEventListener("click", () => void runBridgeGenericForm());
       document.getElementById("autoActionBtn").addEventListener("click", () => void runAutoActionModal());
       document.getElementById("autoFormBtn").addEventListener("click", () => void runAutoFormModal());
       document.getElementById("probeBtn").addEventListener("click", async () => {
@@ -330,6 +385,7 @@
         runBridgeReauthForm,
         runBridgeAccountForm,
         runBridgeChangePasswordForm,
+        runBridgeGenericForm,
         runInvalidBridgeForm,
         runUnsupportedBridgeForm,
         runAutoActionModal,
@@ -345,7 +401,7 @@
   <main>
     <section class="hero">
       <h1>Workspace UI Bridge Fixture</h1>
-      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, plain helper modal-family overlays should auto-route to the parent when the host is same-origin, and the explicit form-bridge contract can render narrow cross-origin login, reauth, account, and change-password forms in the parent shell.</p>
+      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, plain helper modal-family overlays should auto-route to the parent when the host is same-origin, and the explicit form-bridge contract can render cross-origin login, reauth, account, change-password, and generic schema-style forms in the parent shell.</p>
     </section>
     <section class="panel">
       <div class="row">
@@ -359,6 +415,7 @@
         <button id="bridgeReauthBtn" type="button">Bridge Reauth Form</button>
         <button id="bridgeAccountBtn" type="button">Bridge Account Form</button>
         <button id="bridgeChangePasswordBtn" type="button">Bridge Change Password</button>
+        <button id="bridgeGenericBtn" type="button">Bridge Generic Form</button>
         <button id="autoActionBtn" type="button">Auto Action Modal</button>
         <button id="autoFormBtn" type="button">Auto Form Modal</button>
       </div>

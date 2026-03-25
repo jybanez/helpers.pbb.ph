@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.24`
+- Latest documented release: `v0.21.27`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -32,7 +32,46 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.2.x`: audio UI layer
 - `v0.1.x`: initial public prototype
 
+## Releases
+
+### v0.21.27
+
+- added session-style cross-origin bridged preset submit updates through:
+  - `modal.form.session.open`
+  - `modal.form.update`
+  - `modal.form.close`
+- shipped child-driven busy/error round-trip for cross-origin preset submit flows so parent-owned bridged login/reauth/account/change-password modals can stay open while the child app runs async submit logic
+- added explicit busy-submit coverage to the cross-origin harness and browser regressions
+- added a manual `Open Login Busy` trigger to `demos/demo.workspace.bridge.cross.origin.html`
+- bumped overlay-routing revision chain to `v0.21.27`
+
 ## Release Notes
+### v0.21.26
+
+- Fixed direct cross-origin `showWorkspaceFormModal(...)` calls so they now default `ownerTitle` from the child document title when the payload omits it.
+- Practical effect:
+  - schema-style `generic-form` bridge calls now keep the same owning-window subtitle behavior that preset-based bridged modals already had
+  - child apps using the raw form bridge no longer need to wire `ownerTitle` manually just to preserve Workspace ownership context
+- Bumped the overlay-routing revision chain again so downstream Workspace/child app refreshes fetch the owner-title fallback for direct bridge calls instead of stale cached modules.
+
+### v0.21.25
+
+- Extended the explicit cross-origin `modal.form.open` runtime to support `intent: "generic-form"` for schema-style row-based admin forms.
+- The parent Workspace host now accepts generic row payloads under the existing JSON-safe row contract and reuses the shared `createFormModal(...)` renderer instead of introducing a separate bridge-only form engine.
+- Added generic-form coverage to:
+  - `samples/iframe/workspace-ui-bridge.fixture.html`
+  - `samples/iframe/workspace-ui-bridge.cross-origin.child.html`
+  - `tests/workspace.bridge.regression.html`
+  - `tests/workspace.bridge.cross.origin.regression.html`
+- The generic-form bridge path now proves:
+  - parent-owned rendering
+  - owner-title subtitle preservation
+  - form-level error rendering
+  - field-level error rendering
+  - `ui.select` item transport
+  - no local child fallback modal remains visible
+- Bumped the overlay-routing revision chain again so downstream Workspace/child app refreshes fetch the generic-form bridge support instead of stale cached modules.
+
 ### v0.21.24
 
 - Added a first-class local cross-origin Workspace bridge harness so bridge changes can be validated in this repo before downstream teams spend time testing them in live apps.

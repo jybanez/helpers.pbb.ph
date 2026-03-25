@@ -186,9 +186,11 @@
     });
 
     document.getElementById("openLoginBtn").addEventListener("click", () => void sendCommand("login.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("openLoginBusyBtn").addEventListener("click", () => void sendCommand("login-busy.open").catch((error) => writeLog("error", { message: error.message })));
     document.getElementById("openReauthBtn").addEventListener("click", () => void sendCommand("reauth.open").catch((error) => writeLog("error", { message: error.message })));
     document.getElementById("openAccountBtn").addEventListener("click", () => void sendCommand("account.open").catch((error) => writeLog("error", { message: error.message })));
     document.getElementById("openChangePasswordBtn").addEventListener("click", () => void sendCommand("change-password.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("openGenericBtn").addEventListener("click", () => void sendCommand("generic-form.open").catch((error) => writeLog("error", { message: error.message })));
     document.getElementById("inspectBtn").addEventListener("click", () => void sendCommand("inspect.overlays").then((result) => writeLog("inspect.overlays", result || {})).catch((error) => writeLog("error", { message: error.message })));
 
     setReady(false);
@@ -199,13 +201,15 @@
     <section class="panel">
       <div>
         <h1>Workspace Bridge Cross-Origin Demo</h1>
-        <p class="muted">Use this page with the local two-origin harness so the child iframe really runs on a different origin. This is the correct place to verify cross-origin login, re-auth, account, change-password, ownership subtitles, and bridged account footer actions before other teams pull the helper update.</p>
+        <p class="muted">Use this page with the local two-origin harness so the child iframe really runs on a different origin. This is the correct place to verify cross-origin login, re-auth, account, change-password, generic schema-style forms, ownership subtitles, bridged account footer actions, and async busy/error submit updates before other teams pull the helper update.</p>
         <p class="status" id="status">Waiting for child</p>
         <div class="controls">
           <button id="openLoginBtn">Open Login</button>
+          <button id="openLoginBusyBtn">Open Login Busy</button>
           <button id="openReauthBtn">Open Re-auth</button>
           <button id="openAccountBtn">Open Account</button>
           <button id="openChangePasswordBtn">Open Change Password</button>
+          <button id="openGenericBtn">Open Generic Form</button>
           <button id="inspectBtn">Inspect Child Overlays</button>
         </div>
       </div>

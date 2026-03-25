@@ -108,6 +108,26 @@
       Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
       await waitForEvent("login.result");
 
+      await sendCommand(bridgeFrame, "login-busy.open");
+      await waitForEvent("loginBusy.open");
+      await waitUntil(() => Boolean(document.body.querySelector(".ui-form-modal")), 1500);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "bridged busy login should render in the parent document before submit");
+      const busyPasswordInput = document.querySelector('input[name="password"]');
+      if (busyPasswordInput) {
+        busyPasswordInput.value = "demo-secret";
+        busyPasswordInput.dispatchEvent(new Event("input", { bubbles: true }));
+        busyPasswordInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Login"))?.click();
+      await waitForEvent("loginBusy.submit.start");
+      await waitUntil(() => Boolean(document.body.querySelector(".ui-modal-busy:not([hidden])")), 1500);
+      assert(Boolean(document.body.querySelector(".ui-modal-busy:not([hidden])")), "bridged busy login should show the parent modal busy state during child async submit");
+      await waitForEvent("loginBusy.submit.end");
+      await waitUntil(() => (document.body.querySelector(".ui-form-modal-form-error")?.textContent || "").includes("Invalid demo credentials"), 2500);
+      assert((document.body.querySelector(".ui-form-modal-form-error")?.textContent || "").includes("Invalid demo credentials"), "bridged busy login should surface child-side submit errors back into the open parent modal");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await waitForEvent("loginBusy.result");
+
       await sendCommand(bridgeFrame, "account.open");
       await wait(300);
       assert(Boolean(document.body.querySelector(".ui-form-modal")), "bridged account should render in the parent document");
@@ -125,6 +145,19 @@
       assert(childOverlayState?.localFormModalCount === 0, "bridged change-password should not leave a local child form modal visible");
       Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
       await waitForEvent("changePassword.result");
+
+      await sendCommand(bridgeFrame, "generic-form.open");
+      await waitForEvent("genericForm.open");
+      await wait(300);
+      assert((document.body.querySelector(".ui-modal-title")?.textContent || "").includes("Add Hub"), "bridged generic form should render in the parent document");
+      assert((document.body.querySelector(".ui-modal-owner-title")?.textContent || "").includes("PBB HQ"), "bridged generic form should keep the owner-title subtitle");
+      assert((document.body.querySelector(".ui-form-modal-form-error")?.textContent || "").includes("invalid"), "bridged generic form should render the provided form-level error");
+      const genericFieldError = document.querySelector('input[name="domain_name"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+      assert((genericFieldError?.textContent || "").includes("already been taken"), "bridged generic form should render field-level errors");
+      childOverlayState = await sendCommand(bridgeFrame, "inspect.overlays");
+      assert(childOverlayState?.localFormModalCount === 0, "bridged generic form should not leave a local child form modal visible");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await waitForEvent("genericForm.result");
     } catch (error) {
       failures.push(`exception: ${String(error?.message || error)}`);
     }
@@ -171,6 +204,17 @@
 
     function wait(ms) {
       return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    async function waitUntil(predicate, timeoutMs = 1500, intervalMs = 50) {
+      const started = Date.now();
+      while (Date.now() - started < timeoutMs) {
+        if (predicate()) {
+          return true;
+        }
+        await wait(intervalMs);
+      }
+      return Boolean(predicate());
     }
 
     function finish() {
