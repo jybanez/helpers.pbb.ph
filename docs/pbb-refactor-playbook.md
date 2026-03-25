@@ -370,6 +370,7 @@ If changing callback signatures or removing methods, plan a major version.
 - `createModal(options)` is now the base shell for overlay/dialog rendering.
 - `createModal(...)` now defaults to header-only dragging (`draggable: true`); keep drag initiation restricted to the header and do not let close buttons or header actions accidentally start movement.
 - `ownerTitle` is now the shared way to restore ownership context in parent-owned bridged modals; prefer it over app-local subtitle markup when the shell needs to identify the requesting window/app.
+- Cross-origin bridged preset modals now default `ownerTitle` from the child document title when `options.ownerTitle` is not explicitly provided. If the subtitle is missing in Workspace, verify the child app sets a meaningful `document.title`.
 - `ui.dialog` helpers (`uiAlert`, `uiConfirm`, `uiPrompt`) are expected to compose over `ui.modal`, not duplicate modal/backdrop/focus logic.
 - `createModal(...)` may expose header-level actions through `headerActions`; keep these as a slot-level contract, not a second footer-action API.
 - `createActionModal(...)` may expose declarative `headerActions[]`; keep the header/footer action object contract identical when extending that helper.

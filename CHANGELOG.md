@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.21`
+- Latest documented release: `v0.21.22`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,17 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.22
+
+- Fixed bridged preset modal ownership subtitles so cross-origin Workspace-rendered login, re-auth, account, and change-password modals no longer depend on each child app explicitly passing `ownerTitle`.
+- Bridged preset payloads now resolve `ownerTitle` in this order:
+  - explicit `options.ownerTitle`
+  - child document title
+  - empty string
+- Practical effect:
+  - Workspace-hosted child apps such as HQ now show the owning window/app title under the bridged modal title by default, provided the child document has a meaningful `document.title`.
+- Bumped the overlay-routing revision chain again so downstream Workspace/child app refreshes fetch the owner-title fix instead of stale cached preset modules.
+
 ### v0.21.21
 
 - Extended the explicit cross-origin Workspace form bridge beyond auth-only flows so `modal.form.open` now supports:

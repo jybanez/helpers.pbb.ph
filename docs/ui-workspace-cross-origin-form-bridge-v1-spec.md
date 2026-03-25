@@ -15,6 +15,7 @@ Primary method:
 - keep payloads close to the existing helper form-modal shape
 - keep business logic in the child app
 - let child apps pass explicit ownership context for parent-owned bridged modal shells
+- preserve visible ownership context even when child apps rely on shared helper presets without manually setting `ownerTitle`
 
 ## Method
 
@@ -82,6 +83,8 @@ Primary method:
   rows: Array<Array<Record<string, unknown>>>;
 }
 ```
+
+`ownerTitle` is optional in the transport payload. For helper-owned preset flows, the child helper may default it from the child document title when the app does not pass an explicit value.
 
 ## Row Contract
 

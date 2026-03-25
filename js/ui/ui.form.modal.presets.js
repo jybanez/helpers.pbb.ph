@@ -1,5 +1,5 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.21";
-import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.21";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.22";
+import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.22";
 
 export function createLoginFormModal(options = {}) {
   if (shouldUseCrossOriginFormBridge(options)) {
@@ -270,7 +270,7 @@ function buildLoginBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Operator Login",
-    ownerTitle: String(options.ownerTitle || "").trim(),
+    ownerTitle: resolveBridgeOwnerTitle(options),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Login",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -325,7 +325,7 @@ function buildReauthBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Session Expired",
-    ownerTitle: String(options.ownerTitle || "").trim(),
+    ownerTitle: resolveBridgeOwnerTitle(options),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Continue",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -377,7 +377,7 @@ function buildAccountBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Account",
-    ownerTitle: String(options.ownerTitle || "").trim(),
+    ownerTitle: resolveBridgeOwnerTitle(options),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Save",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -425,7 +425,7 @@ function buildChangePasswordBridgePayload(options, state) {
   return {
     intent: state.intent,
     title: options.title || "Change Password",
-    ownerTitle: String(options.ownerTitle || "").trim(),
+    ownerTitle: resolveBridgeOwnerTitle(options),
     size: options.size || "sm",
     submitLabel: options.submitLabel || "Update Password",
     cancelLabel: options.cancelLabel || "Cancel",
@@ -753,6 +753,20 @@ function normalizeFieldMap(value, fallback) {
 function normalizeIdentifierKind(value) {
   const next = String(value || "email").trim().toLowerCase();
   return next === "username" ? "username" : "email";
+}
+
+function resolveBridgeOwnerTitle(options = {}) {
+  const explicit = String(options.ownerTitle || "").trim();
+  if (explicit) {
+    return explicit;
+  }
+  if (typeof document !== "undefined") {
+    const fallback = String(document.title || "").trim();
+    if (fallback) {
+      return fallback;
+    }
+  }
+  return "";
 }
 
 function normalizeOptionsList(options) {

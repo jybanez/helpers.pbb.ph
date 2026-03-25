@@ -1,7 +1,7 @@
 const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
-const UI_OVERLAY_ROUTING_REV = "0.21.21";
+const UI_OVERLAY_ROUTING_REV = "0.21.22";
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
