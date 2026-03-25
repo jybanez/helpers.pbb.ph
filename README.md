@@ -222,8 +222,9 @@ Reusable shared UI utilities live under `js/ui`:
   - `createIframeHost(options)` helper-owned iframe surface with loading/error states, narrow source controls, and clean composition with `ui.window`
 - `ui.workspace.bridge.js`
   - `installWorkspaceUiBridgeHost(options)` trusted parent-side bridge for iframe-hosted apps
-  - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, and explicit action-modals
+  - `getWorkspaceUiBridge(options)` child-side bridge helper for delegated toasts, dialogs, explicit action-modals, and explicit cross-origin form-modal requests
   - `showWorkspaceActionModal(payload, options)` narrow child-side request helper for parent-owned simple action-modals
+  - `showWorkspaceFormModal(payload, options)` narrow child-side request helper for parent-owned cross-origin login and re-auth form-modals through `modal.form.open`
 - `ui.dialog.js`
   - `uiAlert(message, options)` promise-based alert modal
   - `uiConfirm(message, options)` promise-based confirm modal
@@ -2144,7 +2145,7 @@ Related demos:
 
 - `demos/demo.iframe.host.html`
 
-### `installWorkspaceUiBridgeHost(options)`, `getWorkspaceUiBridge(options)`, `showWorkspaceActionModal(payload, options)` (`js/ui/ui.workspace.bridge.js`)
+### `installWorkspaceUiBridgeHost(options)`, `getWorkspaceUiBridge(options)`, `showWorkspaceActionModal(payload, options)`, `showWorkspaceFormModal(payload, options)` (`js/ui/ui.workspace.bridge.js`)
 
 Purpose:
 
@@ -2156,7 +2157,9 @@ Design rule:
 - parent host owns the rendered overlay surfaces
 - child helpers delegate only when a trusted bridge is available
 - local iframe rendering remains the fallback
-- automatic modal-family parent routing is same-origin only; cross-origin arbitrary form/modal DOM is still outside the helper contract
+- automatic modal-family parent routing is same-origin only
+- cross-origin arbitrary form/modal DOM is still outside the helper contract
+- cross-origin login and re-auth rendering can use the explicit `modal.form.open` bridge contract through `showWorkspaceFormModal(...)`
 
 Parent host:
 
@@ -2188,6 +2191,23 @@ const bridge = getWorkspaceUiBridge();
 const available = await bridge.isAvailable();
 ```
 
+Cross-origin form bridge:
+
+```js
+import { showWorkspaceFormModal } from "./js/ui/ui.workspace.bridge.js";
+
+const result = await showWorkspaceFormModal({
+  intent: "login",
+  title: "Login",
+  submitLabel: "Login",
+  cancelLabel: "Cancel",
+  rows: [
+    [{ type: "input", input: "email", name: "email", label: "Email address", required: true }],
+    [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
+  ],
+});
+```
+
 Parent options:
 
 | Option | Type | Default | Description |
@@ -2215,6 +2235,7 @@ Child API:
 | `confirm` | `payload` | `Promise<any>` | Delegates `uiConfirm(...)` behavior to the parent host. |
 | `prompt` | `payload` | `Promise<any>` | Delegates `uiPrompt(...)` behavior to the parent host. |
 | `showActionModal` | `payload` | `Promise<object>` | Requests a parent-owned simple action modal. |
+| `showFormModal` | `payload` | `Promise<object>` | Requests a parent-owned cross-origin login or re-auth form modal through `modal.form.open`. |
 
 V1 scope:
 
@@ -2226,6 +2247,24 @@ V1 scope:
   - `createActionModal(...)`
   - `createFormModal(...)`
   - presets built over `createFormModal(...)`
+- explicit cross-origin form bridge for:
+  - `intent: "login"`
+  - `intent: "reauth"`
+
+Cross-origin form-bridge contract:
+
+- request namespace:
+  - `pbb.workspace.ui.bridge.v2`
+- request method:
+  - `modal.form.open`
+- result shape:
+  - `{ reason, values }`
+  - where `reason` is `submit | cancel | dismiss`
+- child app still owns:
+  - API submission
+  - auth/session logic
+  - CSRF refresh sequence
+  - retry/error mapping
 
 V1 non-goals:
 
@@ -4024,7 +4063,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.17`
+- Latest documented release: `v0.21.18`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

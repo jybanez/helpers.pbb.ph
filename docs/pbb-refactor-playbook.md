@@ -454,12 +454,24 @@ If changing callback signatures or removing methods, plan a major version.
   - parent installs `installWorkspaceUiBridgeHost(...)`
   - child uses `getWorkspaceUiBridge(...)`
 - Do not treat this as generic cross-origin DOM mirroring. Automatic modal-family routing is same-origin only; cross-origin cases still rely on explicit bridge-aware surfaces or local fallback.
+- For cross-origin iframe apps that need helper-owned auth modals in the Workspace parent, use the explicit form bridge:
+  - `showWorkspaceFormModal(...)`
+  - `namespace: "pbb.workspace.ui.bridge.v2"`
+  - `method: "modal.form.open"`
+  - current shipped `intent` values:
+    - `login`
+    - `reauth`
 - After helper-side routing changes land, downstream apps should refresh vendored helper assets and hard-refresh the browser so stale cached ES modules do not keep older local-rendering behavior alive.
 - Keep V1 narrow:
   - no generic parent RPC
   - no auth/session brokering
-  - no automatic cross-origin `createFormModal(...)` mirroring
+  - no automatic cross-origin `createFormModal(...)` mirroring beyond the explicit `login` / `reauth` form bridge contract
   - no arbitrary modal mirroring from child DOM into parent DOM
+- Child apps still own:
+  - API submission
+  - CSRF refresh sequencing
+  - auth/session state changes
+  - retry/error mapping
 - Prefer `trustedOrigins` over permissive cross-frame behavior. Workspace-owned surfaces should only be delegated to a known parent shell.
 
 ### 11.4 Grid Virtualization (`ui.grid`)

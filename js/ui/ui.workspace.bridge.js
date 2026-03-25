@@ -1,4 +1,6 @@
-const BRIDGE_NAMESPACE = "pbb.workspace.ui.bridge.v1";
+const BRIDGE_NAMESPACE_V1 = "pbb.workspace.ui.bridge.v1";
+const BRIDGE_NAMESPACE_V2 = "pbb.workspace.ui.bridge.v2";
+const BRIDGE_NAMESPACES = [BRIDGE_NAMESPACE_V1, BRIDGE_NAMESPACE_V2];
 const DEFAULT_TIMEOUT_MS = 900;
 const HOST_METHODS = [
   "toast.show",
@@ -8,6 +10,7 @@ const HOST_METHODS = [
   "dialog.confirm",
   "dialog.prompt",
   "modal.action",
+  "modal.form.open",
 ];
 
 let cachedAvailabilityPromise = null;
@@ -45,7 +48,7 @@ export function installWorkspaceUiBridgeHost(options = {}) {
         },
       });
       event.source?.postMessage({
-        namespace: BRIDGE_NAMESPACE,
+        namespace: normalizeBridgeNamespace(message.namespace),
         phase: "response",
         id: message.id,
         ok: true,
@@ -54,7 +57,7 @@ export function installWorkspaceUiBridgeHost(options = {}) {
       }, event.origin === "null" ? "*" : event.origin);
     } catch (error) {
       event.source?.postMessage({
-        namespace: BRIDGE_NAMESPACE,
+        namespace: normalizeBridgeNamespace(message.namespace),
         phase: "response",
         id: message.id,
         ok: false,
@@ -126,6 +129,12 @@ export function getWorkspaceUiBridge(options = {}) {
     async showActionModal(payload = {}) {
       return requestWorkspaceUi("modal.action", payload, requestOptions);
     },
+    async showFormModal(payload = {}) {
+      return requestWorkspaceUi("modal.form.open", payload, {
+        ...requestOptions,
+        namespace: BRIDGE_NAMESPACE_V2,
+      });
+    },
   };
 }
 
@@ -148,6 +157,11 @@ export function resolveWorkspaceOverlayParent(options = {}) {
 export async function showWorkspaceActionModal(payload = {}, options = {}) {
   const bridge = getWorkspaceUiBridge(options);
   return bridge.showActionModal(payload);
+}
+
+export async function showWorkspaceFormModal(payload = {}, options = {}) {
+  const bridge = getWorkspaceUiBridge(options);
+  return bridge.showFormModal(payload);
 }
 
 export async function maybeDelegateWorkspaceDialog(kind, message, options = {}) {
@@ -253,6 +267,7 @@ function requestWorkspaceUi(method, payload, options) {
   }
   const timeoutMs = resolveTimeout(options?.timeoutMs);
   const targetOrigin = typeof options?.targetOrigin === "string" && options.targetOrigin.trim() ? options.targetOrigin.trim() : "*";
+  const namespace = normalizeBridgeNamespace(options?.namespace);
   const requestId = `workspace-ui-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
   return new Promise((resolve, reject) => {
@@ -286,7 +301,7 @@ function requestWorkspaceUi(method, payload, options) {
     }, timeoutMs);
 
     window.parent.postMessage({
-      namespace: BRIDGE_NAMESPACE,
+      namespace,
       phase: "request",
       id: requestId,
       method,
@@ -302,7 +317,10 @@ function probeWorkspaceUiBridge(options = {}) {
   if (typeof window === "undefined" || window.parent === window || !window.parent) {
     return Promise.resolve(false);
   }
-  cachedAvailabilityPromise = requestWorkspaceUi("bridge.ping", {}, options)
+  cachedAvailabilityPromise = requestWorkspaceUi("bridge.ping", {}, {
+    ...options,
+    namespace: BRIDGE_NAMESPACE_V1,
+  })
     .then((result) => Array.isArray(result?.methods))
     .catch(() => false);
   return cachedAvailabilityPromise;
@@ -323,7 +341,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.17");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.18");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -331,7 +349,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.17");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.18");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -339,7 +357,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.17");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.18");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -348,6 +366,8 @@ async function handleRequest(method, payload, modalParent, context) {
     }
     case "modal.action":
       return openWorkspaceActionModal(payload, modalParent);
+    case "modal.form.open":
+      return openWorkspaceFormModal(payload, modalParent);
     default:
       throw new Error(`Unsupported workspace bridge method: ${String(method || "")}`);
   }
@@ -357,7 +377,7 @@ function openWorkspaceActionModal(payload = {}, parent) {
   return new Promise((resolve) => {
     let settled = false;
     let modal = null;
-    import("./ui.modal.js?v=0.21.17").then(({ createActionModal }) => {
+    import("./ui.modal.js?v=0.21.18").then(({ createActionModal }) => {
       modal = createActionModal({
       title: String(payload.title || "Notice"),
       content: buildActionModalContent(payload),
@@ -405,6 +425,58 @@ function openWorkspaceActionModal(payload = {}, parent) {
         actionId: null,
         actionLabel: String(error?.message || "Workspace action modal failed to load."),
       });
+    });
+  });
+}
+
+function openWorkspaceFormModal(payload = {}, parent) {
+  const normalized = normalizeBridgeFormPayload(payload);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let modal = null;
+
+    import("./ui.form.modal.js?v=0.21.18").then(({ createFormModal }) => {
+      const formConfig = {
+        title: normalized.title,
+        size: normalized.size,
+        submitLabel: normalized.submitLabel,
+        cancelLabel: normalized.cancelLabel,
+        busyMessage: normalized.busyMessage,
+        closeOnBackdrop: normalized.closeOnBackdrop,
+        closeOnEscape: normalized.closeOnEscape,
+        mode: normalized.mode,
+        context: normalized.context,
+        rows: normalized.rows,
+        initialValues: normalized.initialValues,
+        parent,
+        workspaceBridge: false,
+        async onSubmit(values) {
+          return values;
+        },
+        onClose(meta = {}) {
+          if (settled) {
+            modal?.destroy?.();
+            return;
+          }
+          settled = true;
+          resolve({
+            reason: normalizeBridgeFormCloseReason(meta),
+            values: meta?.reason === "submit" ? modal?.getValues?.() || null : null,
+          });
+          modal?.destroy?.();
+        },
+      };
+
+      modal = createFormModal(formConfig);
+      if (normalized.fieldErrors && Object.keys(normalized.fieldErrors).length) {
+        modal.setErrors(normalized.fieldErrors);
+      }
+      if (normalized.formError) {
+        modal.setFormError(normalized.formError);
+      }
+      modal.open();
+    }).catch((error) => {
+      reject(error);
     });
   });
 }
@@ -483,6 +555,150 @@ function sanitizeToastOptions(options = {}) {
   return copy;
 }
 
+function normalizeBridgeFormPayload(payload = {}) {
+  const source = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : null;
+  if (!source) {
+    throw new Error("Form bridge payload must be an object.");
+  }
+
+  const intent = normalizeBridgeFormIntent(source.intent || source.variant);
+  if (!intent) {
+    throw new Error("Form bridge payload requires a supported intent.");
+  }
+
+  const rows = normalizeBridgeRows(source.rows);
+  const initialValues = normalizePlainObject(source.initialValues);
+  const fieldErrors = normalizeErrorMap(source.fieldErrors);
+
+  return {
+    intent,
+    title: String(source.title || (intent === "reauth" ? "Session Expired" : "Login")).trim(),
+    size: normalizeBridgeModalSize(source.size || "sm"),
+    submitLabel: String(source.submitLabel || (intent === "reauth" ? "Continue" : "Login")).trim(),
+    cancelLabel: String(source.cancelLabel || "Cancel").trim(),
+    busyMessage: String(source.busyMessage || (intent === "reauth" ? "Re-authenticating..." : "Signing in...")).trim(),
+    closeOnBackdrop: source.closeOnBackdrop !== false,
+    closeOnEscape: source.closeOnEscape !== false,
+    mode: String(source.mode || "").trim(),
+    context: normalizeBridgeContext(source.context),
+    initialValues,
+    rows,
+    fieldErrors,
+    formError: String(source.formError || "").trim(),
+  };
+}
+
+function normalizeBridgeFormIntent(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "login" || normalized === "reauth") {
+    return normalized;
+  }
+  return "";
+}
+
+function normalizeBridgeContext(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return {
+    kind: value.kind ? String(value.kind).trim() : "",
+    badge: value.badge ? String(value.badge).trim() : "",
+    summary: value.summary ? String(value.summary).trim() : "",
+  };
+}
+
+function normalizePlainObject(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const copy = {};
+  Object.keys(value).forEach((key) => {
+    const next = value[key];
+    if (isJsonSafeValue(next)) {
+      copy[key] = next;
+    }
+  });
+  return copy;
+}
+
+function normalizeErrorMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const copy = {};
+  Object.keys(value).forEach((key) => {
+    const message = Array.isArray(value[key]) ? String(value[key][0] || "").trim() : String(value[key] || "").trim();
+    if (message) {
+      copy[key] = message;
+    }
+  });
+  return copy;
+}
+
+function normalizeBridgeRows(rows) {
+  if (!Array.isArray(rows)) {
+    throw new Error("Form bridge payload.rows must be an array.");
+  }
+  return rows.map((row, rowIndex) => {
+    if (!Array.isArray(row)) {
+      throw new Error(`Form bridge row ${rowIndex + 1} must be an array.`);
+    }
+    return row.map((item, itemIndex) => normalizeBridgeRowItem(item, rowIndex, itemIndex));
+  });
+}
+
+function normalizeBridgeRowItem(item, rowIndex, itemIndex) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
+    throw new Error(`Form bridge row item ${rowIndex + 1}:${itemIndex + 1} must be an object.`);
+  }
+  const type = String(item.type || "").trim().toLowerCase();
+  if (!BRIDGE_FORM_SUPPORTED_TYPES[type]) {
+    throw new Error(`Unsupported row type: ${type || "(missing type)"}`);
+  }
+  const next = {};
+  Object.keys(item).forEach((key) => {
+    if (!BRIDGE_FORM_SUPPORTED_TYPES[type].includes(key)) {
+      return;
+    }
+    const value = item[key];
+    if (key === "items" || key === "options") {
+      next[key] = normalizeBridgeSelectItems(value);
+      return;
+    }
+    if (isJsonSafeValue(value)) {
+      next[key] = value;
+    }
+  });
+  next.type = type;
+  return next;
+}
+
+function normalizeBridgeSelectItems(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items.map((item) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      return {
+        label: String(item.label || item.value || "").trim(),
+        value: String(item.value || item.label || "").trim(),
+      };
+    }
+    const value = String(item || "").trim();
+    return { label: value, value };
+  }).filter((item) => item.label && item.value);
+}
+
+function normalizeBridgeFormCloseReason(meta = {}) {
+  if (meta.reason === "submit") {
+    return "submit";
+  }
+  if (meta.reason === "action" && meta.actionId === "cancel") {
+    return "cancel";
+  }
+  return "dismiss";
+}
+
 function shouldUseWorkspaceBridge(options = {}) {
   if (typeof window === "undefined" || !window.parent || window.parent === window) {
     return false;
@@ -512,7 +728,7 @@ function isBridgeRequest(message) {
   return Boolean(
     message
     && typeof message === "object"
-    && message.namespace === BRIDGE_NAMESPACE
+    && BRIDGE_NAMESPACES.includes(String(message.namespace || ""))
     && message.phase === "request"
     && typeof message.id === "string"
     && typeof message.method === "string"
@@ -523,10 +739,18 @@ function isBridgeResponse(message) {
   return Boolean(
     message
     && typeof message === "object"
-    && message.namespace === BRIDGE_NAMESPACE
+    && BRIDGE_NAMESPACES.includes(String(message.namespace || ""))
     && message.phase === "response"
     && typeof message.id === "string"
   );
+}
+
+function normalizeBridgeNamespace(value) {
+  const namespace = String(value || "").trim();
+  if (BRIDGE_NAMESPACES.includes(namespace)) {
+    return namespace;
+  }
+  return BRIDGE_NAMESPACE_V1;
 }
 
 function normalizeTrustedOrigins(origins) {
@@ -564,6 +788,35 @@ function isElementNode(value) {
     && value.ownerDocument
   );
 }
+
+function isJsonSafeValue(value) {
+  if (value == null) {
+    return true;
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => isJsonSafeValue(item));
+  }
+  if (typeof value === "object") {
+    return Object.values(value).every((item) => isJsonSafeValue(item));
+  }
+  return false;
+}
+
+const BRIDGE_FORM_SUPPORTED_TYPES = {
+  input: ["type", "input", "name", "label", "value", "placeholder", "autocomplete", "required", "readonly", "disabled", "help", "span", "pattern", "min", "max", "step", "inputmode"],
+  textarea: ["type", "name", "label", "value", "placeholder", "required", "readonly", "disabled", "help", "span"],
+  select: ["type", "name", "label", "value", "required", "disabled", "help", "span", "options"],
+  checkbox: ["type", "name", "label", "value", "required", "disabled", "help", "span"],
+  "ui.select": ["type", "name", "label", "value", "required", "disabled", "help", "span", "items", "placeholder", "searchable", "multiple", "closeOnSelect", "selectOnTab", "clearable", "emptyText"],
+  hidden: ["type", "name", "value"],
+  text: ["type", "content", "className", "span"],
+  alert: ["type", "content", "tone", "className", "span"],
+  divider: ["type", "className", "span"],
+  display: ["type", "name", "label", "value", "help", "emptyText", "span"],
+};
 
 function getDelegatedDialogFallbackResult(kind) {
   switch (String(kind || "")) {

@@ -61,7 +61,7 @@
   </style>
   <script type="module">
     import { uiLoader } from "../../js/ui/ui.loader.js";
-    import { showWorkspaceActionModal, getWorkspaceUiBridge } from "../../js/ui/ui.workspace.bridge.js";
+    import { showWorkspaceActionModal, showWorkspaceFormModal, getWorkspaceUiBridge } from "../../js/ui/ui.workspace.bridge.js";
 
     window.addEventListener("DOMContentLoaded", async () => {
       await uiLoader.loadMany(["ui.toast", "ui.dialog.alert", "ui.dialog.confirm", "ui.dialog.prompt", "ui.action.modal", "ui.form.modal"]);
@@ -128,6 +128,89 @@
         return result;
       }
 
+      async function runBridgeLoginForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "login",
+          title: "Login",
+          size: "sm",
+          submitLabel: "Login",
+          cancelLabel: "Cancel",
+          busyMessage: "Signing in...",
+          initialValues: {
+            email: "user@pbb.ph",
+          },
+          rows: [
+            [{ type: "input", input: "email", name: "email", label: "Email address", required: true }],
+            [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
+          ],
+        });
+        writeLog("modal.form.login", result);
+        return result;
+      }
+
+      async function runBridgeReauthForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "reauth",
+          title: "Session Expired",
+          size: "sm",
+          submitLabel: "Continue",
+          cancelLabel: "Cancel",
+          busyMessage: "Re-authenticating...",
+          closeOnBackdrop: false,
+          closeOnEscape: false,
+          context: {
+            badge: "EMAIL",
+            summary: "user@pbb.ph",
+          },
+          initialValues: {
+            email: "user@pbb.ph",
+          },
+          rows: [
+            [{ type: "display", name: "email", label: "Email address" }],
+            [{ type: "hidden", name: "email" }],
+            [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
+          ],
+        });
+        writeLog("modal.form.reauth", result);
+        return result;
+      }
+
+      async function runInvalidBridgeForm() {
+        try {
+          await showWorkspaceFormModal({
+            intent: "login",
+            title: "Broken Login",
+            rows: "not-an-array",
+          });
+          const result = { ok: false, error: "Expected invalid bridge form payload to fail." };
+          writeLog("modal.form.invalid.unexpected", result);
+          return result;
+        } catch (error) {
+          const result = { ok: true, message: String(error?.message || error) };
+          writeLog("modal.form.invalid", result);
+          return result;
+        }
+      }
+
+      async function runUnsupportedBridgeForm() {
+        try {
+          await showWorkspaceFormModal({
+            intent: "login",
+            title: "Unsupported Login",
+            rows: [
+              [{ type: "custom-node", name: "unsupported" }],
+            ],
+          });
+          const result = { ok: false, error: "Expected unsupported bridge row type to fail." };
+          writeLog("modal.form.unsupported.unexpected", result);
+          return result;
+        } catch (error) {
+          const result = { ok: true, message: String(error?.message || error) };
+          writeLog("modal.form.unsupported", result);
+          return result;
+        }
+      }
+
       function runAutoActionModal() {
         const modal = createActionModal({
           title: "Auto Action Modal",
@@ -176,6 +259,8 @@
       document.getElementById("confirmBtn").addEventListener("click", () => void runConfirm());
       document.getElementById("promptBtn").addEventListener("click", () => void runPrompt());
       document.getElementById("modalBtn").addEventListener("click", () => void runActionModal());
+      document.getElementById("bridgeLoginBtn").addEventListener("click", () => void runBridgeLoginForm());
+      document.getElementById("bridgeReauthBtn").addEventListener("click", () => void runBridgeReauthForm());
       document.getElementById("autoActionBtn").addEventListener("click", () => void runAutoActionModal());
       document.getElementById("autoFormBtn").addEventListener("click", () => void runAutoFormModal());
       document.getElementById("probeBtn").addEventListener("click", async () => {
@@ -188,6 +273,10 @@
         runConfirm,
         runPrompt,
         runActionModal,
+        runBridgeLoginForm,
+        runBridgeReauthForm,
+        runInvalidBridgeForm,
+        runUnsupportedBridgeForm,
         runAutoActionModal,
         runAutoFormModal,
         async isBridgeAvailable() {
@@ -201,7 +290,7 @@
   <main>
     <section class="hero">
       <h1>Workspace UI Bridge Fixture</h1>
-      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, and plain helper modal-family overlays should auto-route to the parent when the host is same-origin.</p>
+      <p>These controls run inside the iframe child app. When the parent workspace host is installed, helper-owned toasts and dialogs should render in the parent shell instead of inside this iframe, plain helper modal-family overlays should auto-route to the parent when the host is same-origin, and the explicit form-bridge contract can render narrow cross-origin login/reauth forms in the parent shell.</p>
     </section>
     <section class="panel">
       <div class="row">
@@ -211,6 +300,8 @@
         <button id="confirmBtn" type="button">Confirm</button>
         <button id="promptBtn" type="button">Prompt</button>
         <button id="modalBtn" type="button">Action Modal</button>
+        <button id="bridgeLoginBtn" type="button">Bridge Login Form</button>
+        <button id="bridgeReauthBtn" type="button">Bridge Reauth Form</button>
         <button id="autoActionBtn" type="button">Auto Action Modal</button>
         <button id="autoFormBtn" type="button">Auto Form Modal</button>
       </div>

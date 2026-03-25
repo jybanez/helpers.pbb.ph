@@ -114,6 +114,39 @@
       assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "plain helper form modal should not render inside the bridged iframe");
       Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Save"))?.click();
       await wait(450);
+
+      const initialLogText = bridgeFrame.contentDocument.querySelector("#log")?.textContent || "";
+
+      bridgeFrame.contentWindow.__workspaceBridgeFixture.runBridgeLoginForm();
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "explicit bridge login form should render in parent document");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "explicit bridge login form should not render inside the bridged iframe");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await wait(450);
+      assert((bridgeFrame.contentDocument.querySelector("#log")?.textContent || "") !== initialLogText, "explicit bridge login form should round-trip a result back to the child iframe");
+
+      const afterLoginLogText = bridgeFrame.contentDocument.querySelector("#log")?.textContent || "";
+      bridgeFrame.contentWindow.__workspaceBridgeFixture.runBridgeReauthForm();
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "explicit bridge reauth form should render in parent document");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "explicit bridge reauth form should not render inside the bridged iframe");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await wait(450);
+      assert((bridgeFrame.contentDocument.querySelector("#log")?.textContent || "") !== afterLoginLogText, "explicit bridge reauth form should round-trip a result back to the child iframe");
+
+      const invalidResult = await bridgeFrame.contentWindow.__workspaceBridgeFixture.runInvalidBridgeForm();
+      await wait(150);
+      assert(invalidResult?.ok === true, "malformed modal.form.open payload should reject");
+      assert(String(invalidResult?.message || "").includes("payload.rows must be an array"), "malformed payload rejection should mention rows array requirement");
+      assert(!document.body.querySelector(".ui-form-modal"), "malformed payload should not leave a parent form modal mounted");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "malformed payload should not render a child form modal");
+
+      const unsupportedResult = await bridgeFrame.contentWindow.__workspaceBridgeFixture.runUnsupportedBridgeForm();
+      await wait(150);
+      assert(unsupportedResult?.ok === true, "unsupported row-type payload should reject");
+      assert(String(unsupportedResult?.message || "").includes("Unsupported row type"), "unsupported row-type rejection should mention unsupported row type");
+      assert(!document.body.querySelector(".ui-form-modal"), "unsupported row-type payload should not leave a parent form modal mounted");
+      assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "unsupported row-type payload should not render a child form modal");
     } catch (error) {
       failures.push(`exception: ${String(error?.message || error)}`);
     }

@@ -1,6 +1,10 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.17";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.18";
+import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.18";
 
 export function createLoginFormModal(options = {}) {
+  if (shouldUseCrossOriginFormBridge(options)) {
+    return createDelegatedPresetFormModal("login", options, buildLoginBridgePayload);
+  }
   const fields = normalizeFieldMap(options.fields, {
     identifier: "email",
     password: "password",
@@ -47,6 +51,9 @@ export function createLoginFormModal(options = {}) {
 }
 
 export function createReauthFormModal(options = {}) {
+  if (shouldUseCrossOriginFormBridge(options)) {
+    return createDelegatedPresetFormModal("reauth", options, buildReauthBridgePayload);
+  }
   const fields = normalizeFieldMap(options.fields, {
     identifier: "email",
     password: "password",
@@ -92,6 +99,339 @@ export function createReauthFormModal(options = {}) {
     busyMessage: options.busyMessage || "Re-authenticating...",
     submitLabel: options.submitLabel || "Continue",
     rows,
+  });
+}
+
+function createDelegatedPresetFormModal(intent, options, buildPayload) {
+  const currentOptions = { ...(options || {}) };
+  let destroyed = false;
+  let open = false;
+  let lastResult = null;
+
+  async function openModal() {
+    if (destroyed) {
+      return null;
+    }
+    open = true;
+    let initialValues = normalizeInitialValues(currentOptions.initialValues);
+    let fieldErrors = {};
+    let formError = "";
+
+    try {
+      while (!destroyed) {
+        const payload = buildPayload(currentOptions, {
+          intent,
+          initialValues,
+          fieldErrors,
+          formError,
+        });
+        let response;
+        try {
+          response = await showWorkspaceFormModal(payload, {
+            timeoutMs: currentOptions.workspaceBridgeTimeoutMs,
+            targetOrigin: currentOptions.workspaceBridgeTargetOrigin,
+          });
+        } catch {
+          return openLocalFallback(intent, currentOptions);
+        }
+
+        lastResult = response;
+        const reason = String(response?.reason || "dismiss");
+        if (reason !== "submit") {
+          open = false;
+          currentOptions.onClose?.({
+            reason,
+            actionId: reason === "cancel" ? "cancel" : null,
+            result: response?.values || null,
+          });
+          return response;
+        }
+
+        const values = response?.values && typeof response.values === "object" ? response.values : {};
+        if (typeof currentOptions.onSubmit !== "function") {
+          open = false;
+          currentOptions.onClose?.({
+            reason: "submit",
+            actionId: "submit",
+            result: values,
+          });
+          return response;
+        }
+
+        const bridgeContext = createDelegatedSubmitContext();
+        const accepted = await currentOptions.onSubmit(values, bridgeContext);
+        if (accepted) {
+          open = false;
+          currentOptions.onClose?.({
+            reason: "submit",
+            actionId: "submit",
+            result: values,
+          });
+          return response;
+        }
+
+        initialValues = {
+          ...initialValues,
+          ...values,
+        };
+        fieldErrors = bridgeContext.getErrors();
+        formError = bridgeContext.getFormError();
+      }
+      return null;
+    } finally {
+      open = false;
+    }
+  }
+
+  function openLocalFallback(nextIntent, nextOptions) {
+    const localFactory = nextIntent === "reauth" ? createLocalReauthFormModal : createLocalLoginFormModal;
+    const modal = localFactory(nextOptions);
+    lastResult = modal;
+    return modal.open();
+  }
+
+  return {
+    open: openModal,
+    async close(meta = {}) {
+      open = false;
+      currentOptions.onClose?.(meta);
+      return true;
+    },
+    update(nextOptions = {}) {
+      Object.assign(currentOptions, nextOptions || {});
+    },
+    destroy() {
+      destroyed = true;
+      open = false;
+    },
+    getState() {
+      return {
+        open,
+        options: { ...currentOptions },
+        lastResult,
+      };
+    },
+  };
+}
+
+function createDelegatedSubmitContext() {
+  let fieldErrors = {};
+  let formError = "";
+
+  return {
+    setErrors(nextErrors = {}) {
+      fieldErrors = normalizeApiErrors(nextErrors).fieldErrors;
+    },
+    clearErrors() {
+      fieldErrors = {};
+    },
+    setFormError(message) {
+      formError = String(message || "").trim();
+    },
+    clearFormError() {
+      formError = "";
+    },
+    applyApiErrors(response) {
+      const mapped = normalizeApiErrors(response);
+      fieldErrors = mapped.fieldErrors;
+      formError = mapped.formError;
+      return mapped;
+    },
+    getErrors() {
+      return { ...fieldErrors };
+    },
+    getFormError() {
+      return formError;
+    },
+    setBusy() {},
+    isBusy() {
+      return false;
+    },
+    mode: "",
+    modal: null,
+    changedFieldName: null,
+  };
+}
+
+function buildLoginBridgePayload(options, state) {
+  const fields = normalizeFieldMap(options.fields, {
+    identifier: "email",
+    password: "password",
+  });
+  const identifierKind = normalizeIdentifierKind(options.identifierKind);
+  const identifierLabel = String(options.identifierLabel || (identifierKind === "username" ? "Username" : "Email address"));
+  const identifierPlaceholder = String(options.identifierPlaceholder || (identifierKind === "username" ? "Enter username" : "name@agency.gov.ph"));
+  const identifierInput = identifierKind === "username" ? "text" : "email";
+  const identifierAutocomplete = String(options.identifierAutocomplete || "username");
+  const passwordLabel = String(options.passwordLabel || "Password");
+  const passwordPlaceholder = String(options.passwordPlaceholder || "Enter password");
+  const message = String(options.message || "Please sign in to continue.");
+
+  return {
+    intent: state.intent,
+    title: options.title || "Operator Login",
+    size: options.size || "sm",
+    submitLabel: options.submitLabel || "Login",
+    cancelLabel: options.cancelLabel || "Cancel",
+    busyMessage: options.busyMessage || "Signing in...",
+    closeOnBackdrop: options.closeOnBackdrop !== false,
+    closeOnEscape: options.closeOnEscape !== false,
+    initialValues: {
+      ...state.initialValues,
+    },
+    fieldErrors: state.fieldErrors,
+    formError: state.formError,
+    rows: [
+      [{ type: "text", content: message }],
+      [{
+        type: "input",
+        input: identifierInput,
+        name: fields.identifier,
+        label: identifierLabel,
+        placeholder: identifierPlaceholder,
+        autocomplete: identifierAutocomplete,
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.password,
+        label: passwordLabel,
+        placeholder: passwordPlaceholder,
+        autocomplete: "current-password",
+        required: true,
+      }],
+    ],
+  };
+}
+
+function buildReauthBridgePayload(options, state) {
+  const fields = normalizeFieldMap(options.fields, {
+    identifier: "email",
+    password: "password",
+  });
+  const identifierKind = normalizeIdentifierKind(options.identifierKind);
+  const identifierLabel = String(options.identifierLabel || (identifierKind === "username" ? "Username" : "Email address"));
+  const identifierValue = String(
+    options.identifierValue
+    ?? state.initialValues?.[fields.identifier]
+    ?? ""
+  );
+  const passwordLabel = String(options.passwordLabel || "Password");
+  const passwordPlaceholder = String(options.passwordPlaceholder || "Re-enter password");
+  const message = String(options.message || "Your session has expired. Please re-enter your password to continue.");
+
+  return {
+    intent: state.intent,
+    title: options.title || "Session Expired",
+    size: options.size || "sm",
+    submitLabel: options.submitLabel || "Continue",
+    cancelLabel: options.cancelLabel || "Cancel",
+    busyMessage: options.busyMessage || "Re-authenticating...",
+    closeOnBackdrop: options.closeOnBackdrop === true ? true : false,
+    closeOnEscape: options.closeOnEscape === true ? true : false,
+    context: {
+      badge: identifierKind === "username" ? "USER" : "EMAIL",
+      summary: identifierValue,
+    },
+    initialValues: {
+      ...state.initialValues,
+      [fields.identifier]: identifierValue,
+    },
+    fieldErrors: state.fieldErrors,
+    formError: state.formError,
+    rows: [
+      [{ type: "text", content: message }],
+      [{
+        type: "display",
+        name: fields.identifier,
+        label: identifierLabel,
+      }],
+      [{
+        type: "hidden",
+        name: fields.identifier,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.password,
+        label: passwordLabel,
+        placeholder: passwordPlaceholder,
+        autocomplete: "current-password",
+        required: true,
+      }],
+    ],
+  };
+}
+
+function createLocalLoginFormModal(options) {
+  const localOptions = { ...(options || {}), workspaceBridge: false, renderTarget: "local" };
+  return createFormModal({
+    ...localOptions,
+    title: localOptions.title || "Operator Login",
+    size: localOptions.size || "sm",
+    busyMessage: localOptions.busyMessage || "Signing in...",
+    submitLabel: localOptions.submitLabel || "Login",
+    rows: [
+      [{ type: "text", content: String(localOptions.message || "Please sign in to continue.") }],
+      [{
+        type: "input",
+        input: normalizeIdentifierKind(localOptions.identifierKind) === "username" ? "text" : "email",
+        name: normalizeFieldMap(localOptions.fields, { identifier: "email", password: "password" }).identifier,
+        label: String(localOptions.identifierLabel || (normalizeIdentifierKind(localOptions.identifierKind) === "username" ? "Username" : "Email address")),
+        value: resolveInitialValue(localOptions, normalizeFieldMap(localOptions.fields, { identifier: "email", password: "password" }).identifier),
+        placeholder: String(localOptions.identifierPlaceholder || (normalizeIdentifierKind(localOptions.identifierKind) === "username" ? "Enter username" : "name@agency.gov.ph")),
+        autocomplete: String(localOptions.identifierAutocomplete || "username"),
+        required: true,
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: normalizeFieldMap(localOptions.fields, { identifier: "email", password: "password" }).password,
+        label: String(localOptions.passwordLabel || "Password"),
+        value: resolveInitialValue(localOptions, normalizeFieldMap(localOptions.fields, { identifier: "email", password: "password" }).password),
+        placeholder: String(localOptions.passwordPlaceholder || "Enter password"),
+        autocomplete: "current-password",
+        required: true,
+      }],
+    ],
+  });
+}
+
+function createLocalReauthFormModal(options) {
+  const localOptions = { ...(options || {}), workspaceBridge: false, renderTarget: "local" };
+  const fields = normalizeFieldMap(localOptions.fields, { identifier: "email", password: "password" });
+  const identifierKind = normalizeIdentifierKind(localOptions.identifierKind);
+  const identifierValue = String(localOptions.identifierValue ?? resolveInitialValue(localOptions, fields.identifier) ?? "");
+  return createFormModal({
+    ...localOptions,
+    title: localOptions.title || "Session Expired",
+    size: localOptions.size || "sm",
+    busyMessage: localOptions.busyMessage || "Re-authenticating...",
+    submitLabel: localOptions.submitLabel || "Continue",
+    rows: [
+      [{ type: "text", content: String(localOptions.message || "Your session has expired. Please re-enter your password to continue.") }],
+      [{
+        type: "input",
+        input: identifierKind === "username" ? "text" : "email",
+        name: fields.identifier,
+        label: String(localOptions.identifierLabel || (identifierKind === "username" ? "Username" : "Email address")),
+        value: identifierValue,
+        readonly: true,
+        disabled: true,
+        autocomplete: "username",
+      }],
+      [{
+        type: "input",
+        input: "password",
+        name: fields.password,
+        label: String(localOptions.passwordLabel || "Password"),
+        value: resolveInitialValue(localOptions, fields.password),
+        placeholder: String(localOptions.passwordPlaceholder || "Re-enter password"),
+        autocomplete: "current-password",
+        required: true,
+      }],
+    ],
   });
 }
 
@@ -351,4 +691,61 @@ function normalizeRows(rows) {
   return rows
     .map((row) => (Array.isArray(row) ? row.filter(Boolean) : []))
     .filter((row) => row.length);
+}
+
+function shouldUseCrossOriginFormBridge(options = {}) {
+  if (typeof window === "undefined" || !window.parent || window.parent === window) {
+    return false;
+  }
+  if (String(options.renderTarget || "auto").trim().toLowerCase() === "local") {
+    return false;
+  }
+  if (options.workspaceBridge === false) {
+    return false;
+  }
+  return !resolveWorkspaceOverlayParent(options);
+}
+
+function normalizeInitialValues(initialValues) {
+  return initialValues && typeof initialValues === "object" ? { ...initialValues } : {};
+}
+
+function normalizeApiErrors(response) {
+  const source = response?.data && typeof response.data === "object" ? response.data : response;
+  const fieldErrors = {};
+  let formError = "";
+
+  const candidates = [
+    source?.errors,
+    source?.fieldErrors,
+    source?.validation?.errors,
+  ];
+
+  candidates.forEach((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      return;
+    }
+    Object.keys(candidate).forEach((key) => {
+      const value = candidate[key];
+      const message = Array.isArray(value) ? String(value[0] || "").trim() : String(value || "").trim();
+      if (!message) {
+        return;
+      }
+      if (key === "_form" || key === "form" || key === "non_field_errors") {
+        if (!formError) {
+          formError = message;
+        }
+        return;
+      }
+      fieldErrors[key] = message;
+    });
+  });
+
+  if (!formError && source && typeof source === "object") {
+    formError = String(source.formError || source.error || source.message || "").trim();
+  } else if (!formError && typeof source === "string") {
+    formError = source.trim();
+  }
+
+  return { fieldErrors, formError };
 }

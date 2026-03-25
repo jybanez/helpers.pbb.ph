@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.17`
+- Latest documented release: `v0.21.18`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,28 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.18
+
+- Added explicit cross-origin Workspace form-bridge support for helper-owned login and re-auth modal flows.
+- `ui.workspace.bridge` now supports:
+  - `namespace: "pbb.workspace.ui.bridge.v2"`
+  - `method: "modal.form.open"`
+- Added child-side helper access through:
+  - `showWorkspaceFormModal(payload, options)`
+- Added parent host handling for serializable cross-origin form-modal payloads with:
+  - `intent: "login"`
+  - `intent: "reauth"`
+- Kept the contract narrow:
+  - parent renders the helper-owned modal shell
+  - child app still owns API/auth/business logic
+  - only JSON-safe row payloads are accepted
+  - arbitrary cross-origin DOM mirroring is still not supported
+- Updated login and re-auth presets so cross-origin iframe apps can delegate those flows to the parent Workspace surface when same-origin parent mounting is unavailable.
+- Extended the workspace bridge fixture and browser regression harness to verify:
+  - explicit login form parent rendering
+  - explicit re-auth form parent rendering
+  - result round-trip back to the child iframe
+
 ### v0.21.17
 
 - Added a cache-busting follow-up for the new same-origin Workspace overlay routing chain.
