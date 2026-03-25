@@ -77,6 +77,8 @@
 - [x] Add browser coverage for accepted bridged `change-password` requests
 - [x] Verify cancel/result round-trip for both new intents
 - [x] Verify malformed/unsupported preset payload rejection for both new intents
+- [x] Verify bridged account preset preserves serialized `extraActions` such as `Change Password`
+- [x] Verify bridged footer action round-trip returns `reason: "action"` with the selected `actionId`
 
 ## Demo Surface
 

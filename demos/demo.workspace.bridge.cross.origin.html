@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workspace Bridge Cross-Origin Demo</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.window.css">
+  <link rel="stylesheet" href="../css/ui/ui.iframe.host.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 18px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 14px;
+      background: #111827;
+      overflow: hidden;
+    }
+    .panel > div {
+      padding: 18px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .muted {
+      color: #8aa0c6;
+    }
+    .surface {
+      height: 620px;
+      border-top: 1px solid #263146;
+    }
+    pre {
+      margin: 0;
+      padding: 12px;
+      background: #0b1220;
+      color: #d7e0f4;
+      border-top: 1px solid #263146;
+      min-height: 160px;
+      white-space: pre-wrap;
+      font: 12px/1.5 Consolas, "Courier New", monospace;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      color: #9fb4d9;
+      font-size: 13px;
+    }
+    .status::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #6b7280;
+    }
+    .status.is-ready::before {
+      background: #22c55e;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await uiLoader.loadMany(["ui.window", "ui.iframe.host", "ui.workspace.bridge.host"]);
+
+    const createWindowManager = await uiLoader.get("ui.window");
+    const createIframeHost = await uiLoader.get("ui.iframe.host");
+    const installWorkspaceUiBridgeHost = await uiLoader.get("ui.workspace.bridge.host");
+
+    const params = new URLSearchParams(window.location.search);
+    const childOrigin = params.get("childOrigin") || "http://127.0.0.1:4174";
+    const childPath = params.get("childPath") || "/samples/iframe/workspace-ui-bridge.cross-origin.child.html";
+    const childUrl = new URL(childPath, childOrigin).href;
+    const controlNamespace = "pbb.workspace.bridge.demo.control";
+    const statusNamespace = "pbb.workspace.bridge.demo.status";
+
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const surface = document.getElementById("surface");
+
+    let bridgeFrame = null;
+    let bridgeChildReady = false;
+    let pendingResponses = new Map();
+
+    function writeLog(type, payload = {}) {
+      const line = `[${new Date().toISOString()}] ${type}\n${JSON.stringify(payload, null, 2)}\n`;
+      logEl.textContent = logEl.textContent === "No events yet." ? line : `${line}\n${logEl.textContent}`;
+    }
+
+    function setReady(ready, detail = "") {
+      bridgeChildReady = ready;
+      statusEl.classList.toggle("is-ready", ready);
+      statusEl.textContent = ready ? `Child ready: ${detail || childUrl}` : `Waiting for child: ${childUrl}`;
+    }
+
+    installWorkspaceUiBridgeHost({
+      trustedOrigins: [window.location.origin, childOrigin, "null"],
+    });
+
+    const manager = createWindowManager({
+      container: surface,
+      taskbarMode: "always",
+    });
+
+    const iframeHost = createIframeHost({
+      src: childUrl,
+      title: "Cross-Origin Bridge Child",
+      loadingText: "Loading cross-origin bridge child...",
+    });
+    bridgeFrame = iframeHost.iframe;
+
+    const childWindow = manager.createWindow({
+      id: "workspace-cross-origin-child",
+      title: "PBB HQ",
+      width: 920,
+      height: 560,
+      content: iframeHost.root,
+    });
+    childWindow.focus();
+
+    function sendCommand(command, payload = {}) {
+      if (!bridgeFrame?.contentWindow) {
+        return Promise.reject(new Error("Child iframe is unavailable."));
+      }
+      const id = `cmd-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      return new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          pendingResponses.delete(id);
+          reject(new Error(`Timed out waiting for child command response: ${command}`));
+        }, 15000);
+        pendingResponses.set(id, { resolve, reject, timer });
+        bridgeFrame.contentWindow.postMessage({
+          namespace: controlNamespace,
+          id,
+          command,
+          payload,
+        }, childOrigin);
+      });
+    }
+
+    window.addEventListener("message", (event) => {
+      const message = event.data;
+      if (!message || message.namespace !== statusNamespace) {
+        return;
+      }
+      if (event.origin !== childOrigin) {
+        return;
+      }
+
+      if (message.type === "child.ready") {
+        setReady(true, `${message.payload?.title || "Unknown child"} @ ${event.origin}`);
+        writeLog("child.ready", message.payload || {});
+        return;
+      }
+
+      if (message.type === "control.response") {
+        const response = pendingResponses.get(String(message.payload?.id || ""));
+        if (!response) {
+          return;
+        }
+        pendingResponses.delete(String(message.payload?.id || ""));
+        window.clearTimeout(response.timer);
+        if (message.payload?.ok) {
+          response.resolve(message.payload.result);
+        } else {
+          response.reject(new Error(String(message.payload?.error || "Child command failed.")));
+        }
+        writeLog("child.control.response", message.payload || {});
+        return;
+      }
+
+      writeLog(message.type, message.payload || {});
+    });
+
+    document.getElementById("openLoginBtn").addEventListener("click", () => void sendCommand("login.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("openReauthBtn").addEventListener("click", () => void sendCommand("reauth.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("openAccountBtn").addEventListener("click", () => void sendCommand("account.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("openChangePasswordBtn").addEventListener("click", () => void sendCommand("change-password.open").catch((error) => writeLog("error", { message: error.message })));
+    document.getElementById("inspectBtn").addEventListener("click", () => void sendCommand("inspect.overlays").then((result) => writeLog("inspect.overlays", result || {})).catch((error) => writeLog("error", { message: error.message })));
+
+    setReady(false);
+  </script>
+</head>
+<body>
+  <div class="stack">
+    <section class="panel">
+      <div>
+        <h1>Workspace Bridge Cross-Origin Demo</h1>
+        <p class="muted">Use this page with the local two-origin harness so the child iframe really runs on a different origin. This is the correct place to verify cross-origin login, re-auth, account, change-password, ownership subtitles, and bridged account footer actions before other teams pull the helper update.</p>
+        <p class="status" id="status">Waiting for child</p>
+        <div class="controls">
+          <button id="openLoginBtn">Open Login</button>
+          <button id="openReauthBtn">Open Re-auth</button>
+          <button id="openAccountBtn">Open Account</button>
+          <button id="openChangePasswordBtn">Open Change Password</button>
+          <button id="inspectBtn">Inspect Child Overlays</button>
+        </div>
+      </div>
+      <div class="surface" id="surface"></div>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </div>
+</body>
+</html>

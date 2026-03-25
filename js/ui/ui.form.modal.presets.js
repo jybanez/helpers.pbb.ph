@@ -1,5 +1,5 @@
-import { createFormModal } from "./ui.form.modal.js?v=0.21.22";
-import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.22";
+import { createFormModal } from "./ui.form.modal.js?v=0.21.23";
+import { resolveWorkspaceOverlayParent, showWorkspaceFormModal } from "./ui.workspace.bridge.js?v=0.21.23";
 
 export function createLoginFormModal(options = {}) {
   if (shouldUseCrossOriginFormBridge(options)) {
@@ -137,6 +137,40 @@ function createDelegatedPresetFormModal(intent, options, buildPayload) {
 
         lastResult = response;
         const reason = String(response?.reason || "dismiss");
+        if (reason === "action") {
+          const values = response?.values && typeof response.values === "object" ? response.values : {};
+          const actionId = String(response?.actionId || "");
+          const action = Array.isArray(currentOptions.extraActions)
+            ? currentOptions.extraActions.find((candidate) => String(candidate?.id || "") === actionId)
+            : null;
+          if (!action || typeof action.onClick !== "function") {
+            initialValues = {
+              ...initialValues,
+              ...values,
+            };
+            continue;
+          }
+
+          const bridgeContext = createDelegatedActionContext(action);
+          const actionResult = await action.onClick(values, bridgeContext, actionId);
+          if (action.closeOnClick === true && actionResult !== false) {
+            open = false;
+            currentOptions.onClose?.({
+              reason: "action",
+              actionId,
+              result: values,
+            });
+            return response;
+          }
+
+          initialValues = {
+            ...initialValues,
+            ...values,
+          };
+          fieldErrors = bridgeContext.getErrors();
+          formError = bridgeContext.getFormError();
+          continue;
+        }
         if (reason !== "submit") {
           open = false;
           currentOptions.onClose?.({
@@ -250,6 +284,16 @@ function createDelegatedSubmitContext() {
     mode: "",
     modal: null,
     changedFieldName: null,
+  };
+}
+
+function createDelegatedActionContext(action) {
+  const base = createDelegatedSubmitContext();
+  return {
+    ...base,
+    action,
+    actionId: String(action?.id || ""),
+    event: null,
   };
 }
 
@@ -384,6 +428,8 @@ function buildAccountBridgePayload(options, state) {
     busyMessage: options.busyMessage || "Saving account...",
     closeOnBackdrop: options.closeOnBackdrop !== false,
     closeOnEscape: options.closeOnEscape !== false,
+    extraActionsPlacement: options.extraActionsPlacement,
+    extraActions: serializeBridgeExtraActions(options.extraActions),
     initialValues: {
       ...state.initialValues,
     },
@@ -767,6 +813,35 @@ function resolveBridgeOwnerTitle(options = {}) {
     }
   }
   return "";
+}
+
+function serializeBridgeExtraActions(actions) {
+  if (!Array.isArray(actions)) {
+    return [];
+  }
+  return actions
+    .map((action, index) => {
+      if (!action || typeof action !== "object") {
+        return null;
+      }
+      const label = String(action.label || "").trim();
+      if (!label) {
+        return null;
+      }
+      const id = String(action.id || `extra-action-${index}`).trim();
+      if (!id || id === "cancel" || id === "submit") {
+        return null;
+      }
+      return {
+        id,
+        label,
+        variant: String(action.variant || "ghost").trim() || "ghost",
+        icon: String(action.icon || "").trim(),
+        className: String(action.className || "").trim(),
+        closeOnClick: action.closeOnClick === true,
+      };
+    })
+    .filter(Boolean);
 }
 
 function normalizeOptionsList(options) {

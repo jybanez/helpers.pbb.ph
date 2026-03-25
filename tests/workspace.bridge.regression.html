@@ -141,7 +141,8 @@
       await wait(300);
       assert(Boolean(document.body.querySelector(".ui-form-modal")), "explicit bridge account form should render in parent document");
       assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "explicit bridge account form should not render inside the bridged iframe");
-      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      assert(Array.from(document.body.querySelectorAll(".ui-action-modal-button")).some((button) => button.textContent.includes("Change Password")), "explicit bridge account form should render serialized extra actions in the parent footer");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Change Password"))?.click();
       await wait(450);
       assert((bridgeFrame.contentDocument.querySelector("#log")?.textContent || "") !== afterReauthLogText, "explicit bridge account form should round-trip a result back to the child iframe");
 

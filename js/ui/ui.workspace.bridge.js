@@ -354,7 +354,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.22");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.23");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -362,7 +362,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.22");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.23");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -370,7 +370,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.22");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.23");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -390,7 +390,7 @@ function openWorkspaceActionModal(payload = {}, parent) {
   return new Promise((resolve) => {
     let settled = false;
     let modal = null;
-    import("./ui.modal.js?v=0.21.22").then(({ createActionModal }) => {
+    import("./ui.modal.js?v=0.21.23").then(({ createActionModal }) => {
       modal = createActionModal({
       title: String(payload.title || "Notice"),
       content: buildActionModalContent(payload),
@@ -448,7 +448,7 @@ function openWorkspaceFormModal(payload = {}, parent) {
     let settled = false;
     let modal = null;
 
-    import("./ui.form.modal.js?v=0.21.22").then(({ createFormModal }) => {
+    import("./ui.form.modal.js?v=0.21.23").then(({ createFormModal }) => {
       const formConfig = {
         title: normalized.title,
         ownerTitle: normalized.ownerTitle,
@@ -461,6 +461,24 @@ function openWorkspaceFormModal(payload = {}, parent) {
         mode: normalized.mode,
         context: normalized.context,
         rows: normalized.rows,
+        extraActionsPlacement: normalized.extraActionsPlacement,
+        extraActions: normalized.extraActions.map((action) => ({
+          ...action,
+          closeOnClick: true,
+          async onClick() {
+            if (settled) {
+              return true;
+            }
+            settled = true;
+            resolve({
+              reason: "action",
+              actionId: action.id,
+              values: modal?.getValues?.() || null,
+            });
+            modal?.destroy?.();
+            return true;
+          },
+        })),
         initialValues: normalized.initialValues,
         parent,
         workspaceBridge: false,
@@ -596,11 +614,42 @@ function normalizeBridgeFormPayload(payload = {}) {
     closeOnEscape: source.closeOnEscape !== false,
     mode: String(source.mode || "").trim(),
     context: normalizeBridgeContext(source.context),
+    extraActionsPlacement: normalizeBridgeExtraActionsPlacement(source.extraActionsPlacement),
+    extraActions: normalizeBridgeExtraActions(source.extraActions),
     initialValues,
     rows,
     fieldErrors,
     formError: String(source.formError || "").trim(),
   };
+}
+
+function normalizeBridgeExtraActions(actions) {
+  if (!Array.isArray(actions)) {
+    return [];
+  }
+  return actions.map((action, index) => {
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      return null;
+    }
+    const label = String(action.label || "").trim();
+    const id = String(action.id || `extra-action-${index}`).trim();
+    if (!label || !id || id === "cancel" || id === "submit") {
+      return null;
+    }
+    return {
+      id,
+      label,
+      variant: normalizeActionVariant(action.variant || "ghost"),
+      icon: String(action.icon || "").trim(),
+      className: String(action.className || "").trim(),
+      closeOnClick: action.closeOnClick === true,
+    };
+  }).filter(Boolean);
+}
+
+function normalizeBridgeExtraActionsPlacement(value) {
+  const normalized = String(value || "end").trim().toLowerCase();
+  return normalized === "start" ? "start" : "end";
 }
 
 function normalizeBridgeFormIntent(value) {

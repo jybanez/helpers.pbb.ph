@@ -1,7 +1,7 @@
 import { createElement } from "./ui.dom.js";
-import { createActionModal } from "./ui.modal.js?v=0.21.22";
+import { createActionModal } from "./ui.modal.js?v=0.21.23";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
-import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.22";
+import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.23";
 
 export function uiAlert(message, options = {}) {
   return new Promise((resolve) => {

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workspace Bridge Cross-Origin Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.toast.css">
+  <link rel="stylesheet" href="../css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="../css/ui/ui.window.css">
+  <link rel="stylesheet" href="../css/ui/ui.iframe.host.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #surface {
+      height: 560px;
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #0b1220;
+      overflow: hidden;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="surface"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createWindowManager } from "../js/ui/ui.window.js";
+    import { createIframeHost } from "../js/ui/ui.iframe.host.js";
+    import { installWorkspaceUiBridgeHost } from "../js/ui/ui.workspace.bridge.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const surface = document.getElementById("surface");
+    const childOrigin = new URLSearchParams(window.location.search).get("childOrigin") || "http://127.0.0.1:4174";
+    const childUrl = `${childOrigin}/samples/iframe/workspace-ui-bridge.cross-origin.child.html`;
+    const controlNamespace = "pbb.workspace.bridge.demo.control";
+    const statusNamespace = "pbb.workspace.bridge.demo.status";
+    const responses = new Map();
+    const events = [];
+
+    try {
+      installWorkspaceUiBridgeHost({
+        trustedOrigins: [window.location.origin, childOrigin, "null"],
+      });
+
+      const manager = createWindowManager({ container: surface, taskbarMode: "always" });
+      const iframeHost = createIframeHost({
+        src: childUrl,
+        title: "Cross-Origin Child",
+        loadingText: "Loading cross-origin child...",
+      });
+      manager.createWindow({
+        title: "PBB HQ",
+        width: 920,
+        height: 520,
+        content: iframeHost.root,
+      }).focus();
+
+      const bridgeFrame = iframeHost.iframe;
+
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        if (!message || message.namespace !== statusNamespace || event.origin !== childOrigin) {
+          return;
+        }
+        events.push({
+          type: message.type,
+          payload: message.payload || {},
+        });
+        if (message.type === "control.response") {
+          const response = responses.get(String(message.payload?.id || ""));
+          if (!response) {
+            return;
+          }
+          responses.delete(String(message.payload?.id || ""));
+          window.clearTimeout(response.timer);
+          if (message.payload?.ok) {
+            response.resolve(message.payload.result);
+          } else {
+            response.reject(new Error(String(message.payload?.error || "Child command failed.")));
+          }
+        }
+      });
+
+      await waitForEvent("child.ready");
+
+      await sendCommand(bridgeFrame, "login.open");
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "bridged login should render in the parent document");
+      assert((document.body.querySelector(".ui-modal-title")?.textContent || "").includes("Login"), "bridged login should keep the modal title");
+      assert((document.body.querySelector(".ui-modal-owner-title")?.textContent || "").includes("PBB HQ"), "bridged login should infer the owner title from the child document title");
+      let childOverlayState = await sendCommand(bridgeFrame, "inspect.overlays");
+      assert(childOverlayState?.localFormModalCount === 0, "cross-origin bridged login should not leave a local child form modal visible");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await waitForEvent("login.result");
+
+      await sendCommand(bridgeFrame, "account.open");
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "bridged account should render in the parent document");
+      assert((document.body.querySelector(".ui-modal-owner-title")?.textContent || "").includes("PBB HQ"), "bridged account should keep the owner-title subtitle");
+      assert(Array.from(document.body.querySelectorAll(".ui-action-modal-button")).some((button) => button.textContent.includes("Change Password")), "bridged account should preserve the Change Password extra action");
+      childOverlayState = await sendCommand(bridgeFrame, "inspect.overlays");
+      assert(childOverlayState?.localFormModalCount === 0, "cross-origin bridged account should not leave a local child form modal visible");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Change Password"))?.click();
+      const extraActionEvent = await waitForEvent("account.extraAction");
+      assert(extraActionEvent?.payload?.actionId === "change-password", "bridged account extra action should round-trip the selected action id to the child");
+      await waitForEvent("changePassword.open");
+      await wait(300);
+      assert((document.body.querySelector(".ui-modal-title")?.textContent || "").includes("Change Password"), "clicking bridged Change Password should open the change-password modal in the parent");
+      childOverlayState = await sendCommand(bridgeFrame, "inspect.overlays");
+      assert(childOverlayState?.localFormModalCount === 0, "bridged change-password should not leave a local child form modal visible");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Cancel"))?.click();
+      await waitForEvent("changePassword.result");
+    } catch (error) {
+      failures.push(`exception: ${String(error?.message || error)}`);
+    }
+
+    finish();
+
+    function sendCommand(iframe, command, payload = {}) {
+      if (!iframe?.contentWindow) {
+        return Promise.reject(new Error("Bridge iframe is unavailable."));
+      }
+      const id = `cmd-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      return new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          responses.delete(id);
+          reject(new Error(`Timed out waiting for command response: ${command}`));
+        }, 15000);
+        responses.set(id, { resolve, reject, timer });
+        iframe.contentWindow.postMessage({
+          namespace: controlNamespace,
+          id,
+          command,
+          payload,
+        }, childOrigin);
+      });
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    async function waitForEvent(type, timeoutMs = 15000) {
+      const started = Date.now();
+      while (Date.now() - started < timeoutMs) {
+        const index = events.findIndex((entry) => entry.type === type);
+        if (index >= 0) {
+          return events.splice(index, 1)[0];
+        }
+        await wait(50);
+      }
+      throw new Error(`Timed out waiting for event: ${type}`);
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function finish() {
+      if (failures.length) {
+        document.body.dataset.status = "fail";
+        results.textContent = `FAIL\n${failures.map((item) => `- ${item}`).join("\n")}`;
+      } else {
+        document.body.dataset.status = "pass";
+        results.textContent = "PASS";
+      }
+    }
+  </script>
+</body>
+</html>

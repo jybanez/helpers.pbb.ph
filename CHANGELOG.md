@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.22`
+- Latest documented release: `v0.21.24`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,34 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.24
+
+- Added a first-class local cross-origin Workspace bridge harness so bridge changes can be validated in this repo before downstream teams spend time testing them in live apps.
+- Added a two-origin manual demo surface:
+  - `demos/demo.workspace.bridge.cross.origin.html`
+  - `samples/iframe/workspace-ui-bridge.cross-origin.child.html`
+- Added a local launcher script:
+  - `node scripts/run-workspace-bridge-cross-origin-demo.mjs`
+- Added automated browser regression coverage with two local origins on different ports:
+  - `tests/workspace.bridge.cross.origin.regression.html`
+  - `tests/workspace.bridge.cross.origin.regression.mjs`
+- Current cross-origin regression proves:
+  - bridged login renders in the parent shell
+  - owner-title subtitle is preserved
+  - no local child fallback modal remains visible
+  - bridged account preserves serialized `Change Password` footer action
+  - bridged account extra-action round-trip returns the correct `actionId`
+
+### v0.21.23
+
+- Fixed bridged account preset footer parity so cross-origin Workspace-rendered account modals no longer drop serialized `extraActions` such as `Change Password`.
+- The cross-origin `modal.form.open` transport now carries narrow serializable footer extensions:
+  - `extraActions`
+  - `extraActionsPlacement`
+- Parent Workspace renders those footer actions and returns `reason: "action"` plus the selected `actionId` and current form values back to the child app.
+- Child preset logic now runs the existing local `extraActions[].onClick(values, ctx, actionId)` contract after the bridged action round-trip, then reopens the bridged account modal when the extra action remains non-closing.
+- Bumped the overlay-routing revision chain again so downstream Workspace/child app refreshes fetch the bridged footer-action fix instead of stale cached modules.
+
 ### v0.21.22
 
 - Fixed bridged preset modal ownership subtitles so cross-origin Workspace-rendered login, re-auth, account, and change-password modals no longer depend on each child app explicitly passing `ownerTitle`.

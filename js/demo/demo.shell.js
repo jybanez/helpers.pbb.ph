@@ -73,6 +73,7 @@ const DEMO_GROUPS = [
       { href: "./demo.window.manager.html", label: "Window Manager" },
       { href: "./demo.iframe.host.html", label: "Iframe Host" },
       { href: "./demo.workspace.bridge.html", label: "Workspace Bridge" },
+      { href: "./demo.workspace.bridge.cross.origin.html", label: "Workspace Bridge X-Origin" },
     ],
   },
   {

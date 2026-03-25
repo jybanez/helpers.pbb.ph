@@ -73,6 +73,15 @@ Primary method:
   busyMessage?: string;
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
+  extraActionsPlacement?: "start" | "end";
+  extraActions?: Array<{
+    id: string;
+    label: string;
+    variant?: "default" | "primary" | "danger" | "ghost";
+    icon?: string;
+    className?: string;
+    closeOnClick?: boolean;
+  }>;
   mode?: string;
   context?: {
     kind?: string;
@@ -245,7 +254,8 @@ These fields support the retry/reopen model for the currently shipped bridged pr
 
 ```ts
 {
-  reason: "submit" | "cancel" | "dismiss";
+  reason: "submit" | "cancel" | "dismiss" | "action";
+  actionId?: string | null;
   values: Record<string, unknown> | null;
 }
 ```
@@ -277,6 +287,19 @@ These fields support the retry/reopen model for the currently shipped bridged pr
 {
   "reason": "dismiss",
   "values": null
+}
+```
+
+### Extra-action example
+
+```json
+{
+  "reason": "action",
+  "actionId": "change-password",
+  "values": {
+    "name": "Operator One",
+    "email": "operator@pbb.ph"
+  }
 }
 ```
 
@@ -429,6 +452,14 @@ These fields support the retry/reopen model for the currently shipped bridged pr
     "submitLabel": "Save",
     "cancelLabel": "Cancel",
     "busyMessage": "Saving account...",
+    "extraActionsPlacement": "start",
+    "extraActions": [
+      {
+        "id": "change-password",
+        "label": "Change Password",
+        "variant": "ghost"
+      }
+    ],
     "initialValues": {
       "name": "Operator One",
       "email": "operator@pbb.ph"

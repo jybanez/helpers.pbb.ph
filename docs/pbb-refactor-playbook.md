@@ -466,6 +466,10 @@ If changing callback signatures or removing methods, plan a major version.
   - `reauth`
   - `account`
   - `change-password`
+- Before asking downstream teams to validate a new cross-origin bridge change in real repos, use the local harness first:
+  - `docs/ui-workspace-cross-origin-demo-harness.md`
+  - `node scripts/run-workspace-bridge-cross-origin-demo.mjs`
+  - `node tests/workspace.bridge.cross.origin.regression.mjs`
 - Keep timeout semantics straight:
   - `timeoutMs` is for bridge availability / transport only
   - once the parent accepts and renders the interactive login or re-auth modal, the request should remain pending until the user responds

@@ -2270,8 +2270,8 @@ Cross-origin form-bridge contract:
   - `timeoutMs` applies to bridge availability probing and transport setup
   - accepted interactive parent-owned login, re-auth, account, and change-password modals stay open until the user responds
 - result shape:
-  - `{ reason, values }`
-  - where `reason` is `submit | cancel | dismiss`
+  - `{ reason, values, actionId? }`
+  - where `reason` is `submit | cancel | dismiss | action`
 - child app still owns:
   - API submission
   - auth/session logic
@@ -2287,7 +2287,17 @@ V1 non-goals:
 Related demos:
 
 - `demos/demo.workspace.bridge.html`
+- `demos/demo.workspace.bridge.cross.origin.html`
 - `demos/demo.iframe.host.html`
+
+Cross-origin local harness:
+
+- doc:
+  - `docs/ui-workspace-cross-origin-demo-harness.md`
+- manual launcher:
+  - `node scripts/run-workspace-bridge-cross-origin-demo.mjs`
+- automated regression:
+  - `node tests/workspace.bridge.cross.origin.regression.mjs`
 
 ### `createFormModal(options)` (`js/ui/ui.form.modal.js`)
 
@@ -2513,7 +2523,7 @@ Common preset rules:
 | Busy behavior | Presets reuse `createFormModal(...)` busy submit handling. |
 | Submit behavior | App code still owns the actual `onSubmit(values, ctx)` implementation. |
 | Session expiry detection | Re-auth auto-launch is app-owned. `createReauthFormModal(...)` does not monitor timeout state or open itself. |
-| Cross-origin Workspace bridge | Login, re-auth, account, and change-password presets can delegate through `modal.form.open` when running in a cross-origin Workspace iframe and same-origin parent mounting is unavailable. |
+| Cross-origin Workspace bridge | Login, re-auth, account, and change-password presets can delegate through `modal.form.open` when running in a cross-origin Workspace iframe and same-origin parent mounting is unavailable. Bridged account presets also preserve serializable `extraActions` and return `reason: "action"` plus `actionId` to the child app. |
 
 Preset options:
 
@@ -4076,7 +4086,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.22`
+- Latest documented release: `v0.21.24`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

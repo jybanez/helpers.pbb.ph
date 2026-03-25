@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PBB HQ</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eff5ff, #dfe9ff);
+      color: #173055;
+    }
+    main {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .hero,
+    .panel {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #b9c9ef;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid #3f5f96;
+      background: #173055;
+      color: #eef4ff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: 600 14px/1.2 "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #ffffff;
+      color: #173055;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: #0b1220;
+      color: #d7e0f4;
+      overflow: auto;
+      min-height: 120px;
+      font: 12px/1.5 Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+    }
+    p, h1, h2 {
+      margin: 0;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../../js/ui/ui.loader.js";
+
+    const CONTROL_NAMESPACE = "pbb.workspace.bridge.demo.control";
+    const STATUS_NAMESPACE = "pbb.workspace.bridge.demo.status";
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await uiLoader.loadMany([
+        "ui.form.modal.login",
+        "ui.form.modal.reauth",
+        "ui.form.modal.account",
+        "ui.form.modal.change.password",
+      ]);
+
+      const createLoginFormModal = await uiLoader.get("ui.form.modal.login");
+      const createReauthFormModal = await uiLoader.get("ui.form.modal.reauth");
+      const createAccountFormModal = await uiLoader.get("ui.form.modal.account");
+      const createChangePasswordFormModal = await uiLoader.get("ui.form.modal.change.password");
+
+      const log = document.getElementById("log");
+      const state = {
+        activeModal: null,
+      };
+
+      function emit(type, payload = {}) {
+        window.parent.postMessage({
+          namespace: STATUS_NAMESPACE,
+          type,
+          payload,
+        }, "*");
+      }
+
+      function writeLog(type, payload = {}) {
+        const line = `[${new Date().toISOString()}] ${type}\n${JSON.stringify(payload, null, 2)}\n`;
+        log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+        emit(type, payload);
+      }
+
+      function inspectLocalOverlays() {
+        return {
+          localModalCount: document.querySelectorAll(".ui-modal-root").length,
+          localFormModalCount: document.querySelectorAll(".ui-form-modal").length,
+        };
+      }
+
+      function bindModal(modal, resultType) {
+        state.activeModal?.destroy?.();
+        state.activeModal = modal;
+        return modal.open().then((result) => {
+          writeLog(resultType, result || {});
+          state.activeModal = null;
+          return result;
+        });
+      }
+
+      function openLogin() {
+        const modal = createLoginFormModal({
+          title: "Login",
+          initialValues: {
+            email: "name@agency.gov.ph",
+          },
+        });
+        writeLog("login.open", { ownerTitle: document.title });
+        void bindModal(modal, "login.result");
+        return { started: true };
+      }
+
+      function openReauth() {
+        const modal = createReauthFormModal({
+          title: "Session Expired",
+          identifierValue: "user1@hub.pbb.ph",
+        });
+        writeLog("reauth.open", { ownerTitle: document.title });
+        void bindModal(modal, "reauth.result");
+        return { started: true };
+      }
+
+      function openAccount() {
+        const modal = createAccountFormModal({
+          title: "Account",
+          initialValues: {
+            name: "user1",
+            email: "user1@hub.pbb.ph",
+          },
+          extraActionsPlacement: "start",
+          extraActions: [{
+            id: "change-password",
+            label: "Change Password",
+            closeOnClick: true,
+            onClick(values, _ctx, actionId) {
+              writeLog("account.extraAction", { actionId, values });
+              return openChangePassword();
+            },
+          }],
+        });
+        writeLog("account.open", { ownerTitle: document.title });
+        void bindModal(modal, "account.result");
+        return { started: true };
+      }
+
+      function openChangePassword() {
+        const modal = createChangePasswordFormModal({
+          title: "Change Password",
+          initialValues: {
+            current_password: "",
+            new_password: "",
+            confirm_password: "",
+          },
+        });
+        writeLog("changePassword.open", { ownerTitle: document.title });
+        void bindModal(modal, "changePassword.result");
+        return { started: true };
+      }
+
+      const commands = {
+        "login.open": openLogin,
+        "reauth.open": openReauth,
+        "account.open": openAccount,
+        "change-password.open": openChangePassword,
+        "inspect.overlays": async () => inspectLocalOverlays(),
+      };
+
+      window.addEventListener("message", async (event) => {
+        const message = event.data;
+        if (!message || message.namespace !== CONTROL_NAMESPACE) {
+          return;
+        }
+        const command = String(message.command || "");
+        const requestId = String(message.id || "");
+        const handler = commands[command];
+        if (!handler) {
+          emit("control.response", {
+            id: requestId,
+            ok: false,
+            error: `Unknown command: ${command}`,
+          });
+          return;
+        }
+        try {
+          const result = await handler(message.payload || {});
+          emit("control.response", {
+            id: requestId,
+            ok: true,
+            result: result || null,
+          });
+        } catch (error) {
+          emit("control.response", {
+            id: requestId,
+            ok: false,
+            error: String(error?.message || error || "Child command failed."),
+          });
+        }
+      });
+
+      document.getElementById("loginBtn").addEventListener("click", () => void openLogin());
+      document.getElementById("reauthBtn").addEventListener("click", () => void openReauth());
+      document.getElementById("accountBtn").addEventListener("click", () => void openAccount());
+      document.getElementById("changePasswordBtn").addEventListener("click", () => void openChangePassword());
+
+      emit("child.ready", {
+        title: document.title,
+        origin: window.location.origin,
+      });
+    });
+  </script>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Cross-Origin Bridge Child</h1>
+      <p>This child page runs real preset helpers under a different origin so Workspace can test the actual cross-origin bridge path before other teams adopt it.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Preset Triggers</h2>
+      <div class="row" style="margin-top: 12px;">
+        <button id="loginBtn">Login</button>
+        <button id="reauthBtn">Re-auth</button>
+        <button id="accountBtn">Account</button>
+        <button id="changePasswordBtn">Change Password</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Child Event Log</h2>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </main>
+</body>
+</html>
