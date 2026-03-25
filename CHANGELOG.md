@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.18`
+- Latest documented release: `v0.21.19`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,16 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Release Notes
+### v0.21.19
+
+- Fixed the first shipped cross-origin Workspace form bridge so interactive parent-owned login and re-auth modals no longer fall back locally after the old 900ms request timeout.
+- Interactive bridge requests now:
+  - probe bridge availability first
+  - keep the actual parent-owned dialog/modal request open until the user responds
+- This prevents duplicate modal copies in real Workspace-hosted child apps such as `workspace.pbb.ph` hosting `hub.pbb.ph`, where the parent modal was visible but the child later opened a local fallback after timing out.
+- Tightened browser regression coverage so bridged login and re-auth flows are held open past the old timeout before asserting cancel/result round-trip.
+- Added a parent-document stylesheet safety fix for parent-mounted form modals so bridged login and re-auth forms keep the correct hidden submit proxy and password-toggle styling when rendered outside the child iframe.
+
 ### v0.21.18
 
 - Added explicit cross-origin Workspace form-bridge support for helper-owned login and re-auth modal flows.

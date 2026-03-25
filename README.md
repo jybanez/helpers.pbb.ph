@@ -2220,7 +2220,7 @@ Child options:
 
 | Option | Type | Default | Description |
 |---|---|---:|---|
-| `timeoutMs` | `number` | `900` | Bridge request timeout in milliseconds. |
+| `timeoutMs` | `number` | `900` | Handshake / availability timeout in milliseconds. Interactive parent-owned dialogs and form-modals do not auto-timeout once the request is accepted by the parent host. |
 | `targetOrigin` | `string` | `"*"` | `postMessage` target origin. |
 
 Child API:
@@ -2257,6 +2257,9 @@ Cross-origin form-bridge contract:
   - `pbb.workspace.ui.bridge.v2`
 - request method:
   - `modal.form.open`
+- request timeout behavior:
+  - `timeoutMs` applies to bridge availability probing and transport setup
+  - accepted interactive parent-owned login and re-auth modals stay open until the user responds
 - result shape:
   - `{ reason, values }`
   - where `reason` is `submit | cancel | dismiss`
@@ -4063,7 +4066,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.18`
+- Latest documented release: `v0.21.19`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`
