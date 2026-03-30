@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Upload Queue Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 180px; color: #b2c2e5; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.upload.queue"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Chat Upload Queue",
+      overview: "Shared pending-attachment queue for unsent chat drafts, with grouped media previews, listed audio/file rows, and visual upload state.",
+      useWhen: [
+        "Use <code>createChatUploadQueue(...)</code> when a chat draft should show selected attachments before send.",
+        "Compose it with <code>createChatComposer(...)</code> so the composer owns file picking while the queue owns pending-attachment presentation."
+      ],
+      avoidWhen: [
+        "Do not use it as an upload transport engine; app code still owns actual upload/send lifecycle.",
+        "Do not replace delivered message attachments with the queue helper; sent content belongs in <code>ui.chat.thread</code>."
+      ],
+      description: "The upload queue helper is the visual draft-stage attachment surface. It groups image/video through the shared media strip, keeps audio/file items as removable listed rows, and can show upload progress or failure state without owning transport.",
+      defaultSampleCode: "const queue = createChatUploadQueue(host, {\n  items: [\n    { id: 'img1', kind: 'image', name: 'dispatch-photo-01.jpg', previewUrl: '...', status: 'uploading', progress: 64, progressLabel: '64%' },\n    { id: 'pdf1', kind: 'file', name: 'handoff-notes.pdf', sizeLabel: '1.2 MB', status: 'failed', errorText: 'Upload failed.' }\n  ]\n}, {\n  onRemove(item) {\n    console.log('remove', item.id);\n  }\n});",
+      constructor: [
+        { factory: "<code>createChatUploadQueue(container, data, options)</code>", arguments: "target container, initial items, queue options", returns: "Chat upload queue instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific composition." },
+        { option: "<code>emptyHidden</code>", default: '<code>true</code>', description: "Keeps the queue hidden when there are no pending items." },
+        { option: "<code>maxMediaThumbs</code>", default: '<code>8</code>', description: "Caps how many image/video items render in the grouped media strip." },
+        { option: "<code>mediaStripOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the internal <code>ui.media.strip</code> instance." }
+      ],
+      propertiesText: "No stable public instance properties are documented. Use <code>getItems()</code> and <code>getState()</code> instead of reading DOM state.",
+      events: [
+        { event: "<code>onRemove(item)</code>", arguments: "normalized queue item", returns: "<code>void</code>", description: "Fires when the user removes a pending attachment." },
+        { event: "<code>onOpen(item)</code>", arguments: "normalized queue item", returns: "<code>void</code>", description: "Fires when an image/video item opens through the shared media viewer path." }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
+        { method: "<code>setItems(items)</code>", arguments: "queue items array", returns: "<code>void</code>" },
+        { method: "<code>getItems()</code>", arguments: "none", returns: "current queue items" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current item and option snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Chat Upload Queue Demo</h1>
+      <p class="muted">Dedicated helper page for the shared pending-attachment draft queue.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="showSampleBtn" class="ui-button" type="button">Show Sample Queue</button>
+        <button id="showProgressBtn" class="ui-button ui-button-ghost" type="button">Show Uploading</button>
+        <button id="showFailedBtn" class="ui-button ui-button-ghost" type="button">Show Failed</button>
+        <button id="showFilesBtn" class="ui-button ui-button-ghost" type="button">Files Only</button>
+        <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Queue</button>
+      </div>
+      <div class="preview" id="queueHost"></div>
+      <pre class="log" id="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
+
+    const host = document.getElementById("queueHost");
+    const log = document.getElementById("log");
+    const preview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\"><rect width=\"120\" height=\"120\" rx=\"12\" fill=\"#15233d\"/><circle cx=\"38\" cy=\"40\" r=\"14\" fill=\"#8fd5ff\"/><path d=\"M16 92l28-28 18 18 18-24 24 34H16Z\" fill=\"#4f74b9\"/></svg>');
+
+    let items = buildSampleItems();
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function buildSampleItems() {
+      return [
+        { id: "img1", kind: "image", name: "dispatch-photo-01.jpg", previewUrl: preview, status: "uploading", progress: 42, progressLabel: "42%" },
+        { id: "img2", kind: "image", name: "dispatch-photo-02.jpg", previewUrl: preview, status: "uploaded", progressLabel: "Uploaded" },
+        { id: "vid1", kind: "video", name: "approach-scan.mp4", previewUrl: preview, status: "uploading", progress: 81, progressLabel: "81%" },
+        { id: "file1", kind: "file", name: "field-briefing-notes.pdf", sizeLabel: "1.2 MB", status: "uploading", progress: 64, progressLabel: "64%" },
+        { id: "audio1", kind: "audio", name: "radio-handoff.mp3", sizeLabel: "420 KB", status: "failed", errorText: "Upload failed. Retry from the app workflow." },
+      ];
+    }
+
+    function buildUploadingItems() {
+      return [
+        { id: "img3", kind: "image", name: "staging-photo.jpg", previewUrl: preview, status: "uploading", progress: 23, progressLabel: "23%" },
+        { id: "vid2", kind: "video", name: "site-scan.mp4", previewUrl: preview, status: "uploading", progress: 76, progressLabel: "76%" },
+        { id: "file4", kind: "file", name: "dispatch-packet.pdf", sizeLabel: "1.8 MB", status: "uploading", progress: 58, progressLabel: "58%" },
+      ];
+    }
+
+    function buildFailedItems() {
+      return [
+        { id: "file5", kind: "file", name: "mutual-aid-contacts.pdf", sizeLabel: "560 KB", status: "failed", errorText: "Upload failed. Check connectivity and retry from the app flow." },
+        { id: "audio3", kind: "audio", name: "voice-note-from-scene.m4a", sizeLabel: "220 KB", status: "failed", errorText: "Audio upload was rejected by the server." },
+      ];
+    }
+
+    const queue = createChatUploadQueue(host, { items }, {
+      onOpen(item) {
+        writeLog("queue.open", { itemId: item.id, kind: item.kind });
+      },
+      onRemove(item) {
+        items = items.filter((candidate) => candidate.id !== item.id);
+        queue.setItems(items);
+        writeLog("queue.remove", { itemId: item.id });
+      },
+    });
+
+    document.getElementById("showSampleBtn").addEventListener("click", () => {
+      items = buildSampleItems();
+      queue.setItems(items);
+      writeLog("queue.setItems", { mode: "sample", count: items.length });
+    });
+
+    document.getElementById("showProgressBtn").addEventListener("click", () => {
+      items = buildUploadingItems();
+      queue.setItems(items);
+      writeLog("queue.setItems", { mode: "uploading", count: items.length });
+    });
+
+    document.getElementById("showFailedBtn").addEventListener("click", () => {
+      items = buildFailedItems();
+      queue.setItems(items);
+      writeLog("queue.setItems", { mode: "failed", count: items.length });
+    });
+
+    document.getElementById("showFilesBtn").addEventListener("click", () => {
+      items = [
+        { id: "file2", kind: "file", name: "dispatch-handoff-packet.pdf", sizeLabel: "880 KB" },
+        { id: "file3", kind: "file", name: "mutual-aid-contact-sheet.pdf", sizeLabel: "560 KB" },
+        { id: "audio2", kind: "audio", name: "voice-note-from-scene.m4a", sizeLabel: "220 KB" },
+      ];
+      queue.setItems(items);
+      writeLog("queue.setItems", { mode: "files-only", count: items.length });
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      items = [];
+      queue.setItems(items);
+      writeLog("queue.clear", {});
+    });
+  </script>
+</body>
+</html>

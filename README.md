@@ -43,6 +43,9 @@ css/
     ui.data.inspector.css
     ui.empty.state.css
     ui.skeleton.css
+    ui.chat.thread.css
+    ui.chat.composer.css
+    ui.chat.upload.queue.css
     ui.file.uploader.css
     ui.tabs.css
     ui.strips.css
@@ -93,6 +96,9 @@ js/
     ui.data.inspector.js
     ui.empty.state.js
     ui.skeleton.js
+    ui.chat.thread.js
+    ui.chat.composer.js
+    ui.chat.upload.queue.js
     ui.file.uploader.js
     ui.tabs.js
     ui.strips.js
@@ -276,6 +282,12 @@ Reusable shared UI utilities live under `js/ui`:
   - `createEmptyState(container, data, options)` standardized empty/error/no-result presentation block with optional chrome-less rendering
 - `ui.skeleton.js`
   - `createSkeleton(container, data, options)` loading placeholders (`lines`, `card`, `grid`)
+- `ui.chat.thread.js`
+  - `createChatThread(container, data, options)` conversation thread with incoming/outgoing/system messages, grouped runs, delivery states, grouped media/file attachments, and helper-owned per-message action menus
+- `ui.chat.composer.js`
+  - `createChatComposer(container, data, options)` message composer with multiline input, send action, busy/disabled state, and helper-owned native file picking
+- `ui.chat.upload.queue.js`
+  - `createChatUploadQueue(container, data, options)` draft attachment queue with grouped image/video previews, listed audio/file rows, and visual upload progress/state before send
 - `ui.file.uploader.js`
   - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
@@ -1051,6 +1063,69 @@ Methods:
 - Global defaults:
   - `iconPosition` (default `"start"`)
   - `iconOnly` (default `false`)
+
+#### `createChatThread(container, data, options)`
+
+- Shared conversation thread for:
+  - incoming
+  - outgoing
+  - system messages
+- Supports:
+  - sender names
+  - timestamps
+  - outgoing delivery/read states
+  - grouped message runs
+  - grouped image/video attachments through `ui.media.strip`
+  - audio/file attachments as listed rows
+  - helper-owned per-message action trigger when apps return menu items
+- Instance methods:
+  - `setMessages(messages)`
+  - `getMessages()`
+  - `getState()`
+
+#### `createChatComposer(container, data, options)`
+
+- Shared message composer with:
+  - multiline text entry
+  - send button
+  - helper-owned attachment picker
+  - busy/disabled state
+- Supports:
+  - `Enter` submit
+  - `Shift+Enter` newline
+  - hidden native `<input type="file">`
+  - `accept`
+  - `multiple`
+  - optional `capture`
+  - `onFilesSelected(files, meta)`
+- Instance methods:
+  - `setValue(value)`
+  - `getValue()`
+  - `clear()`
+  - `focus()`
+  - `setBusy(busy)`
+  - `getState()`
+
+#### `createChatUploadQueue(container, data, options)`
+
+- Shared pending-attachment queue for unsent drafts.
+- Supports:
+  - grouped `image` / `video` attachments through `ui.media.strip`
+  - listed `audio` / `file` attachments with remove actions
+  - visual per-item upload state:
+    - `queued`
+    - `uploading`
+    - `uploaded`
+    - `failed`
+  - visual per-item progress/error fields:
+    - `progress`
+    - `progressLabel`
+    - `errorText`
+  - hidden empty state by default
+- Instance methods:
+  - `setItems(items)`
+  - `getItems()`
+  - `getState()`
 
 #### `createSidebar(container, data, options)`
 
@@ -4100,7 +4175,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.27`
+- Latest documented release: `v0.21.32`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

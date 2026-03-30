@@ -274,6 +274,24 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: ["ui.progress"],
     export: "createFileUploader",
   },
+  "ui.chat.thread": {
+    js: "./ui.chat.thread.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.nav.css", "../../css/ui/ui.chat.thread.css", "../../css/ui/ui.media.strip.css", "../../css/ui/ui.media.viewer.css"],
+    deps: ["ui.media.strip", "ui.menu"],
+    export: "createChatThread",
+  },
+  "ui.chat.composer": {
+    js: "./ui.chat.composer.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.composer.css"],
+    deps: [],
+    export: "createChatComposer",
+  },
+  "ui.chat.upload.queue": {
+    js: "./ui.chat.upload.queue.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.upload.queue.css", "../../css/ui/ui.media.strip.css", "../../css/ui/ui.media.viewer.css"],
+    deps: ["ui.media.strip"],
+    export: "createChatUploadQueue",
+  },
   "ui.tabs": {
     js: "./ui.tabs.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.tabs.css"],
@@ -501,6 +519,11 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.toggle.group",
     "ui.datepicker",
     "ui.file.uploader",
+  ],
+  communication: [
+    "ui.chat.thread",
+    "ui.chat.composer",
+    "ui.chat.upload.queue",
   ],
   data: [
     "ui.grid",

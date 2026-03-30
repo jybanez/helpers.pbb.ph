@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Thread Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; min-height: 420px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 180px; color: #b2c2e5; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.thread"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Chat Thread",
+      overview: "Shared conversation thread for incoming, outgoing, and system messages with compact attachment rendering and helper-owned per-message action menus.",
+      useWhen: [
+        "Use <code>createChatThread(...)</code> for conversation history, operational chat panes, and support/admin messaging surfaces.",
+        "Compose it with <code>ui.chat.composer</code>, <code>ui.file.uploader</code>, <code>ui.media.strip</code>, and <code>ui.media.viewer</code> for a fuller messaging flow."
+      ],
+      avoidWhen: [
+        "Do not put transport logic, unread counters, or socket lifecycle into the thread helper.",
+        "Do not use it as a conversation list; it is a single-thread surface."
+      ],
+      description: "The thread helper owns message presentation only. Apps still own transport, upload orchestration, and conversation state beyond the provided message array.",
+      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: sampleMessages,\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
+      constructor: [
+        { factory: "<code>createChatThread(container, data, options)</code>", arguments: "target container, thread data, thread options", returns: "Chat thread instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific layout adjustments." },
+        { option: "<code>emptyTitle</code>", default: '<code>"No messages yet"</code>', description: "Heading shown when the thread has no messages." },
+        { option: "<code>emptyText</code>", default: '<code>"Start the conversation from the composer below."</code>', description: "Secondary empty-state copy." },
+        { option: "<code>showSenderNames</code>", default: '<code>true</code>', description: "Shows sender labels on message bubbles." },
+        { option: "<code>showTimestamps</code>", default: '<code>true</code>', description: "Shows compact timestamps in the message meta row." },
+        { option: "<code>showStates</code>", default: '<code>true</code>', description: "Shows outgoing message delivery state such as delivered, read, or failed." },
+        { option: "<code>groupAdjacentMessages</code>", default: '<code>true</code>', description: "Visually compresses compatible adjacent runs from the same sender/direction." },
+        { option: "<code>alignOutgoingRight</code>", default: '<code>true</code>', description: "Keeps outgoing messages right-aligned." },
+        { option: "<code>showMessageMenuTrigger</code>", default: '<code>true</code>', description: "Shows a helper-owned action trigger when a message returns menu items." },
+        { option: "<code>maxMediaThumbsPerMessage</code>", default: '<code>4</code>', description: "Caps how many image/video attachments render in one message media strip." },
+        { option: "<code>mediaStripOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the per-message <code>ui.media.strip</code> instance." },
+        { option: "<code>getMessageMenuItems(message, state)</code>", default: '<code>null</code>', description: "Returns app-defined menu items for a message." },
+        { option: "<code>messageMenuOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the shared menu instance used by message actions." }
+      ],
+      propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly.",
+      events: [
+        { event: "<code>onAttachmentOpen(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when an attachment open action occurs, including built-in media viewer launches." },
+        { event: "<code>onAttachmentDownload(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when a listed file/audio attachment download action is selected." },
+        { event: "<code>onMessageAction(message, actionId)</code>", arguments: "normalized message and action id", returns: "<code>void</code>", description: "Reserved narrow hook for message-level actions when an app adds them." },
+        { event: "<code>onMessageMenuSelect(message, item, meta)</code>", arguments: "normalized message, selected menu item, and menu meta", returns: "<code>void</code>", description: "Fires when a helper-owned per-message menu action is selected." }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
+        { method: "<code>setMessages(messages)</code>", arguments: "full message array", returns: "<code>void</code>" },
+        { method: "<code>getMessages()</code>", arguments: "none", returns: "normalized message array" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current messages and option snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Chat Thread Demo</h1>
+      <p class="muted">Dedicated helper page for shared conversation-thread rendering.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="showSampleBtn" class="ui-button" type="button">Show Sample Thread</button>
+        <button id="showEmptyBtn" class="ui-button ui-button-ghost" type="button">Show Empty</button>
+      </div>
+      <div class="preview" id="threadHost"></div>
+      <pre class="log" id="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createChatThread = await uiLoader.get("ui.chat.thread");
+
+    const host = document.getElementById("threadHost");
+    const log = document.getElementById("log");
+    const inlinePreviewA = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#15233d\"/><circle cx=\"58\" cy=\"56\" r=\"18\" fill=\"#8fd5ff\"/><path d=\"M24 138l42-42 28 28 26-34 36 48H24Z\" fill=\"#4f74b9\"/></svg>');
+    const inlinePreviewB = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#101c31\"/><rect x=\"28\" y=\"34\" width=\"124\" height=\"76\" rx=\"10\" fill=\"#7198e5\" opacity=\"0.45\"/><path d=\"M30 142l34-28 24 18 28-32 34 42H30Z\" fill=\"#8fd5ff\" opacity=\"0.9\"/></svg>');
+    const inlinePreviewC = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#12213a\"/><rect x=\"24\" y=\"26\" width=\"132\" height=\"54\" rx=\"12\" fill=\"#4f74b9\" opacity=\"0.55\"/><circle cx=\"48\" cy=\"122\" r=\"16\" fill=\"#8fd5ff\"/><path d=\"M22 146l34-24 22 18 26-30 54 36H22Z\" fill=\"#7198e5\"/></svg>');
+    const sampleMessages = [
+      {
+        id: "m1",
+        direction: "incoming",
+        senderName: "Dispatcher Jane",
+        text: "Team is en route to Lahug. Please keep the line open.",
+        timestamp: "09:18",
+      },
+      {
+        id: "m2",
+        direction: "incoming",
+        senderName: "Dispatcher Jane",
+        text: "Mixed media bundle from the site attached below.",
+        timestamp: "09:19",
+        attachments: [
+          { id: "a1", kind: "image", name: "site-photo.jpg", previewUrl: inlinePreviewA },
+          { id: "a2", kind: "video", name: "road-clip.mp4", previewUrl: inlinePreviewB, url: inlinePreviewB },
+          { id: "a6", kind: "image", name: "staging-area-photo.jpg", previewUrl: inlinePreviewC },
+          { id: "a7", kind: "video", name: "intersection-approach.mp4", previewUrl: inlinePreviewA, url: inlinePreviewA },
+          { id: "a8", kind: "image", name: "command-post-photo.jpg", previewUrl: inlinePreviewB },
+        ],
+      },
+      {
+        id: "m2b",
+        direction: "incoming",
+        senderName: "Dispatcher Jane",
+        text: "Full mixed attachment packet for field review attached here.",
+        timestamp: "09:20",
+        attachments: [
+          { id: "a9", kind: "image", name: "perimeter-photo-01.jpg", previewUrl: inlinePreviewA },
+          { id: "a10", kind: "video", name: "perimeter-driveby-01.mp4", previewUrl: inlinePreviewB, url: inlinePreviewB },
+          { id: "a11", kind: "image", name: "perimeter-photo-02.jpg", previewUrl: inlinePreviewC },
+          { id: "a12", kind: "video", name: "command-post-walkthrough.mp4", previewUrl: inlinePreviewA, url: inlinePreviewA },
+          { id: "a13", kind: "image", name: "perimeter-photo-03.jpg", previewUrl: inlinePreviewB },
+          { id: "a14", kind: "file", name: "field-operations-summary-and-traffic-reroute-plan.pdf", sizeLabel: "1.4 MB" },
+          { id: "a15", kind: "file", name: "on-scene-photo-reference-index-for-responders.pdf", sizeLabel: "780 KB" },
+          { id: "a16", kind: "file", name: "equipment-staging-and-command-post-checklist.pdf", sizeLabel: "510 KB" },
+        ],
+      },
+      {
+        id: "m3",
+        direction: "system",
+        text: "Conversation transferred to Incident Desk",
+      },
+      {
+        id: "m4",
+        direction: "outgoing",
+        senderName: "Operator One",
+        text: "Copy. Sharing the route packet and supporting documents now.",
+        timestamp: "09:22",
+        state: "delivered",
+        attachments: [
+          { id: "a3", kind: "file", name: "route-plan-for-lahug-cebu-city-response-team.pdf", sizeLabel: "1.2 MB" },
+          { id: "a4", kind: "file", name: "route-photos-and-staging-area-reference-document.pdf", sizeLabel: "860 KB" },
+          { id: "a5", kind: "file", name: "deployment-notes-and-operator-handoff-checklist.pdf", sizeLabel: "420 KB" },
+        ],
+      },
+      {
+        id: "m5",
+        direction: "outgoing",
+        senderName: "Operator One",
+        text: "Last update failed to sync to the relay hub.",
+        timestamp: "09:23",
+        state: "failed",
+      },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const thread = createChatThread(host, { messages: sampleMessages }, {
+      getMessageMenuItems(message) {
+        if (message.direction === "system") {
+          return [];
+        }
+        return [
+          { id: "copy", label: "Copy text" },
+          { id: "reply", label: "Reply" },
+          ...(message.direction === "outgoing" ? [{ id: "delete", label: "Delete", danger: true }] : []),
+        ];
+      },
+      onAttachmentOpen(message, attachment) {
+        writeLog("thread.attachment.open", { messageId: message.id, attachmentId: attachment.id, kind: attachment.kind });
+      },
+      onAttachmentDownload(message, attachment) {
+        writeLog("thread.attachment.download", { messageId: message.id, attachmentId: attachment.id });
+      },
+      onMessageMenuSelect(message, item, meta) {
+        writeLog("thread.message.menu", { messageId: message.id, actionId: item.id, source: meta.source });
+      },
+    });
+
+    document.getElementById("showSampleBtn").addEventListener("click", () => {
+      thread.setMessages(sampleMessages);
+      writeLog("thread.setMessages", { mode: "sample" });
+    });
+    document.getElementById("showEmptyBtn").addEventListener("click", () => {
+      thread.setMessages([]);
+      writeLog("thread.setMessages", { mode: "empty" });
+    });
+  </script>
+</body>
+</html>

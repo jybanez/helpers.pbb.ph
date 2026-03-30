@@ -77,7 +77,10 @@ Use adapter functions between helper callbacks and backend APIs.
 - `createAccountFormModal(...)`
 - `createChangePasswordFormModal(...)`
 - `createPasswordField(...)`
-- `createFieldset(...)`
+  - `createFieldset(...)`
+  - `createChatThread(...)`
+  - `createChatComposer(...)`
+  - `createChatUploadQueue(...)`
   - `createStatusUpdateFormModal(...)`
   - `createReasonFormModal(...)`
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
@@ -194,6 +197,9 @@ Shared UI layer:
 - `js/ui/ui.toast.js`
 - `js/ui/ui.workspace.bridge.js`
 - `js/ui/ui.fieldset.js`
+- `js/ui/ui.chat.thread.js`
+- `js/ui/ui.chat.composer.js`
+- `js/ui/ui.chat.upload.queue.js`
 - `js/ui/ui.select.js`
 - `js/ui/ui.toggle.button.js`
 - `js/ui/ui.toggle.group.js`
@@ -502,6 +508,40 @@ If changing callback signatures or removing methods, plan a major version.
   - auth/session state changes
   - retry/error mapping
 - Prefer `trustedOrigins` over permissive cross-frame behavior. Workspace-owned surfaces should only be delegated to a known parent shell.
+
+## 11.4 Communication Helpers
+
+- `createChatThread(...)` is the shared thread surface for conversation history, grouped message runs, and attachment presentation.
+- In `createChatThread(...)`:
+  - image/video attachments should group through `ui.media.strip`
+  - audio/file attachments should remain in the listed file group
+  - per-message actions should prefer the helper-owned action trigger plus shared menu contract instead of app-local kebab menus
+- `createChatComposer(...)` now owns the helper-side attach picker:
+  - hidden native `<input type="file">`
+  - `accept`
+  - `multiple`
+  - optional `capture`
+  - `onFilesSelected(files, meta)`
+- `createChatUploadQueue(...)` is the shared pending-draft attachment surface that should sit between `createChatComposer(...)` and app-owned send logic.
+- In `createChatUploadQueue(...)`:
+  - image/video attachments should group through `ui.media.strip`
+  - audio/file attachments should remain in the listed file group
+  - remove actions should update app-owned draft state, not mutate backend uploads
+  - upload state is visual-only:
+    - `status`
+    - `progress`
+    - `progressLabel`
+    - `errorText`
+  - actual upload transport and retry logic still remain app-owned
+- Do not build separate app-local image thumbnail strips for chat messages when `ui.media.strip` already fits the message media set.
+- Do not build separate app-local per-message kebab/context menus when `createChatThread(...)` already provides the shared message-action trigger contract.
+- Keep attachment transport, upload orchestration, and realtime delivery logic in app code.
+- Compose the thread with:
+  - `createChatComposer(...)`
+  - `createChatUploadQueue(...)`
+  - `createFileUploader(...)`
+  - `createMediaStrip(...)`
+  - `createMediaViewer(...)`
 
 ### 11.4 Grid Virtualization (`ui.grid`)
 

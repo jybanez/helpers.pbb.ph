@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.chat.thread.css">
+  <link rel="stylesheet" href="../css/ui/ui.chat.composer.css">
+  <link rel="stylesheet" href="../css/ui/ui.chat.upload.queue.css">
+  <link rel="stylesheet" href="../css/ui/ui.nav.css">
+  <link rel="stylesheet" href="../css/ui/ui.media.strip.css">
+  <link rel="stylesheet" href="../css/ui/ui.media.viewer.css">
+</head>
+<body data-status="pending">
+  <div id="threadHost"></div>
+  <div id="composerHost"></div>
+  <div id="queueHost"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createChatThread } from "../js/ui/ui.chat.thread.js";
+    import { createChatComposer } from "../js/ui/ui.chat.composer.js";
+    import { createChatUploadQueue } from "../js/ui/ui.chat.upload.queue.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const threadHost = document.getElementById("threadHost");
+    const composerHost = document.getElementById("composerHost");
+    const queueHost = document.getElementById("queueHost");
+    const events = [];
+    const inlinePreview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\"><rect width=\"120\" height=\"120\" rx=\"12\" fill=\"#15233d\"/><circle cx=\"38\" cy=\"40\" r=\"14\" fill=\"#8fd5ff\"/><path d=\"M16 92l28-28 18 18 18-24 24 34H16Z\" fill=\"#4f74b9\"/></svg>');
+
+    try {
+      const sampleMessages = [
+        { id: "i1", direction: "incoming", senderName: "Dispatcher", text: "Incoming message", timestamp: "09:00" },
+        { id: "o1", direction: "outgoing", senderName: "Operator", text: "Outgoing message", timestamp: "09:01", state: "failed" },
+        { id: "s1", direction: "system", text: "Transferred" },
+        { id: "f1", direction: "incoming", senderName: "Dispatcher", text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
+        { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
+      ];
+
+      const thread = createChatThread(threadHost, { messages: sampleMessages }, {
+        getMessageMenuItems(message) {
+          if (message.direction === "system") {
+            return [];
+          }
+          return [
+            { id: "copy", label: "Copy text" },
+            ...(message.direction === "outgoing" ? [{ id: "delete", label: "Delete", danger: true }] : []),
+          ];
+        },
+        onAttachmentOpen(message, attachment) {
+          events.push({ type: "attachment-open", messageId: message.id, attachmentId: attachment.id });
+        },
+        onAttachmentDownload(message, attachment) {
+          events.push({ type: "attachment-download", messageId: message.id, attachmentId: attachment.id });
+        },
+        onMessageMenuSelect(message, item, meta) {
+          events.push({ type: "message-menu-select", messageId: message.id, itemId: item.id, source: meta.source });
+        },
+      });
+
+      assert(threadHost.querySelectorAll(".ui-chat-message").length === sampleMessages.length, "thread should render all messages");
+      assert(threadHost.querySelector('.ui-chat-message[data-direction=\"system\"]'), "thread should render system message");
+      assert(threadHost.querySelector(".ui-media-strip"), "thread should render media strip for image/video attachments");
+      assert(threadHost.querySelectorAll(".ui-chat-attachment-file").length === 2, "thread should render file/audio attachments individually");
+      assert(threadHost.querySelector(".ui-chat-message-state.is-failed"), "thread should render failed outgoing state");
+      assert(threadHost.querySelectorAll(".ui-chat-message-menu-trigger").length === 4, "thread should render action triggers for non-system messages with menu items");
+
+      threadHost.querySelector(".ui-media-thumb").click();
+      await wait(40);
+      assert(document.querySelector(".ui-media-viewer-shell.is-open"), "thread image click should open media viewer");
+      threadHost.querySelector(".ui-chat-attachment-file-download").click();
+      threadHost.querySelector(".ui-chat-message-menu-trigger").click();
+      await wait(20);
+      document.querySelector(".ui-menu-item").click();
+      assert(events.some((event) => event.type === "attachment-open" && event.attachmentId === "im1"), "thread should emit image open callback");
+      assert(events.some((event) => event.type === "attachment-download" && event.attachmentId === "fa1"), "thread should emit file download callback");
+      assert(events.some((event) => event.type === "message-menu-select" && event.itemId === "copy"), "thread should emit message menu selection callback");
+
+      thread.setMessages([]);
+      assert(threadHost.querySelector(".ui-chat-thread-empty"), "thread should render empty state");
+      assert(Array.isArray(thread.getMessages()) && thread.getMessages().length === 0, "thread getMessages should track latest messages");
+
+      const queue = createChatUploadQueue(queueHost, { items: [] }, {
+        onOpen(item) {
+          events.push({ type: "queue-open", itemId: item.id });
+        },
+        onRemove(item) {
+          events.push({ type: "queue-remove", itemId: item.id });
+        },
+      });
+
+      assert(queueHost.querySelector(".ui-chat-upload-queue")?.hidden === true, "queue should stay hidden when empty by default");
+
+      const composer = createChatComposer(composerHost, { value: "" }, {
+        helperText: "Enter sends",
+        accept: "image/*,video/*,audio/*,.pdf",
+        multiple: true,
+        onChange(value) {
+          events.push({ type: "composer-change", value });
+        },
+        onSend(payload) {
+          events.push({ type: "composer-send", text: payload.text });
+        },
+        onFilesSelected(files) {
+          events.push({ type: "composer-files", count: files.length, names: files.map((file) => file.name) });
+        },
+      });
+
+      const input = composerHost.querySelector(".ui-chat-composer-input");
+      const sendButton = composerHost.querySelector(".ui-chat-composer-send");
+      const attachButton = composerHost.querySelector(".ui-chat-composer-attach");
+      const fileInput = composerHost.querySelector(".ui-chat-composer-file-input");
+      assert(Boolean(input && sendButton && attachButton && fileInput), "composer should render input, actions, and hidden file input");
+      assert(fileInput.type === "file", "composer file input should be a native file picker");
+      assert(sendButton.disabled === true, "composer send should start disabled for empty value");
+
+      input.value = "Hello thread";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      assert(events.some((event) => event.type === "composer-change" && event.value === "Hello thread"), "composer should emit change");
+      assert(sendButton.disabled === false, "composer send should enable for non-empty value");
+
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await wait(10);
+      assert(events.some((event) => event.type === "composer-send" && event.text === "Hello thread"), "composer should send on Enter");
+
+      const pickedFile = new File(["route"], "route-plan.pdf", { type: "application/pdf" });
+      Object.defineProperty(fileInput, "files", {
+        configurable: true,
+        value: [pickedFile],
+      });
+      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+      assert(events.some((event) => event.type === "composer-files" && event.names.includes("route-plan.pdf")), "composer should emit selected files");
+
+      composer.setBusy(true);
+      const busySend = composerHost.querySelector(".ui-chat-composer-send");
+      const busyAttach = composerHost.querySelector(".ui-chat-composer-attach");
+      const busyFileInput = composerHost.querySelector(".ui-chat-composer-file-input");
+      assert(busySend.disabled === true && busyAttach.disabled === true && busyFileInput.disabled === true, "composer busy state should disable actions and file input");
+
+      composer.setBusy(false);
+      composer.setValue("Line 1");
+      const multilineInput = composerHost.querySelector(".ui-chat-composer-input");
+      multilineInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }));
+      assert(events.filter((event) => event.type === "composer-send" && event.text === "Line 1").length === 0, "composer should not send on Shift+Enter");
+
+      composer.clear();
+      assert(composer.getValue() === "", "composer clear should empty current value");
+      queue.setItems([
+        { id: "img1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview, status: "uploading", progress: 42, progressLabel: "42%" },
+        { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, status: "uploaded", progressLabel: "Uploaded" },
+        { id: "aud1", kind: "audio", name: "radio.mp3", sizeLabel: "220 KB", status: "failed", errorText: "Upload failed" },
+        { id: "file1", kind: "file", name: "route-plan.pdf", sizeLabel: "1.2 MB", status: "uploading", progress: 64, progressLabel: "64%" },
+      ]);
+      assert(queueHost.querySelector(".ui-media-strip"), "queue should render media strip for image/video items");
+      assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-overlay").length === 2, "queue media items should render overlay remove actions");
+      assert(queueHost.querySelectorAll(".ui-chat-upload-queue-file").length === 2, "queue should render audio/file items individually");
+      assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-inline").length === 2, "queue file/audio rows should render inline trailing remove actions");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-progress-fill.is-uploading"), "queue should render uploading progress state");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-progress.is-complete"), "queue should render uploaded state");
+      assert(queueHost.textContent.includes("Upload failed"), "queue should render failed-state error text");
+      queueHost.querySelector(".ui-media-thumb").click();
+      await wait(40);
+      assert(document.querySelector(".ui-media-viewer-shell.is-open"), "queue image click should open media viewer");
+      assert(events.some((event) => event.type === "queue-open" && event.itemId === "img1"), "queue should emit media open callback");
+      queueHost.querySelector(".ui-chat-upload-queue-file .ui-chat-upload-queue-remove").click();
+      assert(events.some((event) => event.type === "queue-remove" && event.itemId === "aud1"), "queue should emit remove callback");
+      composer.destroy();
+      queue.destroy();
+      thread.destroy();
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Chat regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

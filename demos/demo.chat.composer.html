@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Composer Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 180px; color: #b2c2e5; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.composer", "ui.chat.upload.queue"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Chat Composer",
+      overview: "Shared message composer with send handling, busy state, multiline text entry, and helper-owned native file picking.",
+      useWhen: [
+        "Use <code>createChatComposer(...)</code> for chat send surfaces, support/admin messaging inputs, and Workspace-hosted communication panes.",
+        "Compose it with <code>ui.chat.thread</code> and app-owned transport logic."
+      ],
+      avoidWhen: [
+        "Do not put upload transport or realtime send logic inside the helper.",
+        "Do not use it as a general-purpose form textarea when the real need is message composition."
+      ],
+      description: "The composer helper owns the interaction shell plus the hidden native file picker. Apps still own send lifecycle, upload orchestration, and draft persistence.",
+      defaultSampleCode: "const composer = createChatComposer(host, { value: '' }, {\n  helperText: 'Enter sends. Shift+Enter adds a new line.',\n  accept: 'image/*,video/*,.pdf,.mp3',\n  multiple: true,\n  onSend({ text }) {\n    console.log('send', text);\n  },\n  onFilesSelected(files) {\n    console.log('files', files);\n  },\n});",
+      constructor: [
+        { factory: "<code>createChatComposer(container, data, options)</code>", arguments: "target container, initial data, composer options", returns: "Chat composer instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific composition." },
+        { option: "<code>placeholder</code>", default: '<code>"Type a message..."</code>', description: "Input placeholder copy." },
+        { option: "<code>helperText</code>", default: '<code>""</code>', description: "Optional muted helper line below the controls." },
+        { option: "<code>disabled</code>", default: '<code>false</code>', description: "Disables the composer controls without implying an active send lifecycle." },
+        { option: "<code>busy</code>", default: '<code>false</code>', description: "Disables sending and file picking during an active submit/upload phase." },
+        { option: "<code>sendLabel</code>", default: '<code>"Send"</code>', description: "Visible label for the send action." },
+        { option: "<code>attachmentLabel</code>", default: '<code>"Attach"</code>', description: "Accessible label/title for the helper-owned attach action." },
+        { option: "<code>showAttachmentButton</code>", default: '<code>true</code>', description: "Shows or hides the attach action entirely." },
+        { option: "<code>accept</code>", default: '<code>""</code>', description: "Native file-input <code>accept</code> filter passed to the hidden picker." },
+        { option: "<code>multiple</code>", default: '<code>true</code>', description: "Allows multiple files to be selected in one pick operation." },
+        { option: "<code>capture</code>", default: '<code>null</code>', description: "Optional native capture hint for camera/mic-capable environments." },
+        { option: "<code>maxLength</code>", default: '<code>null</code>', description: "Optional max length constraint for the text input." },
+        { option: "<code>multiline</code>", default: '<code>true</code>', description: "Uses a textarea by default; when false, uses a single-line input." },
+        { option: "<code>submitOnEnter</code>", default: '<code>true</code>', description: "When true, Enter submits and Shift+Enter adds a newline." }
+      ],
+      propertiesText: "No stable public instance properties are documented. Use <code>getValue()</code> and <code>getState()</code> instead of reading internal refs.",
+      events: [
+        { event: "<code>onChange(value)</code>", arguments: "current input string", returns: "<code>void</code>", description: "Fires on every text input change." },
+        { event: "<code>onSend({ text })</code>", arguments: "plain text payload", returns: "<code>void | Promise&lt;void&gt;</code>", description: "Fires when the helper accepts a send action." },
+        { event: "<code>onFilesSelected(files, meta)</code>", arguments: "<code>File[]</code> and picker metadata", returns: "<code>void</code>", description: "Fires after the helper-owned native file picker returns selected files." }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
+        { method: "<code>setValue(value)</code>", arguments: "string", returns: "<code>void</code>" },
+        { method: "<code>getValue()</code>", arguments: "none", returns: "current text" },
+        { method: "<code>clear()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>focus()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>setBusy(busy)</code>", arguments: "boolean", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current value and option snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Chat Composer Demo</h1>
+      <p class="muted">Dedicated helper page for the shared message-composer surface.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="toggleBusyBtn" class="ui-button ui-button-ghost" type="button">Toggle Busy</button>
+        <button id="fillBtn" class="ui-button" type="button">Fill Draft</button>
+        <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Draft</button>
+        <button id="focusBtn" class="ui-button ui-button-ghost" type="button">Focus</button>
+      </div>
+      <div class="preview" id="composerHost"></div>
+      <div class="preview" id="queueHost"></div>
+      <pre class="log" id="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createChatComposer = await uiLoader.get("ui.chat.composer");
+    const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
+
+    const host = document.getElementById("composerHost");
+    const queueHost = document.getElementById("queueHost");
+    const log = document.getElementById("log");
+    let busy = false;
+    let queueItems = [];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function inferKind(file) {
+      const type = String(file?.type || "");
+      if (type.startsWith("image/")) {
+        return "image";
+      }
+      if (type.startsWith("video/")) {
+        return "video";
+      }
+      if (type.startsWith("audio/")) {
+        return "audio";
+      }
+      return "file";
+    }
+
+    function formatSize(size) {
+      if (!Number.isFinite(size)) {
+        return "";
+      }
+      if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+      }
+      if (size >= 1024) {
+        return `${Math.round(size / 1024)} KB`;
+      }
+      return `${size} B`;
+    }
+
+    const queue = createChatUploadQueue(queueHost, { items: queueItems }, {
+      onRemove(item) {
+        queueItems = queueItems.filter((candidate) => candidate.id !== item.id);
+        queue.setItems(queueItems);
+        writeLog("queue.remove", { itemId: item.id });
+      },
+    });
+
+    const composer = createChatComposer(host, { value: "" }, {
+      helperText: "Enter sends. Shift+Enter adds a new line.",
+      accept: "image/*,video/*,audio/*,.pdf",
+      multiple: true,
+      onChange(value) {
+        writeLog("composer.change", { value });
+      },
+      onSend({ text }) {
+        writeLog("composer.send", { text });
+      },
+      onFilesSelected(files) {
+        const nextItems = files.map((file, index) => ({
+          id: `${Date.now()}-${index}-${file.name}`,
+          kind: inferKind(file),
+          name: file.name,
+          sizeLabel: formatSize(file.size),
+          previewUrl: file.type && (file.type.startsWith("image/") || file.type.startsWith("video/")) ? URL.createObjectURL(file) : "",
+          file,
+        }));
+        queueItems = queueItems.concat(nextItems);
+        queue.setItems(queueItems);
+        writeLog("composer.filesSelected", { count: files.length, names: files.map((file) => file.name) });
+      },
+    });
+
+    document.getElementById("toggleBusyBtn").addEventListener("click", () => {
+      busy = !busy;
+      composer.setBusy(busy);
+      writeLog("composer.busy", { busy });
+    });
+    document.getElementById("fillBtn").addEventListener("click", () => {
+      composer.setValue("Please check the latest incident photos before deployment.");
+      writeLog("composer.setValue", { mode: "filled" });
+    });
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      composer.clear();
+      writeLog("composer.clear", {});
+    });
+    document.getElementById("focusBtn").addEventListener("click", () => {
+      composer.focus();
+      writeLog("composer.focus", {});
+    });
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.28`
+- Latest documented release: `v0.21.32`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,105 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.32
+
+- Extended `ui.chat.upload.queue` with visual per-item upload state.
+- Queue items now support:
+  - `status`
+    - `queued`
+    - `uploading`
+    - `uploaded`
+    - `failed`
+  - `progress`
+  - `progressLabel`
+  - `errorText`
+- Kept the boundary narrow:
+  - the queue renders visual progress and failure state
+  - apps still own upload transport, retry, and backend orchestration
+- Updated:
+  - `demos/demo.chat.upload.queue.html`
+  - `tests/chat.regression.html`
+  - `docs/ui-chat-upload-queue-v1-spec.md`
+  - `docs/ui-chat-upload-queue-progress-addendum.md`
+  - `docs/ui-chat-upload-queue-progress-checklist.md`
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+
+### v0.21.31
+
+- Extended `ui.chat.thread` with helper-owned per-message action menus.
+- Added narrow thread options:
+  - `showMessageMenuTrigger`
+  - `getMessageMenuItems(message, state)`
+  - `messageMenuOptions`
+  - `onMessageMenuSelect(message, item, meta)`
+- Kept menu actions app-defined; the helper now owns only:
+  - trigger rendering
+  - shared menu mounting
+  - selection routing
+- Updated:
+  - `demos/demo.chat.thread.html`
+  - `tests/chat.regression.html`
+  - `docs/ui-chat-thread-v1-spec.md`
+  - `docs/ui-chat-thread-message-actions-addendum.md`
+  - `docs/ui-chat-thread-message-actions-checklist.md`
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+
+### v0.21.30
+
+- Extended `ui.chat.composer` so the attach control now owns a hidden native file input instead of only exposing a thin click callback.
+- Added composer-side file-picker options:
+  - `accept`
+  - `multiple`
+  - `capture`
+  - `onFilesSelected(files, meta)`
+- Added shared draft attachment queue helper:
+  - `ui.chat.upload.queue`
+  - `createChatUploadQueue(container, data, options)`
+- `ui.chat.upload.queue` now renders:
+  - grouped `image` / `video` attachments through `ui.media.strip`
+  - listed `audio` / `file` rows with remove actions
+- Added:
+  - `demos/demo.chat.upload.queue.html`
+  - `docs/ui-chat-upload-queue-v1-spec.md`
+  - `docs/ui-communication-upload-queue-checklist.md`
+- Updated:
+  - `demos/demo.chat.composer.html`
+  - `tests/chat.regression.html`
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+
+### v0.21.29
+
+- Added first-wave communication helpers:
+  - `ui.chat.thread`
+  - `ui.chat.composer`
+- Added shared chat-thread rendering for:
+  - incoming, outgoing, and system messages
+  - grouped message runs
+  - outgoing delivery/read states
+  - grouped image/video attachments through `ui.media.strip`
+  - listed audio/file attachments
+  - helper-owned empty state
+- Added shared chat-composer behavior for:
+  - multiline message entry
+  - send guard for empty input
+  - `Enter` submit and `Shift+Enter` newline
+  - busy/disabled state
+  - optional attachment trigger
+- Added:
+  - `demos/demo.chat.thread.html`
+  - `demos/demo.chat.composer.html`
+  - `tests/chat.regression.html`
+  - `tests/chat.regression.mjs`
+  - `docs/ui-communication-first-wave-checklist.md`
+- Updated:
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+  - `demos/index.html`
+  - `js/demo/demo.shell.js`
 
 ### v0.21.28
 

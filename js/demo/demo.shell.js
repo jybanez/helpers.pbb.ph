@@ -54,6 +54,14 @@ const DEMO_GROUPS = [
     ],
   },
   {
+    label: "Communication",
+    items: [
+      { href: "./demo.chat.thread.html", label: "Chat Thread" },
+      { href: "./demo.chat.composer.html", label: "Chat Composer" },
+      { href: "./demo.chat.upload.queue.html", label: "Chat Upload Queue" },
+    ],
+  },
+  {
     label: "Navigation",
     items: [
       { href: "./demo.nav.html", label: "Overview" },
