@@ -10,6 +10,7 @@
     .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
     .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
     .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; min-height: 420px; }
+    .preview.is-virtualized { height: 520px; min-height: 520px; overflow: hidden; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
     .log { min-height: 180px; color: #b2c2e5; }
@@ -22,7 +23,7 @@
   <script>
     window.demoMeta = {
       title: "Chat Thread",
-      overview: "Shared conversation thread for incoming, outgoing, and system messages with compact attachment rendering and helper-owned per-message action menus.",
+      overview: "Shared conversation thread for incoming, outgoing, and system messages with compact attachment rendering, helper-owned per-message action menus, and opt-in long-thread virtualization.",
       useWhen: [
         "Use <code>createChatThread(...)</code> for conversation history, operational chat panes, and support/admin messaging surfaces.",
         "Compose it with <code>ui.chat.composer</code>, <code>ui.file.uploader</code>, <code>ui.media.strip</code>, and <code>ui.media.viewer</code> for a fuller messaging flow."
@@ -49,9 +50,13 @@
         { option: "<code>maxMediaThumbsPerMessage</code>", default: '<code>4</code>', description: "Caps how many image/video attachments render in one message media strip." },
         { option: "<code>mediaStripOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the per-message <code>ui.media.strip</code> instance." },
         { option: "<code>getMessageMenuItems(message, state)</code>", default: '<code>null</code>', description: "Returns app-defined menu items for a message." },
-        { option: "<code>messageMenuOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the shared menu instance used by message actions." }
+        { option: "<code>messageMenuOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the shared menu instance used by message actions." },
+        { option: "<code>enableVirtualization</code>", default: '<code>false</code>', description: "Opt-in measured-window virtualization for long message histories." },
+        { option: "<code>virtualThreshold</code>", default: '<code>120</code>', description: "Minimum message count before virtualization activates." },
+        { option: "<code>virtualOverscan</code>", default: '<code>10</code>', description: "Extra messages rendered above and below the visible window." },
+        { option: "<code>bottomAnchorThreshold</code>", default: '<code>48</code>', description: "Pixel threshold used to decide whether the thread is pinned near the latest message." }
       ],
-      propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly.",
+      propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly. When virtualization is enabled, <code>getState()</code> also reports whether the virtualized path is active.",
       events: [
         { event: "<code>onAttachmentOpen(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when an attachment open action occurs, including built-in media viewer launches." },
         { event: "<code>onAttachmentDownload(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when a listed file/audio attachment download action is selected." },
@@ -79,6 +84,7 @@
       <div class="row">
         <button id="showSampleBtn" class="ui-button" type="button">Show Sample Thread</button>
         <button id="showEmptyBtn" class="ui-button ui-button-ghost" type="button">Show Empty</button>
+        <button id="showVirtualBtn" class="ui-button ui-button-ghost" type="button">Show Virtualized Long Thread</button>
       </div>
       <div class="preview" id="threadHost"></div>
       <pre class="log" id="log">No events yet.</pre>
@@ -160,6 +166,24 @@
         state: "failed",
       },
     ];
+    const virtualizedMessages = Array.from({ length: 220 }, (_, index) => {
+      const messageNumber = index + 1;
+      if (messageNumber % 9 === 0) {
+        return {
+          id: `vt-${messageNumber}`,
+          direction: "system",
+          text: `Escalation marker ${messageNumber}`,
+        };
+      }
+      return {
+        id: `vt-${messageNumber}`,
+        direction: messageNumber % 5 === 0 ? "outgoing" : "incoming",
+        senderName: messageNumber % 5 === 0 ? "Operator One" : "Dispatcher Jane",
+        text: `Virtualized history message ${messageNumber}. Keep the route channel open and continue monitoring updates.`,
+        timestamp: `10:${String(messageNumber % 60).padStart(2, "0")}`,
+        state: messageNumber % 5 === 0 ? "delivered" : undefined,
+      };
+    });
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -189,12 +213,24 @@
     });
 
     document.getElementById("showSampleBtn").addEventListener("click", () => {
-      thread.setMessages(sampleMessages);
+      host.classList.remove("is-virtualized");
+      thread.update({ messages: sampleMessages }, { enableVirtualization: false });
       writeLog("thread.setMessages", { mode: "sample" });
     });
     document.getElementById("showEmptyBtn").addEventListener("click", () => {
-      thread.setMessages([]);
+      host.classList.remove("is-virtualized");
+      thread.update({ messages: [] }, { enableVirtualization: false });
       writeLog("thread.setMessages", { mode: "empty" });
+    });
+    document.getElementById("showVirtualBtn").addEventListener("click", () => {
+      host.classList.add("is-virtualized");
+      thread.update({ messages: virtualizedMessages }, {
+        enableVirtualization: true,
+        virtualThreshold: 24,
+        virtualOverscan: 6,
+        bottomAnchorThreshold: 56,
+      });
+      writeLog("thread.setMessages", { mode: "virtualized", count: virtualizedMessages.length });
     });
   </script>
 </body>

@@ -197,9 +197,11 @@ Shared UI layer:
 - `js/ui/ui.toast.js`
 - `js/ui/ui.workspace.bridge.js`
 - `js/ui/ui.fieldset.js`
+- `js/ui/ui.property.editor.js`
 - `js/ui/ui.chat.thread.js`
 - `js/ui/ui.chat.composer.js`
 - `js/ui/ui.chat.upload.queue.js`
+- `docs/ui-chat-thread-virtualization-v1-spec.md`
 - `js/ui/ui.select.js`
 - `js/ui/ui.toggle.button.js`
 - `js/ui/ui.toggle.group.js`

@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.32`
+- Latest documented release: `v0.21.36`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,82 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.36
+
+- Updated shared `ui.select` multiple-select option rows to improve selected-state visibility.
+- Added:
+  - stable left padding for multi-select menu items
+  - left-side check affordance for multi-select rows
+  - green selected check icon when an item is selected
+- Updated:
+  - `js/ui/ui.select.js`
+  - `css/ui/ui.select.css`
+
+### v0.21.35
+
+- Extended `ui.property.editor` to support hosted shared `ui.select` rows.
+- Added multi-value property editing support through:
+  - `kind: "ui.select"`
+  - `items`
+  - `multiple`
+  - shared `ui.select` options such as `searchable`, `clearable`, and `closeOnSelect`
+- Updated:
+  - `js/ui/ui.property.editor.js`
+  - `css/ui/ui.property.editor.css`
+  - `docs/ui-property-editor-proposal.md`
+  - `docs/ui-property-editor-v1-spec.md`
+  - `docs/ui-property-editor-checklist.md`
+  - `demos/demo.property.editor.html`
+  - `tests/property.editor.regression.html`
+
+### v0.21.34
+
+- Added `ui.property.editor` as a shared inspector-style editing surface.
+- Added grouped property sections with:
+  - stable label/value/action row layout
+  - selection header support
+  - typed rows for `display`, `text`, `textarea`, `number`, `checkbox`, `toggle`, `select`, `color`, `color-select`, `action`, and `divider`
+  - read-only and mixed-value handling
+  - property-level error rendering
+  - structured `onPropertyChange(...)` and `onAction(...)` callbacks
+- Added:
+  - `docs/ui-property-editor-proposal.md`
+  - `docs/ui-property-editor-v1-spec.md`
+  - `docs/ui-property-editor-checklist.md`
+  - `demos/demo.property.editor.html`
+  - `tests/property.editor.regression.html`
+  - `tests/property.editor.regression.mjs`
+- Updated:
+  - `js/ui/ui.loader.js`
+  - `js/demo/demo.shell.js`
+  - `demos/index.html`
+  - `README.md`
+  - `docs/pbb-refactor-playbook.md`
+
+### v0.21.33
+
+- Added opt-in measured-window virtualization to `ui.chat.thread`.
+- Added narrow thread virtualization options:
+  - `enableVirtualization`
+  - `virtualThreshold`
+  - `virtualOverscan`
+  - `bottomAnchorThreshold`
+- Preserved append/prepend reading behavior for long threads without changing the existing message data contract.
+- Updated the chat regression harness to cover:
+  - virtualized activation above threshold
+  - append while pinned near bottom
+  - append while reading older messages
+  - prepend history preservation
+- Updated:
+  - `js/ui/ui.chat.thread.js`
+  - `css/ui/ui.chat.thread.css`
+  - `demos/demo.chat.thread.html`
+  - `tests/chat.regression.html`
+  - `docs/ui-chat-thread-virtualization-proposal.md`
+  - `docs/ui-chat-thread-virtualization-v1-spec.md`
+  - `docs/ui-chat-thread-virtualization-checklist.md`
+  - `README.md`
 
 ### v0.21.32
 

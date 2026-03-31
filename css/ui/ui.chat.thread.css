@@ -4,6 +4,32 @@
   min-width: 0;
 }
 
+.ui-chat-thread.is-virtualized {
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.ui-chat-thread-viewport {
+  overflow: auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.ui-chat-thread-virtual-scroller,
+.ui-chat-thread-virtual-window {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  align-content: start;
+}
+
+.ui-chat-thread-virtual-spacer {
+  width: 100%;
+  min-height: 0;
+  pointer-events: none;
+}
+
 .ui-chat-thread-empty {
   border: 1px dashed var(--ui-border, #2b3750);
   border-radius: 12px;

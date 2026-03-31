@@ -36,7 +36,12 @@ It should not own:
 - no typing-indicator transport
 - no message send API
 - no conversation directory/list
-- no virtualized thread in V1
+- no forced virtualization by default
+
+## Related Addenda
+
+- `docs/ui-chat-thread-message-actions-addendum.md`
+- `docs/ui-chat-thread-virtualization-v1-spec.md`
 
 ## Factory
 

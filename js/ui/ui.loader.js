@@ -178,6 +178,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: ["ui.select", "ui.password"],
     export: "createFieldset",
   },
+  "ui.property.editor": {
+    js: "./ui.property.editor.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.editor.css", "../../css/ui/ui.toggle.css", "../../css/ui/ui.select.css"],
+    deps: ["ui.toggle.button", "ui.select"],
+    export: "createPropertyEditor",
+  },
   "ui.select": {
     js: "./ui.select.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css"],
@@ -514,6 +520,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.form.modal.reason",
     "ui.password",
     "ui.fieldset",
+    "ui.property.editor",
     "ui.select",
     "ui.toggle.button",
     "ui.toggle.group",

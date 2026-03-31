@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Property Editor Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.select.css">
+  <link rel="stylesheet" href="../css/ui/ui.toggle.css">
+  <link rel="stylesheet" href="../css/ui/ui.property.editor.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createPropertyEditor } from "../js/ui/ui.property.editor.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const events = [];
+
+    try {
+      const editor = createPropertyEditor(host, {
+        selectionLabel: "Rectangle (2)",
+        sections: [
+          {
+            id: "general",
+            title: "General",
+            description: "Basic geometry and style properties.",
+            properties: [
+              { id: "name", label: "Name", kind: "text", value: "Rectangle A" },
+              { id: "opacity", label: "Opacity", kind: "number", value: 0.5, min: 0, max: 1, step: 0.1 },
+              { id: "visible", label: "Visible", kind: "checkbox", value: true },
+              { id: "locked", label: "Locked", kind: "toggle", value: false },
+              { id: "layer", label: "Layer", kind: "select", value: "dimensions", options: [
+                { value: "dimensions", label: "dimensions" },
+                { value: "annotations", label: "annotations" }
+              ] },
+              { id: "visible_in", label: "Visible In", kind: "ui.select", value: ["plan", "elevation"], multiple: true, closeOnSelect: false, items: [
+                { value: "plan", label: "Plan" },
+                { value: "elevation", label: "Elevation" },
+                { value: "section", label: "Section" }
+              ] },
+              { id: "color", label: "Color", kind: "color", value: "#7198e5" },
+              { id: "font_size", label: "Font Size", kind: "text", value: "11px", mixed: true },
+              { id: "handle", label: "Handle", kind: "display", value: "0x3d0", readOnly: true },
+              { id: "divider-1", label: "", kind: "divider" },
+              { id: "manager", label: "Layer Manager", kind: "action", value: "Open Layer Manager", actions: [{ id: "open-layer-manager", label: "Open" }] },
+              { id: "duplicate", label: "Duplicate", kind: "display", value: "Ready", actions: [{ id: "duplicate-object", label: "Duplicate" }] }
+            ]
+          }
+        ]
+      }, {
+        labelWidth: 180,
+        onPropertyChange(change, meta) {
+          events.push({ type: "change", ...change, previousValue: meta.previousValue, mixedCleared: meta.mixedCleared });
+        },
+        onAction(property, action, meta) {
+          events.push({ type: "action", propertyId: property.id, actionId: action?.id, sectionId: meta.sectionId });
+        }
+      });
+
+      assert(host.querySelector(".ui-property-editor-selection-value").textContent.includes("Rectangle (2)"), "selection header should render");
+      assert(host.querySelectorAll(".ui-property-editor-row").length >= 9, "property rows should render");
+      assert(host.querySelector(".ui-property-editor-row.is-mixed"), "mixed-value rows should render");
+      assert(host.querySelector(".ui-property-editor-display").textContent.includes("0x3d0"), "read-only display rows should render");
+      assert(host.querySelector(".ui-toggle-button"), "toggle property should render shared toggle button");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-select'), "ui.select property rows should render the shared hosted select surface");
+
+      const nameInput = host.querySelector('input[type="text"]');
+      nameInput.value = "Rectangle B";
+      nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+      assert(events.some((event) => event.type === "change" && event.propertyId === "name" && event.value === "Rectangle B"), "text property changes should emit structured events");
+
+      const checkbox = host.querySelector('.ui-property-editor-checkbox');
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      assert(events.some((event) => event.type === "change" && event.propertyId === "visible" && event.value === false), "checkbox changes should emit structured events");
+
+      host.querySelector('.ui-toggle-button').click();
+      assert(events.some((event) => event.type === "change" && event.propertyId === "locked" && event.value === true), "toggle changes should emit structured events");
+
+      const hostedSelectHost = host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-property-editor-select-host');
+      hostedSelectHost.__uiSelectInstance.setValue(["plan", "section"]);
+      assert(events.some((event) => event.type === "change" && event.propertyId === "visible_in" && Array.isArray(event.value) && event.value.includes("plan") && event.value.includes("section")), "ui.select property changes should emit structured multi-value events");
+
+      editor.setErrors({ layer: "Layer is required.", font_size: "Font size must be normalized." });
+      assert(host.textContent.includes("Layer is required."), "setErrors should render property-level errors");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="layer"].is-invalid'), "invalid property rows should render invalid state");
+
+      host.querySelector('.ui-property-editor-action').click();
+      host.querySelector('.ui-property-editor-row[data-property-id="duplicate"] .ui-property-editor-actions .ui-button').click();
+      assert(events.some((event) => event.type === "action" && event.propertyId === "manager"), "action rows should emit onAction");
+      assert(events.some((event) => event.type === "action" && event.propertyId === "duplicate" && event.actionId === "duplicate-object"), "trailing actions should emit onAction");
+
+      editor.setSelectionLabel("Rectangle (3)");
+      assert(host.querySelector(".ui-property-editor-selection-value").textContent.includes("Rectangle (3)"), "setSelectionLabel should update the selection header");
+
+      editor.clearErrors();
+      assert(!host.textContent.includes("Layer is required."), "clearErrors should remove property-level errors");
+
+      const state = editor.getState();
+      assert(state.selectionLabel === "Rectangle (3)", "getState should expose the current selection label");
+      assert(state.sections[0].properties.some((property) => property.kind === "toggle"), "getState should expose normalized sections");
+
+      editor.destroy();
+      assert(host.innerHTML === "", "destroy should clear the host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Property editor regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

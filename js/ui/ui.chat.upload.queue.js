@@ -68,10 +68,10 @@ export function createChatUploadQueue(container, data = {}, options = {}) {
         },
       });
       mediaStripApis.push(stripApi);
-      attachMediaRemoveButtons(mediaHost, mediaItems);
-      const mediaStatuses = createMediaStatusList(mediaItems);
-      if (mediaStatuses) {
-        mediaSection.appendChild(mediaStatuses);
+      attachMediaThumbChrome(mediaHost, mediaItems);
+      const mediaErrors = createMediaErrorList(mediaItems);
+      if (mediaErrors) {
+        mediaSection.appendChild(mediaErrors);
       }
       root.appendChild(mediaSection);
     }
@@ -167,7 +167,7 @@ export function createChatUploadQueue(container, data = {}, options = {}) {
   return { update, destroy, setItems, getItems, getState };
 }
 
-function attachMediaRemoveButtons(mediaHost, mediaItems) {
+function attachMediaThumbChrome(mediaHost, mediaItems) {
   const thumbs = Array.from(mediaHost.querySelectorAll(".ui-media-thumb"));
   thumbs.forEach((thumb, index) => {
     const item = mediaItems[index];
@@ -199,6 +199,11 @@ function attachMediaRemoveButtons(mediaHost, mediaItems) {
       }
     });
     thumb.appendChild(button);
+
+    const stateNode = createMediaThumbState(item);
+    if (stateNode) {
+      thumb.appendChild(stateNode);
+    }
   });
 }
 
@@ -237,34 +242,45 @@ function normalizeProgress(progress) {
   return Math.max(0, Math.min(100, next));
 }
 
-function createMediaStatusList(items) {
-  const statusItems = items.filter((item) => item.status !== "queued" || item.progress != null || item.errorText);
-  if (!statusItems.length) {
+function createMediaThumbState(item) {
+  if (item.status === "queued" && item.progress == null && !item.errorText) {
     return null;
   }
-  const list = createElement("div", { className: "ui-chat-upload-queue-media-statuses" });
-  statusItems.forEach((item) => {
-    const row = createElement("div", { className: `ui-chat-upload-queue-media-status is-${item.status}` });
-    row.appendChild(createElement("div", {
-      className: "ui-chat-upload-queue-media-status-name",
-      text: item.name || "Attachment",
+  const overlay = createElement("div", {
+    className: `ui-chat-upload-queue-media-state is-${item.status}`,
+  });
+  if (item.progress != null || item.status === "uploading") {
+    const track = createElement("div", { className: "ui-chat-upload-queue-media-progress-track" });
+    const fill = createElement("div", {
+      className: `ui-chat-upload-queue-media-progress-fill is-${item.status}`,
+    });
+    fill.style.width = `${item.progress ?? 0}%`;
+    track.appendChild(fill);
+    overlay.appendChild(track);
+    overlay.appendChild(createElement("div", {
+      className: "ui-chat-upload-queue-media-progress-label",
+      text: item.progressLabel || formatStatusLabel(item),
     }));
-    const progressNode = createProgressNode(item, "is-compact");
-    if (progressNode) {
-      row.appendChild(progressNode);
-    } else {
-      row.appendChild(createElement("div", {
-        className: "ui-chat-upload-queue-media-status-label",
-        text: formatStatusLabel(item),
-      }));
-    }
-    if (item.errorText) {
-      row.appendChild(createElement("div", {
-        className: "ui-chat-upload-queue-media-status-error",
-        text: item.errorText,
-      }));
-    }
-    list.appendChild(row);
+    return overlay;
+  }
+  overlay.appendChild(createElement("div", {
+    className: "ui-chat-upload-queue-media-progress-label",
+    text: item.progressLabel || formatStatusLabel(item),
+  }));
+  return overlay;
+}
+
+function createMediaErrorList(items) {
+  const failedItems = items.filter((item) => item.errorText);
+  if (!failedItems.length) {
+    return null;
+  }
+  const list = createElement("div", { className: "ui-chat-upload-queue-media-errors" });
+  failedItems.forEach((item) => {
+    list.appendChild(createElement("div", {
+      className: "ui-chat-upload-queue-media-status-error",
+      text: item.errorText,
+    }));
   });
   return list;
 }

@@ -283,11 +283,13 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.skeleton.js`
   - `createSkeleton(container, data, options)` loading placeholders (`lines`, `card`, `grid`)
 - `ui.chat.thread.js`
-  - `createChatThread(container, data, options)` conversation thread with incoming/outgoing/system messages, grouped runs, delivery states, grouped media/file attachments, and helper-owned per-message action menus
+  - `createChatThread(container, data, options)` conversation thread with incoming/outgoing/system messages, grouped runs, delivery states, grouped media/file attachments, helper-owned per-message action menus, and opt-in long-thread virtualization
 - `ui.chat.composer.js`
   - `createChatComposer(container, data, options)` message composer with multiline input, send action, busy/disabled state, and helper-owned native file picking
 - `ui.chat.upload.queue.js`
   - `createChatUploadQueue(container, data, options)` draft attachment queue with grouped image/video previews, listed audio/file rows, and visual upload progress/state before send
+- `ui.property.editor.js`
+  - `createPropertyEditor(container, data, options)` inspector-style property editor with grouped sections, typed property rows, mixed/read-only states, toggle/checkbox booleans, and structured property/action callbacks
 - `ui.file.uploader.js`
   - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
@@ -4175,7 +4177,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.32`
+- Latest documented release: `v0.21.36`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

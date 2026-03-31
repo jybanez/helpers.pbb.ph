@@ -113,10 +113,45 @@
   cursor: pointer;
 }
 
+.ui-select-option.is-multiple {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding-left: 12px;
+}
+
+.ui-select-option-check {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+}
+
+.ui-select-option-check svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ui-select-option-label {
+  min-width: 0;
+}
+
 .ui-select-option:hover,
 .ui-select-option.is-selected {
   background: var(--ui-bg-soft, #101c31);
   border-color: var(--ui-border-strong, #344769);
+}
+
+.ui-select-option.is-selected .ui-select-option-check {
+  color: #43d17f;
 }
 
 .ui-select-option.is-active {

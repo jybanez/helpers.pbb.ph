@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Editor Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 220px; color: #b2c2e5; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.property.editor"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Property Editor",
+      overview: "Inspector-style property editor for grouped name/value editing with typed property rows, read-only and mixed-value handling, checkbox/toggle booleans, native selects, and hosted ui.select fields including multi-value selection.",
+      useWhen: [
+        "Use <code>createPropertyEditor(...)</code> for inspector panels, configuration sidebars, and object property panes where edits happen continuously instead of through a submit-only form.",
+        "Use it when you need compact property rows with shared editing behavior for text, number, select, ui.select, color, checkbox, and toggle properties."
+      ],
+      avoidWhen: [
+        "Do not use it as a persistence or autosave engine. App code still owns transport, undo/redo, and cross-property business rules.",
+        "Do not use it as a full schema designer or arbitrary plugin-host surface in V1."
+      ],
+      description: "The helper stays narrow: sectioned inspector layout, stable label/editor/action columns, mixed/read-only states, and structured change/action callbacks. It is not a modal form engine and it is not a domain model runtime.",
+      defaultSampleCode: `const editor = createPropertyEditor(host, {\n  selectionLabel: 'Radial Dimension (1)',\n  sections: [{\n    id: 'general',\n    title: 'General Properties',\n    properties: [\n      { id: 'layer', label: 'Layer', kind: 'select', value: 'dimensions', options: [\n        { value: 'dimensions', label: 'dimensions' },\n        { value: 'annotations', label: 'annotations' }\n      ] },\n      { id: 'visible_in', label: 'Visible In', kind: 'ui.select', value: ['plan', 'elevation'], multiple: true, items: [\n        { value: 'plan', label: 'Plan' },\n        { value: 'elevation', label: 'Elevation' },\n        { value: 'section', label: 'Section' }\n      ] },\n      { id: 'locked', label: 'Locked', kind: 'toggle', value: false },\n      { id: 'handle', label: 'Handle', kind: 'display', value: '0x3d0', readOnly: true }\n    ]\n  }]\n}, {\n  onPropertyChange(change) {\n    console.log(change.propertyId, change.value);\n  }\n});`,
+      constructor: [
+        { factory: "<code>createPropertyEditor(container, data, options)</code>", arguments: "host container, editor data, and editor options", returns: "Property editor instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific layout adjustments." },
+        { option: "<code>showSelectionLabel</code>", default: '<code>true</code>', description: "Shows the selection header row when <code>selectionLabel</code> is provided." },
+        { option: "<code>selectionLabelPlaceholder</code>", default: '<code>"No selection"</code>', description: "Fallback text for the selection header when no selection label is present." },
+        { option: "<code>labelWidth</code>", default: '<code>null</code>', description: "Optional fixed width for the property label column." },
+        { option: "<code>dense</code>", default: '<code>false</code>', description: "Uses a tighter row density for inspector-heavy surfaces." },
+        { option: "<code>showSectionDescriptions</code>", default: '<code>true</code>', description: "Shows section descriptions when provided." },
+        { option: "<code>showPropertyHelp</code>", default: '<code>true</code>', description: "Shows property help text when provided." },
+        { option: "<code>mixedLabel</code>", default: '<code>"Mixed"</code>', description: "Display label used when a property has <code>mixed: true</code>." },
+        { option: "<code>readOnlyValueFallback</code>", default: '<code>"—"</code>', description: "Fallback display for empty read-only values." },
+        { option: "<code>property.kind = \"ui.select\"</code>", default: "n/a", description: "Uses the shared hosted select surface and supports <code>multiple</code>, <code>searchable</code>, <code>clearable</code>, and item arrays for richer property editing." }
+      ],
+      propertiesText: "No stable direct instance properties are documented. Use <code>getState()</code> instead of reading DOM or internal references directly.",
+      events: [
+        { event: "<code>onPropertyChange(change, meta)</code>", arguments: "structured property change object and metadata", returns: "<code>void</code>", description: "Fires when an editable property value changes." },
+        { event: "<code>onAction(property, action, meta)</code>", arguments: "property descriptor, action descriptor, and metadata", returns: "<code>void</code>", description: "Fires when a property action or action row is triggered." }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or options", returns: "<code>void</code>" },
+        { method: "<code>setSections(sections)</code>", arguments: "full section array", returns: "<code>void</code>" },
+        { method: "<code>setSelectionLabel(label)</code>", arguments: "next selection label", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "normalized data, options, and error state" },
+        { method: "<code>setErrors(errors)</code>", arguments: "property-id keyed error map", returns: "<code>void</code>" },
+        { method: "<code>clearErrors()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Property Editor Demo</h1>
+      <p class="muted">Dedicated helper page for inspector-style grouped property editing.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="showSampleBtn" class="ui-button" type="button">Show Sample Editor</button>
+        <button id="showErrorsBtn" class="ui-button ui-button-ghost" type="button">Show Errors</button>
+        <button id="clearErrorsBtn" class="ui-button ui-button-quiet" type="button">Clear Errors</button>
+      </div>
+      <div id="editorHost"></div>
+      <pre class="log" id="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createPropertyEditor = await uiLoader.get("ui.property.editor");
+
+    const host = document.getElementById("editorHost");
+    const log = document.getElementById("log");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const sampleData = {
+      selectionLabel: "Radial Dimension (1)",
+      sections: [
+        {
+          id: "general",
+          title: "General Properties",
+          description: "Common styling and ownership values for the selected object.",
+          properties: [
+            { id: "layer", label: "Layer", kind: "select", value: "dimensions", options: [
+              { value: "dimensions", label: "dimensions" },
+              { value: "annotations", label: "annotations" },
+              { value: "construction", label: "construction" }
+            ] },
+            { id: "visible_in", label: "Visible In", kind: "ui.select", value: ["plan", "elevation"], multiple: true, searchable: true, clearable: true, closeOnSelect: false, items: [
+              { value: "plan", label: "Plan" },
+              { value: "elevation", label: "Elevation" },
+              { value: "section", label: "Section" },
+              { value: "detail", label: "Detail" }
+            ], help: "Hosted multi-value select using the shared ui.select helper." },
+            { id: "locked", label: "Locked", kind: "toggle", value: false, help: "Prevents accidental edits when enabled." },
+            { id: "color", label: "Color", kind: "color-select", value: "#ffffff", options: [
+              { value: "#ffffff", label: "By Layer" },
+              { value: "#7198e5", label: "Highlight" },
+              { value: "#ffd580", label: "Warning" }
+            ] },
+            { id: "show_names", label: "Show Page Names", kind: "checkbox", value: true },
+            { id: "opacity", label: "Opacity", kind: "number", value: 0.5, min: 0, max: 1, step: 0.1 },
+            { id: "handle", label: "Handle", kind: "display", value: "0x3d0", readOnly: true },
+            { id: "font_size", label: "Font Size", kind: "text", value: "11px", mixed: true, help: "Mixed because the current multi-selection uses more than one font size." },
+            { id: "notes", label: "Notes", kind: "textarea", value: "Updated by incident designer.", help: "Free-form operator notes for the selected object." },
+            { id: "divider-1", label: "", kind: "divider" },
+            { id: "layer_manager", label: "Layer Manager", kind: "action", value: "Open Layer Manager", actions: [{ id: "open-layer-manager", label: "Open", danger: false }] },
+            { id: "duplicate", label: "Duplicate", kind: "display", value: "Ready", actions: [{ id: "duplicate-object", label: "Duplicate" }] }
+          ]
+        }
+      ]
+    };
+
+    const editor = createPropertyEditor(host, sampleData, {
+      labelWidth: 190,
+      onPropertyChange(change, meta) {
+        writeLog("property.change", { ...change, previousValue: meta.previousValue, mixedCleared: meta.mixedCleared });
+      },
+      onAction(property, action, meta) {
+        writeLog("property.action", { propertyId: property.id, actionId: action?.id, sectionId: meta.sectionId });
+      }
+    });
+
+    document.getElementById("showSampleBtn").addEventListener("click", () => {
+      editor.update(sampleData, { labelWidth: 190, dense: false });
+      writeLog("property.update", { mode: "sample" });
+    });
+    document.getElementById("showErrorsBtn").addEventListener("click", () => {
+      editor.setErrors({
+        layer: "Layer must be assigned.",
+        notes: "Notes exceed the allowed length."
+      });
+      writeLog("property.errors", { mode: "show" });
+    });
+    document.getElementById("clearErrorsBtn").addEventListener("click", () => {
+      editor.clearErrors();
+      writeLog("property.errors", { mode: "clear" });
+    });
+  </script>
+</body>
+</html>

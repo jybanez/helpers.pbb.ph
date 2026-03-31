@@ -23,7 +23,7 @@
   <script>
     window.demoMeta = {
       title: "Select",
-      overview: "Shared select/dropdown input with single-select, multi-select, searchable mode, and hosted floating menu behavior.",
+      overview: "Shared select/dropdown input with single-select, multi-select, searchable mode, hosted floating menu behavior, and clearer selected-item affordances in multi-select menus.",
       useWhen: [
         "Use <code>createSelect(...)</code> for shared select behavior instead of ad hoc custom dropdowns.",
         "Use it inside forms, modals, and drawers when you need a menu that can escape clipped containers."
@@ -32,14 +32,14 @@
         "Do not use it for extremely large remote datasets without a real query strategy.",
         "Do not fork a second select system inside form-modal or app-local UI."
       ],
-      description: "This page focuses on the shared select helper itself: single and multi selection, searchable mode, placeholder handling, and change callbacks.",
+      description: "This page focuses on the shared select helper itself: single and multi selection, searchable mode, placeholder handling, change callbacks, and the selected-item check affordance used in multi-select menus.",
       defaultSampleCode: "const select = createSelect(host, items, {\n  searchable: true,\n  multiple: true,\n  clearable: true,\n  onChange(values, selectedItems) {\n    writeLog(\"select.change\", { values, selectedItems });\n  },\n});",
       constructor: [
         { factory: "<code>createSelect(container, items, options)</code>", arguments: "host node, item array, select options", returns: "Select instance" }
       ],
       options: [
         { option: "<code>searchable</code>", default: "<code>false</code>", description: "Shows inline filtering input.", values: ["true", "false"] },
-        { option: "<code>multiple</code>", default: "<code>false</code>", description: "Enables multi-select mode.", values: ["true", "false"] },
+        { option: "<code>multiple</code>", default: "<code>false</code>", description: "Enables multi-select mode with padded option rows and a left-side selected checkmark.", values: ["true", "false"] },
         { option: "<code>clearable</code>", default: "<code>false</code>", description: "Shows clear/reset affordance where supported.", values: ["true", "false"] },
         { option: "<code>placeholder</code>", default: "<code>\"Select...\"</code>", description: "Trigger placeholder when nothing is selected." },
         { option: "<code>selected</code>", default: "<code>null</code>", description: "Initial selected value or values." },

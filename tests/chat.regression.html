@@ -15,6 +15,7 @@
 </head>
 <body data-status="pending">
   <div id="threadHost"></div>
+  <div id="threadVirtualHost" style="height: 320px;"></div>
   <div id="composerHost"></div>
   <div id="queueHost"></div>
   <pre id="results">Running...</pre>
@@ -27,10 +28,11 @@
     const failures = [];
     const results = document.getElementById("results");
     const threadHost = document.getElementById("threadHost");
+    const threadVirtualHost = document.getElementById("threadVirtualHost");
     const composerHost = document.getElementById("composerHost");
     const queueHost = document.getElementById("queueHost");
     const events = [];
-    const inlinePreview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\"><rect width=\"120\" height=\"120\" rx=\"12\" fill=\"#15233d\"/><circle cx=\"38\" cy=\"40\" r=\"14\" fill=\"#8fd5ff\"/><path d=\"M16 92l28-28 18 18 18-24 24 34H16Z\" fill=\"#4f74b9\"/></svg>');
+    const inlinePreview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="12" fill="#15233d"/><circle cx="38" cy="40" r="14" fill="#8fd5ff"/><path d="M16 92l28-28 18 18 18-24 24 34H16Z" fill="#4f74b9"/></svg>');
 
     try {
       const sampleMessages = [
@@ -63,7 +65,7 @@
       });
 
       assert(threadHost.querySelectorAll(".ui-chat-message").length === sampleMessages.length, "thread should render all messages");
-      assert(threadHost.querySelector('.ui-chat-message[data-direction=\"system\"]'), "thread should render system message");
+      assert(threadHost.querySelector('.ui-chat-message[data-direction="system"]'), "thread should render system message");
       assert(threadHost.querySelector(".ui-media-strip"), "thread should render media strip for image/video attachments");
       assert(threadHost.querySelectorAll(".ui-chat-attachment-file").length === 2, "thread should render file/audio attachments individually");
       assert(threadHost.querySelector(".ui-chat-message-state.is-failed"), "thread should render failed outgoing state");
@@ -79,6 +81,57 @@
       assert(events.some((event) => event.type === "attachment-open" && event.attachmentId === "im1"), "thread should emit image open callback");
       assert(events.some((event) => event.type === "attachment-download" && event.attachmentId === "fa1"), "thread should emit file download callback");
       assert(events.some((event) => event.type === "message-menu-select" && event.itemId === "copy"), "thread should emit message menu selection callback");
+
+      const longMessages = Array.from({ length: 200 }, (_, index) => ({
+        id: `v-${index + 1}`,
+        direction: index % 5 === 0 ? "outgoing" : "incoming",
+        senderName: index % 5 === 0 ? "Operator" : "Dispatcher",
+        text: `Long thread message ${index + 1}`,
+        timestamp: `10:${String(index % 60).padStart(2, "0")}`,
+      }));
+      const virtualThread = createChatThread(threadVirtualHost, { messages: longMessages }, {
+        enableVirtualization: true,
+        virtualThreshold: 20,
+        virtualOverscan: 4,
+      });
+      await wait(80);
+
+      const viewport = threadVirtualHost.querySelector(".ui-chat-thread-viewport");
+      assert(threadVirtualHost.querySelector(".ui-chat-thread.is-virtualized"), "thread should switch to virtualized mode above threshold");
+      assert(Boolean(viewport), "virtualized thread should render a viewport");
+      assert(threadVirtualHost.querySelectorAll(".ui-chat-message").length < longMessages.length, "virtualized thread should render fewer rows than the total message count");
+
+      viewport.scrollTop = viewport.scrollHeight;
+      viewport.dispatchEvent(new Event("scroll"));
+      await wait(80);
+      const appendedMessages = longMessages.concat([{ id: "v-201", direction: "incoming", senderName: "Dispatcher", text: "Newest message" }]);
+      virtualThread.setMessages(appendedMessages);
+      await wait(100);
+      assert(threadVirtualHost.querySelector('[data-message-id="v-201"]'), "virtualized thread should render the appended bottom message while pinned");
+      assert(threadVirtualHost.querySelector(".ui-chat-thread-virtual-spacer.is-bottom")?.style?.height === "0px", "virtualized thread should keep the newest message slice active when appending near the end");
+
+      viewport.scrollTop = Math.max(0, Math.round(viewport.scrollHeight * 0.35));
+      viewport.dispatchEvent(new Event("scroll"));
+      await wait(80);
+      const beforeAppendScrollTop = viewport.scrollTop;
+      const olderReaderMessages = appendedMessages.concat([{ id: "v-202", direction: "incoming", senderName: "Dispatcher", text: "Do not jump" }]);
+      virtualThread.setMessages(olderReaderMessages);
+      await wait(100);
+      assert(Math.abs(viewport.scrollTop - beforeAppendScrollTop) <= 4, "virtualized thread should preserve scroll position when appending away from the bottom");
+      assert(!threadVirtualHost.querySelector('[data-message-id="v-202"]'), "virtualized thread should not auto-jump to the newest appended message when reading older messages");
+
+      viewport.scrollTop = Math.max(0, Math.round(viewport.scrollHeight * 0.45));
+      viewport.dispatchEvent(new Event("scroll"));
+      await wait(80);
+      const firstVisibleBeforePrepend = firstVisibleMessageId(viewport);
+      const prependedMessages = [
+        { id: "v-000a", direction: "incoming", senderName: "Dispatcher", text: "Older history A" },
+        { id: "v-000b", direction: "incoming", senderName: "Dispatcher", text: "Older history B" },
+        ...olderReaderMessages,
+      ];
+      virtualThread.setMessages(prependedMessages);
+      await wait(120);
+      assert(firstVisibleBeforePrepend === firstVisibleMessageId(viewport), "virtualized thread should preserve the visible reading position when prepending history");
 
       thread.setMessages([]);
       assert(threadHost.querySelector(".ui-chat-thread-empty"), "thread should render empty state");
@@ -159,8 +212,9 @@
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-overlay").length === 2, "queue media items should render overlay remove actions");
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-file").length === 2, "queue should render audio/file items individually");
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-inline").length === 2, "queue file/audio rows should render inline trailing remove actions");
-      assert(queueHost.querySelector(".ui-chat-upload-queue-progress-fill.is-uploading"), "queue should render uploading progress state");
-      assert(queueHost.querySelector(".ui-chat-upload-queue-progress.is-complete"), "queue should render uploaded state");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-progress-fill.is-uploading"), "queue should render media uploading progress inside the thumb");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-progress-label"), "queue should render media progress label inside the thumb");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-state.is-uploaded"), "queue should render uploaded media state inside the thumb");
       assert(queueHost.textContent.includes("Upload failed"), "queue should render failed-state error text");
       queueHost.querySelector(".ui-media-thumb").click();
       await wait(40);
@@ -171,6 +225,7 @@
       composer.destroy();
       queue.destroy();
       thread.destroy();
+      virtualThread.destroy();
 
       finish();
     } catch (error) {
@@ -182,6 +237,13 @@
       if (!condition) {
         throw new Error(message);
       }
+    }
+
+    function firstVisibleMessageId(viewport) {
+      const viewportRect = viewport.getBoundingClientRect();
+      const rows = Array.from(viewport.querySelectorAll(".ui-chat-message[data-message-id]"));
+      const candidate = rows.find((row) => row.getBoundingClientRect().bottom > viewportRect.top + 2);
+      return candidate?.dataset?.messageId || null;
     }
 
     function wait(ms) {

@@ -197,7 +197,6 @@ export function createSelect(container, items = [], options = {}) {
       const isSelected = selected.has(key);
       const row = createElement("button", {
         className: `ui-select-option${isSelected ? " is-selected" : ""}${isActiveOption(item) ? " is-active" : ""}`,
-        text: item.label,
         attrs: {
           type: "button",
           role: "option",
@@ -205,6 +204,19 @@ export function createSelect(container, items = [], options = {}) {
           "aria-selected": isSelected ? "true" : "false",
         },
       });
+      if (currentOptions.multiple) {
+        row.classList.add("is-multiple");
+        row.appendChild(createElement("span", {
+          className: "ui-select-option-check",
+          html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+        }));
+        row.appendChild(createElement("span", {
+          className: "ui-select-option-label",
+          text: item.label,
+        }));
+      } else {
+        row.textContent = item.label;
+      }
       row.dataset.index = String(index);
       events.on(row, "click", () => {
         toggleSelected(key);
