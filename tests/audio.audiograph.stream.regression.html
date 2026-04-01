@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio Audiograph Stream Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.audio.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createAudioGraph } from "../js/ui/ui.audio.audiograph.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    let streamContext = null;
+    let streamOscillator = null;
+    let streamGain = null;
+    let streamDestination = null;
+    let nodeContext = null;
+    let nodeOscillator = null;
+    let nodeGain = null;
+
+    try {
+      const graph = createAudioGraph(host, {
+        role: "local-audio",
+        roleLabel: "Local audio",
+        isPlaying: true,
+        isLive: true,
+        isActive: true,
+      }, {
+        style: "tsunami",
+        overlayHeader: false,
+        showMute: false,
+      });
+
+      streamContext = new (window.AudioContext || window.webkitAudioContext)();
+      streamOscillator = streamContext.createOscillator();
+      streamGain = streamContext.createGain();
+      streamDestination = streamContext.createMediaStreamDestination();
+      streamOscillator.type = "square";
+      streamOscillator.frequency.value = 240;
+      streamGain.gain.value = 0.2;
+      streamOscillator.connect(streamGain);
+      streamGain.connect(streamDestination);
+      streamOscillator.start();
+
+      graph.attachMediaStream(streamDestination.stream);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      const resumed = await graph.resume();
+      assert(typeof resumed === "boolean", "resume should return a boolean");
+      assert(graph.getState().sourceType === "media-stream", "attachMediaStream should set sourceType to media-stream");
+
+      const replacementDestination = streamContext.createMediaStreamDestination();
+      streamGain.disconnect();
+      streamGain.connect(replacementDestination);
+      graph.attachMediaStream(replacementDestination.stream);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      await graph.resume();
+      assert(graph.getState().sourceType === "media-stream", "replacing media stream sources should preserve media-stream sourceType");
+
+      nodeContext = new (window.AudioContext || window.webkitAudioContext)();
+      nodeOscillator = nodeContext.createOscillator();
+      nodeGain = nodeContext.createGain();
+      nodeOscillator.type = "triangle";
+      nodeOscillator.frequency.value = 180;
+      nodeGain.gain.value = 0.2;
+      nodeOscillator.connect(nodeGain);
+      nodeGain.connect(nodeContext.destination);
+      nodeOscillator.start();
+
+      graph.attachAudioNode(nodeGain);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      await graph.resume();
+      assert(graph.getState().sourceType === "audio-node", "attachAudioNode should set sourceType to audio-node");
+
+      graph.setMuted(true);
+      assert(graph.getState().muted === true, "setMuted should still update graph state for livestream sources");
+
+      graph.destroy();
+      assert(host.innerHTML === "", "destroy should clear the host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    } finally {
+      try { streamOscillator?.stop?.(); } catch (_error) {}
+      try { nodeOscillator?.stop?.(); } catch (_error) {}
+      try { streamGain?.disconnect?.(); } catch (_error) {}
+      try { nodeGain?.disconnect?.(); } catch (_error) {}
+      if (streamContext && streamContext.state !== "closed") {
+        streamContext.close().catch(() => {});
+      }
+      if (nodeContext && nodeContext.state !== "closed") {
+        nodeContext.close().catch(() => {});
+      }
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Audio audiograph livestream regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

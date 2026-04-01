@@ -64,16 +64,29 @@
         "Do not use it as a generic audio player for unrelated media galleries.",
         "Do not use it when simple browser audio controls are enough."
       ],
-      description: "The audio demo loads incident sample JSON and resolves segment paths against the repo base. It is an operational playback surface, not a generic entertainment-style media player.",
+      description: "The audio demo loads incident sample JSON and resolves supported relative segment paths against the repo base. It is an operational playback surface, not a generic entertainment-style media player.",
       defaultSampleCode: `const session = createAudioCallSession(host, data, {\n  baseUrl: "..",\n});`,
       constructor: [
         { factory: "<code>createAudioCallSession(container, data, options)</code>", arguments: "<code>container</code>, call-session <code>data</code>, <code>options</code>", returns: "Audio-session instance" }
       ],
       options: [
-        { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative audio segment paths." }
+        { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative audio segment paths." },
+        { option: "<code>audiographStyle</code>", default: '<code>"vu"</code>', description: "Graph style used for role tracks." },
+        { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Audiograph sensitivity multiplier." },
+        { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows per-role mute controls on the graph tracks." },
+        { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build." }
+      ],
+      propertiesText: "Use <code>getState()</code> for playback/session state instead of reading the internal audio elements directly.",
+      events: [
+        { event: "<code>onError(error)</code>", arguments: "error object", returns: "<code>void</code>", description: "Fires when the session build or metadata loading hits a recoverable error." },
+        { event: "<code>onStateChange(state)</code>", arguments: "playback/session state", returns: "<code>void</code>", description: "Fires as playback state changes during seeking and play/pause transitions." }
       ],
       methods: [
-        { method: "<code>setData(data)</code>", arguments: "session payload", returns: "<code>void</code>" },
+        { method: "<code>update(data, options?)</code>", arguments: "incident payload and optional options", returns: "<code>void</code>" },
+        { method: "<code>play()</code>", arguments: "none", returns: "<code>Promise&lt;void&gt;</code>" },
+        { method: "<code>pause()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>seek(ms)</code>", arguments: "timeline milliseconds", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current playback/session state" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
@@ -165,18 +178,38 @@
       return response.json();
     }
 
+    function sampleHasSupportedAudioPaths(payload) {
+      const media = Array.isArray(payload?.incident?.media) ? payload.incident.media : [];
+      const audioRows = media.filter((row) => String(row?.type || "").toLowerCase() === "audio");
+      if (!audioRows.length) {
+        return false;
+      }
+      return audioRows.every((row) => {
+        const value = String(row?.path || "").trim();
+        if (!value) {
+          return false;
+        }
+        return value.startsWith("samples/")
+          || value.startsWith("./")
+          || value.startsWith("/")
+          || /^(https?:)?\/\//i.test(value);
+      });
+    }
+
     async function initSamplePicker() {
       const available = [];
       for (const name of sampleCandidates) {
         try {
-          await fetchJson(`../samples/${name}`);
-          available.push(name);
+          const payload = await fetchJson(`../samples/${name}`);
+          if (sampleHasSupportedAudioPaths(payload)) {
+            available.push(name);
+          }
         } catch (error) {
           // skip missing file
         }
       }
       if (!available.length) {
-        throw new Error("No sampledata_*.json files could be loaded.");
+        throw new Error("No compatible audio sampledata_*.json files could be loaded.");
       }
       sampleSelect.innerHTML = "";
       available.forEach((name) => {
@@ -243,9 +276,15 @@
       });
     }
 
-    await initSamplePicker();
-    updateSensitivityLabel();
-    await mountSelectedSample();
+    try {
+      await initSamplePicker();
+      updateSensitivityLabel();
+      await mountSelectedSample();
+    } catch (error) {
+      console.error(error);
+      host.innerHTML = '<div class="ui-empty-state"><strong>Audio demo failed to load.</strong><div>Check the sample payloads and audio paths for this page.</div></div>';
+      addEvent("audio.demo.error", { message: error?.message || "Unknown error" });
+    }
 
     sampleSelect.addEventListener("change", () => {
       mountSelectedSample().catch((error) => {

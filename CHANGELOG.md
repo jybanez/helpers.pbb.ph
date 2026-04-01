@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.36`
+- Latest documented release: `v0.21.39`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,43 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.39
+
+- Fixed stale-browser-module loading for the audio helper chain after the `ui.audio.audiograph` livestream update.
+- Added revisioned loader paths for:
+  - `ui.audio.player`
+  - `ui.audio.audiograph`
+  - `ui.audio.callSession`
+- Updated `js/ui/ui.audio.callSession.js` to import the revisioned audio runtime modules directly so browser caches do not keep serving the old audiograph contract.
+
+### v0.21.38
+
+- Added stream-native support to `ui.audio.audiograph`.
+- Added:
+  - `attachMediaStream(stream)`
+  - `attachAudioNode(node)`
+  - `resume()`
+- Kept `unlockAudioContext()` as a compatibility alias to `resume()`.
+- The audiograph now reports the active source through `getState().sourceType`:
+  - `none`
+  - `media-element`
+  - `media-stream`
+  - `audio-node`
+- Added dedicated livestream demo and regression coverage:
+  - `demos/demo.audio.audiograph.stream.html`
+  - `tests/audio.audiograph.stream.regression.html`
+  - `tests/audio.audiograph.stream.regression.mjs`
+
+### v0.21.37
+
+- Fixed `demos/demo.audio.html` sample compatibility handling.
+- The audio demo now filters out incompatible sample payloads whose audio paths do not match the demo's `baseUrl` strategy.
+- Corrected stale demo reference metadata for `ui.audio.callSession`:
+  - documented actual options
+  - documented actual events
+  - documented actual instance methods
+- Added a narrow demo boot error state instead of failing silently when no compatible audio sample can be mounted.
 
 ### v0.21.36
 

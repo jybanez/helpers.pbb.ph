@@ -6,6 +6,8 @@ const DEFAULT_DATA = {
   roleLabel: "Role",
   muted: false,
   isPlaying: false,
+  isLive: false,
+  isActive: false,
   currentMs: 0,
   durationMs: 0,
 };
@@ -41,10 +43,15 @@ export function createAudioGraph(container, data = {}, options = {}) {
   let roleLabelId = "";
   let rafId = 0;
   let audioEl = null;
+  let mediaStream = null;
+  let attachedAudioNode = null;
   let audioContext = null;
+  let ownsAudioContext = false;
   let analyser = null;
   let analyserData = null;
   let analyserTimeData = null;
+  let sourceNode = null;
+  let sourceType = "none";
   let particleState = [];
   let burstLevels = [];
   let envelopeLevel = 0;
@@ -731,11 +738,8 @@ export function createAudioGraph(container, data = {}, options = {}) {
     return Math.max(0, Math.min(1, envelopeLevel));
   }
 
-  function attachAudio(nextAudioEl) {
-    audioEl = nextAudioEl instanceof HTMLMediaElement ? nextAudioEl : null;
-    analyser = null;
-    analyserData = null;
-    analyserTimeData = null;
+  function resetVisualState() {
+    clearAnalyser();
     envelopeLevel = 0;
     particleState = [];
     burstLevels = [];
@@ -743,32 +747,180 @@ export function createAudioGraph(container, data = {}, options = {}) {
     lastPaintAt = performance.now();
   }
 
+  function resetSourceState() {
+    audioEl = null;
+    mediaStream = null;
+    attachedAudioNode = null;
+    currentData.isLive = false;
+    currentData.isActive = false;
+    disconnectSourceNode();
+    clearAnalyser();
+    sourceType = "none";
+  }
+
+  function clearAnalyser() {
+    analyser = null;
+    analyserData = null;
+    analyserTimeData = null;
+  }
+
+  function disconnectSourceNode() {
+    if (sourceNode && analyser) {
+      try {
+        sourceNode.disconnect(analyser);
+      } catch (_error) {
+        // Ignore disconnect failures from stale graphs.
+      }
+    }
+    if (sourceNode && sourceType === "media-element" && audioContext?.destination) {
+      try {
+        sourceNode.disconnect(audioContext.destination);
+      } catch (_error) {
+        // Ignore disconnect failures from stale graphs.
+      }
+    }
+    sourceNode = null;
+  }
+
+  function resolveSourceType() {
+    if (attachedAudioNode) {
+      return "audio-node";
+    }
+    if (mediaStream) {
+      return "media-stream";
+    }
+    if (audioEl) {
+      return "media-element";
+    }
+    return "none";
+  }
+
+  function resolveAudioContextForSource(resolvedType) {
+    if (resolvedType === "audio-node") {
+      ownsAudioContext = false;
+      return attachedAudioNode?.context || null;
+    }
+    if (!audioContext || !ownsAudioContext) {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextCtor) {
+        return null;
+      }
+      audioContext = new AudioContextCtor();
+      ownsAudioContext = true;
+    }
+    return audioContext;
+  }
+
+  function ensureAnalyser(context) {
+    if (analyser && audioContext === context) {
+      return;
+    }
+    analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.72;
+    analyserData = new Uint8Array(analyser.frequencyBinCount);
+    analyserTimeData = new Uint8Array(analyser.fftSize);
+  }
+
+  function attachResolvedSource(resolvedType) {
+    disconnectSourceNode();
+    if (!audioContext || !analyser) {
+      return;
+    }
+    if (resolvedType === "media-element") {
+      if (!audioEl) {
+        return;
+      }
+      const source = audioEl.__uiAudioGraphSourceMap?.get(audioContext)
+        || audioEl.__uiAudioGraphSource
+        || audioContext.createMediaElementSource(audioEl);
+      if (!audioEl.__uiAudioGraphSourceMap) {
+        audioEl.__uiAudioGraphSourceMap = new Map();
+      }
+      audioEl.__uiAudioGraphSourceMap.set(audioContext, source);
+      audioEl.__uiAudioGraphSource = source;
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+      sourceNode = source;
+      currentData.isLive = false;
+      currentData.isActive = !audioEl.paused;
+      sourceType = "media-element";
+      return;
+    }
+    if (resolvedType === "media-stream") {
+      if (!mediaStream) {
+        return;
+      }
+      sourceNode = audioContext.createMediaStreamSource(mediaStream);
+      sourceNode.connect(analyser);
+      currentData.isLive = true;
+      currentData.isActive = mediaStream.getAudioTracks().some((track) => track.readyState === "live");
+      sourceType = "media-stream";
+      return;
+    }
+    if (resolvedType === "audio-node") {
+      if (!attachedAudioNode) {
+        return;
+      }
+      sourceNode = attachedAudioNode;
+      sourceNode.connect(analyser);
+      currentData.isLive = true;
+      currentData.isActive = true;
+      sourceType = "audio-node";
+    }
+  }
+
+  function attachAudio(nextAudioEl) {
+    resetSourceState();
+    audioEl = nextAudioEl instanceof HTMLMediaElement ? nextAudioEl : null;
+    sourceType = audioEl ? "media-element" : "none";
+    resetVisualState();
+  }
+
+  function attachMediaStream(nextStream) {
+    resetSourceState();
+    mediaStream = nextStream instanceof MediaStream ? nextStream : null;
+    sourceType = mediaStream ? "media-stream" : "none";
+    currentData.isLive = Boolean(mediaStream);
+    currentData.isActive = Boolean(mediaStream);
+    applyState();
+    resetVisualState();
+  }
+
+  function attachAudioNode(nextNode) {
+    resetSourceState();
+    attachedAudioNode = isAudioNodeLike(nextNode) ? nextNode : null;
+    sourceType = attachedAudioNode ? "audio-node" : "none";
+    currentData.isLive = Boolean(attachedAudioNode);
+    currentData.isActive = Boolean(attachedAudioNode);
+    applyState();
+    resetVisualState();
+  }
+
   function unlockAudioContext() {
-    if (!audioEl) {
+    return resume();
+  }
+
+  function resume() {
+    const resolvedType = resolveSourceType();
+    if (resolvedType === "none") {
       return Promise.resolve(false);
     }
     try {
-      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-      if (!audioEl.__uiAudioGraphSource) {
-        audioEl.__uiAudioGraphSource = audioContext.createMediaElementSource(audioEl);
+      const context = resolveAudioContextForSource(resolvedType);
+      if (!context) {
+        return Promise.resolve(false);
       }
-      if (!analyser) {
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.72;
-        audioEl.__uiAudioGraphSource.connect(analyser);
-        analyser.connect(audioContext.destination);
-        analyserData = new Uint8Array(analyser.frequencyBinCount);
-        analyserTimeData = new Uint8Array(analyser.fftSize);
-      }
+      audioContext = context;
+      ensureAnalyser(audioContext);
+      attachResolvedSource(resolvedType);
       if (audioContext.state === "suspended") {
         return audioContext.resume().then(() => true).catch(() => false);
       }
       return Promise.resolve(true);
     } catch (error) {
-      analyser = null;
-      analyserData = null;
-      analyserTimeData = null;
+      disconnectSourceNode();
+      clearAnalyser();
       return Promise.resolve(false);
     }
   }
@@ -786,6 +938,12 @@ export function createAudioGraph(container, data = {}, options = {}) {
 
   function setPlayback(playback = {}) {
     currentData.isPlaying = Boolean(playback.isPlaying);
+    if (Object.prototype.hasOwnProperty.call(playback || {}, "isLive")) {
+      currentData.isLive = Boolean(playback.isLive);
+    }
+    if (Object.prototype.hasOwnProperty.call(playback || {}, "isActive")) {
+      currentData.isActive = Boolean(playback.isActive);
+    }
     currentData.currentMs = Math.max(0, Number(playback.currentMs) || 0);
     currentData.durationMs = Math.max(0, Number(playback.durationMs) || currentData.durationMs || 0);
     applyState();
@@ -810,16 +968,21 @@ export function createAudioGraph(container, data = {}, options = {}) {
     canvas = null;
     ctx = null;
     audioEl = null;
+    mediaStream = null;
+    attachedAudioNode = null;
+    disconnectSourceNode();
+    clearAnalyser();
     analyser = null;
     analyserData = null;
     analyserTimeData = null;
+    sourceType = "none";
     particleState = [];
     burstLevels = [];
     peakHoldLevel = 0;
   }
 
   function getState() {
-    return { ...currentData, style: currentOptions.style };
+    return { ...currentData, style: currentOptions.style, sourceType };
   }
 
   render();
@@ -830,6 +993,9 @@ export function createAudioGraph(container, data = {}, options = {}) {
     setMuted,
     setPlayback,
     attachAudio,
+    attachMediaStream,
+    attachAudioNode,
+    resume,
     unlockAudioContext,
     getState,
   };
@@ -841,6 +1007,8 @@ function normalizeData(data) {
     ...(data || {}),
     muted: Boolean(data?.muted),
     isPlaying: Boolean(data?.isPlaying),
+    isLive: Boolean(data?.isLive),
+    isActive: Boolean(data?.isActive),
     currentMs: Math.max(0, Number(data?.currentMs) || 0),
     durationMs: Math.max(0, Number(data?.durationMs) || 0),
   };
@@ -922,4 +1090,8 @@ function drawPeakMarker(drawCtx, x, y, color) {
 
 function toDomIdToken(value) {
   return String(value).trim().replace(/[^a-zA-Z0-9_-]+/g, "-") || "item";
+}
+
+function isAudioNodeLike(value) {
+  return Boolean(value && typeof value === "object" && typeof value.connect === "function" && value.context);
 }

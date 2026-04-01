@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Audiograph Stream Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; min-height: 220px; overflow: auto; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.audio.audiograph"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Audio Audiograph Stream",
+      overview: "Stream-native audio graph demo for live microphone, synthetic MediaStream, and AudioNode attachment.",
+      useWhen: [
+        "Use <code>attachMediaStream(...)</code> for local mic or remote WebRTC audio visualization.",
+        "Use <code>attachAudioNode(...)</code> when the app already owns a Web Audio graph."
+      ],
+      avoidWhen: [
+        "Do not build hidden probe media elements when the real source is already a MediaStream.",
+        "Do not assume the helper owns actual call mute policy for live streams."
+      ],
+      description: "This page exercises the stream-oriented audiograph path directly. It includes a synthetic source that works without microphone permissions and a manual microphone path for browser testing.",
+      defaultSampleCode: `const graph = createAudioGraph(host, {\n  role: "local-audio",\n  roleLabel: "Local audio",\n  isPlaying: true,\n  isLive: true,\n  isActive: true,\n}, {\n  style: "tsunami",\n  overlayHeader: false,\n  showMute: false,\n});\n\nawait graph.resume();\ngraph.attachMediaStream(localStream);`,
+      constructor: [
+        { factory: "<code>createAudioGraph(container, data, options)</code>", arguments: "graph host, data state, and graph options", returns: "Audio graph instance" }
+      ],
+      options: [
+        { option: "<code>style</code>", default: '<code>"vu"</code>', description: "Graph visual style." },
+        { option: "<code>overlayHeader</code>", default: '<code>true</code>', description: "Overlays the header over the graph canvas." },
+        { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Visual intensity multiplier." },
+        { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows the helper-owned mute button." }
+      ],
+      propertiesText: "Use <code>getState()</code> to inspect the active source type and graph state.",
+      methods: [
+        { method: "<code>attachAudio(mediaElement)</code>", arguments: "HTMLMediaElement", returns: "<code>void</code>" },
+        { method: "<code>attachMediaStream(stream)</code>", arguments: "MediaStream", returns: "<code>void</code>" },
+        { method: "<code>attachAudioNode(node)</code>", arguments: "AudioNode", returns: "<code>void</code>" },
+        { method: "<code>resume()</code>", arguments: "none", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>unlockAudioContext()</code>", arguments: "none", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "graph state including <code>sourceType</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Audio Audiograph Stream Demo</h1>
+      <p class="muted">Stream-native audio visualization for synthetic, microphone, and AudioNode sources.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="syntheticStreamBtn" class="ui-button" type="button">Attach Synthetic Stream</button>
+        <button id="audioNodeBtn" class="ui-button ui-button-ghost" type="button">Attach AudioNode</button>
+        <button id="micBtn" class="ui-button ui-button-quiet" type="button">Attach Microphone</button>
+        <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Source</button>
+      </div>
+      <div id="graphHost"></div>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createAudioGraph = await uiLoader.get("ui.audio.audiograph");
+
+    const host = document.getElementById("graphHost");
+    const log = document.getElementById("log");
+    const graph = createAudioGraph(host, {
+      role: "local-audio",
+      roleLabel: "Local audio",
+      isPlaying: false,
+      isLive: false,
+      isActive: false,
+    }, {
+      style: "tsunami",
+      overlayHeader: false,
+      showMute: false,
+    });
+
+    let syntheticContext = null;
+    let syntheticOscillator = null;
+    let syntheticGain = null;
+    let syntheticDestination = null;
+    let micStream = null;
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    function teardownSynthetic() {
+      try { syntheticOscillator?.stop?.(); } catch (_error) {}
+      try { syntheticOscillator?.disconnect?.(); } catch (_error) {}
+      try { syntheticGain?.disconnect?.(); } catch (_error) {}
+      syntheticOscillator = null;
+      syntheticGain = null;
+      syntheticDestination = null;
+      if (syntheticContext && syntheticContext.state !== "closed") {
+        syntheticContext.close().catch(() => {});
+      }
+      syntheticContext = null;
+    }
+
+    function teardownMic() {
+      if (micStream) {
+        micStream.getTracks().forEach((track) => track.stop());
+      }
+      micStream = null;
+    }
+
+    async function attachSyntheticStream() {
+      teardownSynthetic();
+      syntheticContext = new (window.AudioContext || window.webkitAudioContext)();
+      syntheticOscillator = syntheticContext.createOscillator();
+      syntheticGain = syntheticContext.createGain();
+      syntheticDestination = syntheticContext.createMediaStreamDestination();
+      syntheticOscillator.type = "sawtooth";
+      syntheticOscillator.frequency.value = 220;
+      syntheticGain.gain.value = 0.18;
+      syntheticOscillator.connect(syntheticGain);
+      syntheticGain.connect(syntheticDestination);
+      syntheticOscillator.start();
+      graph.attachMediaStream(syntheticDestination.stream);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      const resumed = await graph.resume();
+      writeLog("audiograph.attachMediaStream", { resumed, sourceType: graph.getState().sourceType });
+    }
+
+    async function attachAudioNode() {
+      teardownSynthetic();
+      syntheticContext = new (window.AudioContext || window.webkitAudioContext)();
+      syntheticOscillator = syntheticContext.createOscillator();
+      syntheticGain = syntheticContext.createGain();
+      syntheticOscillator.type = "triangle";
+      syntheticOscillator.frequency.value = 180;
+      syntheticGain.gain.value = 0.22;
+      syntheticOscillator.connect(syntheticGain);
+      syntheticGain.connect(syntheticContext.destination);
+      syntheticOscillator.start();
+      graph.attachAudioNode(syntheticGain);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      const resumed = await graph.resume();
+      writeLog("audiograph.attachAudioNode", { resumed, sourceType: graph.getState().sourceType });
+    }
+
+    async function attachMic() {
+      teardownMic();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      micStream = stream;
+      graph.attachMediaStream(stream);
+      graph.setPlayback({ isPlaying: true, isLive: true, isActive: true });
+      const resumed = await graph.resume();
+      writeLog("audiograph.attachMicrophone", { resumed, sourceType: graph.getState().sourceType });
+    }
+
+    document.getElementById("syntheticStreamBtn").addEventListener("click", () => {
+      attachSyntheticStream().catch((error) => writeLog("audiograph.error", { message: error.message }));
+    });
+    document.getElementById("audioNodeBtn").addEventListener("click", () => {
+      attachAudioNode().catch((error) => writeLog("audiograph.error", { message: error.message }));
+    });
+    document.getElementById("micBtn").addEventListener("click", () => {
+      attachMic().catch((error) => writeLog("audiograph.error", { message: error.message }));
+    });
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      teardownSynthetic();
+      teardownMic();
+      graph.attachMediaStream(null);
+      graph.setPlayback({ isPlaying: false, isLive: false, isActive: false });
+      writeLog("audiograph.clear", { sourceType: graph.getState().sourceType });
+    });
+  </script>
+</body>
+</html>

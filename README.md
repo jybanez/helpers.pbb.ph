@@ -334,7 +334,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.audio.player.js`
   - `createAudioPlayer(container, data, options)` reusable transport UI (play/pause, time, seek)
 - `ui.audio.audiograph.js`
-  - `createAudioGraph(container, data, options)` standalone role audiograph renderer with multiple styles
+  - `createAudioGraph(container, data, options)` standalone role audiograph renderer with playback and livestream source support
 - `ui.audio.callSession.js`
   - `createAudioCallSession(container, incident, options)` parent orchestrator for timeline playback + stacked role audiographs
 
@@ -885,6 +885,8 @@ Data:
 - `roleLabel`
 - `muted`
 - `isPlaying`
+- `isLive`
+- `isActive`
 - `currentMs`
 - `durationMs`
 
@@ -909,8 +911,20 @@ Methods:
 - `setMuted(muted, { notify? })`
 - `setPlayback({ isPlaying, currentMs, durationMs })`
 - `attachAudio(audioElement)`
+- `attachMediaStream(stream)`
+- `attachAudioNode(node)`
+- `resume()`
 - `unlockAudioContext()`
 - `getState()`
+
+Notes:
+
+- One source is active at a time:
+  - media element
+  - media stream
+  - audio node
+- `unlockAudioContext()` remains as a compatibility alias to `resume()`.
+- For live sources, the helper visualizes signal activity but does not own microphone/call mute policy.
 
 ### `createAudioPlayer(container, data, options)`
 
@@ -4177,7 +4191,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.36`
+- Latest documented release: `v0.21.39`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

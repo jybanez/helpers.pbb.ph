@@ -48,6 +48,7 @@ const DEMO_GROUPS = [
     label: "Media",
     items: [
       { href: "./demo.audio.html", label: "Audio" },
+      { href: "./demo.audio.audiograph.stream.html", label: "Audio Graph Stream" },
       { href: "./demo.media.strip.html", label: "Media Strip" },
       { href: "./demo.media.viewer.html", label: "Media Viewer" },
       { href: "./demo.timeline.html", label: "Timeline" },
