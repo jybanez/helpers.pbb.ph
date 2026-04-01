@@ -25,7 +25,7 @@
   <script>
     window.demoMeta = {
       title: "Alert Dialog",
-      overview: "Promise-based read-only dialog for acknowledgement flows, semantic variants, descriptions, and optional speech.",
+      overview: "Promise-based read-only dialog for acknowledgement flows, semantic variants, and helper-owned async acknowledge pending/error handling.",
       useWhen: [
         "Use <code>uiAlert(...)</code> for read-only acknowledgement flows where the user only needs to dismiss a message.",
         "Use it when semantic status treatment and optional speech help communicate a short outcome clearly."
@@ -43,6 +43,10 @@
         { option: "<code>variant</code>", default: "<code>\"default\"</code>", description: "Semantic dialog tone.", values: ["default", "success", "info", "warning", "error"] },
         { option: "<code>description</code>", default: "<code>\"\"</code>", description: "Secondary explanatory copy." },
         { option: "<code>showVariantIcon</code>", default: "<code>true</code>", description: "Show or suppress the built-in status icon.", values: ["true", "false"] },
+        { option: "<code>onAcknowledge</code>", default: "<code>null</code>", description: "Optional local acknowledge handler. Promise-returning handlers keep the dialog open with busy state until the async work resolves." },
+        { option: "<code>busyMessage</code>", default: "<code>\"\"</code>", description: "Modal busy copy shown while an async acknowledge handler is pending." },
+        { option: "<code>okBusyMessage</code>", default: "<code>busyMessage</code>", description: "OK-action-specific busy message override." },
+        { option: "<code>errorText</code>", default: "component default", description: "Fallback inline error message when an async acknowledge handler rejects without a usable message." },
         { option: "<code>speak</code>", default: "<code>false</code>", description: "Opt-in speech for dialog content.", values: ["true", "false"] },
         { option: "<code>voiceName</code>", default: "<code>\"\"</code>", description: "Exact speech-synthesis voice name. Use one of the voices exposed by the browser/OS voice list; empty string falls back to the default voice." }
       ],
@@ -99,6 +103,7 @@
         <button id="alertBtn" class="ui-button" type="button">Alert (Info)</button>
         <button id="successAlertBtn" class="ui-button ui-button-primary" type="button">Alert (Success)</button>
         <button id="iconlessAlertBtn" class="ui-button ui-button-ghost" type="button">Alert (No Icon)</button>
+        <button id="asyncAlertBtn" class="ui-button ui-button-danger" type="button">Alert (Async Ack)</button>
       </div>
       <div class="row">
         <label><input id="dialogSpeakToggle" type="checkbox"> Speak Dialogs</label>
@@ -165,6 +170,27 @@
         ...getDialogSpeechOptions(),
       });
       writeLog("dialog.warningNoIcon", { acknowledged: true });
+    });
+    let asyncAcknowledgeAttempts = 0;
+    document.getElementById("asyncAlertBtn").addEventListener("click", async () => {
+      asyncAcknowledgeAttempts = 0;
+      await uiAlert("The logout handshake is still terminating downstream sessions.", {
+        title: "Logout In Progress",
+        variant: "warning",
+        description: "The first acknowledgement attempt fails intentionally so you can see the alert stay open until the async workflow succeeds.",
+        ...getDialogSpeechOptions(),
+        okText: "Finish Logout",
+        busyMessage: "Finishing logout...",
+        onAcknowledge: async () => {
+          asyncAcknowledgeAttempts += 1;
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          if (asyncAcknowledgeAttempts === 1) {
+            throw new Error("Session drain is still in progress. Try the acknowledgement again in a moment.");
+          }
+          return true;
+        },
+      });
+      writeLog("dialog.asyncAlert", { acknowledged: true, attempts: asyncAcknowledgeAttempts });
     });
   </script>
 </body>

@@ -22,7 +22,7 @@
   <script>
     window.demoMeta = {
       title: "Confirm Dialog",
-      overview: "Promise-based confirm dialog for yes/no flows, semantic warning/error variants, and explicit retry/cancel decisions.",
+      overview: "Promise-based confirm dialog for yes/no flows, semantic warning/error variants, and helper-owned async pending/error handling.",
       useWhen: [
         "Use <code>uiConfirm(...)</code> when the user must decide whether to proceed or cancel.",
         "Use it for destructive or high-attention flows where primary-action emphasis matters."
@@ -41,6 +41,10 @@
         { option: "<code>description</code>", default: "<code>\"\"</code>", description: "Secondary explanatory copy." },
         { option: "<code>confirmText</code>", default: "component default", description: "Primary action label override." },
         { option: "<code>cancelText</code>", default: "component default", description: "Cancel action label override." },
+        { option: "<code>onConfirm</code>", default: "<code>null</code>", description: "Optional local confirm handler. If it returns a promise, the dialog stays open, locks actions, and shows busy state until the promise resolves." },
+        { option: "<code>busyMessage</code>", default: "<code>\"\"</code>", description: "Modal busy copy shown while an async confirm handler is pending." },
+        { option: "<code>confirmBusyMessage</code>", default: "<code>busyMessage</code>", description: "Primary-action-specific busy message override." },
+        { option: "<code>errorText</code>", default: "component default", description: "Fallback inline error message when an async confirm handler rejects without a usable message." },
         { option: "<code>speak</code>", default: "<code>false</code>", description: "Opt-in speech for dialog content.", values: ["true", "false"] },
         { option: "<code>voiceName</code>", default: "<code>\"\"</code>", description: "Exact speech-synthesis voice name. Use one of the voices exposed by the browser/OS voice list; empty string falls back to the default voice." }
       ],
@@ -70,6 +74,7 @@
       <div class="row">
         <button id="confirmBtn" class="ui-button" type="button">Confirm (Warning)</button>
         <button id="errorConfirmBtn" class="ui-button ui-button-danger" type="button">Confirm (Error)</button>
+        <button id="asyncConfirmBtn" class="ui-button ui-button-primary" type="button">Confirm (Async)</button>
       </div>
       <div class="row">
         <label><input id="dialogSpeakToggle" type="checkbox"> Speak Dialogs</label>
@@ -126,6 +131,27 @@
         cancelText: "Dismiss",
       });
       writeLog("dialog.error", { retry: confirmed });
+    });
+    let asyncAttempts = 0;
+    document.getElementById("asyncConfirmBtn").addEventListener("click", async () => {
+      asyncAttempts = 0;
+      const confirmed = await uiConfirm("Delete the cached relay session?", {
+        title: "Delete Cached Session",
+        variant: "warning",
+        description: "The first attempt fails intentionally so you can see the dialog stay open and show inline error feedback.",
+        ...getDialogSpeechOptions(),
+        confirmText: "Delete",
+        busyMessage: "Deleting cached session...",
+        onConfirm: async () => {
+          asyncAttempts += 1;
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          if (asyncAttempts === 1) {
+            throw new Error("The relay session is still being drained. Retry after the active request completes.");
+          }
+          return true;
+        },
+      });
+      writeLog("dialog.asyncConfirm", { confirmed, attempts: asyncAttempts });
     });
   </script>
 </body>

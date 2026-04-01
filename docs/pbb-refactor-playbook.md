@@ -77,6 +77,7 @@ Use adapter functions between helper callbacks and backend APIs.
 - `createAccountFormModal(...)`
 - `createChangePasswordFormModal(...)`
 - `createPasswordField(...)`
+  - `createDevicePrimer(...)`
   - `createFieldset(...)`
   - `createChatThread(...)`
   - `createChatComposer(...)`

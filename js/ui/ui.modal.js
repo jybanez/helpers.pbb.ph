@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
-import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.27";
+import { resolveWorkspaceOverlayParent } from "./ui.workspace.bridge.js?v=0.21.61";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -976,4 +976,5 @@ function isElementNode(value) {
     && value.ownerDocument
   );
 }
+
 

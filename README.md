@@ -8,6 +8,8 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
+Latest documented release: `v0.21.61`
+
 This repository currently covers **7 helpers**:
 
 - `incidentBase`
@@ -216,6 +218,9 @@ Reusable shared UI utilities live under `js/ui`:
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
 - `ui.fieldset.js`
   - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields with notes, alerts, images, and custom content
+- `ui.device.primer.js`
+  - `createDevicePrimer(container, data, options)` project-configurable startup readiness checks for permissions, devices, and browser capabilities
+  - `createDevicePrimerModal(data, options)` modal preset wrapper for startup primer flows
 - `ui.icons.js`
   - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
@@ -4182,6 +4187,37 @@ Recommended integration flow:
 3. Use `onStateChange(state)` to sync external UI if needed.
 4. Use `update(nextIncident, nextOptions?)` when refreshed incident data arrives.
 
+### `createDevicePrimer(container, data, options)` / `createDevicePrimerModal(data, options)`
+
+Shared startup preflight helper for browser/device capability checks such as microphone, camera, geolocation, notifications, and audio playback readiness.
+
+Supported V1 check kinds:
+
+- `microphone`
+- `camera`
+- `geolocation`
+- `speechSynthesis`
+- `speechRecognition`
+- `notifications`
+- `audioPlayback`
+- `mediaDevices`
+
+Core methods:
+
+- `runAll()`
+- `runCheck(id)`
+- `retryCheck(id)`
+- `update(nextData, nextOptions?)`
+- `getState()`
+- `destroy()`
+
+Modal preset notes:
+
+- wraps the core helper inside a helper-owned action modal
+- intended for page-load or pre-join readiness flows
+- auto-runs by default unless the app explicitly disables it
+- project code still owns blocking policy and what happens after success/failure
+
 ## Notes
 
 - This is a scaffold/prototype for testing flow.
@@ -4192,7 +4228,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.40`
+- Latest documented release: `v0.21.60`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

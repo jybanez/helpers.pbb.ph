@@ -1,0 +1,125 @@
+.ui-device-primer {
+  display: grid;
+  gap: 12px;
+}
+
+.ui-device-primer-title {
+  margin: 0;
+}
+
+.ui-device-primer-message {
+  margin: 0;
+  color: var(--ui-muted, #9fb2d8);
+  line-height: 1.5;
+}
+
+.ui-device-primer-summary {
+  border: 1px solid var(--ui-border, #2b3750);
+  border-radius: 8px;
+  background: rgba(12, 20, 34, 0.92);
+  color: var(--ui-muted, #9fb2d8);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.ui-device-primer-summary.is-ready {
+  color: #b8f3cf;
+}
+
+.ui-device-primer-summary.is-failed {
+  color: #ffb5b5;
+}
+
+.ui-device-primer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ui-device-primer-row {
+  border: 1px solid var(--ui-border, #2b3750);
+  border-radius: 10px;
+  background: rgba(10, 20, 35, 0.92);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.ui-device-primer-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ui-device-primer-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ui-device-primer-label {
+  font-weight: 700;
+  color: var(--ui-text, #d7e0f4);
+}
+
+.ui-device-primer-required.is-required {
+  background: rgba(141, 181, 255, 0.18);
+}
+
+.ui-device-primer-required.is-optional {
+  background: rgba(123, 145, 182, 0.18);
+}
+
+.ui-device-primer-description {
+  color: var(--ui-muted, #9fb2d8);
+  font-size: 13px;
+}
+
+.ui-device-primer-detail {
+  color: #bfd0ec;
+  font-size: 13px;
+}
+
+.ui-device-primer-side {
+  display: grid;
+  align-content: start;
+  justify-items: end;
+  gap: 8px;
+}
+
+.ui-device-primer-status.is-ready {
+  background: rgba(99, 187, 131, 0.2);
+  color: #b8f3cf;
+}
+
+.ui-device-primer-status.is-failed,
+.ui-device-primer-status.is-blocked {
+  background: rgba(214, 92, 92, 0.18);
+  color: #ffb5b5;
+}
+
+.ui-device-primer-status.is-checking {
+  background: rgba(255, 195, 65, 0.18);
+  color: #ffe2a0;
+}
+
+.ui-device-primer-status.is-unsupported,
+.ui-device-primer-status.is-pending {
+  background: rgba(123, 145, 182, 0.18);
+  color: #bfd0ec;
+}
+
+.ui-device-primer-modal-host {
+  min-width: min(640px, 100%);
+}
+
+@media (max-width: 700px) {
+  .ui-device-primer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-device-primer-side {
+    justify-items: start;
+  }
+}

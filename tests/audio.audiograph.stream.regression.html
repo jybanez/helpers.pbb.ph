@@ -38,10 +38,12 @@
         isLive: true,
         isActive: true,
       }, {
-        style: "tsunami",
+        style: "classic-waveform",
         overlayHeader: false,
         showMute: false,
       });
+
+      assert(graph.getState().style === "classic-waveform", "classic-waveform style should be accepted");
 
       streamContext = new (window.AudioContext || window.webkitAudioContext)();
       streamOscillator = streamContext.createOscillator();

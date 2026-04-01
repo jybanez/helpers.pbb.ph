@@ -26,6 +26,20 @@ Existing compatibility surface remains:
 
 `unlockAudioContext()` remains as a compatibility alias to `resume()`.
 
+## Visual Styles
+
+The component also supports a live waveform-inspired visual style:
+
+- `style: "classic-waveform"`
+
+This style is still:
+
+- live
+- compact
+- non-timeline
+
+It exists to provide a more classic centered waveform look without changing the component into a history-based waveform timeline.
+
 ## Source Model
 
 Only one active source is attached at a time:

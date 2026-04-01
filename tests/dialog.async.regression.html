@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dialog Async Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.dialog.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { uiAlert, uiConfirm, uiPrompt } from "../js/ui/ui.dialog.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function waitFor(predicate, timeoutMs = 1500, stepMs = 20) {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        const value = predicate();
+        if (value) {
+          return value;
+        }
+        await delay(stepMs);
+      }
+      return null;
+    }
+
+    function getOpenModal() {
+      return document.querySelector(".ui-modal-root.is-open .ui-modal");
+    }
+
+    function getFooterButtons() {
+      return Array.from(document.querySelectorAll(".ui-modal-root.is-open .ui-dialog-footer-actions button, .ui-modal-root.is-open .ui-modal-footer button"));
+    }
+
+    function findFooterButton(label) {
+      return getFooterButtons().find((button) => (button.textContent || "").trim() === label) || null;
+    }
+
+    let confirmCalls = 0;
+    const confirmPromise = uiConfirm("Confirm async action?", {
+      title: "Async Confirm",
+      confirmText: "Confirm",
+      busyMessage: "Processing confirm...",
+      onConfirm: async () => {
+        confirmCalls += 1;
+        await delay(40);
+        if (confirmCalls === 1) {
+          throw new Error("First confirm attempt failed.");
+        }
+        return true;
+      },
+    });
+    const confirmButton = await waitFor(() => findFooterButton("Confirm"));
+    assert(confirmButton, "Confirm dialog should render a confirm button.");
+    confirmButton?.click();
+    confirmButton?.click();
+    await delay(10);
+    assert(confirmCalls === 1, "Confirm handler should only run once while busy.");
+    assert(Boolean(getOpenModal()), "Confirm dialog should remain open while async confirm is pending.");
+    const confirmError = await waitFor(() => {
+      const node = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+      return (node?.textContent || "").includes("First confirm attempt failed.") ? node : null;
+    });
+    assert((confirmError?.textContent || "").includes("First confirm attempt failed."), "Confirm dialog should surface inline error text after rejection.");
+    findFooterButton("Confirm")?.click();
+    const confirmResult = await Promise.race([confirmPromise, delay(1500).then(() => "__timeout__")]);
+    assert(confirmResult === true, "Confirm dialog should resolve true after async handler succeeds.");
+
+    const promptPromise = uiPrompt("Enter alias:", {
+      title: "Async Prompt",
+      submitText: "Save",
+      onSubmit: async (value) => {
+        await delay(30);
+        if (String(value || "").trim().length < 4) {
+          throw new Error("Alias must be at least 4 characters.");
+        }
+        return true;
+      },
+    });
+    const promptInput = await waitFor(() => document.querySelector(".ui-modal-root.is-open input.ui-input"));
+    assert(promptInput, "Prompt dialog should render an input.");
+    promptInput.value = "abc";
+    promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+    findFooterButton("Save")?.click();
+    const promptError = await waitFor(() => {
+      const node = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+      return (node?.textContent || "").includes("at least 4 characters") ? node : null;
+    });
+    assert((promptError?.textContent || "").includes("at least 4 characters"), "Prompt dialog should surface inline async validation error.");
+    promptInput.value = "abcd";
+    promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const clearedPromptError = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+    assert((clearedPromptError?.textContent || "").trim() === "", "Prompt input edits should clear inline error text.");
+    findFooterButton("Save")?.click();
+    const promptResult = await Promise.race([promptPromise, delay(1500).then(() => "__timeout__")]);
+    assert(promptResult === "abcd", "Prompt dialog should resolve entered value after async submit succeeds.");
+
+    const allClosed = await waitFor(() => !document.querySelector(".ui-modal-root.is-open"), 2000);
+    assert(Boolean(allClosed), "All dialogs should close after async handlers succeed.");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.map((message) => `FAIL: ${message}`).join("\n");
+    } else {
+      document.body.dataset.status = "passed";
+      results.textContent = "Dialog async regression passed.";
+    }
+  </script>
+</body>
+</html>

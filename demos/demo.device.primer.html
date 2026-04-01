@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Primer Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; min-height: 220px; overflow: auto; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.device.primer", "ui.device.primer.modal"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Device Primer",
+      overview: "Project-configurable startup checks for permissions, capabilities, and browser/device readiness.",
+      useWhen: [
+        "Use this before workflows that depend on microphone, camera, location, notifications, or audio playback.",
+        "Use the modal preset when the primer should run at page load before the main page flow continues."
+      ],
+      avoidWhen: [
+        "Do not use this as a full media-call setup wizard.",
+        "Do not move app-specific fallback behavior into the helper."
+      ],
+      description: "The device primer is a reusable preflight surface. Projects choose which checks they need. The helper owns status presentation and retry UI, while app code still owns routing and business fallback behavior.",
+      defaultSampleCode: `const primer = createDevicePrimer(host, {\n  title: "Startup Device Check",\n  message: "This page needs microphone, camera, and audio playback readiness before you continue.",\n  checks: [\n    { id: "mic", kind: "microphone", required: true },\n    { id: "cam", kind: "camera", required: true },\n    { id: "audio", kind: "audioPlayback", required: true },\n    { id: "speech", kind: "speechRecognition", required: false },\n  ],\n});`,
+      constructor: [
+        { factory: "<code>createDevicePrimer(container, data, options)</code>", arguments: "primer host, configured checks, and callbacks", returns: "Device primer instance" },
+        { factory: "<code>createDevicePrimerModal(data, options)</code>", arguments: "configured checks and modal options", returns: "Modal-backed device primer instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root primer element." },
+        { option: "<code>autoRun</code>", default: "<code>true</code>", description: "Runs the configured checks immediately on init." },
+        { option: "<code>allowRetry</code>", default: "<code>true</code>", description: "Shows retry actions on failed or blocked checks." },
+        { option: "<code>showSummary</code>", default: "<code>true</code>", description: "Shows aggregate readiness status above the rows." },
+        { option: "<code>title</code>", default: "<code>\"Device Primer\"</code>", description: "Modal preset title shown in the modal shell." },
+        { option: "<code>continueLabel</code>", default: "<code>\"Continue\"</code>", description: "Modal preset label for the continue action." },
+        { option: "<code>retryLabel</code>", default: "<code>\"Retry Failed\"</code>", description: "Modal preset label for retrying failed or blocked checks." },
+        { option: "<code>blockUntilReady</code>", default: "<code>false</code>", description: "Modal preset option that disables Continue until all required checks are ready." },
+        { option: "<code>showCloseButton</code>", default: "<code>true</code>", description: "Controls whether the modal preset shows the close button in the header." },
+        { option: "<code>closeOnBackdrop</code>", default: "<code>true</code>", description: "Allows the modal preset to close when the backdrop is clicked." },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Allows the modal preset to close when Escape is pressed." }
+      ],
+      events: [
+        { event: "<code>onCheckStart(check, state)</code>", arguments: "normalized check state and current aggregate state", returns: "<code>void</code>" },
+        { event: "<code>onCheckComplete(check, state)</code>", arguments: "resolved check state and current aggregate state", returns: "<code>void</code>" },
+        { event: "<code>onRetry(check, state)</code>", arguments: "check being retried and current aggregate state", returns: "<code>void</code>" },
+        { event: "<code>onComplete(state)</code>", arguments: "aggregate state after configured checks settle", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>runAll()</code>", arguments: "none", returns: "<code>Promise&lt;state&gt;</code>" },
+        { method: "<code>runCheck(id)</code>", arguments: "check id", returns: "<code>Promise&lt;check | null&gt;</code>" },
+        { method: "<code>retryCheck(id)</code>", arguments: "check id", returns: "<code>Promise&lt;check | null&gt;</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "aggregate primer state" },
+        { method: "<code>update(nextData, nextOptions)</code>", arguments: "data patch and options patch", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ],
+      propertiesText: "Each check row tracks its own status, detail text, retry availability, timestamp, and whether it is required or optional. Aggregate state exposes <code>title</code>, <code>message</code>, <code>checks</code>, <code>allComplete</code>, <code>allRequiredReady</code>, and <code>hasFailures</code>. Check descriptors also support per-check <code>label</code>, <code>description</code>, <code>required</code>, and <code>autoRun</code>."
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Device Primer Demo</h1>
+      <p class="muted">Shared startup readiness checks for project-configured device, permission, and capability requirements.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <button id="runAllBtn" class="ui-button ui-button-primary" type="button">Run All Again</button>
+        <button id="failureBtn" class="ui-button" type="button">Show Failure Demo</button>
+        <button id="modalBtn" class="ui-button ui-button-ghost" type="button">Open Modal Preset</button>
+      </div>
+      <div id="primerHost"></div>
+    </section>
+
+    <section class="panel">
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createDevicePrimer = await uiLoader.get("ui.device.primer");
+    const createDevicePrimerModal = await uiLoader.get("ui.device.primer.modal");
+
+    const host = document.getElementById("primerHost");
+    const eventLog = document.getElementById("eventLog");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet." ? line : `${line}\n${eventLog.textContent}`;
+    }
+
+    const primer = createDevicePrimer(host, {
+      title: "Startup Device Check",
+      message: "This example keeps the built-in checks browser-safe for demo use. Real projects can choose their own required and optional startup checks.",
+      checks: [
+        {
+          id: "audio",
+          kind: "audioPlayback",
+          label: "Audio Playback",
+          description: "Confirms the browser can resume the audio context for playback-heavy surfaces.",
+          required: true,
+        },
+        {
+          id: "speech",
+          kind: "speechRecognition",
+          label: "Speech Recognition",
+          description: "Checks whether the browser exposes the speech-recognition API.",
+          required: false,
+        },
+        {
+          id: "notifications",
+          kind: "notifications",
+          label: "Notifications",
+          description: "Optional browser notifications for background alerts.",
+          required: false,
+        },
+      ],
+    }, {
+      onCheckStart(check, state) { writeLog("devicePrimer.checkStart", { check, state }); },
+      onCheckComplete(check, state) { writeLog("devicePrimer.checkComplete", { check, state }); },
+      onRetry(check, state) { writeLog("devicePrimer.retry", { check, state }); },
+      onComplete(state) { writeLog("devicePrimer.complete", state); },
+    });
+
+    document.getElementById("runAllBtn").addEventListener("click", () => {
+      primer.runAll().catch((error) => writeLog("devicePrimer.error", { message: error.message }));
+    });
+
+    document.getElementById("failureBtn").addEventListener("click", () => {
+      primer.update({
+        checks: [
+          {
+            id: "camera-demo",
+            kind: "camera",
+            label: "Camera",
+            description: "Camera can fail or be blocked depending on user permission.",
+            required: true,
+          },
+          {
+            id: "geo-demo",
+            kind: "geolocation",
+            label: "Location Service",
+            description: "Location can be blocked or unavailable on the current browser/device.",
+            required: true,
+          },
+          {
+            id: "speech-demo",
+            kind: "speechRecognition",
+            label: "Speech Recognition",
+            description: "Capability-only check used to show unsupported handling.",
+            required: false,
+          },
+        ],
+      });
+      writeLog("devicePrimer.demoConfig", { mode: "failure-demo" });
+    });
+
+    document.getElementById("modalBtn").addEventListener("click", () => {
+      const modal = createDevicePrimerModal({
+        title: "Join Call Device Check",
+        message: "This call workflow requires microphone and audio playback readiness before you continue.",
+        checks: [
+          { id: "mic", kind: "microphone", label: "Microphone", required: true },
+          { id: "audio", kind: "audioPlayback", label: "Audio Playback", required: true },
+          { id: "notify", kind: "notifications", label: "Notifications", required: false },
+        ],
+      }, {
+        blockUntilReady: true,
+      });
+      modal.open();
+      writeLog("devicePrimer.modalOpen", modal.getState());
+    });
+
+    if (new URLSearchParams(window.location.search).get("autostart") === "1") {
+      const modal = createDevicePrimerModal({
+        title: "Autostart Device Check",
+        message: "This query-param example opens the modal preset on page load.",
+        checks: [
+          { id: "audio", kind: "audioPlayback", required: true },
+          { id: "speech", kind: "speechRecognition", required: false },
+        ],
+      }, {
+        autoOpen: true,
+        blockUntilReady: false,
+        autoRun: true,
+      });
+      writeLog("devicePrimer.modalAutostart", modal.getState());
+    }
+  </script>
+</body>
+</html>

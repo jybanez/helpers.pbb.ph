@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Primer Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="../css/ui/ui.device.primer.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createDevicePrimer, createDevicePrimerModal } from "../js/ui/ui.device.primer.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    let micMode = "blocked";
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        async getUserMedia(constraints) {
+          if (constraints && constraints.audio) {
+            if (micMode === "blocked") {
+              const error = new Error("Microphone permission denied.");
+              error.name = "NotAllowedError";
+              throw error;
+            }
+            return { getTracks() { return [{ stop() {} }]; } };
+          }
+          return { getTracks() { return [{ stop() {} }]; } };
+        },
+        async enumerateDevices() {
+          return [{ kind: "audioinput", deviceId: "mic-1", label: "Stub Mic" }];
+        },
+      },
+    });
+
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: {
+        getCurrentPosition(success) {
+          success({ coords: { latitude: 10.3157, longitude: 123.8854 } });
+        },
+      },
+    });
+
+    class NotificationStub {}
+    NotificationStub.permission = "default";
+    NotificationStub.requestPermission = async () => "granted";
+    Object.defineProperty(window, "Notification", {
+      configurable: true,
+      value: NotificationStub,
+    });
+
+    class AudioContextStub {
+      constructor() { this.state = "suspended"; }
+      async resume() { this.state = "running"; }
+      async close() { this.state = "closed"; }
+    }
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: AudioContextStub,
+    });
+
+    const completionStates = [];
+    const primer = createDevicePrimer(host, {
+      title: "Regression Primer",
+      checks: [
+        { id: "mic", kind: "microphone", required: true },
+        { id: "audio", kind: "audioPlayback", required: true },
+        { id: "speech", kind: "speechRecognition", required: false },
+      ],
+    }, {
+      autoRun: false,
+      onComplete(state) { completionStates.push(state); },
+    });
+
+    assert(primer.getState().checks.every((check) => check.status === "pending"), "Initial checks should be pending.");
+
+    const blockedMic = await primer.runCheck("mic");
+    assert(blockedMic && blockedMic.status === "blocked", "Blocked microphone should report blocked.");
+    assert(blockedMic && blockedMic.canRetry === true, "Blocked microphone should allow retry.");
+
+    micMode = "ready";
+    const retriedMic = await primer.retryCheck("mic");
+    assert(retriedMic && retriedMic.status === "ready", "Retried microphone should become ready.");
+
+    const allState = await primer.runAll();
+    assert(allState.allRequiredReady === true, "All required checks should be ready after runAll.");
+    assert(allState.checks.find((check) => check.id === "audio")?.status === "ready", "Audio playback should be ready.");
+    assert(["unsupported", "ready"].includes(allState.checks.find((check) => check.id === "speech")?.status), "Speech recognition should resolve to a valid capability state.");
+    assert(completionStates.length >= 1, "onComplete should fire.");
+
+    class HangingAudioContextStub {
+      constructor() { this.state = "suspended"; }
+      async resume() { return new Promise(() => {}); }
+      async close() { this.state = "closed"; }
+    }
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: HangingAudioContextStub,
+    });
+    const blockedAudioPrimer = createDevicePrimer(host, {
+      checks: [
+        { id: "audio-blocked", kind: "audioPlayback", required: true },
+      ],
+    }, {
+      autoRun: false,
+    });
+    const blockedAudio = await blockedAudioPrimer.runCheck("audio-blocked");
+    assert(blockedAudio && blockedAudio.status === "blocked", "Gesture-gated audio playback should report blocked instead of hanging.");
+    blockedAudioPrimer.destroy();
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: AudioContextStub,
+    });
+
+    const modal = createDevicePrimerModal({
+      title: "Modal Primer",
+      checks: [
+        { id: "mic-modal", kind: "microphone", required: true },
+      ],
+    }, {
+      blockUntilReady: true,
+      autoRun: false,
+    });
+    modal.open();
+
+    const continueButtonBefore = Array.from(document.querySelectorAll(".ui-dialog-footer-actions button, .ui-modal-footer button"))
+      .find((button) => (button.textContent || "").trim() === "Continue");
+    assert(continueButtonBefore && continueButtonBefore.disabled, "Continue should start disabled when required checks are not ready.");
+
+    micMode = "ready";
+    await modal.runAll();
+
+    const continueButtonAfter = Array.from(document.querySelectorAll(".ui-dialog-footer-actions button, .ui-modal-footer button"))
+      .find((button) => (button.textContent || "").trim() === "Continue");
+    assert(continueButtonAfter && !continueButtonAfter.disabled, "Continue should enable after required checks are ready.");
+
+    modal.destroy();
+    primer.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.map((message) => `FAIL: ${message}`).join("\n");
+    } else {
+      document.body.dataset.status = "passed";
+      results.textContent = "Device primer regression passed.";
+    }
+  </script>
+</body>
+</html>

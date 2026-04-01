@@ -22,7 +22,7 @@
   <script>
     window.demoMeta = {
       title: "Prompt Dialog",
-      overview: "Promise-based prompt dialog for small single-value capture with semantic variants, descriptions, and optional speech.",
+      overview: "Promise-based prompt dialog for small single-value capture with semantic variants plus helper-owned async submit pending/error handling.",
       useWhen: [
         "Use <code>uiPrompt(...)</code> for short single-value capture inside a dialog shell.",
         "Use it when a full form modal would be excessive for one field."
@@ -40,6 +40,10 @@
         { option: "<code>variant</code>", default: "<code>\"default\"</code>", description: "Semantic dialog tone.", values: ["default", "success", "info", "warning", "error"] },
         { option: "<code>description</code>", default: "<code>\"\"</code>", description: "Secondary explanatory copy." },
         { option: "<code>placeholder</code>", default: "<code>\"\"</code>", description: "Input placeholder text." },
+        { option: "<code>onSubmit</code>", default: "<code>null</code>", description: "Optional local submit handler. Promise-returning handlers keep the dialog open with busy state until the async work resolves." },
+        { option: "<code>busyMessage</code>", default: "<code>\"\"</code>", description: "Modal busy copy shown while an async submit handler is pending." },
+        { option: "<code>submitBusyMessage</code>", default: "<code>busyMessage</code>", description: "Submit-action-specific busy message override." },
+        { option: "<code>errorText</code>", default: "component default", description: "Fallback inline error message when an async submit handler rejects without a usable message." },
         { option: "<code>speak</code>", default: "<code>false</code>", description: "Opt-in speech for dialog content.", values: ["true", "false"] },
         { option: "<code>voiceName</code>", default: "<code>\"\"</code>", description: "Exact speech-synthesis voice name. Use one of the voices exposed by the browser/OS voice list; empty string falls back to the default voice." }
       ],
@@ -68,6 +72,7 @@
       <h2 class="ui-title">Single-Value Capture</h2>
       <div class="row">
         <button id="promptBtn" class="ui-button ui-button-primary" type="button">Prompt (Success)</button>
+        <button id="asyncPromptBtn" class="ui-button" type="button">Prompt (Async Validation)</button>
       </div>
       <div class="row">
         <label><input id="dialogSpeakToggle" type="checkbox"> Speak Dialogs</label>
@@ -115,6 +120,25 @@
         placeholder: "Type here...",
       });
       writeLog("dialog.prompt", { value });
+    });
+    document.getElementById("asyncPromptBtn").addEventListener("click", async () => {
+      const value = await uiPrompt("Enter a relay alias:", {
+        title: "Relay Alias",
+        variant: "info",
+        description: "Short aliases are rejected intentionally so you can see the dialog stay open and surface inline validation feedback.",
+        ...getDialogSpeechOptions(),
+        placeholder: "Minimum 4 characters",
+        submitText: "Save Alias",
+        busyMessage: "Validating relay alias...",
+        onSubmit: async (nextValue) => {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          if (String(nextValue || "").trim().length < 4) {
+            throw new Error("Relay alias must be at least 4 characters long.");
+          }
+          return true;
+        },
+      });
+      writeLog("dialog.asyncPrompt", { value });
     });
   </script>
 </body>

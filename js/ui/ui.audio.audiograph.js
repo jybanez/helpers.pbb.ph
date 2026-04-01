@@ -15,7 +15,7 @@ const DEFAULT_DATA = {
 const DEFAULT_OPTIONS = {
   className: "",
   ariaLabel: "",
-  style: "vu", // vu | dots | mirrored | spectrum
+  style: "vu", // vu | dots | mirrored | spectrum | classic-waveform
   overlayHeader: true,
   transparentBackground: false,
   headerInsetPx: 30,
@@ -179,7 +179,7 @@ export function createAudioGraph(container, data = {}, options = {}) {
 
     ctx.clearRect(0, 0, width, height);
 
-    if (!currentOptions.transparentBackground) {
+    if (!currentOptions.transparentBackground && style !== "classic-waveform") {
       const gradient = ctx.createLinearGradient(0, 0, width, 0);
       gradient.addColorStop(0, "rgba(255, 186, 61, 0.14)");
       gradient.addColorStop(1, "rgba(255, 94, 94, 0.08)");
@@ -201,6 +201,10 @@ export function createAudioGraph(container, data = {}, options = {}) {
     }
     if (style === "mirrored") {
       drawMirrored(width, baselineY, graphHeight, level);
+      return;
+    }
+    if (style === "classic-waveform") {
+      drawClassicWaveform(width, baselineY, graphTop, graphHeight, level);
       return;
     }
     if (style === "spectrum") {
@@ -308,6 +312,66 @@ export function createAudioGraph(container, data = {}, options = {}) {
       }
     }
     drawPeakMarker(ctx, peakX, peakY, "rgba(255, 230, 166, 0.95)");
+  }
+
+  function drawClassicWaveform(width, baselineY, graphTop, graphHeight, level) {
+    const ms = currentData.currentMs || 0;
+    const pointCount = hasUsableTimeDomainData() ? analyserTimeData.length : Math.max(180, Math.floor(width * 0.8));
+    const sliceWidth = width / Math.max(1, pointCount - 1);
+    const sensitivityGain = Math.max(0.5, Number(currentOptions.sensitivity) || 3.4);
+    const waveScale = (graphHeight * 0.46) * sensitivityGain;
+
+    ctx.save();
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.shadowColor = "rgba(92, 221, 255, 0.30)";
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = "rgba(228, 248, 255, 0.96)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+
+    for (let i = 0; i < pointCount; i += 1) {
+      const x = i * sliceWidth;
+      const sample = resolveClassicWaveformSample(i, pointCount, ms);
+      const y = baselineY + (sample * waveScale);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.scale(1, -1);
+    ctx.translate(0, -(baselineY * 2));
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(92, 221, 255, 0.70)";
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    for (let i = 0; i < pointCount; i += 1) {
+      const x = i * sliceWidth;
+      const sample = resolveClassicWaveformSample(i, pointCount, ms);
+      const y = baselineY + (sample * waveScale);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(230, 248, 255, 0.34)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, Math.round(baselineY) + 0.5);
+    ctx.lineTo(width, Math.round(baselineY) + 0.5);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawNeon(width, graphHeight, baselineY, level) {
@@ -989,6 +1053,21 @@ export function createAudioGraph(container, data = {}, options = {}) {
     return { ...currentData, style: currentOptions.style, sourceType };
   }
 
+  function hasUsableTimeDomainData() {
+    return Boolean(analyserTimeData && analyser && analyserTimeData.length > 0);
+  }
+
+  function resolveClassicWaveformSample(index, pointCount, ms) {
+    if (hasUsableTimeDomainData()) {
+      const sampleIndex = Math.min(analyserTimeData.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * analyserTimeData.length));
+      return (analyserTimeData[sampleIndex] - 128) / 128;
+    }
+    const t = index / Math.max(1, pointCount - 1);
+    const baseWave = Math.sin((t * Math.PI * 18) + (ms / 180));
+    const detailWave = Math.sin((t * Math.PI * 54) + (ms / 80)) * 0.28;
+    return (baseWave * 0.6) + detailWave;
+  }
+
   render();
 
   return {
@@ -1033,6 +1112,9 @@ function normalizeStyle(style) {
   if (value === "mirror" || value === "mirrored" || value === "waveform") {
     return "mirrored";
   }
+  if (value === "classic-waveform" || value === "classicwaveform" || value === "classic_waveform" || value === "oscilloscope") {
+    return "classic-waveform";
+  }
   if (value === "spectrum" || value === "bars") {
     return "spectrum";
   }
@@ -1061,7 +1143,7 @@ function normalizeStyle(style) {
 }
 
 function resolveBaselineY(style, graphTop, graphHeight, level) {
-  const centeredStyles = new Set(["mirrored", "neon", "tsunami", "plasma", "heartbeat"]);
+  const centeredStyles = new Set(["mirrored", "classic-waveform", "neon", "tsunami", "plasma", "heartbeat"]);
   if (centeredStyles.has(style)) {
     return Math.floor(graphTop + (graphHeight * 0.5));
   }
@@ -1073,7 +1155,7 @@ function resolveBaselineY(style, graphTop, graphHeight, level) {
 }
 
 function getBaselineAlpha(style, level) {
-  const centeredStyles = new Set(["mirrored", "neon", "tsunami", "plasma", "heartbeat"]);
+  const centeredStyles = new Set(["mirrored", "classic-waveform", "neon", "tsunami", "plasma", "heartbeat"]);
   const base = centeredStyles.has(style) ? 0.12 : 0.18;
   return Math.min(0.32, base + (Math.max(0, Math.min(1, Number(level) || 0)) * 0.14));
 }

@@ -94,6 +94,7 @@ const DEMO_GROUPS = [
       { href: "./demo.toast.html", label: "Toast" },
         { href: "./demo.select.html", label: "Select" },
         { href: "./demo.fieldset.html", label: "Fieldset" },
+        { href: "./demo.device.primer.html", label: "Device Primer" },
         { href: "./demo.property.editor.html", label: "Property Editor" },
         { href: "./demo.toggle.button.html", label: "Toggle Button" },
       { href: "./demo.toggle.group.html", label: "Toggle Group" },

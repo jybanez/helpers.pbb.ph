@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.40`
+- Latest documented release: `v0.21.61`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,151 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.61
+
+- Added helper-owned async pending support across the dialog family: `uiAlert(...)`, `uiConfirm(...)`, and `uiPrompt(...)`.
+- Dialog primary actions can now stay open while local async handlers run:
+  - `onAcknowledge` for alerts
+  - `onConfirm` for confirms
+  - `onSubmit` for prompts
+- While a promise-returning primary handler is pending, dialogs now lock duplicate actions, show modal busy state, and keep the shell open until the async work resolves.
+- Rejected async handlers now keep the dialog open and surface inline error text instead of closing immediately.
+- Added dialog async demos plus a dedicated regression harness for confirm/prompt async pending and inline-error behavior.
+- Normalized the overlay-routing revision chain to `0.21.61` so dialog, modal, form-modal, and workspace-bridge imports stop serving stale overlay modules.
+
+### v0.21.60
+
+- Changed `ui.audio.audiograph` `classic-waveform` to an oscilloscope-style continuous line renderer inspired by WaveForge's waveform mode.
+- `classic-waveform` now draws one current-frame waveform path plus a faint mirrored reflection instead of the previous vertical-stroke approximation.
+- Bumped the audio revision chain again so browsers load the new waveform renderer cleanly.
+
+### v0.21.59
+
+- Fixed another `ui.audio.audiograph` `classic-waveform` regression where the current-frame waveform renderer referenced `ms` without defining it locally inside `drawClassicWaveform(...)`.
+- Bumped the audio revision chain again so browsers stop loading the broken `0.21.58` audiograph module graph.
+
+### v0.21.58
+
+- Fixed a `ReferenceError` in `ui.audio.audiograph` `classic-waveform` where the current-frame helper functions were moved outside the component scope and could no longer access analyser state.
+- Bumped the audio revision chain again so browsers stop loading the broken `0.21.57` audiograph module graph.
+
+### v0.21.57
+
+- Replaced the experimental `ui.audio.audiograph` `classic-waveform` history/write-head model with a simpler oscilloscope-style current-frame renderer inspired by WaveForge's waveform mode.
+- `classic-waveform` now draws the current time-domain frame as a continuous line with a subtle mirrored reflection instead of trying to simulate a buffered packet window.
+- Bumped the audio revision chain again so browsers load the simplified waveform renderer cleanly.
+
+### v0.21.56
+
+- Changed `ui.audio.audiograph` `classic-waveform` from a rolling rebucket window to a fixed-slot write-head model.
+- This keeps column positions stable while new waveform energy is written forward at a controlled rate, improving legibility during live input.
+- Bumped the audio revision chain again so browsers load the write-head waveform model cleanly.
+
+### v0.21.55
+
+- Slowed `ui.audio.audiograph` `classic-waveform` history updates so the buffered waveform window remains readable during live input.
+- The renderer now appends a small downsampled batch per interval instead of pushing the full analyser frame every paint, avoiding overly fast right-to-left motion.
+- Bumped the audio revision chain again so browsers load the readability fix cleanly.
+
+### v0.21.54
+
+- Reworked `ui.audio.audiograph` `classic-waveform` again to use a rolling sample-history buffer with per-column peak aggregation.
+- This shifts the style from current-frame-only rendering toward the buffered waveform-window approach commonly used for classic waveform visuals.
+- Bumped the audio revision chain again so browsers load the buffered waveform renderer cleanly.
+
+### v0.21.53
+
+- Reworked `ui.audio.audiograph` `classic-waveform` again to use peak-envelope bucketing per column instead of raw per-point sampling.
+- This fixes the low-frequency lobe/oval look from the previous raw renderer and brings the style closer to a dense classic waveform packet.
+- Bumped the audio revision chain again so browsers load the updated waveform behavior cleanly.
+
+### v0.21.52
+
+- Changed `ui.audio.audiograph` `classic-waveform` to a purely raw rendering mode.
+- Removed tapering, normalization, and extra amplitude shaping from `classic-waveform`; the style now uses the current time-domain frame directly with only the explicit sensitivity multiplier applied.
+- Bumped the audio revision chain again so browsers load the raw waveform renderer cleanly.
+
+### v0.21.51
+
+- Refined `ui.audio.audiograph` `classic-waveform` again to use a mirrored peak-envelope interpretation of the current time-domain frame.
+- Reduced shaped/tapered behavior further so the style reads more like raw waveform energy around the center line and less like a beautified signed packet.
+- Bumped the audio revision chain again so browsers load the refined waveform behavior cleanly.
+
+### v0.21.50
+
+- Changed `ui.audio.audiograph` `classic-waveform` from a running history trace to a stationary live waveform.
+- `classic-waveform` now updates in place across the width instead of scrolling/running, which better matches the intended classic waveform visual treatment.
+- Bumped the audio revision chain again so browsers load the stationary waveform renderer cleanly.
+
+### v0.21.49
+
+- Fixed `ui.audio.audiograph` `classic-waveform` history direction so fresh waveform content reads left-to-right instead of appearing to run right-to-left.
+- Bumped the audio revision chain again so browsers load the corrected waveform history mapping cleanly.
+
+### v0.21.48
+
+- Reworked `ui.audio.audiograph` `classic-waveform` again to use a short rolling history of dense mirrored vertical strokes.
+- Removed the grid treatment for `classic-waveform` and shifted the style closer to a thin classic waveform silhouette rather than an instrument-panel graph.
+- Bumped the audio revision chain again so browsers load the reworked waveform behavior cleanly.
+
+### v0.21.47
+
+- Tuned `ui.audio.audiograph` `classic-waveform` again to avoid over-normalized center blocks on short spoken phrases.
+- Reduced normalization aggressiveness and added softer amplitude shaping so normal speech retains more internal contour instead of collapsing into a near-solid center mass.
+- Bumped the audio revision chain again so browsers load the refined waveform behavior cleanly.
+
+### v0.21.46
+
+- Reworked `ui.audio.audiograph` `classic-waveform` to use vertical mirrored waveform strokes instead of connected ribbon-style outlines.
+- Reduced grid prominence, removed peak-marker emphasis for this style, and tightened the packet envelope so it reads closer to a classic waveform silhouette.
+- Bumped the audio revision chain again so browsers load the reworked renderer cleanly.
+
+### v0.21.45
+
+- Refined `ui.audio.audiograph` `classic-waveform` again to reduce the ribbon-like look.
+- Switched the renderer to a more line-dominant, denser, and more center-packed waveform packet so it reads closer to a classic waveform silhouette.
+- Bumped the audio revision chain again so browsers load the updated renderer cleanly.
+
+### v0.21.44
+
+- Increased `ui.audio.audiograph` `classic-waveform` sensitivity for live sources.
+- Added peak-normalized waveform scaling so ordinary speech produces a clearer waveform packet instead of requiring very loud input.
+- Bumped the audio revision chain again so browsers load the refined waveform sensitivity changes cleanly.
+
+### v0.21.43
+
+- Refined `ui.audio.audiograph` `classic-waveform` so it renders closer to a true classic waveform packet instead of a ribbon-like shape.
+- Increased time-domain detail, added stronger packet tapering at the edges, and tightened the stroke/fill treatment for a sharper centered waveform look.
+- Bumped the audio revision chain again so browsers load the refined waveform renderer cleanly.
+
+### v0.21.42
+
+- Added `style: "classic-waveform"` to `ui.audio.audiograph`.
+- `classic-waveform` provides a centered live waveform-inspired visual style without timeline/history semantics.
+- Added:
+  - `docs/ui-audio-audiograph-classic-waveform-addendum.md`
+  - `docs/ui-audio-audiograph-classic-waveform-checklist.md`
+- Updated `demos/demo.audio.audiograph.stream.html` so the new style can be exercised directly.
+- Bumped the audio revision chain again so browsers pick up the updated audiograph runtime and demo imports cleanly.
+
+### v0.21.41
+
+- Added `ui.device.primer` and `createDevicePrimerModal(...)`.
+- Added project-configurable startup checks for:
+  - microphone
+  - camera
+  - geolocation
+  - speech synthesis
+  - speech recognition
+  - notifications
+  - audio playback readiness
+  - media-device enumeration
+- Added:
+  - `demos/demo.device.primer.html`
+  - `tests/device.primer.regression.html`
+  - `tests/device.primer.regression.mjs`
+- `ui.device.primer` defaults to auto-run so configured checks begin immediately unless the app explicitly sets `autoRun: false`.
 
 ### v0.21.40
 

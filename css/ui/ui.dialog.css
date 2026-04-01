@@ -23,6 +23,13 @@
   line-height: 1.45;
 }
 
+.ui-dialog-error {
+  margin: 0;
+  color: #ff9aa6;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .ui-dialog-variant-icon {
   display: inline-flex;
   align-items: center;
@@ -130,6 +137,10 @@
 
 .ui-dialog--error .ui-dialog-description {
   color: #f4b8c0;
+}
+
+.ui-dialog--error .ui-dialog-error {
+  color: #ffb4be;
 }
 
 .ui-dialog--error .ui-dialog-variant-icon {
