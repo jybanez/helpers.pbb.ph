@@ -30,13 +30,14 @@
         "Do not assume the helper owns actual call mute policy for live streams."
       ],
       description: "This page exercises the stream-oriented audiograph path directly. It includes a synthetic source that works without microphone permissions and a manual microphone path for browser testing.",
-      defaultSampleCode: `const graph = createAudioGraph(host, {\n  role: "local-audio",\n  roleLabel: "Local audio",\n  isPlaying: true,\n  isLive: true,\n  isActive: true,\n}, {\n  style: "tsunami",\n  overlayHeader: false,\n  showMute: false,\n});\n\nawait graph.resume();\ngraph.attachMediaStream(localStream);`,
+      defaultSampleCode: `const graph = createAudioGraph(host, {\n  role: "local-audio",\n  roleLabel: "Local audio",\n  isPlaying: true,\n  isLive: true,\n  isActive: true,\n}, {\n  style: "tsunami",\n  overlayHeader: false,\n  transparentBackground: true,\n  showMute: false,\n});\n\nawait graph.resume();\ngraph.attachMediaStream(localStream);`,
       constructor: [
         { factory: "<code>createAudioGraph(container, data, options)</code>", arguments: "graph host, data state, and graph options", returns: "Audio graph instance" }
       ],
       options: [
         { option: "<code>style</code>", default: '<code>"vu"</code>', description: "Graph visual style." },
         { option: "<code>overlayHeader</code>", default: '<code>true</code>', description: "Overlays the header over the graph canvas." },
+        { option: "<code>transparentBackground</code>", default: '<code>false</code>', description: "Removes the shell and canvas fill backgrounds so the graph sits directly on the parent surface." },
         { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Visual intensity multiplier." },
         { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows the helper-owned mute button." }
       ],
@@ -66,6 +67,7 @@
         <button id="audioNodeBtn" class="ui-button ui-button-ghost" type="button">Attach AudioNode</button>
         <button id="micBtn" class="ui-button ui-button-quiet" type="button">Attach Microphone</button>
         <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Source</button>
+        <label class="ui-inline-check"><input id="transparentBgToggle" type="checkbox"> Transparent background</label>
       </div>
       <div id="graphHost"></div>
       <pre id="log" class="log">No events yet.</pre>
@@ -87,6 +89,7 @@
     }, {
       style: "tsunami",
       overlayHeader: false,
+      transparentBackground: false,
       showMute: false,
     });
 
@@ -181,6 +184,11 @@
       graph.attachMediaStream(null);
       graph.setPlayback({ isPlaying: false, isLive: false, isActive: false });
       writeLog("audiograph.clear", { sourceType: graph.getState().sourceType });
+    });
+
+    document.getElementById("transparentBgToggle").addEventListener("change", (event) => {
+      graph.update(null, { transparentBackground: Boolean(event.target.checked) });
+      writeLog("audiograph.transparentBackground", { enabled: Boolean(event.target.checked) });
     });
   </script>
 </body>

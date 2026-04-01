@@ -900,6 +900,7 @@ Options:
 - `intensityCurve` (default `1.7`)
 - `freezeOnPause` (default `true`)
 - `overlayHeader` (default `true`)
+- `transparentBackground` (default `false`)
 - `headerInsetPx` (default `30`)
 - `showMute`, `muteLabel`, `unmuteLabel`
 - `onToggleMute(muted, state)`
@@ -4191,7 +4192,7 @@ Recommended integration flow:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.39`
+- Latest documented release: `v0.21.40`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

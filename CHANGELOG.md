@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.39`
+- Latest documented release: `v0.21.40`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -34,6 +34,14 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Releases
 
+### v0.21.40
+
+- Fixed `ui.audio.audiograph` `transparentBackground` so it also skips the renderer-painted gradient background inside the canvas.
+- Bumped the audio loader revision again so updated audio JS and CSS load cleanly in browsers:
+  - `ui.audio.player`
+  - `ui.audio.audiograph`
+  - `ui.audio.callSession`
+
 ### v0.21.39
 
 - Fixed stale-browser-module loading for the audio helper chain after the `ui.audio.audiograph` livestream update.
@@ -42,6 +50,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
   - `ui.audio.audiograph`
   - `ui.audio.callSession`
 - Updated `js/ui/ui.audio.callSession.js` to import the revisioned audio runtime modules directly so browser caches do not keep serving the old audiograph contract.
+- Added `transparentBackground` option to `ui.audio.audiograph` so the graph shell and canvas fill can render fully transparent against the parent surface.
 
 ### v0.21.38
 

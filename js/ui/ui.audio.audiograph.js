@@ -17,6 +17,7 @@ const DEFAULT_OPTIONS = {
   ariaLabel: "",
   style: "vu", // vu | dots | mirrored | spectrum
   overlayHeader: true,
+  transparentBackground: false,
   headerInsetPx: 30,
   sensitivity: 3.4,
   gateThreshold: 0.06,
@@ -129,6 +130,7 @@ export function createAudioGraph(container, data = {}, options = {}) {
       root.classList.toggle("is-muted", currentData.muted);
       root.classList.toggle("is-playing", currentData.isPlaying);
       root.classList.toggle("is-overlay-header", Boolean(currentOptions.overlayHeader));
+      root.classList.toggle("is-transparent-background", Boolean(currentOptions.transparentBackground));
       root.style.setProperty("--ui-audiograph-header-inset", `${Math.max(0, Number(currentOptions.headerInsetPx) || 30)}px`);
     }
     resizeCanvas();
@@ -177,11 +179,13 @@ export function createAudioGraph(container, data = {}, options = {}) {
 
     ctx.clearRect(0, 0, width, height);
 
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, "rgba(255, 186, 61, 0.14)");
-    gradient.addColorStop(1, "rgba(255, 94, 94, 0.08)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+    if (!currentOptions.transparentBackground) {
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, "rgba(255, 186, 61, 0.14)");
+      gradient.addColorStop(1, "rgba(255, 94, 94, 0.08)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
 
     const baselineAlpha = getBaselineAlpha(style, level);
     ctx.strokeStyle = `rgba(255, 156, 102, ${baselineAlpha.toFixed(3)})`;

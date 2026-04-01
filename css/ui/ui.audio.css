@@ -59,6 +59,10 @@
   gap: 8px;
 }
 
+.ui-audiograph.is-transparent-background {
+  background: transparent;
+}
+
 .ui-audiograph.is-overlay-header {
   position: relative;
   padding: 0;
@@ -130,6 +134,10 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   background: linear-gradient(90deg, rgba(15, 30, 51, 0.75), rgba(8, 22, 39, 0.85));
+}
+
+.ui-audiograph.is-transparent-background .ui-audiograph-canvas {
+  background: transparent;
 }
 
 .ui-audiograph.is-overlay-header .ui-audiograph-canvas {

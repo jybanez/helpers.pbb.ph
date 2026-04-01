@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.39";
-import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.39";
+import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.40";
+import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.40";
 
 const DEFAULT_OPTIONS = {
   className: "",

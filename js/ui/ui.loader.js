@@ -2,7 +2,7 @@ const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
 const UI_OVERLAY_ROUTING_REV = "0.21.27";
-const UI_AUDIO_REV = "0.21.39";
+const UI_AUDIO_REV = "0.21.40";
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
@@ -391,19 +391,19 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.audio.player": {
     js: `./ui.audio.player.js?v=${UI_AUDIO_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.audio.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.audio.css?v=${UI_AUDIO_REV}`],
     deps: [],
     export: "createAudioPlayer",
   },
   "ui.audio.audiograph": {
     js: `./ui.audio.audiograph.js?v=${UI_AUDIO_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.audio.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.audio.css?v=${UI_AUDIO_REV}`],
     deps: [],
     export: "createAudioGraph",
   },
   "ui.audio.callSession": {
     js: `./ui.audio.callSession.js?v=${UI_AUDIO_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.audio.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.audio.css?v=${UI_AUDIO_REV}`],
     deps: ["ui.audio.player", "ui.audio.audiograph"],
     export: "createAudioCallSession",
   },
