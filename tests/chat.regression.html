@@ -202,6 +202,22 @@
 
       composer.clear();
       assert(composer.getValue() === "", "composer clear should empty current value");
+
+      const noAttachHost = document.createElement("div");
+      composerHost.parentNode.appendChild(noAttachHost);
+      const noAttachComposer = createChatComposer(noAttachHost, { value: "" }, {
+        showAttachmentButton: false,
+      });
+      const noAttachControls = noAttachHost.querySelector(".ui-chat-composer-controls");
+      const noAttachInput = noAttachHost.querySelector(".ui-chat-composer-input");
+      const noAttachSend = noAttachHost.querySelector(".ui-chat-composer-send");
+      const noAttachAttach = noAttachHost.querySelector(".ui-chat-composer-attach");
+      assert(Boolean(noAttachControls && noAttachInput && noAttachSend), "composer without attachment button should still render controls, input, and send button");
+      assert(noAttachControls.classList.contains("is-no-attachment"), "composer without attachment button should switch to the two-column layout state");
+      assert(!noAttachAttach, "composer without attachment button should not render attach action");
+      noAttachComposer.destroy();
+      noAttachHost.remove();
+
       queue.setItems([
         { id: "img1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview, status: "uploading", progress: 42, progressLabel: "42%" },
         { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, status: "uploaded", progressLabel: "Uploaded" },

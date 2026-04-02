@@ -10,6 +10,8 @@
     .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
     .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
     .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; }
+    .preview-stack { display: grid; gap: 12px; }
+    .preview-label { margin: 0 0 6px; color: #9fb2d8; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
     .log { min-height: 180px; color: #b2c2e5; }
@@ -85,7 +87,16 @@
         <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Draft</button>
         <button id="focusBtn" class="ui-button ui-button-ghost" type="button">Focus</button>
       </div>
-      <div class="preview" id="composerHost"></div>
+      <div class="preview-stack">
+        <div class="preview">
+          <p class="preview-label">Attachment Button Enabled</p>
+          <div id="composerHost"></div>
+        </div>
+        <div class="preview">
+          <p class="preview-label">Attachment Button Hidden</p>
+          <div id="composerNoAttachHost"></div>
+        </div>
+      </div>
       <div class="preview" id="queueHost"></div>
       <pre class="log" id="log">No events yet.</pre>
     </section>
@@ -97,6 +108,7 @@
     const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
 
     const host = document.getElementById("composerHost");
+    const noAttachHost = document.getElementById("composerNoAttachHost");
     const queueHost = document.getElementById("queueHost");
     const log = document.getElementById("log");
     let busy = false;
@@ -167,17 +179,31 @@
       },
     });
 
+    const noAttachComposer = createChatComposer(noAttachHost, { value: "Attachment-free composer sample." }, {
+      helperText: "This variant uses showAttachmentButton: false.",
+      showAttachmentButton: false,
+      onChange(value) {
+        writeLog("composer.noAttach.change", { value });
+      },
+      onSend({ text }) {
+        writeLog("composer.noAttach.send", { text });
+      },
+    });
+
     document.getElementById("toggleBusyBtn").addEventListener("click", () => {
       busy = !busy;
       composer.setBusy(busy);
+      noAttachComposer.setBusy(busy);
       writeLog("composer.busy", { busy });
     });
     document.getElementById("fillBtn").addEventListener("click", () => {
       composer.setValue("Please check the latest incident photos before deployment.");
+      noAttachComposer.setValue("No attachment flow active.");
       writeLog("composer.setValue", { mode: "filled" });
     });
     document.getElementById("clearBtn").addEventListener("click", () => {
       composer.clear();
+      noAttachComposer.clear();
       writeLog("composer.clear", {});
     });
     document.getElementById("focusBtn").addEventListener("click", () => {

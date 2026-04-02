@@ -11,6 +11,10 @@
   align-items: start;
 }
 
+.ui-chat-composer-controls.is-no-attachment {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .ui-chat-composer-input-wrap {
   min-width: 0;
 }

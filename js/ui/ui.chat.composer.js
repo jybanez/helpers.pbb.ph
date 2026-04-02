@@ -43,7 +43,12 @@ export function createChatComposer(container, data = {}, options = {}) {
       ].filter(Boolean).join(" "),
     });
 
-    const controls = createElement("div", { className: "ui-chat-composer-controls" });
+    const controls = createElement("div", {
+      className: [
+        "ui-chat-composer-controls",
+        currentOptions.showAttachmentButton ? "" : "is-no-attachment",
+      ].filter(Boolean).join(" "),
+    });
     const inputWrap = createElement("div", { className: "ui-chat-composer-input-wrap" });
     const input = currentOptions.multiline !== false
       ? createElement("textarea", {
