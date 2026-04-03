@@ -70,26 +70,66 @@
   <script>
     window.demoMeta = {
       title: "Team Assignments",
-      overview: "PBB incident team-assignment demo for real operational assignment surfaces.",
+      overview: "Incident-domain assignment helper for dispatching teams, progressing assignment status, editing contact/notes, and viewing assignment state.",
       useWhen: [
-        "Use this page to inspect shared team-assignment behavior in the incident stack.",
-        "Use it when validating assignment presentation against real incident/team workflows."
+        "Use <code>incidentTeamsAssignments(...)</code> when a PBB incident workflow needs editable or read-only dispatch assignment surfaces.",
+        "Use it when the app should reuse the shared team picker drawer, assignment timeline, and resource-allocation rows."
       ],
       avoidWhen: [
-        "Do not use it as a generic team-management surface outside the incident domain.",
-        "Do not bypass the shared incident/team helper with app-local markup."
+        "Do not treat this as a generic team-management or staffing helper outside the incident domain.",
+        "Do not replace the shared assignment editor/viewer with app-local timeline, cancel, or dispatch markup."
       ],
-      description: "This is a domain demo page rather than a generic UI primitive. Its purpose is to validate shared team-assignment behavior after the demo and documentation reorganization.",
+      description: "This helper owns the list shell, team-selection drawer, per-assignment timeline/status controls, and editable assignment sub-rows. The app still owns team catalogs, confirmation rules, persistence, and post-action workflow decisions.",
       sectionSamples: {
-        "editable team assignments": `const editor = createTeamAssignments(host, data, {\n  editable: true,\n  onAssign(payload) {\n    writeLog("team.assign", payload);\n  },\n});`,
-        "read-only team assignments": `createTeamAssignments(host, data, {\n  editable: false,\n});`
+        "editable team assignments": `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onAssignTeam(assignment) {\n    persistAssignment(assignment);\n  },\n  onStatusNext(id, nextStatus) {\n    persistStatus(id, nextStatus);\n  },\n  onAllocateChange(id, resourceTypeId, allocated) {\n    persistAllocation(id, resourceTypeId, allocated);\n  },\n});`,
+        "read-only team assignments": `incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: false,\n});`
       },
+      defaultSampleCode: `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n});`,
       constructor: [
-        { factory: "<code>incident.teams.assignments</code> helper entry", arguments: "incident-team data and options", returns: "Domain-specific assignment surface" }
+        { factory: "<code>incidentTeamsAssignments(container, data, options)</code>", arguments: "assignment host, incident/assignment data, and domain options", returns: "Team-assignment list instance with drawer, list, and lifecycle methods" }
       ],
-      propertiesText: "Read this page as a domain demo. Stable public contract ownership sits with the incident/team helper layer.",
+      options: [
+        { option: "<code>incident_id</code>", default: "<code>required</code>", description: "Incident identifier required to create and normalize assignment payloads." },
+        { option: "<code>operator_id</code>", default: "<code>required</code>", description: "Current operator identifier recorded on new assignments." },
+        { option: "<code>categories</code>", default: "<code>[]</code>", description: "Incident-category list used to group/filter teams in the dispatch drawer." },
+        { option: "<code>teams</code>", default: "<code>[]</code>", description: "Available team catalog used by the dispatch drawer and assignment cards." },
+        { option: "<code>noticeAlreadyExist</code>", default: "<code>required</code>", description: "Duplicate-assignment notice hook used when a selected team is already dispatched." },
+        { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between editable assignment cards and read-only viewer cards." },
+        { option: "<code>headerText</code>", default: "<code>\"Dispatch Details\"</code>", description: "Header title shown above the assignment list." },
+        { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Teams to Dispatch\"</code>", description: "Drawer title used by the team-selection surface." },
+        { option: "<code>theme</code>", default: "<code>\"dark\"</code>", description: "Applies the helper theme variant to the list shell and item cards." },
+        { option: "<code>onOpenDrawer</code>", default: "<code>undefined</code>", description: "Called when the dispatch drawer opens." },
+        { option: "<code>onCloseDrawer</code>", default: "<code>undefined</code>", description: "Called when the dispatch drawer closes." },
+        { option: "<code>onAssignTeam</code>", default: "<code>undefined</code>", description: "Receives a normalized assignment payload when a team is dispatched from the drawer." },
+        { option: "<code>confirmStatus</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before progressing an assignment status." },
+        { option: "<code>confirmCancel</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before cancelling an assignment." },
+        { option: "<code>confirmDelete</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before deleting an assignment." },
+        { option: "<code>confirmContactEdit</code>", default: "<code>window.confirm(...)</code>", description: "Editable-only confirmation gate before unlocking contact-person editing." },
+        { option: "<code>onStatusNext</code>", default: "<code>undefined</code>", description: "Editable-only hook when status advances to the next step." },
+        { option: "<code>onCancel</code>", default: "<code>undefined</code>", description: "Editable-only hook when an assignment is cancelled." },
+        { option: "<code>onDelete</code>", default: "<code>undefined</code>", description: "Editable-only hook when an assignment is deleted." },
+        { option: "<code>onContactChange</code>", default: "<code>undefined</code>", description: "Editable-only hook when the contact person changes." },
+        { option: "<code>onNoteAdd</code>", default: "<code>undefined</code>", description: "Editable-only hook for adding assignment notes." },
+        { option: "<code>onAllocateChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for team resource allocation changes." }
+      ],
+      events: [
+        { event: "<code>onOpenDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
+        { event: "<code>onCloseDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
+        { event: "<code>onAssignTeam(assignment)</code>", arguments: "normalized assignment payload for the selected team", returns: "<code>void</code>" },
+        { event: "<code>onStatusNext(assignmentId, nextStatus)</code>", arguments: "assignment id and next timeline status", returns: "<code>void</code>" },
+        { event: "<code>onCancel(assignmentId, fromStatus, reasonCode, reasonNote)</code>", arguments: "assignment id, current status, cancellation reason code, and note", returns: "<code>void</code>" },
+        { event: "<code>onDelete(assignmentId)</code>", arguments: "assignment id", returns: "<code>void</code>" },
+        { event: "<code>onContactChange(assignmentId, value)</code>", arguments: "assignment id and next contact-person value", returns: "<code>void</code>" },
+        { event: "<code>onNoteAdd(assignmentId, note)</code>", arguments: "assignment id and note payload", returns: "<code>void</code>" },
+        { event: "<code>onAllocateChange(assignmentId, resourceTypeId, allocated)</code>", arguments: "assignment id, resource type id, and next allocated quantity", returns: "<code>void</code>" }
+      ],
+      propertiesText: "The instance tracks normalized assignment <code>list</code> data, merged <code>options</code>, and current <code>drawerState</code>. Individual assignment cards keep domain details such as dispatch status, contact person, notes, cancellation metadata, and resource allocations. Aggregate state is available through <code>getData()</code> and <code>getState()</code>.",
       methods: [
-        { method: "<code>Domain-specific methods</code>", arguments: "varies by incident/team helper", returns: "varies" }
+        { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement assignment data and optional option patch", returns: "<code>void</code>" },
+        { method: "<code>setList(items)</code>", arguments: "replacement assignment array", returns: "<code>void</code>" },
+        { method: "<code>getData()</code>", arguments: "none", returns: "Current normalized assignment array" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "List, merged options, and drawer state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
   </script>

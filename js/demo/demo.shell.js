@@ -320,7 +320,9 @@ function transformLegacyDemoPage(main, meta) {
   if (!main || main.dataset.demoStructured === "true") {
     return;
   }
-  const panels = Array.from(main.children).filter((node) => node.nodeType === 1 && node.classList.contains("panel"));
+  const childElements = Array.from(main.children).filter((node) => node.nodeType === 1);
+  const panels = childElements.filter((node) => node.classList.contains("panel"));
+  const passthroughNodes = childElements.filter((node) => !node.classList.contains("panel"));
   if (!panels.length) {
     return;
   }
@@ -331,6 +333,10 @@ function transformLegacyDemoPage(main, meta) {
   const fragment = document.createDocumentFragment();
   let introAssigned = false;
   let guidanceAssigned = false;
+
+  passthroughNodes.forEach((node) => {
+    fragment.appendChild(node);
+  });
 
   panels.forEach((panel) => {
     const heading = panel.querySelector(":scope > h1, :scope > h2, :scope > h3");

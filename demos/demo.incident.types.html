@@ -70,26 +70,54 @@
   <script>
     window.demoMeta = {
       title: "Incident Types",
-      overview: "PBB incident-type demo for the incident helper layer, not a generic UI primitive.",
+      overview: "Incident-domain list helper for editable and read-only incident-type records, including drawer-driven add flows and per-item field/resource updates.",
       useWhen: [
-        "Use this page to inspect the shared incident-type presentation and behavior used by PBB incident workflows.",
-        "Use it when validating the incident helper contract against the real incident domain."
+        "Use <code>incidentTypes(...)</code> when a PBB incident workflow needs to add, view, or edit multiple incident-type records within one incident.",
+        "Use it when the app should reuse the shared incident drawer and incident-type detail rows instead of rebuilding incident-specific UI locally."
       ],
       avoidWhen: [
-        "Do not treat this as a generic helper outside the incident domain.",
-        "Do not copy the demo markup into apps instead of consuming the shared incident helper."
+        "Do not treat this as a generic form/list helper outside the incident domain.",
+        "Do not bypass the shared incident helper with app-local list, drawer, or incident-type detail markup."
       ],
-      description: "This is a domain-level demo page. It exists to prove that the incident-type helper remains reusable inside the PBB incident stack after the demo-surface migration.",
+      description: "This helper owns the incident-type list shell, add-from-drawer flow, and item editor/viewer switching. The app still owns the incident catalog, reference lookups, and persistence callbacks.",
       sectionSamples: {
-        "incident.types (editor)": `const editor = createIncidentTypesEditor(host, data, {\n  onChange(next) {\n    writeLog("incident.types.change", next);\n  },\n});`,
-        "incident.types (viewer)": `createIncidentTypesViewer(host, data, {\n  readonly: true,\n});`
+        "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onFieldChange(incidentTypeId, fieldKey, value) {\n    persistFieldChange(incidentTypeId, fieldKey, value);\n  },\n  onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded) {\n    persistResourceChange(incidentTypeId, resourceTypeId, quantityNeeded);\n  },\n});`,
+        "incident.types (viewer)": `incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: false,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n});`
       },
+      defaultSampleCode: `const listApi = incidentTypes(host, incidentTypesData, {\n  editable: true,\n  incidentCategories,\n  resources: resourceTypes,\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n});`,
       constructor: [
-        { factory: "<code>incident.types</code> helper entry", arguments: "incident-domain data and options", returns: "Domain-specific incident-type surface" }
+        { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
-      propertiesText: "Read this page as a domain demo. Its stable contract is owned by the incident helper layer rather than the generic UI family.",
+      options: [
+        { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between item editor rows and read-only viewer rows." },
+        { option: "<code>headerText</code>", default: "<code>\"Incident Details\"</code>", description: "Header title shown above the incident-type list." },
+        { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Reported Incidents\"</code>", description: "Drawer title used by the add-incident-type picker." },
+        { option: "<code>incidentCategories</code>", default: "<code>[]</code>", description: "Incident-category list used to group and filter drawer items." },
+        { option: "<code>resources</code>", default: "<code>[]</code>", description: "Resource-type catalog used by editable incident-type resource rows." },
+        { option: "<code>theme</code>", default: "<code>\"dark\"</code>", description: "Applies the helper theme variant to the list shell and child rows." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class added to the helper root element." },
+        { option: "<code>onOpenDrawer</code>", default: "<code>undefined</code>", description: "Called when the add-incident-type drawer opens." },
+        { option: "<code>onCloseDrawer</code>", default: "<code>undefined</code>", description: "Called when the add-incident-type drawer closes." },
+        { option: "<code>onAddIncidentType</code>", default: "<code>undefined</code>", description: "Receives the normalized incident-type payload selected from the drawer." },
+        { option: "<code>removeIncidentType</code>", default: "<code>undefined</code>", description: "Editable-only removal hook for an incident-type row." },
+        { option: "<code>onFieldChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for field changes within an incident-type row." },
+        { option: "<code>onResourceChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for required-resource quantity changes." }
+      ],
+      events: [
+        { event: "<code>onOpenDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
+        { event: "<code>onCloseDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
+        { event: "<code>onAddIncidentType(payload)</code>", arguments: "normalized incident-type payload selected from the drawer", returns: "<code>void</code>" },
+        { event: "<code>removeIncidentType(payload)</code>", arguments: "incident-type payload being removed", returns: "<code>void</code>" },
+        { event: "<code>onFieldChange(incidentTypeId, fieldKey, value)</code>", arguments: "row id, domain field key, and next value", returns: "<code>void</code>" },
+        { event: "<code>onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded)</code>", arguments: "row id, resource type id, and next quantity", returns: "<code>void</code>" }
+      ],
+      propertiesText: "The instance manages a normalized incident-type <code>list</code>, merged <code>options</code>, and current <code>drawerState</code>. Each incident-type row keeps its own domain fields and resource assignments, while the parent instance exposes aggregate list state through <code>getData()</code> and <code>getState()</code>.",
       methods: [
-        { method: "<code>Domain-specific methods</code>", arguments: "varies by incident helper", returns: "varies" }
+        { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement incident-type data and optional option patch", returns: "<code>void</code>" },
+        { method: "<code>setList(items)</code>", arguments: "replacement incident-type array", returns: "<code>void</code>" },
+        { method: "<code>getData()</code>", arguments: "none", returns: "Current normalized incident-type array" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "List, merged options, and drawer state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
   </script>
