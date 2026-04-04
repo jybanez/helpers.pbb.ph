@@ -79,6 +79,12 @@ Stable namespaced ids:
 - `status`
 - `media`
 - `data`
+- `people`
+- `workflow`
+- `places`
+- `time`
+- `comms`
+- `assets`
 
 ## Render Rules
 
@@ -105,7 +111,14 @@ Stable namespaced ids:
 - `actions.delete`
 - `actions.download`
 - `actions.edit`
+- `actions.more-horizontal`
+- `actions.attach`
+- `actions.export`
+- `actions.refresh`
+- `actions.save`
 - `actions.search`
+- `actions.sort`
+- `actions.view`
 
 ### Navigation
 
@@ -115,6 +128,8 @@ Stable namespaced ids:
 - `navigation.chevron-down`
 - `navigation.arrow-left`
 - `navigation.arrow-right`
+- `navigation.home`
+- `navigation.menu`
 
 ### Status
 
@@ -134,9 +149,53 @@ Stable namespaced ids:
 ### Data
 
 - `data.grid`
+- `data.list`
 - `data.tree`
 - `data.upload`
 - `data.filter`
+
+### People
+
+- `people.user`
+- `people.users`
+
+### Workflow
+
+- `workflow.assigned`
+- `workflow.requested`
+- `workflow.accepted`
+- `workflow.en-route`
+- `workflow.on-scene`
+- `workflow.completed`
+- `workflow.cancelled`
+
+### Places
+
+- `places.pin`
+- `places.route`
+- `places.map`
+- `places.home-base`
+
+### Time
+
+- `time.clock`
+- `time.history`
+- `time.calendar`
+- `time.timer`
+
+### Communication
+
+- `comms.phone`
+- `comms.radio`
+- `comms.message`
+- `comms.signal`
+
+### Assets
+
+- `assets.vehicle`
+- `assets.document`
+- `assets.camera`
+- `assets.clipboard`
 
 ## Non-Goals
 

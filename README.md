@@ -1816,13 +1816,19 @@ Design rule:
 - namespaced stable icon ids
 - `SVGElement` output instead of raw HTML strings
 
-V1 categories:
+Registry categories:
 
 - `actions`
 - `navigation`
 - `status`
 - `media`
 - `data`
+- `people`
+- `workflow`
+- `places`
+- `time`
+- `comms`
+- `assets`
 
 Primary options:
 

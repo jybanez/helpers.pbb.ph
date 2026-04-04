@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.61`
+- Latest documented release: `v0.21.63`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,43 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.63
+
+- Expanded the shared `ui.icons` registry with new reusable icon groups for:
+  - `people`
+  - `workflow`
+  - `places`
+  - `time`
+  - `comms`
+  - `assets`
+- Added new action and navigation icons so shared demos and downstream apps can stop repeating common inline SVG:
+  - `actions.view`
+  - `actions.refresh`
+  - `actions.more-horizontal`
+  - `actions.save`
+  - `actions.attach`
+  - `actions.export`
+  - `actions.sort`
+  - `navigation.home`
+  - `navigation.menu`
+  - `data.list`
+- Added workflow/state icons for incident-focused UIs:
+  - `workflow.assigned`
+  - `workflow.requested`
+  - `workflow.accepted`
+  - `workflow.en-route`
+  - `workflow.on-scene`
+  - `workflow.completed`
+  - `workflow.cancelled`
+- Added new domain-oriented shared icons for location, time, communication, and assets:
+  - `places.pin`, `places.route`, `places.map`, `places.home-base`
+  - `time.clock`, `time.history`, `time.calendar`, `time.timer`
+  - `comms.phone`, `comms.radio`, `comms.message`, `comms.signal`
+  - `assets.vehicle`, `assets.document`, `assets.camera`, `assets.clipboard`
+- Updated `demos/demo.icons.html` catalog copy so the shared icon demo explicitly reflects the expanded registry.
+- Updated icon documentation and regression coverage so the spec, README, and browser test reflect the new categories and icon ids.
+- Bumped the icon revision chain to `0.21.63` so browsers stop serving stale `ui.icons` module graphs after catalog updates.
 
 ### v0.21.61
 

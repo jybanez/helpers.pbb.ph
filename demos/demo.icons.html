@@ -29,7 +29,7 @@
   <script>
     window.demoMeta = {
       title: "Icons",
-      overview: "Shared SVG icon registry with one outline visual language, categorized namespaced ids, and direct SVGElement creation for helper and app use.",
+      overview: "Shared SVG icon registry with one outline visual language, categorized namespaced ids, and direct SVGElement creation for helper and app use across actions, nav, people, and workflow states.",
       useWhen: [
         "Use <code>createIcon(...)</code> when a PBB project needs a shared button, status, or navigation icon without copying inline SVG.",
         "Use it when icon naming, sizing, and stroke style should remain consistent across helper demos and downstream apps."
@@ -38,7 +38,7 @@
         "Do not use it for illustrations or large marketing artwork.",
         "Do not inject arbitrary project-local SVG into the shared registry contract in V1."
       ],
-      description: "The icon registry stays narrow: one outline pack, stable namespaced ids, currentColor inheritance, and plain DOM/SVG output.",
+      description: "The icon registry stays narrow: one outline pack, stable namespaced ids, currentColor inheritance, and plain DOM/SVG output for shared helper and app-shell workflows.",
       defaultSampleCode: `const closeIcon = createIcon(\"actions.close\", {\n  size: 16,\n  title: \"Close\",\n  decorative: false,\n});\n\nbutton.prepend(closeIcon);`,
       constructor: [
         { factory: "<code>createIcon(name, options)</code>", arguments: "icon id and icon options", returns: "<code>SVGElement</code>" }
@@ -70,10 +70,11 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Icons Demo</h1>
-      <p class="muted">Dedicated catalog for the shared outline SVG icon registry.</p>
+      <p class="muted">Dedicated catalog for the shared outline SVG icon registry, including the newer people and workflow icon groups.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Curated Icon Pack</h2>
+      <p class="muted">This catalog is generated from the live registry, so new shared icons appear here automatically as the pack expands.</p>
       <div id="iconGroups" class="icon-groups"></div>
       <pre>const icon = createIcon("actions.search", {
   size: 18,

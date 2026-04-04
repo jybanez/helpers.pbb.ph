@@ -45,9 +45,15 @@
       const categories = listIconCategories();
       const names = listIcons();
 
-      assert(categories.length === 5, "icons registry should expose 5 categories in V1");
+      assert(categories.length === 11, "icons registry should expose 11 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
       assert(names.includes("media.video"), "icons registry should include media.video");
+      assert(names.includes("people.user"), "icons registry should include people.user");
+      assert(names.includes("workflow.requested"), "icons registry should include workflow.requested");
+      assert(names.includes("places.pin"), "icons registry should include places.pin");
+      assert(names.includes("time.clock"), "icons registry should include time.clock");
+      assert(names.includes("comms.phone"), "icons registry should include comms.phone");
+      assert(names.includes("assets.vehicle"), "icons registry should include assets.vehicle");
 
       const closeIcon = createIcon("actions.close", { size: 18, title: "Close", decorative: false });
       host.appendChild(closeIcon);
@@ -62,6 +68,11 @@
       const definition = getIconDefinition("data.grid");
       assert(definition?.category === "data", "getIconDefinition should return the correct category");
       assert(Array.isArray(definition?.nodes) && definition.nodes.length > 0, "getIconDefinition should expose icon nodes");
+
+      const workflow = getIconDefinition("workflow.on-scene");
+      assert(workflow?.category === "workflow", "getIconDefinition should expose workflow icon categories");
+      const asset = getIconDefinition("assets.document");
+      assert(asset?.category === "assets", "getIconDefinition should expose assets icon categories");
 
       let threw = false;
       try {
