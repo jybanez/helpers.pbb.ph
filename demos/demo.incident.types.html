@@ -81,10 +81,10 @@
       ],
       description: "This helper owns the incident-type list shell, add-from-drawer flow, and item editor/viewer switching. The app still owns the incident catalog, reference lookups, and persistence callbacks.",
       sectionSamples: {
-        "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onFieldChange(incidentTypeId, fieldKey, value) {\n    persistFieldChange(incidentTypeId, fieldKey, value);\n  },\n  onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded) {\n    persistResourceChange(incidentTypeId, resourceTypeId, quantityNeeded);\n  },\n});`,
-        "incident.types (viewer)": `incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: false,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n});`
+        "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onFieldChange(incidentTypeId, fieldKey, value) {\n    persistFieldChange(incidentTypeId, fieldKey, value);\n  },\n  onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded) {\n    persistResourceChange(incidentTypeId, resourceTypeId, quantityNeeded);\n  },\n});`,
+        "incident.types (viewer)": `incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: false,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n});`
       },
-      defaultSampleCode: `const listApi = incidentTypes(host, incidentTypesData, {\n  editable: true,\n  incidentCategories,\n  resources: resourceTypes,\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n});`,
+      defaultSampleCode: `const listApi = incidentTypes(host, incidentTypesData, {\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n});`,
       constructor: [
         { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
@@ -92,6 +92,8 @@
         { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between item editor rows and read-only viewer rows." },
         { option: "<code>headerText</code>", default: "<code>\"Incident Details\"</code>", description: "Header title shown above the incident-type list." },
         { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Reported Incidents\"</code>", description: "Drawer title used by the add-incident-type picker." },
+        { option: "<code>lookups</code>", default: "<code>{}</code>", description: "Shared incident lookup bag. The helper reads <code>lookups.incidentTypes</code>, <code>lookups.incidentCategories</code>, and <code>lookups.resourceTypes</code> as fallback catalogs when direct option arrays are omitted." },
+        { option: "<code>incidentTypes</code>", default: "<code>[]</code>", description: "Direct incident-type catalog for the add-from-drawer picker. When omitted, the helper falls back to <code>lookups.incidentTypes</code>." },
         { option: "<code>incidentCategories</code>", default: "<code>[]</code>", description: "Incident-category list used to group and filter drawer items." },
         { option: "<code>resources</code>", default: "<code>[]</code>", description: "Resource-type catalog used by editable incident-type resource rows." },
         { option: "<code>theme</code>", default: "<code>\"dark\"</code>", description: "Applies the helper theme variant to the list shell and child rows." },
