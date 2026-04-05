@@ -483,8 +483,13 @@
     getResourceTrigger()?.click();
     await wait(80);
     const floatingTreeMenu = document.querySelector(".ui-tree-select-menu");
+    const modalRoot = document.querySelector(".ui-modal-root");
     assert(Boolean(floatingTreeMenu), "ui.treeSelect should render an open menu");
     assert(floatingTreeMenu?.parentElement === document.body, "ui.treeSelect menu should mount at document.body to avoid modal clipping");
+    assert(
+      Number.parseInt(window.getComputedStyle(floatingTreeMenu).zIndex || "0", 10) > Number.parseInt(window.getComputedStyle(modalRoot).zIndex || "0", 10),
+      "ui.treeSelect menu should layer above the modal root z-index",
+    );
 
     const resourceSearch = document.querySelector(".ui-tree-select-search");
     resourceSearch.value = "ambu";

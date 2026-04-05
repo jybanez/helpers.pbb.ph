@@ -251,7 +251,7 @@
       <section class="panel intro">
         <span class="eyebrow">Forms</span>
         <h1>Schema Form Modal</h1>
-        <p>Shared modal-form shell for short operational workflows. This page focuses on the base helper contract plus the PBB HQ acceptance-proof mappings for hub add/edit and uplink update flows.</p>
+        <p>Shared modal-form shell for short operational workflows. This page focuses on the base helper contract plus the PBB HQ acceptance-proof mappings for hub add/edit, uplink update, and grouped resource-picking flows.</p>
       </section>
 
       <section class="demo-stack-list">
@@ -432,6 +432,40 @@ const payload = {
             <pre class="demo-log" data-log-prefix="formModal.addUplink">No Add Uplink events yet.</pre>
           </div>
         </article>
+
+        <article class="demo-stack">
+          <div class="demo-stack__row demo-stack__row--live">
+            <div class="demo-stack__header">
+              <div>
+                <h2>Resource Tree Select</h2>
+                <p>Hosted <code>ui.treeSelect</code> for grouped resource catalogs where flat labels become noisy. Search preserves parent context and the payload keeps the selected leaf value.</p>
+              </div>
+              <button id="resourceTreeDemoBtn" class="ui-button ui-button-primary" type="button">Open Resource Picker Style</button>
+            </div>
+            <div class="demo-stack__meta">
+              <span class="demo-chip">ui.treeSelect</span>
+              <span class="demo-chip">parent-context search</span>
+              <span class="demo-chip">single-select</span>
+              <span class="demo-chip">acceptance target</span>
+            </div>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-code">{
+  type: "ui.treeSelect",
+  name: "resource_type_id",
+  searchable: true,
+  options: resourceTreeOptions,
+}
+
+const payload = {
+  ...assignmentState,
+  resource_type_id: values.resource_type_id,
+};</pre>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-log" data-log-prefix="formModal.resourceTree">No Resource Tree Select events yet.</pre>
+          </div>
+        </article>
       </section>
     </section>
 
@@ -470,7 +504,7 @@ const payload = {
 
       <section class="panel content-section" id="description">
         <h2>Description</h2>
-        <p><code>createFormModal(...)</code> is the shared direction for modal forms in PBB projects. It keeps the layout intentionally narrow: one or two items per row, helper-owned field rendering, and a stable submit lifecycle. Presets like login, re-auth, status update, and reason-required compose over it instead of bypassing it.</p>
+        <p><code>createFormModal(...)</code> is the shared direction for modal forms in PBB projects. It keeps the layout intentionally narrow: one or two items per row, helper-owned field rendering, and a stable submit lifecycle. Presets like login, re-auth, status update, and reason-required compose over it instead of bypassing it. Hosted helper fields such as <code>ui.select</code> and <code>ui.treeSelect</code> stay within the same contract instead of introducing app-local picker systems.</p>
       </section>
 
       <section class="panel content-section" id="constructor">
@@ -1025,12 +1059,94 @@ const payload = {
       writeLog(`${source}.open`, { ok: true });
     }
 
+    function openResourceTreeStyleModal(source = "formModal.resourceTree") {
+      const formModal = createFormModal({
+        title: "Assign Team Resource",
+        size: "md",
+        busyMessage: "Saving resource assignment...",
+        submitLabel: "Save Resource",
+        rows: [
+          [{ type: "text", content: "Grouped resource pickers now stay tree-aware inside the shared form-modal contract. Search keeps parent context visible so teams do not need flattened labels like Medical / Ambulance." }],
+          [{
+            type: "ui.treeSelect",
+            name: "resource_type_id",
+            label: "Resource Type",
+            placeholder: "Search grouped resources...",
+            searchable: true,
+            clearable: true,
+            options: [
+              {
+                id: "medical",
+                label: "Medical",
+                children: [
+                  { id: "ambulance", label: "Ambulance" },
+                  { id: "triage_nurse", label: "Triage Nurse" },
+                  { id: "medical_kit", label: "Medical Kit" },
+                ],
+              },
+              {
+                id: "fire_response",
+                label: "Fire Response",
+                children: [
+                  { id: "fire_engine", label: "Fire Engine" },
+                  { id: "rescue_truck", label: "Rescue Truck" },
+                  { id: "foam_unit", label: "Foam Unit" },
+                ],
+              },
+              {
+                id: "utilities",
+                label: "Utilities",
+                children: [
+                  { id: "power_crew", label: "Power Crew" },
+                  { id: "water_district", label: "Water District" },
+                ],
+              },
+            ],
+            required: true,
+            span: 2,
+          }],
+        ],
+        async onSubmit(values, ctx) {
+          const payload = {
+            assignment_id: 41,
+            team_id: 7,
+            incident_id: 16,
+            resource_type_id: values.resource_type_id || null,
+          };
+          writeLog(`${source}.submit.begin`, { values, payload });
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          if (!payload.resource_type_id) {
+            ctx.setErrors({ resource_type_id: "Select one resource type." });
+            writeLog(`${source}.submit.failed`, { reason: "missing-resource-type", payload });
+            return false;
+          }
+          if (payload.resource_type_id === "ambulance") {
+            const mapped = ctx.applyApiErrors({
+              errors: {
+                resource_type_id: ["Ambulance is already assigned to this team."],
+              },
+            });
+            writeLog(`${source}.submit.mapped`, mapped);
+            return false;
+          }
+          writeLog(`${source}.submit.success`, payload);
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, { ok: true });
+    }
+
     document.getElementById("loginDemoBtn").addEventListener("click", () => openLoginFormModal());
     document.getElementById("accountActionsDemoBtn").addEventListener("click", () => openAccountFooterActionsModal());
     document.getElementById("hubCreateDemoBtn").addEventListener("click", () => openHubFormModal("geo-create", "formModal.hub.geoCreate"));
     document.getElementById("hubEditDemoBtn").addEventListener("click", () => openHubFormModal("other-edit", "formModal.hub.otherEdit"));
     document.getElementById("apiErrorsDemoBtn").addEventListener("click", () => openApiErrorMappingModal());
     document.getElementById("uplinkDemoBtn").addEventListener("click", () => openAddUplinkStyleModal());
+    document.getElementById("resourceTreeDemoBtn").addEventListener("click", () => openResourceTreeStyleModal());
   </script>
 </body>
 </html>
