@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.61";
-import { createPasswordField } from "./ui.password.js";
+import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [

@@ -34,6 +34,11 @@ export const ICON_DEFINITIONS = {
     path("M2 12s3.5-6 10-6 10 6-3.5 6-10 6S2 12 2 12Z"),
     circle(12, 12, 2.5),
   ]),
+  "actions.hide": icon("actions", [
+    path("M2 12s3.5-6 10-6 10 6-3.5 6-10 6S2 12 2 12Z"),
+    circle(12, 12, 2.5),
+    line(5, 19, 19, 5),
+  ]),
   "actions.refresh": icon("actions", [
     path("M21 12a9 9 0 1 1-3-6.7"),
     path("M21 3v6h-6"),

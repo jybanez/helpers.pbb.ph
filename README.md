@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.61`
+Latest documented release: `v0.21.64`
 
 This repository currently covers **7 helpers**:
 
@@ -403,6 +403,9 @@ Application integrations should use the registry loader.
 - `uiLoader` is the public app-loading contract.
 - App code should call components by registry key.
 - Direct path imports are for internal library work only and should be avoided in consuming apps.
+- `uiLoader.loadManyGroup(...)` group names such as `core-shell`, `forms`, `communication`, `data`, `media`, `workflow`, and `incident` are retained as backward-compatible preload bundles.
+- Treat loader groups as runtime loading bundles, not as the public documentation taxonomy.
+- The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.
 - Prefer shared styling contracts before adding project-local CSS overrides.
@@ -436,25 +439,26 @@ Application integrations should use the registry loader.
   - shell/layout primitives: `.ui-panel`, `.ui-surface`, `.ui-field`, `.ui-label`, `.ui-badge`, `.ui-eyebrow`, `.ui-shell-header`, `.ui-shell-search`
 - If the same override appears more than once in a consuming app, it is a candidate to move back into the shared library instead of remaining project-local.
 
-Recommended keys:
+Public component families:
 
-- UI utilities:
-  - `ui.modal`
-  - `ui.dialog`
-  - `ui.toast`
-- `ui.media.viewer`
-- `ui.grid`
-- `ui.hierarchy.map`
-- `ui.timeline`
-  - `ui.file.uploader`
+- Modal and feedback:
+  - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`
+- Forms and input:
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
+- Data, timeline, and inspection:
+  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- Media and playback:
+  - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.callSession`
+- Navigation and command surfaces:
+  - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`, `ui.menu`, `ui.dropdown`, `ui.dropup`, `ui.command.palette`, `ui.tabs`, `ui.strips`
+- Workflow and layout:
+  - `ui.drawer`, `ui.kanban`, `ui.stepper`, `ui.splitter`
+- Workspace and embedding:
+  - `ui.window`, `ui.iframe.host`, `ui.workspace.bridge`
+- Shared foundations:
+  - `ui.icons`, `ui.dom`, `ui.events`, `ui.search`
 - Incident helpers:
-  - `incident.base`
-  - `incident.teams.assignments`
-  - `incident.teams.assignments.editor`
-  - `incident.teams.assignments.viewer`
-  - `incident.types`
-  - `incident.types.details.editor`
-  - `incident.types.details.viewer`
+  - `incident.base`, `incident.teams.assignments`, `incident.teams.assignments.editor`, `incident.teams.assignments.viewer`, `incident.types`, `incident.types.details.editor`, `incident.types.details.viewer`
 
 Loader example:
 
@@ -1657,8 +1661,8 @@ Options:
 | `disabled` | `boolean` | `false` | Disables both the input and toggle button. |
 | `readonly` | `boolean` | `false` | Keeps the value visible/toggleable but non-editable. |
 | `ariaLabel` | `string` | `"Password"` | Direct aria-label for unlabeled standalone usage. |
-| `showLabel` | `string` | `"Show"` | Toggle label in hidden state. |
-| `hideLabel` | `string` | `"Hide"` | Toggle label in visible state. |
+| `showLabel` | `string` | `"Show password"` | Accessible label for the hidden-state icon toggle. |
+| `hideLabel` | `string` | `"Hide password"` | Accessible label for the visible-state icon toggle. |
 | `onChange` | `function` | `null` | Called as `onChange(value, api)` when the value changes. |
 | `onToggle` | `function` | `null` | Called as `onToggle(visible, api)` when visibility changes. |
 

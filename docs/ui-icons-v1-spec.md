@@ -111,6 +111,7 @@ Stable namespaced ids:
 - `actions.delete`
 - `actions.download`
 - `actions.edit`
+- `actions.hide`
 - `actions.more-horizontal`
 - `actions.attach`
 - `actions.export`

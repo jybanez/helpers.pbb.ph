@@ -1,4 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
+import { createIcon } from "./ui.icons.js?v=0.21.64";
 
 const DEFAULT_OPTIONS = {
   value: "",
@@ -11,8 +12,8 @@ const DEFAULT_OPTIONS = {
   disabled: false,
   readonly: false,
   ariaLabel: "Password",
-  showLabel: "Show",
-  hideLabel: "Hide",
+  showLabel: "Show password",
+  hideLabel: "Hide password",
   onChange: null,
   onToggle: null,
   describedBy: "",
@@ -44,7 +45,6 @@ export function createPasswordField(container, options = {}) {
   });
   const toggle = createElement("button", {
     className: "ui-password-toggle",
-    text: currentOptions.visible ? currentOptions.hideLabel : currentOptions.showLabel,
     attrs: {
       type: "button",
       "aria-label": currentOptions.visible ? currentOptions.hideLabel : currentOptions.showLabel,
@@ -53,13 +53,16 @@ export function createPasswordField(container, options = {}) {
   });
 
   function syncVisualState() {
+    const toggleLabel = currentOptions.visible ? currentOptions.hideLabel : currentOptions.showLabel;
     input.type = currentOptions.visible ? "text" : "password";
     input.value = currentOptions.value;
     input.disabled = currentOptions.disabled;
     input.readOnly = currentOptions.readonly;
-    toggle.textContent = currentOptions.visible ? currentOptions.hideLabel : currentOptions.showLabel;
-    toggle.setAttribute("aria-label", currentOptions.visible ? currentOptions.hideLabel : currentOptions.showLabel);
+    clearNode(toggle);
+    toggle.appendChild(createToggleIcon(currentOptions.visible));
+    toggle.setAttribute("aria-label", toggleLabel);
     toggle.setAttribute("aria-pressed", currentOptions.visible ? "true" : "false");
+    toggle.setAttribute("title", toggleLabel);
     toggle.disabled = currentOptions.disabled;
     root.classList.toggle("is-visible", currentOptions.visible);
     root.classList.toggle("is-disabled", currentOptions.disabled);
@@ -176,6 +179,14 @@ export function createPasswordField(container, options = {}) {
 
   container.__uiPasswordInstance = api;
   return api;
+}
+
+function createToggleIcon(visible) {
+  return createIcon(visible ? "actions.hide" : "actions.view", {
+    size: 18,
+    decorative: true,
+    className: "ui-password-toggle-icon",
+  });
 }
 
 function normalizeOptions(options = {}) {

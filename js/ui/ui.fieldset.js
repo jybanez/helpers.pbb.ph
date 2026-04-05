@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createSelect } from "./ui.select.js";
-import { createPasswordField } from "./ui.password.js";
+import { createPasswordField } from "./ui.password.js?v=0.21.64";
 
 const DEFAULT_OPTIONS = {
   legend: "",

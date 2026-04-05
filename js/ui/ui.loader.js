@@ -1,9 +1,10 @@
 const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
-const UI_OVERLAY_ROUTING_REV = "0.21.61";
+const UI_OVERLAY_ROUTING_REV = "0.21.64";
 const UI_AUDIO_REV = "0.21.60";
-const UI_ICONS_REV = "0.21.63";
+const UI_ICONS_REV = "0.21.64";
+const UI_PASSWORD_REV = "0.21.64";
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
@@ -127,7 +128,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createFormModal",
   },
   "ui.password": {
-    js: "./ui.password.js",
+    js: `./ui.password.js?v=${UI_PASSWORD_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.password.css"],
     deps: [],
     export: "createPasswordField",
@@ -187,7 +188,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createChangePasswordFormModal",
   },
   "ui.fieldset": {
-    js: "./ui.fieldset.js",
+    js: `./ui.fieldset.js?v=${UI_PASSWORD_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.fieldset.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
     deps: ["ui.select", "ui.password"],
     export: "createFieldset",

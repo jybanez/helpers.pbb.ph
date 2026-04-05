@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.63`
+- Latest documented release: `v0.21.64`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,14 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.64
+
+- Updated the shared password-field helper to use icon-based show/hide toggles instead of visible `Show` / `Hide` button text.
+- Added `actions.hide` to `ui.icons` so password fields can pair the existing view glyph with a shared hidden-state eye-slash icon.
+- Tightened `ui.password` styling for the new compact icon toggle while preserving accessible labels through `showLabel` / `hideLabel`.
+- Bumped the password, icon, and overlay revision chains to `0.21.64` so login, re-auth, change-password, and standalone password-field demos stop serving stale cached modules.
+- Updated password and icon regression coverage plus the password demo/README copy to reflect the icon-based toggle behavior.
 
 ### v0.21.63
 
