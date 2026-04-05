@@ -524,10 +524,15 @@ export function createTreeGrid(container, options = {}) {
   }
 
   function renderStandardCell(column, entry, searchState) {
-    const content = typeof column.render === "function"
-      ? column.render(entry.row?.[column.key], entry.row, entry)
-      : resolveColumnValue(column, entry);
-    if (content instanceof HTMLElement) {
+    const value = entry.row?.[column.key];
+    const renderCell =
+      typeof column.renderCell === "function"
+        ? () => column.renderCell({ row: entry.row, value, key: column.key, column, entry })
+        : typeof column.render === "function"
+          ? () => column.render(value, entry.row, entry)
+          : null;
+    const content = renderCell ? renderCell() : resolveColumnValue(column, entry);
+    if (isDomNode(content)) {
       return content;
     }
     return renderHighlightedText(content == null ? "" : String(content), "ui-tree-grid-cell-text", searchState);
@@ -1001,6 +1006,10 @@ function buildCellClassName(column, entry) {
 
 function isTreeColumn(column) {
   return Boolean(column?.tree);
+}
+
+function isDomNode(value) {
+  return Boolean(value && typeof value === "object" && typeof value.nodeType === "number");
 }
 
 function escapeSelector(value) {

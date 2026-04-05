@@ -2899,23 +2899,28 @@ Options:
 
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
+| `className` | `string` | `""` | no | Extra class name added to the root grid element. |
 | `mode` | `"local" \| "remote"` | `"local"` | no | Chooses internal vs app-owned querying behavior. |
 | `columns` | `Column[]` | `[]` | yes | Column definitions. |
 | `rowKey` | `string \| ((row, index) => key)` | `"id"` | no | Stable row identifier. |
 | `selectable` | `"none" \| "single" \| "multi"` | `"none"` | no | Selection mode. |
 | `selectedKeys` | `Array<string \| number>` | `[]` | no | Initial selected rows. |
-| `enableSort` | `boolean` | `false` | no | Enables sorting UI and state. |
-| `enableSearch` | `boolean` | `false` | no | Enables search UI and query state. |
-| `enablePagination` | `boolean` | `false` | no | Enables paging UI and state. |
+| `enableSort` | `boolean` | mode-dependent | no | Defaults to `true` in `local` mode and `false` in `remote` mode. |
+| `enableSearch` | `boolean` | mode-dependent | no | Defaults to `true` in `local` mode and `false` in `remote` mode. |
+| `enablePagination` | `boolean` | mode-dependent | no | Defaults to `true` in `local` mode and `false` in `remote` mode. |
 | `enableColumnResize` | `boolean` | `false` | no | Enables resizable columns. |
 | `enableVirtualization` | `boolean` | `false` | no | Enables row virtualization for large sets. |
 | `minColumnWidth` | `number` | `72` | no | Minimum resizable column width. |
 | `columnWidths` | `object` | `{}` | no | Per-column width overrides keyed by `column.key`. |
+| `chrome` | `boolean` | `true` | no | Removes the outer helper shell when `false`. |
 | `wrapCellContent` | `boolean` | `true` | no | Global cell wrapping behavior. |
 | `search` | `string` | `""` | no | Initial search term. |
-| `searchPlaceholder` | `string` | `"Search"` | no | Search field placeholder. |
+| `searchPlaceholder` | `string` | `"Search..."` | no | Search field placeholder. |
+| `filters` | `object` | `{}` | no | Additional query metadata preserved in `getQuery()` and `onQueryChange(...)`. |
+| `sortBy` | `string` | `""` | no | Initial sort column key. |
+| `sortDir` | `"asc" \| "desc" \| ""` | `""` | no | Initial sort direction. |
 | `page` | `number` | `1` | no | Current page. |
-| `pageSize` | `number` | `20` | no | Rows per page. |
+| `pageSize` | `number` | `10` | no | Rows per page. |
 | `pageSizeOptions` | `number[]` | component default | no | Page-size choices. |
 | `totalRows` | `number` | local row count | no | Remote-mode total row count. |
 | `virtualRowHeight` | `number` | `40` | no | Virtualized row height. |
@@ -2923,7 +2928,7 @@ Options:
 | `virtualThreshold` | `number` | `80` | no | Row-count threshold before virtualization becomes active. |
 | `loading` | `boolean` | `false` | no | Loading state. |
 | `errorText` | `string` | `""` | no | Error state copy. |
-| `emptyText` | `string` | `"No rows."` | no | Empty state copy. |
+| `emptyText` | `string` | `"No data available."` | no | Empty state copy. |
 
 Column definition:
 
@@ -2934,9 +2939,11 @@ Column definition:
 | `width` | `number \| string` | auto | Initial width. |
 | `align` | `"left" \| "center" \| "right"` | `"left"` | Cell alignment. |
 | `sortable` | `boolean` | inherited | Enables sorting for the column. |
+| `resizable` | `boolean` | `true` | Enables column resizing when grid-level resizing is on. |
 | `wrap` | `boolean` | inherited | Per-column wrapping override. |
 | `format` | `(value, row) => string` | `null` | Simple text formatting hook. |
-| `renderCell` | `({ row, value, key, column }) => any` | `null` | Full custom cell rendering hook. |
+| `renderCell` | `({ row, value, key, column, index }) => any` | `null` | Primary custom cell rendering hook. DOM nodes are mounted directly. |
+| `render` | `(value, row, meta) => any` | `null` | Legacy custom cell alias accepted for compatibility. |
 
 Events / callbacks:
 
@@ -2957,8 +2964,14 @@ Returned API:
 | `getQuery` | none | `object` | Returns current grid query. |
 | `getSelectedRows` | none | `array` | Returns selected rows. |
 | `clearSelection` | none | `void` | Clears selected rows. |
-| `getState` | none | `object` | Returns grid state snapshot. |
+| `getState` | none | `object` | Returns `{ mode, query, selectedKeys, rows, options, columnWidths }`. |
 | `destroy` | none | `void` | Removes DOM and listeners. |
+
+Behavior notes:
+
+- `local` mode enables search, sort, and pagination by default unless explicitly overridden.
+- `remote` mode leaves those controls off by default and expects the app to own fetching via `onQueryChange(...)`.
+- Prefer `renderCell(...)` for new custom cells; `render(...)` remains supported for backward compatibility.
 
 Example (remote mode with optional features enabled):
 
@@ -3004,48 +3017,87 @@ Options:
 
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
+| `className` | `string` | `""` | no | Extra class name added to the root tree-grid element. |
 | `columns` | `Column[]` | `[]` | yes | Column definitions for the tabular layout. |
 | `rows` | `TreeRow[]` | `[]` | no | Initial tree rows. |
-| `rowKey` | `string \| ((row) => key)` | `"id"` | no | Stable row identifier. |
-| `expandAll` | `boolean` | `false` | no | Starts with all loaded nodes expanded. |
+| `rowKey` | `string` | `"id"` | no | Stable row identifier when `getRowId` is not provided. |
+| `getRowId` | `(row) => key` | `null` | no | Explicit row-id resolver. |
+| `getChildren` | `(row) => TreeRow[]` | `null` | no | Explicit child resolver. |
+| `indent` | `number` | `18` | no | Indentation size for tree depth in the first column. |
+| `defaultExpanded` | `boolean` | `false` | no | Starts with all loaded parent rows expanded. |
+| `expandedRowIds` | `string[]` | `[]` | no | Explicit initial expanded row ids. |
+| `selectable` | `"none" \| "single" \| "multi"` | `"none"` | no | Selection mode. |
+| `selectedRowIds` | `string[]` | `[]` | no | Explicit initial selected row ids. |
 | `lazyLoadChildren` | `(node) => Promise<TreeRow[]>` | `null` | no | Loads children on demand for nodes with `hasChildren`. |
+| `onLoadChildren` | `(row, children, state) => void` | `null` | no | Called after a lazy child load succeeds. |
 | `enableColumnResize` | `boolean` | `false` | no | Enables column resize behavior. |
+| `minColumnWidth` | `number` | `72` | no | Minimum resize width. |
+| `columnWidths` | `object` | `{}` | no | Per-column width overrides keyed by `column.key`. |
 | `enableVirtualization` | `boolean` | `false` | no | Enables fixed-row-height virtualization. |
-| `virtualRowHeight` | `number` | component default | no | Virtualized row height. |
+| `virtualRowHeight` | `number` | `40` | no | Virtualized row height. |
+| `virtualOverscan` | `number` | `8` | no | Extra virtual rows rendered outside the viewport. |
+| `virtualThreshold` | `number` | `120` | no | Visible-row threshold before virtualization activates. |
 | `searchTerm` | `string` | `""` | no | Current tree-aware search term. |
-| `searchFields` | `string[]` | `["label"]` | no | Fields included in search matching. |
+| `searchFields` | `string[]` | all column keys | no | Fields included in search matching. |
 | `autoExpandMatches` | `boolean` | `true` | no | Temporarily expands matching ancestor paths. |
 | `highlightMatches` | `boolean` | `true` | no | Highlights all occurrences in rendered text. |
-| `emptyText` | `string` | `"No rows."` | no | Normal empty state copy. |
+| `emptyText` | `string` | `"No data available."` | no | Normal empty state copy. |
 | `emptySearchText` | `string` | `"No matching results."` | no | Empty state while search is active. |
 | `chrome` | `boolean` | `true` | no | Removes outer shell when `false`. |
+| `ariaLabel` | `string` | `"Tree grid"` | no | Table-level accessible label. |
+
+Column definition:
+
+| Property | Type | Default | Description |
+|---|---|---:|---|
+| `key` | `string` | - | Required stable column id. |
+| `label` | `string` | - | Header label. |
+| `width` | `number \| string` | auto | Initial width. |
+| `tree` | `boolean` | first column if omitted | Marks the hierarchy column. Only one column should declare `tree: true`. |
+| `align` | `"left" \| "center" \| "right"` | `"left"` | Cell alignment for non-tree columns. |
+| `wrap` | `boolean` | `false` | Per-column wrapping override. |
+| `resizable` | `boolean` | `true` | Enables resizing when tree-grid-level resizing is on. |
+| `className` | `string` | `""` | Extra class name added to each cell in the column. |
+| `icon` | `(row, entry) => Node \| string` | `null` | Optional icon renderer for the tree column. |
+| `renderCell` | `({ row, value, key, column, entry }) => any` | `null` | Primary custom renderer for non-tree cells. DOM nodes are mounted directly. |
+| `render` | `(value, row, entry) => any` | `null` | Legacy custom renderer alias accepted for compatibility. |
 
 Events / callbacks:
 
 | Callback | Payload | Returns | Description |
 |---|---|---|---|
-| `onRowClick` | `row, meta` | `void` | Fires when a visible tree row is clicked. |
-| `onToggle` | `row, expanded` | `void` | Fires on expand/collapse. |
-| `onSelectionChange` | `selectedRows, selectedKeys` | `void` | Fires when selection changes. |
+| `onRowClick` | `{ row, rowId, depth, entry, event }` | `void` | Fires when a visible tree row is clicked. |
+| `onToggle` | `{ row, rowId, expanded, depth }` | `void` | Fires on expand/collapse. |
+| `onSelectionChange` | `{ selectedRowIds, selectedRows }` | `void` | Fires when selection changes. |
+| `onLoadChildren` | `(row, children, state)` | `void` | Fires after lazy child loading completes. |
 | `onColumnResize` | `{ key, width, columnWidths }` | `void` | Fires after a resize interaction. |
 
 Returned API:
 
 | Method | Arguments | Returns | Description |
 |---|---|---|---|
-| `update` | `nextOptions?` | `void` | Updates tree-grid options/state. |
+| `getData` | none | `TreeRow[]` | Returns current normalized tree rows. |
+| `getVisibleRows` | none | `array` | Returns the current flattened visible row entries. |
+| `getExpandedRowIds` | none | `string[]` | Returns current expanded row ids. |
+| `setExpanded` | `rowId, expanded` | `Promise<boolean>` | Sets one row's expanded state, loading children first when needed. |
+| `loadChildren` | `rowId` | `Promise<TreeRow[]>` | Loads lazy children for one row if applicable. |
+| `refreshChildren` | `rowId` | `Promise<TreeRow[]>` | Forces a lazy child reload for one row. |
+| `toggleRow` | `rowId` | `Promise<boolean>` | Toggles one row's expanded state. |
 | `setRows` | `rows[]` | `void` | Replaces current tree data. |
+| `update` | `nextOptions?` | `void` | Updates tree-grid options/state. |
 | `setSearchTerm` | `term` | `void` | Applies tree-aware search term. |
 | `clearSearch` | none | `void` | Clears current search state. |
 | `expandAll` | none | `void` | Expands loaded nodes. |
 | `collapseAll` | none | `void` | Collapses all nodes. |
-| `getState` | none | `object` | Returns tree-grid state, including `search`. |
+| `getState` | none | `object` | Returns `{ rows, visibleRows, expandedRowIds, selectedRowIds, search, options }`. |
 | `destroy` | none | `void` | Removes DOM and listeners. |
 
 Behavior notes:
 
 - Search is tree-aware rather than flat filtering.
 - Matching descendants keep their ancestor path visible.
+- Prefer `renderCell(...)` for new non-tree custom cells; `render(...)` remains supported for backward compatibility.
+- If no column declares `tree: true`, the helper promotes the first column automatically.
 - `getState().search` includes:
   - `active`
   - `term`

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grid Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.grid.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      max-width: 960px;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createGrid } from "../js/ui/ui.grid.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const rows = [
+      { id: 16, status: "resolved", caller: "Maria Santos" },
+      { id: 15, status: "active", caller: "Juan Dela Cruz" },
+    ];
+    let renderClicks = 0;
+    let renderCellClicks = 0;
+
+    const grid = createGrid(document.getElementById("host"), rows, {
+      mode: "local",
+      enablePagination: false,
+      enableSearch: false,
+      enableSort: false,
+      columns: [
+        { key: "id", label: "ID", width: "72px" },
+        { key: "caller", label: "Caller" },
+        {
+          key: "actions",
+          label: "Actions",
+          width: "140px",
+          render(_value, row) {
+            const wrap = document.createElement("div");
+            wrap.className = "ui-cell-actions";
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "ui-button ui-button-borderless ui-cell-action";
+            button.textContent = `View ${row.id}`;
+            button.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              renderClicks += 1;
+            });
+            wrap.appendChild(button);
+            return wrap;
+          },
+        },
+        {
+          key: "statusAction",
+          label: "Status Action",
+          width: "160px",
+          renderCell({ row }) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "ui-button ui-button-borderless ui-cell-action";
+            button.textContent = `Ping ${row.status}`;
+            button.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              renderCellClicks += 1;
+            });
+            return button;
+          },
+        },
+      ],
+    });
+
+    const actionButtons = document.querySelectorAll("#host tbody .ui-cell-actions .ui-cell-action");
+    assert(actionButtons.length === rows.length, "column.render should mount one action button per row");
+    actionButtons[0]?.click();
+    assert(renderClicks === 1, "column.render action button should stay interactive");
+
+    const renderCellButtons = document.querySelectorAll("#host tbody td:nth-child(4) .ui-cell-action");
+    assert(renderCellButtons.length === rows.length, "column.renderCell should still mount one action button per row");
+    renderCellButtons[0]?.click();
+    assert(renderCellClicks === 1, "column.renderCell action button should stay interactive");
+
+    const firstActionCell = document.querySelector("#host tbody tr td:nth-child(3)");
+    assert(firstActionCell && firstActionCell.textContent.includes("View 16"), "rendered action cell should contain the custom button label");
+
+    grid.destroy();
+    assert(document.querySelector("#host .ui-grid") === null, "destroy should remove the grid DOM");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

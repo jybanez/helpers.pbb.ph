@@ -80,7 +80,17 @@
       defaultExpanded: true,
       columns: [
         { key: "label", label: "Name", tree: true, width: "320px" },
-        { key: "status", label: "Status", width: "140px" },
+        {
+          key: "status",
+          label: "Status",
+          width: "140px",
+          renderCell({ row, value }) {
+            const chip = document.createElement("span");
+            chip.className = "tree-grid-status-chip";
+            chip.textContent = `${row.id}:${value}`;
+            return chip;
+          },
+        },
         { key: "location", label: "Location", width: "220px" },
         { key: "createdAt", label: "Created", width: "180px" },
       ],
@@ -88,6 +98,8 @@
 
     assert(grid.getVisibleRows().length === 5, "initial visible rows should be 5");
     assert(document.querySelectorAll("#host tbody tr[data-row-id]").length === 5, "initial DOM row count should be 5");
+    assert(document.querySelectorAll("#host .tree-grid-status-chip").length === 5, "renderCell should mount one custom status chip per visible row");
+    assert(document.querySelector("#host .tree-grid-status-chip")?.textContent.includes("incident-16:active"), "renderCell should receive row and value context");
 
     grid.setSearchTerm("alpha");
     let state = grid.getState();

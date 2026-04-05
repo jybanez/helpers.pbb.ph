@@ -110,32 +110,57 @@
         "Do not use it for purely visual relationship reading; use <code>createHierarchyMap(...)</code>."
       ],
       description: "This demo shows the narrow space where tree data still needs grid behavior. It covers standard tree-grid rendering, lazy child loading, and a chrome-less variation without turning the helper into a generic graph surface.",
-      defaultSampleCode: `const treeGrid = createTreeGrid(host, {\n  rows,\n  columns,\n  search: true,\n  collapsible: true,\n});`,
+      defaultSampleCode: `const treeGrid = createTreeGrid(host, {\n  rows,\n  columns,\n  defaultExpanded: true,\n  selectable: "single",\n});`,
       sectionSamples: {
-        "lazy tree grid (chrome-less)": `createTreeGrid(host, {\n  rows,\n  chrome: false,\n  lazyLoadChildren(node) {\n    return fetchChildren(node.id);\n  },\n});`,
-        "large tree grid (virtualized)": `createTreeGrid(host, {\n  rows: largeRows,\n  columns,\n  virtualize: true,\n  rowHeight: 42,\n});`
+        "lazy tree grid (chrome-less)": `createTreeGrid(host, {\n  rows,\n  chrome: false,\n  lazyLoadChildren(row) {\n    return fetchChildren(row.id);\n  },\n});`,
+        "large tree grid (virtualized)": `createTreeGrid(host, {\n  rows: largeRows,\n  columns,\n  enableVirtualization: true,\n  virtualRowHeight: 42,\n});`
       },
       constructor: [
         { factory: "<code>createTreeGrid(container, options)</code>", arguments: "<code>container</code>, tree-grid <code>options</code>", returns: "Tree-grid instance with expand/search/data lifecycle methods" }
       ],
       options: [
-        { option: "<code>rows</code>", default: "<code>[]</code>", description: "Tree row payload with nested children or lazy-child markers." },
-        { option: "<code>columns</code>", default: "<code>[]</code>", description: "Aligned non-tree columns rendered after the hierarchy column." },
-        { option: "<code>search</code>", default: "<code>false</code>", description: "Enables tree-aware search and branch reveal behavior.", values: ["true", "false"] },
+        { option: "<code>rows</code> / <code>columns</code>", default: "<code>[]</code> / <code>[]</code>", description: "Tree row payload plus tabular column definitions. If no column declares <code>tree: true</code>, the helper promotes the first column automatically." },
+        { option: "<code>rowKey</code> / <code>getRowId</code>", default: "<code>\"id\"</code> / <code>null</code>", description: "Stable row identifier field or explicit id resolver." },
+        { option: "<code>getChildren</code> / <code>indent</code>", default: "<code>null</code> / <code>18</code>", description: "Custom child resolver plus first-column indentation size." },
+        { option: "<code>defaultExpanded</code> / <code>expandedRowIds</code>", default: "<code>false</code> / <code>[]</code>", description: "Initial expansion behavior for loaded rows." },
+        { option: "<code>selectable</code> / <code>selectedRowIds</code>", default: "<code>\"none\"</code> / <code>[]</code>", description: "Selection mode and initial selected row ids." },
+        { option: "<code>enableColumnResize</code>", default: "<code>false</code>", description: "Adds resize handles and emits normalized column-width updates." },
+        { option: "<code>enableVirtualization</code>", default: "<code>false</code>", description: "Enables fixed-row-height virtualization once the visible row count crosses <code>virtualThreshold</code>." },
+        { option: "<code>virtualRowHeight</code>, <code>virtualOverscan</code>, <code>virtualThreshold</code>", default: "<code>40</code>, <code>8</code>, <code>120</code>", description: "Virtualization tuning values for row height, overscan, and activation threshold." },
+        { option: "<code>minColumnWidth</code> / <code>columnWidths</code>", default: "<code>72</code> / <code>{}</code>", description: "Minimum resize width plus explicit per-column width overrides." },
+        { option: "<code>searchTerm</code> / <code>searchFields</code>", default: "<code>\"\"</code> / all column keys", description: "Tree-aware search term and the fields used for matching." },
+        { option: "<code>autoExpandMatches</code> / <code>highlightMatches</code>", default: "<code>true</code> / <code>true</code>", description: "Controls automatic ancestor reveal and inline highlight behavior while search is active." },
         { option: "<code>lazyLoadChildren</code>", default: "<code>null</code>", description: "Loads child rows only when expandable parents are opened." },
-        { option: "<code>virtualize</code>", default: "<code>false</code>", description: "Enables fixed-row-height virtualization.", values: ["true", "false"] },
-        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Controls outer shell rendering.", values: ["true", "false"] }
+        { option: "<code>chrome</code> / <code>ariaLabel</code>", default: "<code>true</code> / <code>\"Tree grid\"</code>", description: "Controls outer shell rendering and the table-level accessible label." }
       ],
       events: [
-        { event: "<code>onRowClick</code>", arguments: "<code>{ row, path }</code>", returns: "No return effect" },
-        { event: "<code>onToggle</code>", arguments: "<code>{ row, expanded }</code>", returns: "No return effect" }
+        { event: "<code>onRowClick</code>", arguments: "<code>{ row, rowId, depth, entry, event }</code>", returns: "No return effect" },
+        { event: "<code>onToggle</code>", arguments: "<code>{ row, rowId, expanded, depth }</code>", returns: "No return effect" },
+        { event: "<code>onSelectionChange</code>", arguments: "<code>{ selectedRowIds, selectedRows }</code>", returns: "No return effect" },
+        { event: "<code>onLoadChildren</code>", arguments: "<code>(row, children, state)</code>", returns: "No return effect" },
+        { event: "<code>onColumnResize</code>", arguments: "<code>{ key, width, columnWidths }</code>", returns: "No return effect" }
       ],
       methods: [
+        { method: "<code>getData()</code>", arguments: "none", returns: "Current normalized tree rows" },
+        { method: "<code>getVisibleRows()</code>", arguments: "none", returns: "Current flattened visible row entries" },
+        { method: "<code>getExpandedRowIds()</code>", arguments: "none", returns: "Current expanded row ids" },
+        { method: "<code>setExpanded(rowId, expanded)</code>", arguments: "row id and target state", returns: "<code>Promise&lt;boolean&gt;</code>" },
+        { method: "<code>loadChildren(rowId)</code>", arguments: "row id", returns: "<code>Promise&lt;Array&gt;</code>" },
+        { method: "<code>refreshChildren(rowId)</code>", arguments: "row id", returns: "<code>Promise&lt;Array&gt;</code>" },
+        { method: "<code>toggleRow(rowId)</code>", arguments: "row id", returns: "<code>Promise&lt;boolean&gt;</code>" },
         { method: "<code>expandAll()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>collapseAll()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>setRows(rows)</code>", arguments: "tree row array", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options patch", returns: "<code>void</code>" },
         { method: "<code>setSearchTerm(term)</code>", arguments: "string", returns: "<code>void</code>" },
         { method: "<code>clearSearch()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Rows, visible rows, expansion, selection, search, and merged options" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ],
+      propertiesText: [
+        "Column definitions support tree-specific fields such as <code>tree: true</code> and <code>icon(row, entry)</code> plus standard layout fields like <code>width</code>, <code>align</code>, <code>wrap</code>, and <code>className</code>.",
+        "For non-tree columns, prefer <code>renderCell({ row, value, key, column, entry })</code> for custom content. The helper also accepts the older <code>render(value, row, entry)</code> alias for compatibility.",
+        "<code>getState()</code> exposes the current <code>rows</code>, flattened <code>visibleRows</code>, <code>expandedRowIds</code>, <code>selectedRowIds</code>, <code>search</code>, and merged <code>options</code>."
       ]
     };
   </script>
@@ -408,7 +433,7 @@
           key: "status",
           label: "Status",
           width: "140px",
-          render(value) {
+          renderCell({ value }) {
             const chip = document.createElement("span");
             chip.className = "status-pill";
             chip.textContent = String(value || "");
@@ -422,7 +447,7 @@
           label: "Actions",
           width: "168px",
           align: "right",
-          render(value, row) {
+          renderCell({ row }) {
             return createActionCell(row, "treeGrid");
           },
         },
@@ -462,7 +487,7 @@
           label: "Actions",
           width: "132px",
           align: "right",
-          render(value, row) {
+          renderCell({ row }) {
             return createActionCell(row, "treeGridLarge");
           },
         },
@@ -544,7 +569,7 @@
           label: "Actions",
           width: "168px",
           align: "right",
-          render(value, row) {
+          renderCell({ row }) {
             return createActionCell(row, "treeGridLazy");
           },
         },

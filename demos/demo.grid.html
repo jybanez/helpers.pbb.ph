@@ -102,27 +102,24 @@
       ],
       description: "This demo covers three common grid modes: local client-side data, remote query-driven data, and a fixed-height virtualized large grid. The helper stays table-first and does not try to become a tree or chart.",
       sectionSamples: {
-        "local grid": `const grid = createGrid(host, rows, {\n  columns,\n  search: true,\n  sortable: true,\n  pagination: true,\n});`,
-        "remote grid": `const grid = createGrid(host, [], {\n  columns,\n  remote: true,\n  onQueryChange(query) {\n    fetchRows(query).then((rows) => grid.setRows(rows));\n  },\n});`,
-        "large grid (virtualized)": `const grid = createGrid(host, largeRows, {\n  columns,\n  virtualize: true,\n  rowHeight: 44,\n});`
+        "local grid": `const grid = createGrid(host, rows, {\n  columns,\n  mode: "local",\n  enableSearch: true,\n  enableSort: true,\n  enablePagination: true,\n});`,
+        "remote grid": `const grid = createGrid(host, [], {\n  columns,\n  mode: "remote",\n  enableSearch: true,\n  enableSort: true,\n  enablePagination: true,\n  onQueryChange(query) {\n    fetchRows(query).then((rows) => grid.setRows(rows));\n  },\n});`,
+        "large grid (virtualized)": `const grid = createGrid(host, largeRows, {\n  columns,\n  enableVirtualization: true,\n  virtualRowHeight: 44,\n});`
       },
       constructor: [
         { factory: "<code>createGrid(container, rows, options)</code>", arguments: "<code>container</code>, initial <code>rows</code>, grid <code>options</code>", returns: "Grid instance with data, query, and lifecycle methods" }
       ],
       options: [
-        { option: "<code>mode</code>", default: "<code>\"local\"</code>", description: "Grid ownership model: <code>local</code> applies search/sort/paging in the helper, while <code>remote</code> emits query changes for app-owned fetching." },
-        { option: "<code>columns</code>", default: "<code>[]</code>", description: "Column definitions including <code>key</code>, <code>label</code>, width hints, sort flags, and optional cell renderers." },
-        { option: "<code>rowKey</code>", default: "<code>\"id\"</code>", description: "Field used to derive stable selection and row identity." },
-        { option: "<code>selectable</code>", default: "<code>\"none\"</code>", description: "Selection mode: <code>none</code>, <code>single</code>, or <code>multi</code>." },
-        { option: "<code>selectedKeys</code>", default: "<code>[]</code>", description: "Initial selected row keys for single- or multi-select grids." },
-        { option: "<code>enableSearch</code>", default: "<code>false</code>", description: "Shows the built-in search box and keeps <code>query.search</code> in sync." },
-        { option: "<code>enableSort</code>", default: "<code>false</code>", description: "Enables sortable headers for columns that are not explicitly marked <code>sortable: false</code>." },
-        { option: "<code>enablePagination</code>", default: "<code>false</code>", description: "Shows pager controls and page-size selection." },
-        { option: "<code>enableColumnResize</code>", default: "<code>false</code>", description: "Adds resize handles and emits resize callbacks with the normalized width map." },
+        { option: "<code>mode</code>", default: "<code>\"local\"</code>", description: "Grid ownership model: <code>local</code> applies query state internally, while <code>remote</code> emits <code>onQueryChange(...)</code> for app-owned fetching." },
+        { option: "<code>columns</code>", default: "<code>[]</code>", description: "Column definitions including <code>key</code>, <code>label</code>, width hints, alignment, and optional custom cell renderers." },
+        { option: "<code>rowKey</code>", default: "<code>\"id\"</code>", description: "Field or function used to derive stable row identity." },
+        { option: "<code>selectable</code> / <code>selectedKeys</code>", default: "<code>\"none\"</code> / <code>[]</code>", description: "Selection mode and initial selected row keys." },
+        { option: "<code>enableSearch</code>, <code>enableSort</code>, <code>enablePagination</code>", default: "<code>true</code> in local mode, <code>false</code> in remote mode", description: "Enables the built-in query controls and internal query state handling." },
+        { option: "<code>enableColumnResize</code>", default: "<code>false</code>", description: "Adds resize handles and emits normalized column-width updates." },
         { option: "<code>enableVirtualization</code>", default: "<code>false</code>", description: "Enables virtual row rendering once the row count crosses <code>virtualThreshold</code>." },
-        { option: "<code>virtualRowHeight</code>, <code>virtualOverscan</code>, <code>virtualThreshold</code>", default: "<code>40</code>, <code>8</code>, <code>80</code>", description: "Virtualization tuning values for row height, overscan window, and activation threshold." },
-        { option: "<code>minColumnWidth</code> / <code>columnWidths</code>", default: "<code>72</code> / <code>{}</code>", description: "Minimum resize width plus explicit per-column width overrides." },
-        { option: "<code>chrome</code> / <code>wrapCellContent</code>", default: "<code>true</code> / <code>true</code>", description: "Controls whether the helper renders its default toolbar/footer shell and whether cell text wraps." },
+        { option: "<code>virtualRowHeight</code>, <code>virtualOverscan</code>, <code>virtualThreshold</code>", default: "<code>40</code>, <code>8</code>, <code>80</code>", description: "Virtualization tuning for fixed row height, overscan window, and activation threshold." },
+        { option: "<code>minColumnWidth</code> / <code>columnWidths</code>", default: "<code>72</code> / <code>{}</code>", description: "Minimum resize width plus explicit per-column width overrides keyed by <code>column.key</code>." },
+        { option: "<code>chrome</code> / <code>wrapCellContent</code>", default: "<code>true</code> / <code>true</code>", description: "Controls the outer shell and whether cell text wraps by default." },
         { option: "<code>searchPlaceholder</code>, <code>search</code>, <code>filters</code>", default: "<code>\"Search...\"</code>, <code>\"\"</code>, <code>{}</code>", description: "Initial query-state values used for local rendering or remote query emission." },
         { option: "<code>sortBy</code> / <code>sortDir</code>", default: "<code>\"\"</code> / <code>\"\"</code>", description: "Initial sort state. <code>sortDir</code> may be <code>asc</code>, <code>desc</code>, or empty." },
         { option: "<code>page</code>, <code>pageSize</code>, <code>pageSizeOptions</code>", default: "<code>1</code>, <code>10</code>, <code>[10, 20, 50]</code>", description: "Initial pager state and available page-size choices." },
@@ -132,23 +129,23 @@
       events: [
         { event: "<code>onQueryChange</code>", arguments: "<code>{ search, filters, sortBy, sortDir, page, pageSize }</code>", returns: "No return effect. In remote mode, the app should fetch and then call <code>setRows(...)</code> or <code>update(...)</code>." },
         { event: "<code>onRowClick</code>", arguments: "<code>(row, { rowKey, index })</code>", returns: "No return effect." },
-        { event: "<code>onSelectionChange</code>", arguments: "<code>({ selectedKeys, selectedRows })</code>", returns: "No return effect." },
+        { event: "<code>onSelectionChange</code>", arguments: "<code>(selectedRows, selectedKeys)</code>", returns: "No return effect." },
         { event: "<code>onColumnResize</code>", arguments: "<code>({ key, width, columnWidths })</code>", returns: "No return effect." }
       ],
       methods: [
         { method: "<code>update(rows, options)</code>", arguments: "row array, partial options", returns: "<code>void</code>" },
         { method: "<code>setRows(rows)</code>", arguments: "row array", returns: "<code>void</code>" },
-        { method: "<code>setLoading(flag)</code>", arguments: "boolean", returns: "<code>void</code>" },
         { method: "<code>setQuery(query)</code>", arguments: "partial query", returns: "<code>void</code>" },
         { method: "<code>getQuery()</code>", arguments: "none", returns: "Normalized query object with <code>search</code>, <code>filters</code>, <code>sortBy</code>, <code>sortDir</code>, <code>page</code>, and <code>pageSize</code>" },
         { method: "<code>getSelectedRows()</code>", arguments: "none", returns: "Currently selected row objects." },
+        { method: "<code>clearSelection()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>getState()</code>", arguments: "none", returns: "Current grid state" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ],
       propertiesText: [
-        "<code>getState()</code> returns the runtime shape most teams need when debugging: <code>{ mode, query, selectedKeys, selectedRows, rowCount, loading, errorText, virtualization }</code>.",
+        "<code>getState()</code> returns the current grid snapshot: <code>{ mode, query, selectedKeys, rows, options, columnWidths }</code>.",
         "The live query object always uses <code>search</code>, <code>filters</code>, <code>sortBy</code>, <code>sortDir</code>, <code>page</code>, and <code>pageSize</code> regardless of whether the grid is local or remote.",
-        "Column definitions can include display properties such as <code>width</code>, <code>align</code>, <code>sortable</code>, <code>resizable</code>, and cell render hooks. Use the column object itself for per-column behavior rather than inventing extra demo-only flags."
+        "Column definitions can include display properties such as <code>width</code>, <code>align</code>, <code>sortable</code>, <code>resizable</code>, and custom cell hooks. Prefer <code>renderCell({ row, value, key, column, index })</code>; the helper also accepts the older <code>render(value, row, meta)</code> alias for compatibility."
       ]
     };
   </script>
@@ -283,7 +280,7 @@
         width: "148px",
         sortable: false,
         align: "right",
-        render(value, row) {
+        renderCell({ row }) {
           return createActionCell(row, "grid");
         },
       },
@@ -302,15 +299,18 @@
       mode: "local",
       columns: gridColumns,
       selectable: "multi",
+      enableSort: true,
+      enableSearch: true,
+      enablePagination: true,
       wrapCellContent: false,
       enableColumnResize: true,
       pageSize: 3,
       onRowClick(row) {
         writeLog("grid.local.rowClick", { id: row.id });
       },
-        onSelectionChange({ selectedKeys, selectedRows }) {
-          writeLog("grid.local.selection", { keys: selectedKeys, count: selectedRows.length });
-        },
+      onSelectionChange(selectedRows, selectedKeys) {
+        writeLog("grid.local.selection", { keys: selectedKeys, count: selectedRows.length });
+      },
       onColumnResize(payload) {
         writeLog("grid.local.columnResize", payload);
       },

@@ -555,9 +555,15 @@ export function createGrid(container, rows = [], options = {}) {
       if (typeof column.format === "function") {
         content = column.format(value, row);
       }
-      if (typeof column.renderCell === "function") {
-        const rendered = column.renderCell({ row, value, key: column.key, column });
-        if (rendered instanceof HTMLElement) {
+      const renderCell =
+        typeof column.renderCell === "function"
+          ? () => column.renderCell({ row, value, key: column.key, column, index })
+          : typeof column.render === "function"
+            ? () => column.render(value, row, { row, value, key: column.key, column, index })
+            : null;
+      if (renderCell) {
+        const rendered = renderCell();
+        if (isDomNode(rendered)) {
           td.appendChild(rendered);
         } else {
           td.textContent = rendered == null ? "" : String(rendered);
@@ -843,4 +849,8 @@ function getRowKey(row, index, rowKeyOption) {
     return row[rowKeyOption] ?? index;
   }
   return row.id ?? row.key ?? index;
+}
+
+function isDomNode(value) {
+  return Boolean(value && typeof value === "object" && typeof value.nodeType === "number");
 }
