@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.61";
+import { createIcon } from "./ui.icons.js?v=0.21.65";
 
 const CHECK_KINDS = new Set([
   "microphone",
@@ -88,14 +89,30 @@ export function createDevicePrimer(container, data = {}, options = {}) {
 
   function createSummaryNode() {
     const summary = getSummary();
-    return createElement("div", {
+    const tone = summary.hasFailures ? "warning" : (summary.allRequiredReady ? "success" : "info");
+    const title = summary.hasFailures
+      ? "Action needed"
+      : (summary.allRequiredReady ? "Required checks ready" : "Checking device readiness");
+    const summaryNode = createElement("div", {
       className: [
         "ui-device-primer-summary",
         summary.allRequiredReady ? "is-ready" : "",
         summary.hasFailures ? "is-failed" : "",
       ].filter(Boolean).join(" "),
-      text: summary.text,
     });
+    const iconWrap = createElement("div", { className: "ui-device-primer-summary-icon" });
+    iconWrap.appendChild(createIcon(`status.${tone}`, { size: 18, className: "ui-device-primer-summary-glyph" }));
+    const body = createElement("div", { className: "ui-device-primer-summary-body" });
+    body.appendChild(createElement("div", {
+      className: "ui-device-primer-summary-eyebrow",
+      text: title,
+    }));
+    body.appendChild(createElement("div", {
+      className: "ui-device-primer-summary-text",
+      text: summary.text,
+    }));
+    summaryNode.append(iconWrap, body);
+    return summaryNode;
   }
 
   function createCheckRow(check) {
@@ -106,14 +123,38 @@ export function createDevicePrimer(container, data = {}, options = {}) {
     });
     const main = createElement("div", { className: "ui-device-primer-main" });
     const heading = createElement("div", { className: "ui-device-primer-heading" });
-    heading.appendChild(createElement("div", {
+    const titleLine = createElement("div", { className: "ui-device-primer-titleline" });
+    const titleBody = createElement("div", { className: "ui-device-primer-titlebody" });
+    titleLine.appendChild(createCheckIcon(check));
+    titleBody.appendChild(createElement("div", {
       className: "ui-device-primer-label",
       text: check.label,
     }));
-    heading.appendChild(createElement("span", {
+    titleBody.appendChild(createElement("span", {
       className: `ui-badge ui-device-primer-required ${check.required ? "is-required" : "is-optional"}`,
       text: check.required ? "Required" : "Optional",
     }));
+    titleLine.appendChild(titleBody);
+    heading.appendChild(titleLine);
+    const side = createElement("div", { className: "ui-device-primer-side" });
+    side.appendChild(createStatusBadge(check.status));
+
+    if (currentOptions.allowRetry && check.canRetry) {
+      const retryButton = createElement("button", {
+        className: "ui-button ui-button-quiet ui-device-primer-retry",
+        attrs: { type: "button" },
+      });
+      retryButton.append(
+        createIcon("actions.refresh", { size: 14, className: "ui-device-primer-retry-icon" }),
+        createElement("span", { text: "Retry" }),
+      );
+      retryButton.addEventListener("click", () => {
+        retryCheck(check.id).catch(() => {});
+      });
+      side.appendChild(retryButton);
+    }
+
+    heading.appendChild(side);
     main.appendChild(heading);
     if (check.description) {
       main.appendChild(createElement("div", {
@@ -126,25 +167,7 @@ export function createDevicePrimer(container, data = {}, options = {}) {
       text: check.detailText,
     }));
 
-    const side = createElement("div", { className: "ui-device-primer-side" });
-    side.appendChild(createElement("span", {
-      className: `ui-badge ui-device-primer-status is-${check.status}`,
-      text: formatStatusLabel(check.status),
-    }));
-
-    if (currentOptions.allowRetry && check.canRetry) {
-      const retryButton = createElement("button", {
-        className: "ui-button ui-button-quiet ui-device-primer-retry",
-        text: "Retry",
-        attrs: { type: "button" },
-      });
-      retryButton.addEventListener("click", () => {
-        retryCheck(check.id).catch(() => {});
-      });
-      side.appendChild(retryButton);
-    }
-
-    row.append(main, side);
+    row.append(main);
     return row;
   }
 
@@ -619,6 +642,60 @@ function formatCheckLabel(kind) {
     case "audioplayback": return "Audio Playback";
     case "mediadevices": return "Media Devices";
     default: return "Check";
+  }
+}
+
+function createCheckIcon(check) {
+  const chip = createElement("span", {
+    className: `ui-device-primer-check-icon is-${check.kind} is-${check.status}`,
+    attrs: { "aria-hidden": "true" },
+  });
+  chip.appendChild(createIcon(getCheckIconName(check.kind), {
+    size: 16,
+    className: "ui-device-primer-check-glyph",
+  }));
+  return chip;
+}
+
+function createStatusBadge(status) {
+  const badge = createElement("span", {
+    className: `ui-badge ui-device-primer-status is-${status}`,
+  });
+  badge.append(
+    createIcon(getStatusIconName(status), {
+      size: 14,
+      className: "ui-device-primer-status-icon",
+    }),
+    createElement("span", {
+      className: "ui-device-primer-status-label",
+      text: formatStatusLabel(status),
+    }),
+  );
+  return badge;
+}
+
+function getCheckIconName(kind) {
+  switch (kind) {
+    case "microphone": return "media.microphone";
+    case "camera": return "assets.camera";
+    case "geolocation": return "places.pin";
+    case "speechsynthesis": return "comms.message";
+    case "speechrecognition": return "comms.signal";
+    case "notifications": return "comms.notification";
+    case "audioplayback": return "media.audio";
+    case "mediadevices": return "data.grid";
+    default: return "actions.check";
+  }
+}
+
+function getStatusIconName(status) {
+  switch (status) {
+    case "ready": return "status.success";
+    case "failed": return "status.error";
+    case "blocked": return "status.warning";
+    case "checking": return "actions.refresh";
+    case "unsupported": return "status.info";
+    default: return "time.clock";
   }
 }
 

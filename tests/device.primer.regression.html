@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.modal.css">
   <link rel="stylesheet" href="../css/ui/ui.dialog.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
   <link rel="stylesheet" href="../css/ui/ui.device.primer.css">
   <style>
     body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
@@ -93,10 +94,14 @@
     });
 
     assert(primer.getState().checks.every((check) => check.status === "pending"), "Initial checks should be pending.");
+    assert(host.querySelector('.ui-device-primer-summary [data-icon="status.info"]'), "Summary should render an info icon while checks are pending.");
+    assert(host.querySelector('[data-check-id="mic"] [data-icon="media.microphone"]'), "Microphone rows should render the shared microphone icon.");
+    assert(host.querySelector('[data-check-id="audio"] [data-icon="media.audio"]'), "Audio rows should render the shared audio icon.");
 
     const blockedMic = await primer.runCheck("mic");
     assert(blockedMic && blockedMic.status === "blocked", "Blocked microphone should report blocked.");
     assert(blockedMic && blockedMic.canRetry === true, "Blocked microphone should allow retry.");
+    assert(host.querySelector('[data-check-id="mic"] .ui-device-primer-retry [data-icon="actions.refresh"]'), "Retry actions should render the shared refresh icon.");
 
     micMode = "ready";
     const retriedMic = await primer.retryCheck("mic");

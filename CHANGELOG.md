@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.64`
+- Latest documented release: `v0.21.66`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,29 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.66
+
+- Expanded `ui.icons` again with shared settings/account glyphs for app-shell and profile surfaces:
+  - `actions.settings`
+  - `actions.options`
+  - `people.profile`
+  - `people.account`
+- Updated the icon spec, README references, and browser regression coverage for the new icon ids.
+- Bumped the icon revision chain to `0.21.66` so browsers stop serving stale icon module graphs after the catalog update.
+
+### v0.21.65
+
+- Expanded `ui.icons` with two new shared glyphs needed by device and notification flows:
+  - `media.microphone`
+  - `comms.notification`
+- Refreshed `ui.device.primer` visuals without changing its public API:
+  - added stronger summary hierarchy with semantic status icon treatment
+  - added row-level device/capability icons
+  - added icon-backed status pills and retry affordances
+  - increased ready/blocked visual contrast through row and summary state styling
+- Updated the loader so `ui.device.primer` pulls shared icon styling and versioned primer assets together.
+- Updated icon and device-primer browser regression coverage for the new icon ids and primer icon rendering.
 
 ### v0.21.64
 

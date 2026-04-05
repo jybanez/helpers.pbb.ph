@@ -48,12 +48,18 @@
       assert(categories.length === 11, "icons registry should expose 11 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
+      assert(names.includes("actions.settings"), "icons registry should include actions.settings");
+      assert(names.includes("actions.options"), "icons registry should include actions.options");
       assert(names.includes("media.video"), "icons registry should include media.video");
+      assert(names.includes("media.microphone"), "icons registry should include media.microphone");
       assert(names.includes("people.user"), "icons registry should include people.user");
+      assert(names.includes("people.profile"), "icons registry should include people.profile");
+      assert(names.includes("people.account"), "icons registry should include people.account");
       assert(names.includes("workflow.requested"), "icons registry should include workflow.requested");
       assert(names.includes("places.pin"), "icons registry should include places.pin");
       assert(names.includes("time.clock"), "icons registry should include time.clock");
       assert(names.includes("comms.phone"), "icons registry should include comms.phone");
+      assert(names.includes("comms.notification"), "icons registry should include comms.notification");
       assert(names.includes("assets.vehicle"), "icons registry should include assets.vehicle");
 
       const closeIcon = createIcon("actions.close", { size: 18, title: "Close", decorative: false });

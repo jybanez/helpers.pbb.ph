@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.64`
+Latest documented release: `v0.21.66`
 
 This repository currently covers **7 helpers**:
 
@@ -4238,7 +4238,7 @@ Modal preset notes:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.60`
+- Latest documented release: `v0.21.66`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

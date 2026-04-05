@@ -111,6 +111,7 @@ Stable namespaced ids:
 - `actions.delete`
 - `actions.download`
 - `actions.edit`
+- `actions.options`
 - `actions.hide`
 - `actions.more-horizontal`
 - `actions.attach`
@@ -118,6 +119,7 @@ Stable namespaced ids:
 - `actions.refresh`
 - `actions.save`
 - `actions.search`
+- `actions.settings`
 - `actions.sort`
 - `actions.view`
 
@@ -145,6 +147,7 @@ Stable namespaced ids:
 - `media.pause`
 - `media.image`
 - `media.video`
+- `media.microphone`
 - `media.audio`
 
 ### Data
@@ -157,6 +160,8 @@ Stable namespaced ids:
 
 ### People
 
+- `people.account`
+- `people.profile`
 - `people.user`
 - `people.users`
 
@@ -189,6 +194,7 @@ Stable namespaced ids:
 - `comms.phone`
 - `comms.radio`
 - `comms.message`
+- `comms.notification`
 - `comms.signal`
 
 ### Assets

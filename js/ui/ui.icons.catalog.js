@@ -30,6 +30,26 @@ export const ICON_DEFINITIONS = {
     path("M4 20l4.5-1 9.3-9.3a2.1 2.1 0 0 0-3-3L5.5 16 4 20z"),
     path("M13.5 6.5l4 4"),
   ]),
+  "actions.settings": icon("actions", [
+    circle(12, 12, 3),
+    path("M12 5.5v1.5"),
+    path("M12 17v1.5"),
+    path("M5.5 12H7"),
+    path("M17 12h1.5"),
+    path("M7.4 7.4 8.5 8.5"),
+    path("M15.5 15.5l1.1 1.1"),
+    path("M7.4 16.6l1.1-1.1"),
+    path("M15.5 8.5l1.1-1.1"),
+    circle(12, 12, 7),
+  ]),
+  "actions.options": icon("actions", [
+    line(4, 7, 20, 7),
+    circle(9, 7, 1.6),
+    line(4, 12, 20, 12),
+    circle(15, 12, 1.6),
+    line(4, 17, 20, 17),
+    circle(11, 17, 1.6),
+  ]),
   "actions.view": icon("actions", [
     path("M2 12s3.5-6 10-6 10 6-3.5 6-10 6S2 12 2 12Z"),
     circle(12, 12, 2.5),
@@ -136,6 +156,12 @@ export const ICON_DEFINITIONS = {
     rect(4, 6, 12, 12, 2),
     path("M16 10l4-2v8l-4-2z"),
   ]),
+  "media.microphone": icon("media", [
+    path("M9.5 7a2.5 2.5 0 0 1 5 0v5a2.5 2.5 0 0 1-5 0V7z"),
+    path("M7 11.5a5 5 0 0 0 10 0"),
+    line(12, 16.5, 12, 20),
+    path("M9 20h6"),
+  ]),
   "media.audio": icon("media", [
     path("M10 8l5-3v14l-5-3H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3z"),
     path("M18 9a4 4 0 0 1 0 6"),
@@ -178,6 +204,18 @@ export const ICON_DEFINITIONS = {
     circle(16.5, 9.5, 2.5),
     path("M4 19a6 6 0 0 1 10 0"),
     path("M15 18a4.5 4.5 0 0 1 5 0"),
+  ]),
+  "people.profile": icon("people", [
+    circle(12, 8, 3.2),
+    path("M6.5 18a6.5 6.5 0 0 1 11 0"),
+    circle(12, 12, 9),
+  ]),
+  "people.account": icon("people", [
+    rect(4, 5, 16, 14, 2),
+    circle(9, 11, 2.3),
+    path("M6.5 16a3.8 3.8 0 0 1 5 0"),
+    line(14, 10, 17.5, 10),
+    line(14, 13, 17.5, 13),
   ]),
   "workflow.assigned": icon("workflow", [
     circle(12, 12, 5),
@@ -263,6 +301,10 @@ export const ICON_DEFINITIONS = {
   ]),
   "comms.message": icon("comms", [
     path("M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"),
+  ]),
+  "comms.notification": icon("comms", [
+    path("M12 5a4 4 0 0 0-4 4v2.5c0 1-.4 2-1.1 2.7L5.5 16h13l-1.4-1.8a4 4 0 0 1-1.1-2.7V9a4 4 0 0 0-4-4Z"),
+    path("M10 18a2 2 0 0 0 4 0"),
   ]),
   "comms.signal": icon("comms", [
     line(5, 19, 5, 16),
