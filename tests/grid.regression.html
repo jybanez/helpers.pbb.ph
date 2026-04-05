@@ -41,12 +41,31 @@
     ];
     let renderClicks = 0;
     let renderCellClicks = 0;
+    let toolbarClicks = 0;
 
     const grid = createGrid(document.getElementById("host"), rows, {
       mode: "local",
-      enablePagination: false,
-      enableSearch: false,
-      enableSort: false,
+      enablePagination: true,
+      enableSearch: true,
+      enableSort: true,
+      pageSize: 10,
+      pageSizeOptions: [1, 10],
+      toolbarStart: "Admin Users",
+      toolbarEnd({ totalRows }) {
+        const pill = document.createElement("span");
+        pill.className = "toolbar-count";
+        pill.textContent = `${totalRows} records`;
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "ui-button ui-button-primary toolbar-add";
+        button.textContent = "Add User";
+        button.addEventListener("click", () => {
+          toolbarClicks += 1;
+        });
+
+        return [pill, button];
+      },
       columns: [
         { key: "id", label: "ID", width: "72px" },
         { key: "caller", label: "Caller" },
@@ -102,6 +121,31 @@
 
     const firstActionCell = document.querySelector("#host tbody tr td:nth-child(3)");
     assert(firstActionCell && firstActionCell.textContent.includes("View 16"), "rendered action cell should contain the custom button label");
+
+    const toolbarStart = document.querySelector("#host .ui-grid-tools-left .ui-grid-toolbar-slot");
+    const toolbarPill = document.querySelector("#host .toolbar-count");
+    const toolbarButton = document.querySelector("#host .toolbar-add");
+    assert(toolbarStart?.textContent.includes("Admin Users"), "toolbarStart text should render beside helper-owned left tools");
+    assert(toolbarPill?.textContent === "2 records", "toolbarEnd function should render the current total count");
+    toolbarButton?.click();
+    assert(toolbarClicks === 1, "toolbarEnd button should stay interactive");
+
+    const search = document.querySelector("#host .ui-grid-search");
+    search.value = "Juan";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    assert(document.querySelector("#host .toolbar-count")?.textContent === "1 records", "toolbar content should refresh after search-driven re-render");
+    document.querySelector("#host .toolbar-add")?.click();
+    assert(toolbarClicks === 2, "toolbar button should survive search-driven re-render");
+
+    document.querySelector("#host thead th:nth-child(2)")?.click();
+    assert(document.querySelector("#host .toolbar-add"), "toolbar button should survive sort-driven re-render");
+
+    const pageSize = document.querySelector("#host .ui-grid-pagesize");
+    pageSize.value = "1";
+    pageSize.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(document.querySelector("#host .toolbar-count")?.textContent === "1 records", "toolbar count should remain aligned after pagination control re-render");
+    document.querySelector("#host .toolbar-add")?.click();
+    assert(toolbarClicks === 3, "toolbar button should survive pagination-driven re-render");
 
     grid.destroy();
     assert(document.querySelector("#host .ui-grid") === null, "destroy should remove the grid DOM");

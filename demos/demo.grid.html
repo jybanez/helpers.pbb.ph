@@ -100,9 +100,9 @@
         "Do not use it for true parent-child hierarchy; use <code>createTreeGrid(...)</code> or <code>createHierarchyMap(...)</code> instead.",
         "Do not use it for small summary lists where a full grid shell would be excessive."
       ],
-      description: "This demo covers three common grid modes: local client-side data, remote query-driven data, and a fixed-height virtualized large grid. The helper stays table-first and does not try to become a tree or chart.",
+      description: "This demo covers three common grid modes: local client-side data, remote query-driven data, and a fixed-height virtualized large grid. It also shows the additive toolbar extension seam for app-owned controls beside helper-owned search and page-size tools.",
       sectionSamples: {
-        "local grid": `const grid = createGrid(host, rows, {\n  columns,\n  mode: "local",\n  enableSearch: true,\n  enableSort: true,\n  enablePagination: true,\n});`,
+        "local grid": `const grid = createGrid(host, rows, {\n  columns,\n  mode: "local",\n  enableSearch: true,\n  enableSort: true,\n  enablePagination: true,\n  toolbarEnd({ totalRows }) {\n    return [\n      \`\${totalRows} records\`,\n      addButton,\n    ];\n  },\n});`,
         "remote grid": `const grid = createGrid(host, [], {\n  columns,\n  mode: "remote",\n  enableSearch: true,\n  enableSort: true,\n  enablePagination: true,\n  onQueryChange(query) {\n    fetchRows(query).then((rows) => grid.setRows(rows));\n  },\n});`,
         "large grid (virtualized)": `const grid = createGrid(host, largeRows, {\n  columns,\n  enableVirtualization: true,\n  virtualRowHeight: 44,\n});`
       },
@@ -120,6 +120,7 @@
         { option: "<code>virtualRowHeight</code>, <code>virtualOverscan</code>, <code>virtualThreshold</code>", default: "<code>40</code>, <code>8</code>, <code>80</code>", description: "Virtualization tuning for fixed row height, overscan window, and activation threshold." },
         { option: "<code>minColumnWidth</code> / <code>columnWidths</code>", default: "<code>72</code> / <code>{}</code>", description: "Minimum resize width plus explicit per-column width overrides keyed by <code>column.key</code>." },
         { option: "<code>chrome</code> / <code>wrapCellContent</code>", default: "<code>true</code> / <code>true</code>", description: "Controls the outer shell and whether cell text wraps by default." },
+        { option: "<code>toolbarStart</code> / <code>toolbarEnd</code>", default: "<code>null</code> / <code>null</code>", description: "Additive toolbar slots rendered after helper-owned left or right tools. Accepts text, DOM nodes, arrays, or a function returning those values." },
         { option: "<code>searchPlaceholder</code>, <code>search</code>, <code>filters</code>", default: "<code>\"Search...\"</code>, <code>\"\"</code>, <code>{}</code>", description: "Initial query-state values used for local rendering or remote query emission." },
         { option: "<code>sortBy</code> / <code>sortDir</code>", default: "<code>\"\"</code> / <code>\"\"</code>", description: "Initial sort state. <code>sortDir</code> may be <code>asc</code>, <code>desc</code>, or empty." },
         { option: "<code>page</code>, <code>pageSize</code>, <code>pageSizeOptions</code>", default: "<code>1</code>, <code>10</code>, <code>[10, 20, 50]</code>", description: "Initial pager state and available page-size choices." },
@@ -144,6 +145,7 @@
       ],
       propertiesText: [
         "<code>getState()</code> returns the current grid snapshot: <code>{ mode, query, selectedKeys, rows, options, columnWidths }</code>.",
+        "Toolbar slot callbacks receive a narrow render context including <code>query</code>, <code>selectedKeys</code>, <code>selectedRows</code>, <code>rowCount</code>, <code>visibleRows</code>, <code>totalRows</code>, and <code>options</code>.",
         "The live query object always uses <code>search</code>, <code>filters</code>, <code>sortBy</code>, <code>sortDir</code>, <code>page</code>, and <code>pageSize</code> regardless of whether the grid is local or remote.",
         "Column definitions can include display properties such as <code>width</code>, <code>align</code>, <code>sortable</code>, <code>resizable</code>, and custom cell hooks. Prefer <code>renderCell({ row, value, key, column, index })</code>; the helper also accepts the older <code>render(value, row, meta)</code> alias for compatibility."
       ]
@@ -178,7 +180,7 @@
 
     <section class="panel">
       <h2 class="ui-title">Local Grid</h2>
-      <p class="muted">Client-side search, sort, pagination, and selectable rows.</p>
+      <p class="muted">Client-side search, sort, pagination, selectable rows, and toolbar extension slots for app-owned controls.</p>
       <div id="gridHostLocal"></div>
     </section>
 
@@ -263,6 +265,27 @@
       return host;
     }
 
+    function createToolbarPill(text) {
+      const pill = document.createElement("span");
+      pill.className = "ui-badge";
+      pill.textContent = text;
+      return pill;
+    }
+
+    function createToolbarActionButton(label, onClick) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ui-button ui-button-primary";
+      button.textContent = label;
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (typeof onClick === "function") {
+          onClick(event);
+        }
+      });
+      return button;
+    }
+
     document.getElementById("themeToggle").addEventListener("click", () => {
       page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
       writeLog("theme.toggle", { theme: page.dataset.theme });
@@ -305,6 +328,14 @@
       wrapCellContent: false,
       enableColumnResize: true,
       pageSize: 3,
+      toolbarEnd({ totalRows }) {
+        return [
+          createToolbarPill(`${totalRows} records`),
+          createToolbarActionButton("Add User", () => {
+            writeLog("grid.local.addUser", { source: "toolbarEnd", totalRows });
+          }),
+        ];
+      },
       onRowClick(row) {
         writeLog("grid.local.rowClick", { id: row.id });
       },

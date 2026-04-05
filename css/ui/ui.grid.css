@@ -27,6 +27,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ui-grid-toolbar-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ui-grid-toolbar-slot > * {
+  max-width: 100%;
 }
 
 .ui-grid-search {

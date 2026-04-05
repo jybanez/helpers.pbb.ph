@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.66`
+Latest documented release: `v0.21.67`
 
 This repository currently covers **7 helpers**:
 
@@ -2914,6 +2914,8 @@ Options:
 | `columnWidths` | `object` | `{}` | no | Per-column width overrides keyed by `column.key`. |
 | `chrome` | `boolean` | `true` | no | Removes the outer helper shell when `false`. |
 | `wrapCellContent` | `boolean` | `true` | no | Global cell wrapping behavior. |
+| `toolbarStart` | `ToolbarContent` | `null` | no | Additive content rendered after helper-owned left toolbar tools. |
+| `toolbarEnd` | `ToolbarContent` | `null` | no | Additive content rendered after helper-owned right toolbar tools. |
 | `search` | `string` | `""` | no | Initial search term. |
 | `searchPlaceholder` | `string` | `"Search..."` | no | Search field placeholder. |
 | `filters` | `object` | `{}` | no | Additional query metadata preserved in `getQuery()` and `onQueryChange(...)`. |
@@ -2945,6 +2947,13 @@ Column definition:
 | `renderCell` | `({ row, value, key, column, index }) => any` | `null` | Primary custom cell rendering hook. DOM nodes are mounted directly. |
 | `render` | `(value, row, meta) => any` | `null` | Legacy custom cell alias accepted for compatibility. |
 
+`ToolbarContent` may be:
+
+- plain text
+- a DOM node
+- an array mixing text and DOM nodes
+- a function receiving `{ placement, query, selectedKeys, selectedRows, rowCount, visibleRows, totalRows, options, createElement }` and returning one of the above
+
 Events / callbacks:
 
 | Callback | Payload | Returns | Description |
@@ -2971,6 +2980,7 @@ Behavior notes:
 
 - `local` mode enables search, sort, and pagination by default unless explicitly overridden.
 - `remote` mode leaves those controls off by default and expects the app to own fetching via `onQueryChange(...)`.
+- `toolbarStart` and `toolbarEnd` are additive seams only; they do not replace helper-owned search or page-size controls.
 - Prefer `renderCell(...)` for new custom cells; `render(...)` remains supported for backward compatibility.
 
 Example (remote mode with optional features enabled):
@@ -4290,7 +4300,7 @@ Modal preset notes:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.66`
+- Latest documented release: `v0.21.67`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

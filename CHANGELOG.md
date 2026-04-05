@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.66`
+- Latest documented release: `v0.21.67`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,13 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.67
+
+- Added additive `toolbarStart` and `toolbarEnd` extension seams to `ui.grid` so app-owned toolbar content can coexist with helper-owned search and page-size controls without DOM reinjection.
+- Toolbar slots accept text, DOM nodes, arrays, or a function form with grid render context including query, selection, visible rows, and current total row count.
+- Updated the grid demo and README reference so downstream apps have a documented supported path for count pills, add buttons, and similar toolbar controls.
+- Added focused grid browser regression coverage proving custom toolbar content survives search, sort, and pagination-driven grid re-renders.
 
 ### v0.21.66
 

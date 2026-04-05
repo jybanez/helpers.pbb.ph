@@ -36,6 +36,8 @@ const DEFAULT_OPTIONS = {
   onSelectionChange: null,
   onQueryChange: null,
   onColumnResize: null,
+  toolbarStart: null,
+  toolbarEnd: null,
 };
 
 export function createGrid(container, rows = [], options = {}) {
@@ -159,6 +161,9 @@ export function createGrid(container, rows = [], options = {}) {
         onQueryUpdated();
       });
     }
+
+    appendToolbarContent(leftTools, currentOptions.toolbarStart, "start");
+    appendToolbarContent(rightTools, currentOptions.toolbarEnd, "end");
 
     if (leftTools.children.length) {
       toolbar.appendChild(leftTools);
@@ -716,6 +721,30 @@ export function createGrid(container, rows = [], options = {}) {
     };
   }
 
+  function appendToolbarContent(host, source, placement) {
+    const nodes = normalizeToolbarContent(source, placement);
+    nodes.forEach((node) => host.appendChild(node));
+  }
+
+  function normalizeToolbarContent(source, placement) {
+    let value = source;
+    if (typeof value === "function") {
+      const display = isRemoteMode() ? getRemoteRows() : getLocalRows();
+      value = value({
+        placement,
+        query: getQuery(),
+        selectedKeys: Array.from(selectedKeys),
+        selectedRows: getSelectedRows(),
+        rowCount: currentRows.length,
+        visibleRows: [...display.rows],
+        totalRows: display.totalRows,
+        options: { ...currentOptions },
+        createElement,
+      });
+    }
+    return normalizeToolbarValue(value, placement);
+  }
+
   function destroy() {
     if (renderFrame != null) {
       cancelAnimationFrame(renderFrame);
@@ -750,6 +779,34 @@ export function createGrid(container, rows = [], options = {}) {
     clearSelection,
     getState,
   };
+}
+
+function normalizeToolbarValue(value, placement) {
+  if (value == null || value === false) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => normalizeToolbarValue(item, placement));
+  }
+  if (isDomNode(value)) {
+    return [wrapToolbarNode(value, placement)];
+  }
+  return [wrapToolbarText(value, placement)];
+}
+
+function wrapToolbarNode(node, placement) {
+  const wrap = createElement("div", {
+    className: `ui-grid-toolbar-slot is-${placement}`.trim(),
+  });
+  wrap.appendChild(node);
+  return wrap;
+}
+
+function wrapToolbarText(value, placement) {
+  return createElement("div", {
+    className: `ui-grid-toolbar-slot is-${placement}`.trim(),
+    text: String(value),
+  });
 }
 
 function normalizeRows(rows) {
