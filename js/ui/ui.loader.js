@@ -124,7 +124,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.form.modal": {
     js: `./ui.form.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.select.css", "../../css/ui/ui.tree.select.css", "../../css/ui/ui.password.css"],
     deps: ["ui.action.modal", "ui.password"],
     export: "createFormModal",
   },
@@ -205,6 +205,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css"],
     deps: [],
     export: "createSelect",
+  },
+  "ui.tree.select": {
+    js: "./ui.tree.select.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.tree.select.css"],
+    deps: [],
+    export: "createTreeSelect",
   },
   "ui.toggle.button": {
     js: "./ui.toggle.button.js",
@@ -538,6 +544,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.fieldset",
     "ui.property.editor",
     "ui.select",
+    "ui.tree.select",
     "ui.toggle.button",
     "ui.toggle.group",
     "ui.datepicker",

@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.67`
+Latest documented release: `v0.21.68`
 
 This repository currently covers **7 helpers**:
 
@@ -33,6 +33,7 @@ css/
     ui.toast.css
     ui.form.modal.css
     ui.select.css
+    ui.tree.select.css
     ui.toggle.css
     ui.datepicker.css
     ui.timeline.css
@@ -85,6 +86,7 @@ js/
     ui.form.modal.js
     ui.form.modal.presets.js
     ui.select.js
+    ui.tree.select.js
     ui.toggle.button.js
     ui.toggle.group.js
     ui.datepicker.js
@@ -149,6 +151,7 @@ demos/
   demo.ui.html
   demo.toast.html
   demo.select.html
+  demo.tree.select.html
   demo.toggle.button.html
   demo.toggle.group.html
   demo.buttons.html
@@ -251,7 +254,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `getVoices()` returns available speech voices so UI can render a voice selector; per-toast `voiceName` override is supported in `show(message, { voiceName })`
 - `ui.form.modal.js`
   - `createFormModal(options)` schema-driven modal form helper for short login/re-auth/CRUD flows using a strict row-based body model over `createActionModal(...)`
-  - exposes helper-owned values, field errors, form error, busy submit lifecycle, declarative mode rules, hidden/display fields, and hosted `ui.select` integration without widening the base modal shell contract
+  - exposes helper-owned values, field errors, form error, busy submit lifecycle, declarative mode rules, hidden/display fields, and hosted `ui.select` / `ui.treeSelect` integration without widening the base modal shell contract
 - `ui.form.modal.presets.js`
   - `createLoginFormModal(options)` opinionated login wrapper over `createFormModal(...)` with field-name remapping support
   - `createReauthFormModal(options)` opinionated re-auth wrapper over `createFormModal(...)` with locked identifier support and field-name remapping
@@ -261,6 +264,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createChangePasswordFormModal(options)` opinionated password-change wrapper over `createFormModal(...)` with helper-owned current/new/confirm password rows
 - `ui.select.js`
   - `createSelect(container, items, options)` single/multi select with optional search and keyboard navigation (`ArrowUp/ArrowDown/Home/End/Enter/Escape`, optional `selectOnTab`)
+- `ui.tree.select.js`
+  - `createTreeSelect(container, items, options)` hierarchical single-select picker with parent-context search, floating menu behavior, and branch expand/collapse keyboard support
 - `ui.toggle.button.js`
   - `createToggleButton(container, options)` reusable binary toggle button with `aria-pressed`, tones, variants, icon/label support, and `setPressed/getPressed`
 - `ui.toggle.group.js`
@@ -363,6 +368,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.dialog.css` dialog-specific styles on top of modal shell
 - `ui.toast.css` toast notification styles
 - `ui.select.css` select/dropdown styles
+- `ui.tree.select.css` hierarchical tree-select styles
 - `ui.toggle.css` toggle button + toggle group styles
 - `ui.datepicker.css` datepicker styles
 - `ui.timeline.css` timeline styles
@@ -444,7 +450,7 @@ Public component families:
 - Modal and feedback:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`
 - Forms and input:
-  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
 - Data, timeline, and inspection:
   - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
@@ -1364,6 +1370,7 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.form.modal.reauth.html` -> dedicated re-auth preset page
 - `demos/demo.form.modal.status.html` -> dedicated status-update preset page
 - `demos/demo.form.modal.reason.html` -> dedicated reason-required preset page
+- `demos/demo.tree.select.html` -> dedicated grouped tree-select page
 - `demos/demo.fieldset.html` -> dedicated fieldset/grouped-form page
   - semantic `fieldset` / `legend` grouping
   - form-modal-style `rows[]` outside modal lifecycle
@@ -1697,6 +1704,107 @@ Related demos:
 - `demos/demo.password.html`
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
+
+### `createTreeSelect(container, items, options)` (`js/ui/ui.tree.select.js`)
+
+Purpose:
+
+- Shared hierarchical single-select picker for grouped taxonomies that become noisy when flattened into label strings.
+- Reuses the same floating-menu model as `createSelect(...)` so menus can escape clipped modal and drawer containers.
+
+Factory:
+
+```js
+import { createTreeSelect } from "./js/ui/ui.tree.select.js";
+
+const treeSelect = createTreeSelect(container, items, options);
+```
+
+Recommended item shape:
+
+| Property | Type | Description |
+|---|---|---|
+| `id` or `value` | `string` | Stable node identifier. |
+| `label` | `string` | Visible branch or leaf label. |
+| `disabled` | `boolean` | Disables a node from interaction. |
+| `selectable` | `boolean` | Optional override. Defaults to `false` for branches and `true` for leaves. |
+| `children` | `array` | Nested child nodes for grouped vocabularies. |
+| `meta` | `any` | Optional app-owned metadata passed back in `onChange(..., node)`. |
+
+Options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `className` | `string` | `""` | Extra class name applied to the root wrapper. |
+| `ariaLabel` | `string` | `"Tree Select"` | Trigger/menu accessible label. |
+| `placeholder` | `string` | `"Select..."` | Trigger placeholder when nothing is selected. |
+| `emptyText` | `string` | `"No options found."` | Empty-state copy when search has no visible matches. |
+| `searchable` | `boolean` | `true` | Shows the inline search field above the tree menu. |
+| `closeOnSelect` | `boolean` | `true` | Closes the menu after selecting a leaf node. |
+| `selectOnTab` | `boolean` | `false` | Selects the current active leaf on `Tab` when enabled. |
+| `clearable` | `boolean` | `true` | Shows a trigger-level clear button when a value is selected. |
+| `defaultExpanded` | `boolean` | `false` | Expands all branches by default for browse-heavy datasets. |
+| `selected` | `string \| null` | `null` | Initial selected leaf value. |
+| `onChange` | `(value, node) => void` | `null` | Fires when the selected leaf changes. |
+
+Keyboard behavior:
+
+- `ArrowUp` / `ArrowDown` move the active row.
+- `Home` / `End` jump to the first or last visible row.
+- `ArrowRight` expands the active branch when search is not active.
+- `ArrowLeft` collapses the active branch or moves focus to its parent branch.
+- `Enter` / `Space` select the active leaf or toggle the active branch.
+- `Escape` closes the menu.
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `update` | `nextItems, nextOptions?` | `void` | Replaces the tree items/options and re-renders the picker. |
+| `setValue` | `value` | `void` | Selects a leaf value or clears when passed `null`. |
+| `getValue` | none | `string \| null` | Returns the current selected leaf value. |
+| `getState` | none | `object` | Returns open/search/selection state plus current visible entries. |
+| `destroy` | none | `void` | Removes DOM and listeners from the host container. |
+
+Behavior notes:
+
+- V1 is intentionally `single-select` only.
+- Search matches `label` text and preserves parent context for matching descendants.
+- If a parent label matches search, its descendants remain visible so the branch is still actionable.
+- Trigger text shows the selected path as `Parent / Leaf`.
+
+Example:
+
+```js
+const resourcePicker = createTreeSelect(document.getElementById("resourceHost"), [
+  {
+    id: "medical",
+    label: "Medical",
+    children: [
+      { id: "ambulance", label: "Ambulance" },
+      { id: "triage", label: "Triage Nurse" },
+    ],
+  },
+  {
+    id: "fire",
+    label: "Fire Response",
+    children: [
+      { id: "engine", label: "Fire Engine" },
+      { id: "rescue", label: "Rescue Truck" },
+    ],
+  },
+], {
+  searchable: true,
+  selected: "ambulance",
+  onChange(value, node) {
+    console.log(value, node?.pathLabels);
+  },
+});
+```
+
+Related demos:
+
+- `demos/demo.tree.select.html`
 
 ### `createFieldset(container, options)` (`js/ui/ui.fieldset.js`)
 
@@ -2468,6 +2576,7 @@ Supported V1 item types:
 - `hidden`
 - `display`
 - `ui.select`
+- `ui.treeSelect`
 - `input`
 - `textarea`
 - `select`
@@ -2517,6 +2626,17 @@ Field properties:
 - `closeOnSelect`
 - `selectOnTab`
 - `clearable`
+
+`ui.treeSelect` field properties:
+
+- `options` or `items`
+- `placeholder`
+- `emptyText`
+- `searchable`
+- `closeOnSelect`
+- `selectOnTab`
+- `clearable`
+- `defaultExpanded`
 
 Row model:
 
@@ -2579,6 +2699,8 @@ Validation and submit behavior:
 - dotted backend error keys such as `uplink_hub_ids.0` map back onto the base field when possible
 - `ui.select` hosts the existing shared select helper inside the form modal instead of introducing a second select system
 - hosted `ui.select` menus render in a floating body-level layer so they are not clipped by modal or drawer overflow containers
+- `ui.treeSelect` hosts the existing shared tree-select helper inside the form modal instead of introducing app-local grouped picker markup
+- hosted `ui.treeSelect` menus render in the same floating body-level layer so they are not clipped by modal or drawer overflow containers
 
 Example:
 
@@ -4300,7 +4422,7 @@ Modal preset notes:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.67`
+- Latest documented release: `v0.21.68`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

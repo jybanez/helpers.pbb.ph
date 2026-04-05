@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tree Select Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.tree.select.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      max-width: 360px;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createTreeSelect } from "../js/ui/ui.tree.select.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const nodes = [
+      {
+        id: "medical",
+        label: "Medical",
+        children: [
+          { id: "ambulance", label: "Ambulance" },
+          { id: "triage", label: "Triage Nurse" },
+        ],
+      },
+      {
+        id: "fire",
+        label: "Fire Response",
+        children: [
+          { id: "engine", label: "Fire Engine" },
+          { id: "rescue", label: "Rescue Truck" },
+        ],
+      },
+    ];
+
+    const picker = createTreeSelect(document.getElementById("host"), nodes, {
+      selected: "ambulance",
+      searchable: true,
+    });
+
+    const trigger = document.querySelector(".ui-tree-select-trigger");
+    assert(trigger?.textContent.includes("Medical / Ambulance"), "trigger should show selected path");
+
+    trigger?.click();
+    await wait(80);
+
+    const openOptions = () => Array.from(document.querySelectorAll(".ui-tree-select-option"));
+    const labels = () => openOptions().map((node) => (node.querySelector(".ui-tree-select-option-label")?.textContent || "").trim());
+    const getSearch = () => document.querySelector(".ui-tree-select-search");
+
+    assert(Boolean(document.querySelector(".ui-tree-select-menu")), "open trigger should render floating menu");
+    assert(document.querySelector(".ui-tree-select-menu")?.parentElement === document.body, "floating menu should mount at document.body");
+    assert(labels().includes("Ambulance"), "selected child should force ancestor expansion on open");
+    assert(labels().includes("Medical"), "root branch should remain visible");
+
+    getSearch().value = "ambul";
+    getSearch().dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(80);
+
+    assert(labels().includes("Medical"), "search should preserve parent context for matching children");
+    assert(labels().includes("Ambulance"), "search should keep matching leaf visible");
+    assert(!labels().includes("Fire Response"), "search should hide unrelated branches");
+    assert(document.querySelectorAll(".ui-tree-select-match").length >= 1, "search should highlight matching text");
+
+    getSearch().value = "medical";
+    getSearch().dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(80);
+    assert(labels().includes("Ambulance"), "matching a parent label should keep descendant choices visible");
+
+    const medicalRow = openOptions().find((node) => node.textContent.includes("Medical"));
+    medicalRow?.click();
+    await wait(80);
+    assert(picker.getValue() === "ambulance", "branch rows should stay non-selectable by default");
+
+    getSearch().value = "rescue";
+    getSearch().dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(80);
+    const rescueRow = openOptions().find((node) => node.textContent.includes("Rescue Truck"));
+    rescueRow?.click();
+    await wait(80);
+
+    assert(picker.getValue() === "rescue", "leaf row click should update value");
+    assert(document.querySelector(".ui-tree-select-menu") === null, "closeOnSelect should close the menu after leaf selection");
+    assert(document.querySelector(".ui-tree-select-trigger")?.textContent.includes("Fire Response / Rescue Truck"), "trigger should update to the new selected path");
+
+    picker.destroy();
+    assert(document.getElementById("host").children.length === 0, "destroy should clean the host");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

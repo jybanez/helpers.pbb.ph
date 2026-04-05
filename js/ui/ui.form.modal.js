@@ -2,6 +2,7 @@ import { createElement, clearNode } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.61";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
+import { createTreeSelect } from "./ui.tree.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [
   "../../css/ui/ui.tokens.css",
@@ -9,6 +10,7 @@ const FORM_MODAL_STYLE_PATHS = [
   "../../css/ui/ui.modal.css",
   "../../css/ui/ui.form.modal.css",
   "../../css/ui/ui.select.css",
+  "../../css/ui/ui.tree.select.css",
   "../../css/ui/ui.password.css",
 ];
 const FORM_MODAL_STYLE_HREFS = FORM_MODAL_STYLE_PATHS.map((path) => new URL(path, import.meta.url).href);
@@ -77,6 +79,8 @@ export function createFormModal(options = {}) {
     fields.forEach((field) => {
       if (field?.type === "ui.select") {
         field.control?.__uiSelectInstance?.destroy?.();
+      } else if (field?.type === "ui.treeselect") {
+        field.control?.__uiTreeSelectInstance?.destroy?.();
       } else if (field?.type === "input") {
         field.control?.__uiPasswordInstance?.destroy?.();
       }
@@ -89,7 +93,7 @@ export function createFormModal(options = {}) {
     }
     const next = { ...item };
     const mode = currentOptions.mode;
-    next.type = String(next.type || "").trim().toLowerCase();
+    next.type = normalizeItemType(next.type);
     next.span = normalizeSpan(next.span);
     next._initialValues = currentOptions.initialValues || {};
     next.required = Boolean(next.required) || resolveModeFlag(next.requiredOn, mode);
@@ -190,7 +194,7 @@ export function createFormModal(options = {}) {
     if (type === "display") {
       return renderDisplayItem(item);
     }
-    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select") {
+    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select" || type === "ui.treeselect") {
       return renderField(item, type, rowIndex, itemIndex);
     }
     console.warn(`[createFormModal] Unsupported item type "${type}".`);
@@ -295,7 +299,7 @@ export function createFormModal(options = {}) {
         errorEl: null,
       });
       return control;
-    } else if (type === "ui.select") {
+    } else if (type === "ui.select" || type === "ui.treeselect") {
       if (labelText) {
         label.textContent = labelText;
         wrapper.appendChild(label);
@@ -325,7 +329,7 @@ export function createFormModal(options = {}) {
       appendDescribedBy(getFieldAriaTarget({ type, control }), helpEl.id);
     }
 
-    if (type === "ui.select" && errorEl) {
+    if ((type === "ui.select" || type === "ui.treeselect") && errorEl) {
       appendDescribedBy(getFieldAriaTarget({ type, control }), errorEl.id);
     }
 
@@ -393,6 +397,30 @@ export function createFormModal(options = {}) {
         },
       });
       host.__uiSelectInstance = selectInstance;
+      control = host;
+      return control;
+    }
+
+    if (type === "ui.treeselect") {
+      const host = createElement("div", {
+        className: "ui-form-modal-select-host",
+        attrs: { id },
+      });
+      const treeSelectInstance = createTreeSelect(host, item.items || item.options || [], {
+        ariaLabel: item.ariaLabel || item.label || name,
+        placeholder: item.placeholder || "Select...",
+        emptyText: item.emptyText || "No options found.",
+        searchable: item.searchable !== false,
+        closeOnSelect: item.closeOnSelect !== false,
+        selectOnTab: Boolean(item.selectOnTab),
+        clearable: item.clearable !== false,
+        defaultExpanded: Boolean(item.defaultExpanded),
+        selected: value,
+        onChange() {
+          handleFieldChange(name);
+        },
+      });
+      host.__uiTreeSelectInstance = treeSelectInstance;
       control = host;
       return control;
     }
@@ -543,7 +571,7 @@ export function createFormModal(options = {}) {
         if (field.config.required && !control.checked) {
           message = "This field is required.";
         }
-      } else if (field.type === "ui.select") {
+      } else if (field.type === "ui.select" || field.type === "ui.treeselect") {
         const value = getFieldValue(field);
         const isEmpty = Array.isArray(value) ? value.length === 0 : value == null || value === "";
         if (field.config.required && isEmpty) {
@@ -593,7 +621,7 @@ export function createFormModal(options = {}) {
     if (field?.type === "hidden") {
       return;
     }
-    const focusTarget = field?.type === "ui.select"
+    const focusTarget = field?.type === "ui.select" || field?.type === "ui.treeselect"
       ? getFieldAriaTarget(field)
       : getFieldAriaTarget(field) || field?.control;
     if (focusTarget && typeof focusTarget.focus === "function") {
@@ -1061,9 +1089,20 @@ function appendDescribedBy(control, id) {
   control.setAttribute("aria-describedby", next);
 }
 
+function normalizeItemType(type) {
+  const value = String(type || "").trim().toLowerCase();
+  if (value === "ui.treeselect" || value === "ui.tree.select") {
+    return "ui.treeselect";
+  }
+  return value;
+}
+
 function getFieldValue(field) {
   if (field.type === "ui.select") {
     return field.control?.__uiSelectInstance?.getValue?.() ?? (field.config.multiple ? [] : null);
+  }
+  if (field.type === "ui.treeselect") {
+    return field.control?.__uiTreeSelectInstance?.getValue?.() ?? null;
   }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     return field.control.__uiPasswordInstance.getValue();
@@ -1083,6 +1122,14 @@ function setFieldValue(field, value) {
     field.control?.__uiSelectInstance?.setValue?.(value);
     return;
   }
+  if (field.type === "ui.treeselect") {
+    const currentValue = field.control?.__uiTreeSelectInstance?.getValue?.();
+    if (isSameValue(currentValue, value)) {
+      return;
+    }
+    field.control?.__uiTreeSelectInstance?.setValue?.(value);
+    return;
+  }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     field.control.__uiPasswordInstance.setValue(value == null ? "" : String(value));
     return;
@@ -1100,6 +1147,9 @@ function getFieldAriaTarget(field) {
   }
   if (field.type === "ui.select") {
     return field.control?.querySelector?.(".ui-select-trigger") || null;
+  }
+  if (field.type === "ui.treeselect") {
+    return field.control?.querySelector?.(".ui-tree-select-trigger") || null;
   }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     return field.control.__uiPasswordInstance.input || null;

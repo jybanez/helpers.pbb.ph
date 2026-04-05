@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.67`
+- Latest documented release: `v0.21.68`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.68
+
+- Added `ui.tree.select` as a shared hierarchical single-select picker for grouped taxonomies, with parent-context search, branch expand/collapse, and the same floating body-level menu model used by `ui.select`.
+- Added `type: "ui.treeSelect"` hosting support to `createFormModal(...)`, including value participation, helper-applied error state, focus targeting, and floating-menu behavior inside modal containers.
+- Added the dedicated `demos/demo.tree.select.html` page plus focused tree-select and form-modal regression coverage.
 
 ### v0.21.67
 

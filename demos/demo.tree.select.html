@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Select Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 18px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { min-width: 300px; max-width: 380px; display: grid; gap: 8px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.tree.select"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Tree Select",
+      overview: "Hierarchical single-select picker for grouped taxonomies, with parent-context search and floating menu behavior.",
+      useWhen: [
+        "Use <code>createTreeSelect(...)</code> when flat labels like <code>Medical / Ambulance</code> become noisy and users need grouped browsing.",
+        "Use it inside form-modal rows through <code>type: \"ui.treeSelect\"</code> when the vocabulary is a real hierarchy."
+      ],
+      avoidWhen: [
+        "Do not use it for flat vocabularies where <code>createSelect(...)</code> is sufficient.",
+        "Do not use it for checked-tree multi-select semantics in V1."
+      ],
+      description: "This page demonstrates the V1 single-select tree picker: non-selectable parent groups by default, searchable child matching that preserves parent context, and a trigger that shows the selected leaf path.",
+      defaultSampleCode: "const picker = createTreeSelect(host, nodes, {\n  searchable: true,\n  selected: \"ambulance\",\n  onChange(value, node) {\n    writeLog(\"treeSelect.change\", { value, node });\n  },\n});",
+      constructor: [
+        { factory: "<code>createTreeSelect(container, items, options)</code>", arguments: "host node, tree items, picker options", returns: "Tree-select instance" }
+      ],
+      options: [
+        { option: "<code>searchable</code>", default: "<code>true</code>", description: "Shows inline filtering input above the tree menu." },
+        { option: "<code>selected</code>", default: "<code>null</code>", description: "Initial selected leaf value." },
+        { option: "<code>clearable</code>", default: "<code>true</code>", description: "Shows a clear/reset affordance in the trigger when a value is selected." },
+        { option: "<code>defaultExpanded</code>", default: "<code>false</code>", description: "Expands all branch nodes by default for browse-heavy datasets." },
+        { option: "<code>closeOnSelect</code>", default: "<code>true</code>", description: "Closes the floating tree menu after selection." },
+        { option: "<code>selectOnTab</code>", default: "<code>false</code>", description: "Commits the current active item on <code>Tab</code> when enabled." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Fires as <code>(value, node)</code> when the selection changes." }
+      ],
+      propertiesText: "Parent nodes are non-selectable by default when they have children. Override with <code>selectable: true</code> only when a branch is also a valid terminal choice.",
+      methods: [
+        { method: "<code>setValue(value)</code>", arguments: "leaf value or <code>null</code>", returns: "<code>void</code>" },
+        { method: "<code>getValue()</code>", arguments: "none", returns: "current selected value or <code>null</code>" },
+        { method: "<code>update(items, options)</code>", arguments: "tree items, partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "open/search/selection snapshot including visible tree entries" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Tree Select Demo</h1>
+      <p class="muted">Dedicated page for the shared tree-select helper and its grouped-search behavior.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Grouped Picker</h2>
+      <div class="row">
+        <div class="host">
+          <strong>Resource Catalog</strong>
+          <div id="treeSelectHost"></div>
+        </div>
+      </div>
+      <pre>const picker = createTreeSelect(host, nodes, {
+  searchable: true,
+  selected: "ambulance",
+  onChange(value, node) {
+    writeLog("treeSelect.change", { value, node });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createTreeSelect = await uiLoader.get("ui.tree.select");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const nodes = [
+      {
+        id: "medical",
+        label: "Medical",
+        children: [
+          { id: "ambulance", label: "Ambulance" },
+          { id: "triage", label: "Triage Nurse" },
+        ],
+      },
+      {
+        id: "fire",
+        label: "Fire Response",
+        children: [
+          { id: "engine", label: "Fire Engine" },
+          { id: "rescue", label: "Rescue Truck" },
+        ],
+      },
+      {
+        id: "utilities",
+        label: "Utilities",
+        children: [
+          { id: "power", label: "Power Crew" },
+          { id: "water", label: "Water District" },
+        ],
+      },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    createTreeSelect(document.getElementById("treeSelectHost"), nodes, {
+      ariaLabel: "Resource catalog",
+      placeholder: "Choose a resource",
+      searchable: true,
+      selected: "ambulance",
+      onChange(value, node) {
+        writeLog("treeSelect.change", { value, node });
+      },
+    });
+  </script>
+</body>
+</html>

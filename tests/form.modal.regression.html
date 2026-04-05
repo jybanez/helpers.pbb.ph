@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/ui/ui.modal.css">
   <link rel="stylesheet" href="../css/ui/ui.form.modal.css">
   <link rel="stylesheet" href="../css/ui/ui.select.css">
+  <link rel="stylesheet" href="../css/ui/ui.tree.select.css">
   <style>
     body {
       margin: 0;
@@ -431,6 +432,75 @@
     uplinkModal.destroy();
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove ui.select integration modal from DOM");
+
+    const resourceModal = createFormModal({
+      title: "Assign Resource",
+      submitLabel: "Save Resource",
+      rows: [
+        [{
+          type: "ui.treeSelect",
+          name: "resource_type_id",
+          label: "Resource",
+          searchable: true,
+          options: [
+            {
+              id: "medical",
+              label: "Medical",
+              children: [
+                { id: "ambulance", label: "Ambulance" },
+                { id: "triage", label: "Triage Nurse" },
+              ],
+            },
+            {
+              id: "fire",
+              label: "Fire Response",
+              children: [
+                { id: "engine", label: "Fire Engine" },
+                { id: "rescue", label: "Rescue Truck" },
+              ],
+            },
+          ],
+          required: true,
+        }],
+      ],
+      async onSubmit() {
+        await wait(50);
+        return false;
+      },
+    });
+
+    resourceModal.open();
+    await wait(100);
+
+    const getResourceField = () => document.querySelector(".ui-form-modal-field.is-ui-treeselect");
+    const getResourceTrigger = () => getResourceField()?.querySelector(".ui-tree-select-trigger");
+    const getResourceError = () => getResourceField()?.querySelector(".ui-form-modal-field-error");
+    resourceModal.setErrors({ resource_type_id: "Select one resource." });
+    await wait(80);
+    assert(getResourceError()?.textContent.includes("Select one resource."), "ui.treeSelect should render helper-applied field error");
+    assert(getResourceTrigger()?.getAttribute("aria-invalid") === "true", "ui.treeSelect trigger should receive aria-invalid on helper error");
+
+    getResourceTrigger()?.click();
+    await wait(80);
+    const floatingTreeMenu = document.querySelector(".ui-tree-select-menu");
+    assert(Boolean(floatingTreeMenu), "ui.treeSelect should render an open menu");
+    assert(floatingTreeMenu?.parentElement === document.body, "ui.treeSelect menu should mount at document.body to avoid modal clipping");
+
+    const resourceSearch = document.querySelector(".ui-tree-select-search");
+    resourceSearch.value = "ambu";
+    resourceSearch.dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(80);
+    const ambulanceOption = Array.from(document.querySelectorAll(".ui-tree-select-option")).find((node) => node.textContent.includes("Ambulance"));
+    ambulanceOption?.click();
+    await wait(80);
+
+    const resourceValues = resourceModal.getValues();
+    assert(resourceValues.resource_type_id === "ambulance", "ui.treeSelect should participate in getValues with the selected leaf value");
+    assert(getResourceTrigger()?.textContent.includes("Medical / Ambulance"), "ui.treeSelect trigger should show the selected path");
+
+    resourceModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove ui.treeSelect integration modal from DOM");
 
     if (failures.length) {
       document.body.dataset.status = "fail";
