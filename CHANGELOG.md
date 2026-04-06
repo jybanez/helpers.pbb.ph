@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.68`
+- Latest documented release: `v0.21.69`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.69
+
+- Added `kind: "password"` support to `ui.property.editor`, reusing the shared `ui.password` control so secret-bearing settings can stay inside the normal property-editor schema and change lifecycle.
+- Extended property-editor loader wiring, demo coverage, and browser regression coverage for hosted password rows, including masked-by-default rendering and shared show/hide toggle behavior.
 
 ### v0.21.68
 

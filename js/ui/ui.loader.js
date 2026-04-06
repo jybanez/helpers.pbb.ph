@@ -196,8 +196,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.property.editor": {
     js: "./ui.property.editor.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.editor.css", "../../css/ui/ui.toggle.css", "../../css/ui/ui.select.css"],
-    deps: ["ui.toggle.button", "ui.select"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.editor.css", "../../css/ui/ui.toggle.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
+    deps: ["ui.toggle.button", "ui.select", "ui.password"],
     export: "createPropertyEditor",
   },
   "ui.select": {

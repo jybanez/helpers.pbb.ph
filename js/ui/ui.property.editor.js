@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createSelect as createHostedUiSelect } from "./ui.select.js";
+import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createToggleButton } from "./ui.toggle.button.js";
 
 const DEFAULT_OPTIONS = {
@@ -23,6 +24,7 @@ export function createPropertyEditor(container, data = {}, options = {}) {
   let root = null;
   let toggleApis = [];
   let selectApis = [];
+  let passwordApis = [];
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -31,6 +33,7 @@ export function createPropertyEditor(container, data = {}, options = {}) {
 
     destroyToggleApis();
     destroySelectApis();
+    destroyPasswordApis();
     clearNode(container);
 
     root = createElement("div", {
@@ -182,6 +185,8 @@ export function createPropertyEditor(container, data = {}, options = {}) {
         return createReadOnlyValue(property);
       case "text":
         return createTextInput(section, property, editorId, "text");
+      case "password":
+        return createPassword(section, property, editorId);
       case "textarea":
         return createTextarea(section, property, editorId);
       case "number":
@@ -206,6 +211,12 @@ export function createPropertyEditor(container, data = {}, options = {}) {
   }
 
   function createReadOnlyValue(property) {
+    if (property.kind === "password") {
+      return createElement("div", {
+        className: "ui-property-editor-display",
+        text: property.value == null || property.value === "" ? currentOptions.readOnlyValueFallback : "••••••••",
+      });
+    }
     const text = property.mixed
       ? currentOptions.mixedLabel
       : formatDisplayValue(property.value, currentOptions.readOnlyValueFallback);
@@ -255,6 +266,37 @@ export function createPropertyEditor(container, data = {}, options = {}) {
       updatePropertyValue(section.id, property.id, input.value, { source: input, previousValue: property.value });
     });
     return input;
+  }
+
+  function createPassword(section, property, editorId) {
+    if (property.readOnly) {
+      return createReadOnlyValue(property);
+    }
+    const host = createElement("div", {
+      className: "ui-property-editor-password-host",
+    });
+    const passwordApi = createPasswordField(host, {
+      id: editorId,
+      name: property.id,
+      value: property.mixed ? "" : normalizeInputValue(property.value),
+      placeholder: property.mixed ? currentOptions.mixedLabel : (property.placeholder || ""),
+      autocomplete: property.autocomplete || "",
+      disabled: property.disabled,
+      readonly: property.readOnly,
+      ariaLabel: property.ariaLabel || property.label || property.id,
+      onChange(nextValue) {
+        updatePropertyValue(section.id, property.id, nextValue, {
+          source: passwordApi.input,
+          previousValue: property.value,
+          mixedCleared: property.mixed,
+        });
+      },
+    });
+    if (getPropertyError(property.id)) {
+      passwordApi.input.setAttribute("aria-invalid", "true");
+    }
+    passwordApis.push(passwordApi);
+    return host;
   }
 
   function createNumberInput(section, property, editorId) {
@@ -534,6 +576,7 @@ export function createPropertyEditor(container, data = {}, options = {}) {
   function destroy() {
     destroyToggleApis();
     destroySelectApis();
+    destroyPasswordApis();
     clearNode(container);
     root = null;
   }
@@ -546,6 +589,11 @@ export function createPropertyEditor(container, data = {}, options = {}) {
   function destroySelectApis() {
     selectApis.forEach((api) => api?.destroy?.());
     selectApis = [];
+  }
+
+  function destroyPasswordApis() {
+    passwordApis.forEach((api) => api?.destroy?.());
+    passwordApis = [];
   }
 
   render();
@@ -600,6 +648,7 @@ function normalizeProperties(properties = []) {
     value: property?.value,
     placeholder: property?.placeholder == null ? "" : String(property.placeholder),
     help: property?.help == null ? "" : String(property.help),
+    autocomplete: property?.autocomplete == null ? "" : String(property.autocomplete),
     readOnly: Boolean(property?.readOnly),
     disabled: Boolean(property?.disabled),
     mixed: Boolean(property?.mixed),
@@ -657,7 +706,7 @@ function filterErrorsForSections(errors, sections) {
 
 function normalizePropertyKind(kind) {
   const candidate = String(kind || "display").trim().toLowerCase();
-  return ["display", "text", "textarea", "number", "checkbox", "toggle", "select", "ui.select", "color", "color-select", "action", "divider"].includes(candidate)
+  return ["display", "text", "password", "textarea", "number", "checkbox", "toggle", "select", "ui.select", "color", "color-select", "action", "divider"].includes(candidate)
     ? candidate
     : "display";
 }

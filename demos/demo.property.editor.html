@@ -21,17 +21,17 @@
   <script>
     window.demoMeta = {
       title: "Property Editor",
-      overview: "Inspector-style property editor for grouped name/value editing with typed property rows, read-only and mixed-value handling, checkbox/toggle booleans, native selects, and hosted ui.select fields including multi-value selection.",
+      overview: "Inspector-style property editor for grouped name/value editing with typed property rows, read-only and mixed-value handling, checkbox/toggle booleans, native selects, hosted ui.select fields, and shared password-style secret fields.",
       useWhen: [
         "Use <code>createPropertyEditor(...)</code> for inspector panels, configuration sidebars, and object property panes where edits happen continuously instead of through a submit-only form.",
-        "Use it when you need compact property rows with shared editing behavior for text, number, select, ui.select, color, checkbox, and toggle properties."
+        "Use it when you need compact property rows with shared editing behavior for text, password, number, select, ui.select, color, checkbox, and toggle properties."
       ],
       avoidWhen: [
         "Do not use it as a persistence or autosave engine. App code still owns transport, undo/redo, and cross-property business rules.",
         "Do not use it as a full schema designer or arbitrary plugin-host surface in V1."
       ],
       description: "The helper stays narrow: sectioned inspector layout, stable label/editor/action columns, mixed/read-only states, and structured change/action callbacks. It is not a modal form engine and it is not a domain model runtime.",
-      defaultSampleCode: `const editor = createPropertyEditor(host, {\n  selectionLabel: 'Radial Dimension (1)',\n  sections: [{\n    id: 'general',\n    title: 'General Properties',\n    properties: [\n      { id: 'layer', label: 'Layer', kind: 'select', value: 'dimensions', options: [\n        { value: 'dimensions', label: 'dimensions' },\n        { value: 'annotations', label: 'annotations' }\n      ] },\n      { id: 'visible_in', label: 'Visible In', kind: 'ui.select', value: ['plan', 'elevation'], multiple: true, items: [\n        { value: 'plan', label: 'Plan' },\n        { value: 'elevation', label: 'Elevation' },\n        { value: 'section', label: 'Section' }\n      ] },\n      { id: 'locked', label: 'Locked', kind: 'toggle', value: false },\n      { id: 'handle', label: 'Handle', kind: 'display', value: '0x3d0', readOnly: true }\n    ]\n  }]\n}, {\n  onPropertyChange(change) {\n    console.log(change.propertyId, change.value);\n  }\n});`,
+      defaultSampleCode: `const editor = createPropertyEditor(host, {\n  selectionLabel: 'Radial Dimension (1)',\n  sections: [{\n    id: 'general',\n    title: 'General Properties',\n    properties: [\n      { id: 'layer', label: 'Layer', kind: 'select', value: 'dimensions', options: [\n        { value: 'dimensions', label: 'dimensions' },\n        { value: 'annotations', label: 'annotations' }\n      ] },\n      { id: 'visible_in', label: 'Visible In', kind: 'ui.select', value: ['plan', 'elevation'], multiple: true, items: [\n        { value: 'plan', label: 'Plan' },\n        { value: 'elevation', label: 'Elevation' },\n        { value: 'section', label: 'Section' }\n      ] },\n      { id: 'realtime_secret', label: 'Realtime Token Signing Secret', kind: 'password', value: '', autocomplete: 'off' },\n      { id: 'locked', label: 'Locked', kind: 'toggle', value: false },\n      { id: 'handle', label: 'Handle', kind: 'display', value: '0x3d0', readOnly: true }\n    ]\n  }]\n}, {\n  onPropertyChange(change) {\n    console.log(change.propertyId, change.value);\n  }\n});`,
       constructor: [
         { factory: "<code>createPropertyEditor(container, data, options)</code>", arguments: "host container, editor data, and editor options", returns: "Property editor instance" }
       ],
@@ -45,7 +45,8 @@
         { option: "<code>showPropertyHelp</code>", default: '<code>true</code>', description: "Shows property help text when provided." },
         { option: "<code>mixedLabel</code>", default: '<code>"Mixed"</code>', description: "Display label used when a property has <code>mixed: true</code>." },
         { option: "<code>readOnlyValueFallback</code>", default: '<code>"—"</code>', description: "Fallback display for empty read-only values." },
-        { option: "<code>property.kind = \"ui.select\"</code>", default: "n/a", description: "Uses the shared hosted select surface and supports <code>multiple</code>, <code>searchable</code>, <code>clearable</code>, and item arrays for richer property editing." }
+        { option: "<code>property.kind = \"ui.select\"</code>", default: "n/a", description: "Uses the shared hosted select surface and supports <code>multiple</code>, <code>searchable</code>, <code>clearable</code>, and item arrays for richer property editing." },
+        { option: "<code>property.kind = \"password\"</code>", default: "n/a", description: "Uses the shared hosted password surface so secret-bearing settings stay masked by default but still participate in normal property change events." }
       ],
       propertiesText: "No stable direct instance properties are documented. Use <code>getState()</code> instead of reading DOM or internal references directly.",
       events: [
@@ -69,7 +70,7 @@
   <main class="page">
     <section class="panel">
       <h1 class="ui-title">Property Editor Demo</h1>
-      <p class="muted">Dedicated helper page for inspector-style grouped property editing.</p>
+      <p class="muted">Dedicated helper page for inspector-style grouped property editing, including hosted select and password-style secret rows.</p>
     </section>
     <section class="panel">
       <div class="row">
@@ -113,6 +114,7 @@
               { value: "section", label: "Section" },
               { value: "detail", label: "Detail" }
             ], help: "Hosted multi-value select using the shared ui.select helper." },
+            { id: "realtime_secret", label: "Realtime Token Signing Secret", kind: "password", value: "signed-admission-secret", autocomplete: "off", help: "Hosted password field using the shared ui.password helper so integration secrets stay inside the same property-editor contract." },
             { id: "locked", label: "Locked", kind: "toggle", value: false, help: "Prevents accidental edits when enabled." },
             { id: "color", label: "Color", kind: "color-select", value: "#ffffff", options: [
               { value: "#ffffff", label: "By Layer" },

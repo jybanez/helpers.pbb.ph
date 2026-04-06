@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.68`
+Latest documented release: `v0.21.69`
 
 This repository currently covers **7 helpers**:
 
@@ -299,7 +299,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.chat.upload.queue.js`
   - `createChatUploadQueue(container, data, options)` draft attachment queue with grouped image/video previews, listed audio/file rows, and visual upload progress/state before send
 - `ui.property.editor.js`
-  - `createPropertyEditor(container, data, options)` inspector-style property editor with grouped sections, typed property rows, mixed/read-only states, toggle/checkbox booleans, and structured property/action callbacks
+  - `createPropertyEditor(container, data, options)` inspector-style property editor with grouped sections, typed property rows, mixed/read-only states, hosted `ui.select` / `password` rows, toggle/checkbox booleans, and structured property/action callbacks
 - `ui.file.uploader.js`
   - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
@@ -4422,7 +4422,7 @@ Modal preset notes:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.68`
+- Latest documented release: `v0.21.69`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

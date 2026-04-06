@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.select.css">
   <link rel="stylesheet" href="../css/ui/ui.toggle.css">
+  <link rel="stylesheet" href="../css/ui/ui.password.css">
   <link rel="stylesheet" href="../css/ui/ui.property.editor.css">
   <style>
     body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
@@ -48,6 +49,7 @@
                 { value: "elevation", label: "Elevation" },
                 { value: "section", label: "Section" }
               ] },
+              { id: "realtime_secret", label: "Realtime Token Signing Secret", kind: "password", value: "super-secret-token", placeholder: "Enter signing secret", autocomplete: "off" },
               { id: "color", label: "Color", kind: "color", value: "#7198e5" },
               { id: "font_size", label: "Font Size", kind: "text", value: "11px", mixed: true },
               { id: "handle", label: "Handle", kind: "display", value: "0x3d0", readOnly: true },
@@ -73,6 +75,8 @@
       assert(host.querySelector(".ui-property-editor-display").textContent.includes("0x3d0"), "read-only display rows should render");
       assert(host.querySelector(".ui-toggle-button"), "toggle property should render shared toggle button");
       assert(host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-select'), "ui.select property rows should render the shared hosted select surface");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password'), "password property rows should render the shared hosted password surface");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-input')?.type === "password", "password property rows should render masked by default");
 
       const nameInput = host.querySelector('input[type="text"]');
       nameInput.value = "Rectangle B";
@@ -90,6 +94,13 @@
       const hostedSelectHost = host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-property-editor-select-host');
       hostedSelectHost.__uiSelectInstance.setValue(["plan", "section"]);
       assert(events.some((event) => event.type === "change" && event.propertyId === "visible_in" && Array.isArray(event.value) && event.value.includes("plan") && event.value.includes("section")), "ui.select property changes should emit structured multi-value events");
+
+      const passwordInput = host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-input');
+      passwordInput.value = "rotated-secret";
+      passwordInput.dispatchEvent(new Event("input", { bubbles: true }));
+      assert(events.some((event) => event.type === "change" && event.propertyId === "realtime_secret" && event.value === "rotated-secret"), "password property changes should emit structured events");
+      host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-toggle').click();
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-input')?.type === "text", "password property toggle should reveal the value through the shared ui.password behavior");
 
       editor.setErrors({ layer: "Layer is required.", font_size: "Font size must be normalized." });
       assert(host.textContent.includes("Layer is required."), "setErrors should render property-level errors");
