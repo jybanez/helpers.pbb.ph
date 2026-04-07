@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.73`
+- Latest documented release: `v0.21.75`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,16 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.75
+
+- Added `showSummary` support to `createDevicePrimerModal(...)` so engineers can hide the aggregate summary strip in the modal wrapper the same way they can in the inline helper.
+- Tightened modal device-primer footer behavior so `Retry Failed` is only rendered when at least one check is currently retryable instead of showing a permanently disabled action.
+
+### v0.21.74
+
+- Hardened `ui.device.primer` audio playback checks again so the helper waits briefly for delayed `AudioContext` resume transitions before reporting the audio path as blocked.
+- Extended device-primer regression coverage with a delayed-resume audio stub to better match real-origin browser timing.
 
 ### v0.21.73
 

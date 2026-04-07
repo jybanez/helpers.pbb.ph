@@ -4416,6 +4416,8 @@ Modal preset notes:
 - intended for page-load or pre-join readiness flows
 - auto-runs by default unless the app explicitly disables it
 - project code still owns blocking policy and what happens after success/failure
+- `showSummary` is supported for both the inline helper and the modal wrapper
+- the modal wrapper only renders `Retry Failed` when at least one check is currently retryable
 
 ## Notes
 

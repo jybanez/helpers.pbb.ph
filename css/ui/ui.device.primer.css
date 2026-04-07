@@ -1,6 +1,7 @@
 .ui-device-primer {
   display: grid;
   gap: 14px;
+  container-type: inline-size;
 }
 
 .ui-device-primer-title {
@@ -45,22 +46,21 @@
 }
 
 .ui-device-primer-summary-icon {
-  width: 34px;
-  height: 34px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: rgba(135, 163, 212, 0.14);
   color: #d7e0f4;
+  background: transparent;
+  align-self: center;
 }
 
 .ui-device-primer-summary.is-ready .ui-device-primer-summary-icon {
-  background: rgba(99, 187, 131, 0.18);
   color: #b8f3cf;
 }
 
 .ui-device-primer-summary.is-failed .ui-device-primer-summary-icon {
-  background: rgba(214, 92, 92, 0.16);
   color: #ffc2c2;
 }
 
@@ -68,6 +68,8 @@
   display: grid;
   gap: 4px;
   min-width: 0;
+  align-content: center;
+  align-self: center;
 }
 
 .ui-device-primer-summary-eyebrow {
@@ -280,7 +282,15 @@
 
 @media (max-width: 700px) {
   .ui-device-primer-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+
+  .ui-device-primer-summary-icon {
+    width: 56px;
+    height: 56px;
+    align-self: center;
   }
 
   .ui-device-primer-heading {
@@ -290,5 +300,19 @@
 
   .ui-device-primer-side {
     justify-items: start;
+  }
+}
+
+@container (max-width: 360px) {
+  .ui-device-primer-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+
+  .ui-device-primer-summary-icon {
+    width: 56px;
+    height: 56px;
+    align-self: center;
   }
 }

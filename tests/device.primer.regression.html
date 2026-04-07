@@ -71,9 +71,15 @@
     });
 
     class AudioContextStub {
-      constructor() { this.state = "suspended"; }
+      constructor() {
+        this.state = "suspended";
+        this.currentTime = 0;
+        this.destination = {};
+      }
       async resume() { this.state = "running"; }
       async close() { this.state = "closed"; }
+      createGain() { return { gain: { value: 0 }, connect() {} }; }
+      createOscillator() { return { connect() {}, start() {}, stop() {} }; }
     }
     Object.defineProperty(window, "AudioContext", {
       configurable: true,
@@ -82,13 +88,37 @@
 
     let gestureResumeAllowed = false;
     class GestureAudioContextStub {
-      constructor() { this.state = "suspended"; }
+      constructor() {
+        this.state = "suspended";
+        this.currentTime = 0;
+        this.destination = {};
+      }
       async resume() {
         if (gestureResumeAllowed) {
           this.state = "running";
         }
       }
       async close() { this.state = "closed"; }
+      createGain() { return { gain: { value: 0 }, connect() {} }; }
+      createOscillator() { return { connect() {}, start() {}, stop() {} }; }
+    }
+
+    class DelayedResumeAudioContextStub {
+      constructor() {
+        this.state = "suspended";
+        this.onstatechange = null;
+        this.currentTime = 0;
+        this.destination = {};
+      }
+      async resume() {
+        queueMicrotask(() => {
+          this.state = "running";
+          this.onstatechange?.();
+        });
+      }
+      async close() { this.state = "closed"; }
+      createGain() { return { gain: { value: 0 }, connect() {} }; }
+      createOscillator() { return { connect() {}, start() {}, stop() {} }; }
     }
 
     const completionStates = [];
@@ -125,9 +155,17 @@
     assert(completionStates.length >= 1, "onComplete should fire.");
 
     class HangingAudioContextStub {
-      constructor() { this.state = "suspended"; }
-      async resume() { return new Promise(() => {}); }
+      constructor() {
+        this.state = "suspended";
+        this.currentTime = 0;
+        this.destination = {};
+      }
+      async resume() {
+        await Promise.resolve();
+      }
       async close() { this.state = "closed"; }
+      createGain() { return { gain: { value: 0 }, connect() {} }; }
+      createOscillator() { return { connect() {}, start() {}, stop() {} }; }
     }
     Object.defineProperty(window, "AudioContext", {
       configurable: true,
@@ -171,6 +209,25 @@
       value: AudioContextStub,
     });
 
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: DelayedResumeAudioContextStub,
+    });
+    const delayedAudioPrimer = createDevicePrimer(host, {
+      checks: [
+        { id: "audio-delayed", kind: "audioPlayback", required: true },
+      ],
+    }, {
+      autoRun: false,
+    });
+    const delayedAudio = await delayedAudioPrimer.runCheck("audio-delayed");
+    assert(delayedAudio && delayedAudio.status === "ready", "Audio playback should wait briefly for delayed resume transitions before reporting blocked.");
+    delayedAudioPrimer.destroy();
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: AudioContextStub,
+    });
+
     const modal = createDevicePrimerModal({
       title: "Modal Primer",
       checks: [
@@ -185,6 +242,9 @@
     const continueButtonBefore = Array.from(document.querySelectorAll(".ui-dialog-footer-actions button, .ui-modal-footer button"))
       .find((button) => (button.textContent || "").trim() === "Continue");
     assert(continueButtonBefore && continueButtonBefore.disabled, "Continue should start disabled when required checks are not ready.");
+    const retryButtonBefore = Array.from(document.querySelectorAll(".ui-dialog-footer-actions button, .ui-modal-footer button"))
+      .find((button) => (button.textContent || "").trim() === "Retry Failed");
+    assert(!retryButtonBefore, "Retry Failed should stay hidden when no checks are retryable.");
 
     micMode = "ready";
     await modal.runAll();
@@ -194,6 +254,26 @@
     assert(continueButtonAfter && !continueButtonAfter.disabled, "Continue should enable after required checks are ready.");
 
     modal.destroy();
+
+    micMode = "blocked";
+    const failureModal = createDevicePrimerModal({
+      title: "Failure Modal Primer",
+      checks: [
+        { id: "mic-failure-modal", kind: "microphone", required: true },
+      ],
+    }, {
+      blockUntilReady: true,
+      autoRun: false,
+      showSummary: false,
+    });
+    failureModal.open();
+    assert(!document.querySelector(".ui-device-primer-summary"), "Modal should honor showSummary: false.");
+    await failureModal.runAll();
+    const retryButtonAfterFailure = Array.from(document.querySelectorAll(".ui-dialog-footer-actions button, .ui-modal-footer button"))
+      .find((button) => (button.textContent || "").trim() === "Retry Failed");
+    assert(retryButtonAfterFailure && !retryButtonAfterFailure.disabled, "Retry Failed should appear when at least one check is retryable.");
+    failureModal.destroy();
+
     primer.destroy();
 
     if (failures.length) {

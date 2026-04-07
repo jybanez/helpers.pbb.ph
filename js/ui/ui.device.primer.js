@@ -35,6 +35,7 @@ const DEFAULT_MODAL_OPTIONS = {
   size: "md",
   continueLabel: "Continue",
   retryLabel: "Retry Failed",
+  showSummary: true,
   autoOpen: false,
   blockUntilReady: false,
   showCloseButton: true,
@@ -102,7 +103,7 @@ export function createDevicePrimer(container, data = {}, options = {}) {
       ].filter(Boolean).join(" "),
     });
     const iconWrap = createElement("div", { className: "ui-device-primer-summary-icon" });
-    iconWrap.appendChild(createIcon(`status.${tone}`, { size: 18, className: "ui-device-primer-summary-glyph" }));
+    iconWrap.appendChild(createIcon(`status.${tone}`, { size: 30, className: "ui-device-primer-summary-glyph" }));
     const body = createElement("div", { className: "ui-device-primer-summary-body" });
     body.appendChild(createElement("div", {
       className: "ui-device-primer-summary-eyebrow",
@@ -322,30 +323,31 @@ export function createDevicePrimerModal(data = {}, options = {}) {
       return;
     }
     const state = primerApi.getState();
-    modalApi.setActions([
-      {
+    const actions = [];
+    if (state.hasFailures) {
+      actions.push({
         id: "retry-failed",
         label: modalOptions.retryLabel,
         quiet: true,
-        disabled: !state.hasFailures,
         closeOnClick: false,
         onClick() {
           return runFailedChecks();
         },
-      },
-      {
+      });
+    }
+    actions.push({
         id: "continue",
         label: modalOptions.continueLabel,
         primary: true,
         disabled: Boolean(modalOptions.blockUntilReady && !state.allRequiredReady),
-      },
-    ]);
+      });
+    modalApi.setActions(actions);
   }
 
   primerApi = createDevicePrimer(contentHost, data, {
     autoRun: modalOptions.autoRun,
     allowRetry: true,
-    showSummary: true,
+    showSummary: modalOptions.showSummary,
     onCheckStart: modalOptions.onCheckStart || null,
     onCheckComplete: modalOptions.onCheckComplete || null,
     onRetry: modalOptions.onRetry || null,
@@ -384,9 +386,12 @@ export function createDevicePrimerModal(data = {}, options = {}) {
   return {
     ...modalApi,
     update(nextData = {}, nextOptions = {}) {
+      Object.assign(modalOptions, normalizeModalOptions({ ...modalOptions, ...(nextOptions || {}) }));
       primerApi.update(nextData, nextOptions);
       if (nextData && Object.prototype.hasOwnProperty.call(nextData, "title")) {
         modalApi.update({ title: nextData.title });
+      } else if (nextOptions && Object.prototype.hasOwnProperty.call(nextOptions, "title")) {
+        modalApi.update({ title: modalOptions.title });
       }
       refreshActions();
     },
@@ -524,23 +529,19 @@ async function runAudioPlaybackCheck() {
     if (context.state === "running") {
       return { status: "ready", detailText: "Audio playback is ready.", canRetry: false };
     }
-    let resumeError = null;
     if (typeof context.resume === "function") {
-      Promise.resolve(context.resume()).catch((error) => {
-        resumeError = error;
-      });
-      await Promise.resolve();
-      await Promise.resolve();
-    }
-    if (context.state === "running") {
-      return { status: "ready", detailText: "Audio playback is ready.", canRetry: false };
-    }
-    if (resumeError) {
-      return classifyCheckError(resumeError, "Audio playback is not ready yet.");
+      primeAudioContextOutput(context);
+      const resumeResult = await attemptAudioContextResume(context, 900);
+      if (resumeResult.ready) {
+        return { status: "ready", detailText: "Audio playback is ready.", canRetry: false };
+      }
+      if (resumeResult.error) {
+        return classifyCheckError(resumeResult.error, "Audio playback is not ready yet.");
+      }
     }
     return {
       status: "blocked",
-      detailText: "Audio playback needs a user gesture before the audio context can start.",
+      detailText: getAudioPlaybackBlockedDetail(),
       canRetry: true,
     };
   } catch (error) {
@@ -548,6 +549,124 @@ async function runAudioPlaybackCheck() {
   } finally {
     try { await context?.close?.(); } catch (_error) {}
   }
+}
+
+function primeAudioContextOutput(context) {
+  try {
+    if (!context || typeof context.createOscillator !== "function" || typeof context.createGain !== "function" || !context.destination) {
+      return;
+    }
+    const gain = context.createGain();
+    const oscillator = context.createOscillator();
+    gain.gain.value = 0.00001;
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    if (typeof oscillator.stop === "function") {
+      oscillator.stop((Number(context.currentTime) || 0) + 0.02);
+    }
+  } catch (_error) {
+    // Silent priming is best-effort only.
+  }
+}
+
+function getAudioPlaybackBlockedDetail() {
+  const defaultText = "Audio playback needs a user gesture before the audio context can start.";
+  try {
+    const isEmbedded = window.top !== window.self;
+    const autoplayAllowed =
+      document.permissionsPolicy?.allowsFeature?.("autoplay") ??
+      document.featurePolicy?.allowsFeature?.("autoplay") ??
+      null;
+    if (isEmbedded && autoplayAllowed === false) {
+      return "Audio playback is blocked by the host iframe permissions. Allow autoplay on the iframe, then retry.";
+    }
+    if (isEmbedded) {
+      return "Audio playback may be blocked by embed permissions. If this page is inside an iframe, ensure the host allows autoplay, then retry.";
+    }
+  } catch (_error) {
+    return defaultText;
+  }
+  return defaultText;
+}
+
+async function attemptAudioContextResume(context, timeoutMs = 400) {
+  let resumeError = null;
+  let resumeSettled = false;
+  try {
+    Promise.resolve(context.resume?.()).then(() => {
+      resumeSettled = true;
+    }).catch((error) => {
+      resumeSettled = true;
+      resumeError = error;
+    });
+  } catch (error) {
+    resumeSettled = true;
+    resumeError = error;
+  }
+  await Promise.resolve();
+  await Promise.resolve();
+  if (context?.state === "running") {
+    return { ready: true, error: null };
+  }
+  if (resumeError) {
+    return { ready: false, error: resumeError };
+  }
+  if (resumeSettled) {
+    return { ready: false, error: null };
+  }
+  if (await Promise.race([
+    waitForAudioContextRunning(context, timeoutMs),
+    wait(Math.max(timeoutMs + 250, 0)).then(() => false),
+  ])) {
+    return { ready: true, error: null };
+  }
+  return { ready: false, error: resumeError };
+}
+
+function waitForAudioContextRunning(context, timeoutMs = 400) {
+  if (!context || context.state === "running") {
+    return Promise.resolve(true);
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer = null;
+    const finish = (value) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      try {
+        context.removeEventListener?.("statechange", handleStateChange);
+      } catch (_error) {}
+      const existing = context.onstatechange;
+      if (existing === handleStateChange) {
+        context.onstatechange = null;
+      }
+      resolve(Boolean(value));
+    };
+    const handleStateChange = () => {
+      if (context.state === "running") {
+        finish(true);
+      }
+    };
+    try {
+      context.addEventListener?.("statechange", handleStateChange);
+    } catch (_error) {}
+    if (!context.addEventListener && !context.onstatechange) {
+      context.onstatechange = handleStateChange;
+    }
+    timer = setTimeout(() => finish(context.state === "running"), Math.max(0, Number(timeoutMs) || 0));
+  });
+}
+
+function wait(timeoutMs = 0) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, Number(timeoutMs) || 0));
+  });
 }
 
 async function runMediaDevicesCheck() {
@@ -595,7 +714,11 @@ function normalizeOptions(options = {}) {
 }
 
 function normalizeModalOptions(options = {}) {
-  return { ...DEFAULT_MODAL_OPTIONS, ...(options || {}) };
+  return {
+    ...DEFAULT_MODAL_OPTIONS,
+    ...(options || {}),
+    showSummary: options?.showSummary !== false,
+  };
 }
 
 function normalizeChecks(checks = []) {
