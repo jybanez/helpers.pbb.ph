@@ -80,6 +80,17 @@
       value: AudioContextStub,
     });
 
+    let gestureResumeAllowed = false;
+    class GestureAudioContextStub {
+      constructor() { this.state = "suspended"; }
+      async resume() {
+        if (gestureResumeAllowed) {
+          this.state = "running";
+        }
+      }
+      async close() { this.state = "closed"; }
+    }
+
     const completionStates = [];
     const primer = createDevicePrimer(host, {
       title: "Regression Primer",
@@ -132,6 +143,29 @@
     const blockedAudio = await blockedAudioPrimer.runCheck("audio-blocked");
     assert(blockedAudio && blockedAudio.status === "blocked", "Gesture-gated audio playback should report blocked instead of hanging.");
     blockedAudioPrimer.destroy();
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: AudioContextStub,
+    });
+
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: GestureAudioContextStub,
+    });
+    const gesturePrimer = createDevicePrimer(host, {
+      checks: [
+        { id: "audio-gesture", kind: "audioPlayback", required: true },
+      ],
+    }, {
+      autoRun: false,
+    });
+    gestureResumeAllowed = true;
+    queueMicrotask(() => {
+      gestureResumeAllowed = false;
+    });
+    const gestureAudio = await gesturePrimer.runCheck("audio-gesture");
+    assert(gestureAudio && gestureAudio.status === "ready", "Direct audio playback retries should preserve user activation when no other check is queued.");
+    gesturePrimer.destroy();
     Object.defineProperty(window, "AudioContext", {
       configurable: true,
       value: AudioContextStub,

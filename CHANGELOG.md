@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.72`
+- Latest documented release: `v0.21.73`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.73
+
+- Fixed `ui.device.primer` audio playback retries so a direct user-triggered retry preserves browser user activation instead of always deferring through a promise queue before calling `AudioContext.resume()`.
+- Extended device-primer regression coverage with a transient-gesture audio stub to catch real-origin autoplay-policy failures that localhost-style stubs would miss.
 
 ### v0.21.72
 

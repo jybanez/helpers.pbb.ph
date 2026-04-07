@@ -52,6 +52,7 @@ export function createDevicePrimer(container, data = {}, options = {}) {
   let root = null;
   let autoRunToken = 0;
   let runSequence = Promise.resolve();
+  let queuedRuns = 0;
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -195,8 +196,22 @@ export function createDevicePrimer(container, data = {}, options = {}) {
   }
 
   function runCheck(id) {
-    runSequence = runSequence.then(() => executeCheck(id));
-    return runSequence;
+    if (queuedRuns === 0) {
+      queuedRuns += 1;
+      const immediateRun = executeCheck(id);
+      runSequence = immediateRun.finally(() => {
+        queuedRuns = Math.max(0, queuedRuns - 1);
+      });
+      return immediateRun;
+    }
+    queuedRuns += 1;
+    const queuedRun = runSequence
+      .catch(() => {})
+      .then(() => executeCheck(id));
+    runSequence = queuedRun.finally(() => {
+      queuedRuns = Math.max(0, queuedRuns - 1);
+    });
+    return queuedRun;
   }
 
   async function executeCheck(id) {
