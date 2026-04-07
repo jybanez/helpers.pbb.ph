@@ -16,6 +16,7 @@ const DEFAULT_OPTIONS = {
   closeOnEscape: true,
   busy: false,
   busyMessage: "",
+  cancelBusy: false,
   closeWhileBusy: false,
   backdropCloseWhileBusy: false,
   escapeCloseWhileBusy: false,
@@ -56,6 +57,7 @@ export function createModal(options = {}) {
   let lastFocusedElement = null;
   let activeDocument = null;
   let dragState = null;
+  let busyCancelPending = false;
   const titleId = `ui-modal-title-${++modalIdSeed}`;
 
   const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true" } });
@@ -92,10 +94,20 @@ export function createModal(options = {}) {
     className: "ui-modal-busy-message",
     attrs: { role: "status", "aria-live": "polite" },
   });
+  const busyActions = createElement("div", {
+    className: "ui-modal-busy-actions",
+    attrs: { hidden: "hidden" },
+  });
+  const busyCancelButton = createElement("button", {
+    className: "ui-button ui-button-ghost ui-modal-busy-cancel",
+    text: "Cancel",
+    attrs: { type: "button", hidden: "hidden" },
+  });
 
   titleBlock.append(titleEl, ownerTitleEl);
   header.append(titleBlock, headerActions, closeButton);
-  busyLayer.append(busyOverlay, busySpinner, busyMessage);
+  busyActions.appendChild(busyCancelButton);
+  busyLayer.append(busyOverlay, busySpinner, busyMessage, busyActions);
   panel.append(header, body, footer, busyLayer);
   root.append(backdrop, panel);
 
@@ -119,12 +131,15 @@ export function createModal(options = {}) {
   });
   events.on(header, "pointerdown", onHeaderPointerDown);
   events.on(header, "mousedown", onHeaderMouseDown);
+  events.on(busyCancelButton, "click", onBusyCancelClick);
 
   function normalizeOptions(nextOptions) {
-    return {
+    const merged = {
       ...DEFAULT_OPTIONS,
       ...(nextOptions || {}),
     };
+    merged.cancelBusy = normalizeBusyCancel(merged.cancelBusy);
+    return merged;
   }
 
   function applyClasses() {
@@ -345,6 +360,9 @@ export function createModal(options = {}) {
     if (!open || !currentOptions.draggable) {
       return false;
     }
+    if (isCompactViewport()) {
+      return false;
+    }
     if (!(event.target instanceof HTMLElement)) {
       return false;
     }
@@ -358,6 +376,11 @@ export function createModal(options = {}) {
       return false;
     }
     return true;
+  }
+
+  function isCompactViewport() {
+    const view = getDocumentContext().defaultView || window;
+    return Number(view?.innerWidth || 0) <= 640;
   }
 
   function trapFocusInPanel(event) {
@@ -496,14 +519,65 @@ export function createModal(options = {}) {
   function syncBusyState() {
     const busy = isBusy();
     const message = String(currentOptions.busyMessage || "").trim();
+    const cancelBusy = busy ? currentOptions.cancelBusy : null;
     panel.classList.toggle("is-busy", busy);
     panel.setAttribute("aria-busy", busy ? "true" : "false");
     busyLayer.hidden = !busy;
     busyLayer.setAttribute("aria-hidden", busy ? "false" : "true");
     busyMessage.textContent = message;
+    busyCancelButton.textContent = cancelBusy?.label || "Cancel";
+    busyCancelButton.hidden = !cancelBusy;
+    busyActions.hidden = !cancelBusy;
+    busyCancelButton.disabled = Boolean(busyCancelPending);
     syncBusyInteractivity(busy);
     if (busy && open) {
       panel.focus();
+    } else {
+      busyCancelPending = false;
+    }
+  }
+
+  async function onBusyCancelClick(event) {
+    if (!open || !isBusy() || busyCancelPending) {
+      return;
+    }
+    const cancelBusy = currentOptions.cancelBusy;
+    if (!cancelBusy) {
+      return;
+    }
+    busyCancelPending = true;
+    syncBusyState();
+
+    let shouldClearBusy = true;
+    try {
+      const result = typeof cancelBusy.onCancel === "function"
+        ? await cancelBusy.onCancel({
+            modal: api,
+            event,
+            clearBusy(nextOptions = {}) {
+              api?.setBusy(false, nextOptions);
+            },
+            setBusy(nextBusy, nextOptions = {}) {
+              api?.setBusy(nextBusy, nextOptions);
+            },
+          })
+        : true;
+      if (result === false) {
+        shouldClearBusy = false;
+      }
+    } catch (error) {
+      console.error("[createModal] cancelBusy handler failed.", error);
+    } finally {
+      const stillOpen = Boolean(api?.getState?.().open);
+      busyCancelPending = false;
+      if (!stillOpen) {
+        return;
+      }
+      if (shouldClearBusy) {
+        api.setBusy(false);
+      } else {
+        syncBusyState();
+      }
     }
   }
 
@@ -668,7 +742,7 @@ export function createModal(options = {}) {
 
   update(currentOptions);
 
-  return {
+  const api = {
     open: openModal,
     close,
     update,
@@ -690,6 +764,9 @@ export function createModal(options = {}) {
       if (nextOptions && Object.prototype.hasOwnProperty.call(nextOptions, "message")) {
         patch.busyMessage = nextOptions.message == null ? "" : String(nextOptions.message);
       }
+      if (nextOptions && Object.prototype.hasOwnProperty.call(nextOptions, "cancelBusy")) {
+        patch.cancelBusy = normalizeBusyCancel(nextOptions.cancelBusy);
+      }
       update(patch);
     },
     isBusy,
@@ -710,7 +787,30 @@ export function createModal(options = {}) {
       busyOverlay,
       busySpinner,
       busyMessage,
+      busyActions,
+      busyCancelButton,
     },
+  };
+  return api;
+}
+
+function normalizeBusyCancel(value) {
+  if (value == null || value === false) {
+    return false;
+  }
+  if (value === true) {
+    return { label: "Cancel", onCancel: null };
+  }
+  if (typeof value === "function") {
+    return { label: "Cancel", onCancel: value };
+  }
+  if (typeof value !== "object") {
+    return false;
+  }
+  const label = String(value.label || "Cancel").trim() || "Cancel";
+  return {
+    label,
+    onCancel: typeof value.onCancel === "function" ? value.onCancel : null,
   };
 }
 

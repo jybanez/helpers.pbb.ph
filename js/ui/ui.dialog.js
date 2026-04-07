@@ -101,7 +101,7 @@ function openLocalAlert(resolve, message, options = {}) {
     closeOnEscape: options.allowEscClose !== false,
     parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
-    showCloseButton: options.showCloseButton !== false,
+    showCloseButton: Boolean(options.showCloseButton),
     onClose() {
       if (settled) {
         modal.destroy();
@@ -181,7 +181,7 @@ function openLocalConfirm(resolve, message, options = {}) {
     closeOnEscape: options.allowEscClose !== false,
     parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
-    showCloseButton: options.showCloseButton !== false,
+    showCloseButton: Boolean(options.showCloseButton),
     onClose() {
       if (settled) {
         modal.destroy();
@@ -266,7 +266,7 @@ function openLocalPrompt(resolve, message, options = {}) {
     closeOnEscape: options.allowEscClose !== false,
     parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
-    showCloseButton: options.showCloseButton !== false,
+    showCloseButton: Boolean(options.showCloseButton),
     initialFocus: input,
     onClose() {
       if (settled) {

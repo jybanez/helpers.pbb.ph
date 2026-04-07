@@ -74,7 +74,7 @@
     </section>
     <section class="panel">
       <h2 class="ui-title">Reusable Modal Shell</h2>
-      <p class="muted">Open either example to inspect the shared shell. The reusable example shows the owner-title line and default header dragging. The long-content example keeps the header pinned at the top and the footer pinned at the bottom while only the body scrolls.</p>
+      <p class="muted">Open either example to inspect the shared shell. The reusable example shows the owner-title line and default header dragging. The long-content example keeps the header pinned at the top and the footer pinned at the bottom while only the body scrolls. Each modal footer now includes a helper-owned busy trigger so you can test the overlay cancel flow directly inside the modal.</p>
       <div class="row">
         <button id="modalBtn" class="ui-button" type="button">Open Modal</button>
         <button id="longModalBtn" class="ui-button" type="button">Open Long Content Modal</button>
@@ -94,6 +94,17 @@
 });
 
 modal.open();</pre>
+      <pre>modal.setBusy(true, {
+  message: "Saving changes...",
+  cancelBusy: {
+    label: "Cancel Request",
+    onCancel(ctx) {
+      abortController.abort();
+      ctx.clearBusy();
+      return false;
+    },
+  },
+});</pre>
       <pre>const longModal = createModal({
   title: "Long Content Modal",
   size: "md",
@@ -156,6 +167,11 @@ longModal.open();
         text: "Close",
         attrs: { type: "button" },
       });
+      const busyBtn = createElement("button", {
+        className: "ui-button ui-button-ghost",
+        text: "Simulate Busy",
+        attrs: { type: "button" },
+      });
       const headerRefreshBtn = createElement("button", {
         className: "ui-button ui-button-ghost",
         text: "Refresh",
@@ -167,7 +183,7 @@ longModal.open();
         attrs: { type: "button" },
       });
       const footer = createElement("div", { className: "ui-dialog-footer-actions" });
-      footer.appendChild(closeBtn);
+      footer.append(busyBtn, closeBtn);
 
       const modal = createModal({
         title: "Reusable Modal",
@@ -181,6 +197,20 @@ longModal.open();
           writeLog("modal.close", meta || {});
           modal.destroy();
         },
+      });
+      busyBtn.addEventListener("click", () => {
+        modal.setBusy(true, {
+          message: "Simulating shared shell busy state...",
+          cancelBusy: {
+            label: "Cancel Request",
+            onCancel(ctx) {
+              writeLog("modal.busy.cancel", { ok: true });
+              ctx.clearBusy();
+              return false;
+            },
+          },
+        });
+        writeLog("modal.busy", { busy: true, message: "Simulating shared shell busy state..." });
       });
       closeBtn.addEventListener("click", () => {
         modal.close({ reason: "button" });
@@ -217,8 +247,13 @@ longModal.open();
         text: "Save",
         attrs: { type: "button" },
       });
+      const busyBtn = createElement("button", {
+        className: "ui-button ui-button-ghost",
+        text: "Simulate Busy",
+        attrs: { type: "button" },
+      });
       const footer = createElement("div", { className: "ui-dialog-footer-actions" });
-      footer.append(cancelBtn, saveBtn);
+      footer.append(busyBtn, cancelBtn, saveBtn);
 
       const modal = createModal({
         title: "Long Content Modal",
@@ -229,6 +264,20 @@ longModal.open();
           writeLog("modal.long.close", meta || {});
           modal.destroy();
         },
+      });
+      busyBtn.addEventListener("click", () => {
+        modal.setBusy(true, {
+          message: "Saving long-content modal changes...",
+          cancelBusy: {
+            label: "Cancel Request",
+            onCancel(ctx) {
+              writeLog("modal.long.busy.cancel", { ok: true });
+              ctx.clearBusy();
+              return false;
+            },
+          },
+        });
+        writeLog("modal.long.busy", { busy: true, message: "Saving long-content modal changes..." });
       });
 
       cancelBtn.addEventListener("click", () => {

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modal Mobile Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      position: fixed;
+      inset: auto 12px 12px 12px;
+      z-index: 2001;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      background: rgba(12, 16, 23, 0.92);
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createModal } from "../js/ui/ui.modal.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const modal = createModal({
+      title: "Mobile Modal",
+      content: "Fullscreen mobile modal regression surface.",
+      footer: (() => {
+        const row = document.createElement("div");
+        row.className = "ui-dialog-footer-actions";
+        const button = document.createElement("button");
+        button.className = "ui-button ui-button-primary";
+        button.type = "button";
+        button.textContent = "Continue";
+        row.appendChild(button);
+        return row;
+      })(),
+    });
+
+    await modal.open();
+    await wait(80);
+
+    const panel = document.querySelector(".ui-modal");
+    const header = document.querySelector(".ui-modal-header");
+    const rect = panel.getBoundingClientRect();
+    const styles = window.getComputedStyle(panel);
+
+    assert(window.innerWidth <= 640, "regression harness should run in a compact/mobile viewport");
+    assert(Math.abs(rect.width - window.innerWidth) <= 1, "mobile modal should occupy full viewport width");
+    assert(Math.abs(rect.height - window.innerHeight) <= 1, "mobile modal should occupy full viewport height");
+    assert(styles.borderTopWidth === "0px", "mobile modal should remove panel borders");
+    assert(styles.borderTopLeftRadius === "0px", "mobile modal should remove rounded corners");
+    assert(styles.maxHeight === `${window.innerHeight}px`, "mobile modal should not keep desktop max-height constraints");
+
+    const pointerDown = new PointerEvent("pointerdown", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: 30,
+      clientY: 30,
+      pointerId: 1,
+      pointerType: "touch",
+    });
+    header.dispatchEvent(pointerDown);
+    assert(panel.style.getPropertyValue("--ui-modal-drag-x") === "0px", "mobile modal should not start header dragging");
+    assert(panel.style.getPropertyValue("--ui-modal-drag-y") === "0px", "mobile modal should not start header dragging");
+
+    modal.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

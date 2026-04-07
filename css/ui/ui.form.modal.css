@@ -1,12 +1,14 @@
 .ui-form-modal {
   display: grid;
   gap: 14px;
+  align-content: start;
 }
 
 .ui-form-modal-form {
   display: grid;
   gap: 14px;
   margin: 0;
+  align-content: start;
 }
 
 .ui-form-modal-context {
@@ -46,11 +48,13 @@
 .ui-form-modal-rows {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .ui-form-modal-row {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .ui-form-modal-row.is-items-2 {

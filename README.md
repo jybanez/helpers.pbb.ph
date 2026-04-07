@@ -8,7 +8,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 
-Latest documented release: `v0.21.69`
+Latest documented release: `v0.21.70`
 
 This repository currently covers **7 helpers**:
 
@@ -2003,6 +2003,7 @@ Options:
 | `closeOnEscape` | `boolean` | `true` | no | Allows `Esc` close. |
 | `busy` | `boolean` | `false` | no | Opens the modal in busy state. |
 | `busyMessage` | `string` | `""` | no | Busy overlay status text. |
+| `cancelBusy` | `false \| true \| function \| { label?, onCancel? }` | `false` | no | Adds an optional busy-overlay cancel action. `true` shows a helper-owned cancel button that simply clears busy state; function/object forms can abort app-owned work before the helper clears busy. |
 | `closeWhileBusy` | `boolean` | `false` | no | Allows explicit close while busy. |
 | `backdropCloseWhileBusy` | `boolean` | `false` | no | Allows backdrop close while busy. |
 | `escapeCloseWhileBusy` | `boolean` | `false` | no | Allows `Esc` close while busy. |
@@ -2034,7 +2035,7 @@ Returned API:
 | `setHeaderActions` | `headerActions` | `void` | Replaces header actions. |
 | `setFooter` | `footer` | `void` | Replaces footer content. |
 | `setTitle` | `title` | `void` | Updates header title. |
-| `setBusy` | `isBusy, { message? }` | `void` | Toggles helper-owned busy lock state. |
+| `setBusy` | `isBusy, { message?, cancelBusy? }` | `void` | Toggles helper-owned busy lock state and optionally configures the busy-overlay cancel action for that busy run. |
 | `isBusy` | none | `boolean` | Returns current busy state. |
 | `getState` | none | `object` | Returns current modal state snapshot. |
 | `destroy` | none | `void` | Removes DOM and listeners. |
@@ -2053,14 +2054,18 @@ Busy-state behavior:
 
 - modal shell exposes a helper-owned busy overlay
 - modal headers are draggable by default; drag starts only from the header itself, not from close buttons or other interactive header controls
+- on phone-sized viewports (`<= 640px`), modal shells switch to a fullscreen presentation with no border or rounded corners, and header dragging is disabled
 - `ownerTitle` renders as a secondary ownership line below the main title when provided
 - long modal content now scrolls inside the body region only; the header stays fixed at the top of the shell and the footer stays fixed at the bottom
 - when a trusted same-origin Workspace host is installed, modal-family helpers now prefer mounting into the parent Workspace overlay surface automatically
-- `setBusy(true, { message })`:
+- `setBusy(true, { message, cancelBusy })`:
   - sets `aria-busy="true"` on the modal panel
   - disables body/footer/header actions
   - disables close controls when the close policy forbids close while busy
   - suppresses duplicate interaction while the modal is intentionally locked
+  - `cancelBusy: true` shows a helper-owned `Cancel` button that clears busy state
+  - `cancelBusy: fn` or `cancelBusy: { label, onCancel }` lets app code abort work before busy clears
+  - returning `false` from `cancelBusy.onCancel(...)` keeps the busy overlay active, which is useful when the app will clear it later through `ctx.clearBusy()`
 - default busy close policies are safe:
   - `closeWhileBusy: false`
   - `backdropCloseWhileBusy: false`
@@ -2851,7 +2856,7 @@ Shared options:
 
 | Option | Type | Default | Applies to | Description |
 |---|---|---:|---|---|
-| Modal shell options | inherited | inherited | all | Supports shell options such as `title`, `size`, `className`, `showCloseButton`, `allowBackdropClose`, `allowEscClose`. |
+| Modal shell options | inherited | inherited | all | Supports shell options such as `title`, `size`, `className`, `showCloseButton`, `allowBackdropClose`, `allowEscClose`. Dialog helpers hide the header close button by default; set `showCloseButton: true` only when that dismissal path is explicitly desired. |
 | `headerActions` | `Action[]` | `[]` | all | Declarative header actions using the same contract as `createActionModal(...)`. |
 | `variant` | `"default" \| "success" \| "info" \| "warning" \| "error"` | `"default"` | all | Dialog-level semantic styling. |
 | `description` | `string` | `""` | all | Secondary guidance text shown below the main message. |
@@ -4422,7 +4427,7 @@ Modal preset notes:
 
 ### Current Stable Line: `v0.21.x`
 
-- Latest documented release: `v0.21.69`
+- Latest documented release: `v0.21.70`
 - All library modules now follow monotonic SemVer in release notes:
   - breaking API changes -> `major`
   - new components/features -> `minor`

@@ -86,6 +86,7 @@
     const getCloseButton = () => document.querySelector(".ui-modal-close");
     const getBusyLayer = () => document.querySelector(".ui-modal-busy");
     const getBusyMessage = () => document.querySelector(".ui-modal-busy-message");
+    const getBusyCancelButton = () => document.querySelector(".ui-modal-busy-cancel");
 
     assert(Boolean(root), "modal root should exist after open");
     assert(root.classList.contains("is-mounted"), "modal should remain mounted after open");
@@ -118,6 +119,7 @@
     assert(getBusyMessage().textContent.includes("Saving"), "busy message should render during busy state");
     assert(getCloseButton().hidden === true, "close button should remain hidden during busy state");
     assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should remain visually hidden during busy state");
+    assert(getBusyCancelButton().hidden === true, "busy cancel button should stay hidden when cancelBusy is not configured");
     assert(cancel.disabled === true, "footer actions should be disabled during busy state");
     assert(save.disabled === true, "footer actions should be disabled during busy state");
     assert(input.disabled === true, "body inputs should be disabled during busy state");
@@ -135,6 +137,34 @@
     assert(cancel.disabled === false, "footer actions should be restored after busy state");
     assert(save.disabled === false, "footer actions should be restored after busy state");
     assert(input.disabled === false, "body inputs should be restored after busy state");
+
+    let busyCancelCalls = 0;
+    let busyCancelCtx = null;
+    modal.setBusy(true, {
+      message: "Saving with cancel...",
+      cancelBusy: {
+        label: "Abort Save",
+        onCancel: async (ctx) => {
+          busyCancelCalls += 1;
+          busyCancelCtx = ctx;
+          await new Promise((resolve) => setTimeout(resolve, 40));
+        },
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    assert(getBusyCancelButton().hidden === false, "busy cancel button should render when cancelBusy is configured");
+    assert(getBusyCancelButton().textContent.includes("Abort Save"), "busy cancel button should use custom label");
+    getBusyCancelButton().click();
+    getBusyCancelButton().click();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    assert(busyCancelCalls === 1, "busy cancel handler should only run once while pending");
+    assert(typeof busyCancelCtx?.clearBusy === "function", "busy cancel context should expose clearBusy");
+    assert(panel.classList.contains("is-busy") === false, "busy cancel action should clear busy state after handler completion");
+    assert(getBusyLayer().hidden === true, "busy layer should hide after busy cancel resolves");
+    assert(cancel.disabled === false, "footer actions should be restored after busy cancel");
+    assert(save.disabled === false, "footer actions should be restored after busy cancel");
+    assert(input.disabled === false, "body inputs should be restored after busy cancel");
 
     modal.destroy();
     await new Promise((resolve) => setTimeout(resolve, 80));

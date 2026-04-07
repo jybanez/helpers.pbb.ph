@@ -229,6 +229,7 @@
 .ui-dialog-footer-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--ui-space-2, 8px);
   width: 100%;
 }
@@ -240,10 +241,14 @@
 .ui-modal-busy {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
   z-index: 4;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .ui-modal-busy[hidden] {
@@ -253,30 +258,37 @@
 .ui-modal-busy-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(6, 10, 18, 0.58);
-  backdrop-filter: blur(2px);
+  background: rgba(6, 10, 18, 0.68);
+  backdrop-filter: blur(3px);
 }
 
 .ui-modal-busy-spinner,
-.ui-modal-busy-message {
+.ui-modal-busy-message,
+.ui-modal-busy-actions {
   position: relative;
   z-index: 1;
 }
 
 .ui-modal-busy-spinner {
-  width: 34px;
-  height: 34px;
+  width: 90px;
+  height: 90px;
   border-radius: 999px;
-  border: 3px solid rgba(125, 163, 228, 0.2);
+  border: 8px solid rgba(125, 163, 228, 0.2);
   border-top-color: #79a9ff;
   animation: ui-modal-spin 760ms linear infinite;
 }
 
 .ui-modal-busy-message {
-  max-width: min(80%, 340px);
+  max-width: min(80%, 360px);
   text-align: center;
   color: var(--ui-text, #d7e0f4);
   font: 600 13px/1.35 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+}
+
+.ui-modal-busy-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ui-modal-body form {
@@ -327,6 +339,61 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-modal-root {
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .ui-modal,
+  .ui-modal.is-size-sm,
+  .ui-modal.is-size-md,
+  .ui-modal.is-size-lg,
+  .ui-modal.is-size-xl,
+  .ui-modal.is-size-full {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ui-modal,
+  .ui-modal-root.is-open .ui-modal {
+    transform: none;
+  }
+
+  .ui-modal.is-pos-top {
+    margin-top: 0;
+  }
+
+  .ui-modal-header {
+    padding:
+      calc(var(--ui-space-3, 12px) + env(safe-area-inset-top, 0px))
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-right, 0px))
+      var(--ui-space-2, 8px)
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-left, 0px));
+  }
+
+  .ui-modal-body {
+    padding:
+      var(--ui-space-3, 12px)
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-right, 0px))
+      var(--ui-space-3, 12px)
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-left, 0px));
+  }
+
+  .ui-modal-footer:not([hidden]) {
+    padding:
+      var(--ui-space-2, 8px)
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-right, 0px))
+      calc(var(--ui-space-3, 12px) + env(safe-area-inset-bottom, 0px))
+      calc(var(--ui-space-4, 16px) + env(safe-area-inset-left, 0px));
   }
 }
 

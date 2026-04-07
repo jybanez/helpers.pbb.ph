@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.69`
+- Latest documented release: `v0.21.72`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,21 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.72
+
+- Added `cancelBusy` support to `createModal(...)` and `modal.setBusy(...)`, allowing busy overlays to expose an optional cancel action that can abort app-owned work before clearing helper busy state.
+- Updated the modal demo to exercise the busy overlay cancel flow and extended modal busy regression coverage around the new overlay action.
+
+### v0.21.71
+
+- Updated `uiAlert(...)`, `uiConfirm(...)`, and `uiPrompt(...)` so the header close icon is hidden by default, keeping dialog dismissal focused on the helper-owned footer actions unless callers explicitly opt back in with `showCloseButton: true`.
+- Extended dialog regression coverage so the shared async dialog suite now asserts both the right-aligned footer action row and the hidden-by-default header close button contract.
+
+### v0.21.70
+
+- Updated `ui.modal` mobile behavior so phone-sized viewports render modal-family panels as fullscreen surfaces with no border or rounded corners, preserving header/body/footer structure while giving the body the scroll region.
+- Disabled header dragging for compact/mobile modal viewports and added dedicated browser regression coverage in `tests/modal.mobile.regression.html` and `tests/modal.mobile.regression.mjs`.
 
 ### v0.21.69
 

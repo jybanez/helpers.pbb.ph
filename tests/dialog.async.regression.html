@@ -52,6 +52,14 @@
       return Array.from(document.querySelectorAll(".ui-modal-root.is-open .ui-dialog-footer-actions button, .ui-modal-root.is-open .ui-modal-footer button"));
     }
 
+    function getDialogFooterActions() {
+      return document.querySelector(".ui-modal-root.is-open .ui-dialog-footer-actions");
+    }
+
+    function getCloseButton() {
+      return document.querySelector(".ui-modal-root.is-open .ui-modal-close");
+    }
+
     function findFooterButton(label) {
       return getFooterButtons().find((button) => (button.textContent || "").trim() === label) || null;
     }
@@ -72,6 +80,11 @@
     });
     const confirmButton = await waitFor(() => findFooterButton("Confirm"));
     assert(confirmButton, "Confirm dialog should render a confirm button.");
+    assert(
+      getComputedStyle(getDialogFooterActions()).justifyContent === "flex-end",
+      "Dialog footer actions should be right-aligned by default."
+    );
+    assert(getCloseButton()?.hidden === true, "Confirm dialog should hide the header close button by default.");
     confirmButton?.click();
     confirmButton?.click();
     await delay(10);
@@ -99,6 +112,7 @@
     });
     const promptInput = await waitFor(() => document.querySelector(".ui-modal-root.is-open input.ui-input"));
     assert(promptInput, "Prompt dialog should render an input.");
+    assert(getCloseButton()?.hidden === true, "Prompt dialog should hide the header close button by default.");
     promptInput.value = "abc";
     promptInput.dispatchEvent(new Event("input", { bubbles: true }));
     findFooterButton("Save")?.click();
