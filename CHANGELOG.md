@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.75`
+- Latest documented release: `v0.21.76`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.76
+
+- Added narrow declarative `visibleWhen` support to `createFormModal(...)` so dependent fields can hide and show based on current helper-owned form values without app-local row regeneration.
+- Hidden `visibleWhen` fields now drop out of helper validation and `getValues()` / submit payloads while still retaining their previous value internally for restoration when they become visible again.
 
 ### v0.21.75
 

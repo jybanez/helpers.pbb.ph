@@ -2613,6 +2613,7 @@ Field properties:
 - `readonly`
 - `readonlyOn`
 - `hiddenOn`
+- `visibleWhen`
 - `autocomplete`
 - `min`
 - `max`
@@ -2698,6 +2699,9 @@ Validation and submit behavior:
 - `extraActions` render before helper-owned `Cancel` and `Submit`, stay additive, and disable together with the rest of the footer during helper-owned busy state
 - `extraActionsPlacement: "start"` visually splits the last extra action away from the helper-owned `Cancel` and `Submit` cluster
 - `requiredOn`, `hiddenOn`, and `readonlyOn` are first-pass declarative mode rules
+- `visibleWhen` is a narrow field-level conditional-visibility rule for value-dependent admin-form cases
+- `visibleWhen` accepts an object where string values mean exact match, array values mean inclusion, and all declared keys must match
+- fields hidden by `visibleWhen` are omitted from helper validation and `getValues()` / submit payloads while hidden, but their prior value is retained and restored if they become visible again
 - `context` is intentionally narrow and exists to cover real acceptance-target header/context needs without reopening a larger form-builder surface
 - `display` is visual-only and does not participate in payload output
 - `hidden` participates in payload output without rendering visible validation UI

@@ -51,11 +51,11 @@ export const ICON_DEFINITIONS = {
     circle(11, 17, 1.6),
   ]),
   "actions.view": icon("actions", [
-    path("M2 12s3.5-6 10-6 10 6-3.5 6-10 6S2 12 2 12Z"),
+    path("M2 12Q5.5 6 12 6Q18.5 6 22 12Q18.5 18 12 18Q5.5 18 2 12Z"),
     circle(12, 12, 2.5),
   ]),
   "actions.hide": icon("actions", [
-    path("M2 12s3.5-6 10-6 10 6-3.5 6-10 6S2 12 2 12Z"),
+    path("M2 12Q5.5 6 12 6Q18.5 6 22 12Q18.5 18 12 18Q5.5 18 2 12Z"),
     circle(12, 12, 2.5),
     line(5, 19, 19, 5),
   ]),

@@ -335,6 +335,103 @@
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove mode/rules modal from DOM");
 
+    let conditionalSubmitValues = null;
+    const conditionalModal = createFormModal({
+      title: "Conditional Fields",
+      submitLabel: "Save",
+      rows: [
+        [{
+          type: "select",
+          name: "input_type",
+          label: "Input Type",
+          value: "text",
+          options: [
+            { label: "Text", value: "text" },
+            { label: "Number", value: "number" },
+            { label: "Select", value: "select" },
+          ],
+        }],
+        [{
+          type: "input",
+          input: "text",
+          name: "default_value",
+          label: "Default Value",
+          value: "Alpha",
+          visibleWhen: { input_type: ["text", "number"] },
+        }],
+        [{
+          type: "input",
+          input: "number",
+          name: "min",
+          label: "Min",
+          required: true,
+          visibleWhen: { input_type: "number" },
+        }],
+        [{
+          type: "textarea",
+          name: "options_text",
+          label: "Options",
+          visibleWhen: { input_type: "select" },
+        }],
+      ],
+      async onSubmit(values) {
+        conditionalSubmitValues = values;
+        await wait(20);
+        return false;
+      },
+    });
+
+    conditionalModal.open();
+    await wait(100);
+
+    const getConditionalInputType = () => document.querySelector('select[name="input_type"]');
+    const getConditionalDefaultValue = () => document.querySelector('input[name="default_value"]');
+    const getConditionalMin = () => document.querySelector('input[name="min"]');
+    const getConditionalOptions = () => document.querySelector('textarea[name="options_text"]');
+    const conditionalSaveButton = () => Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /save/i.test(button.textContent || ""));
+
+    assert(Boolean(getConditionalDefaultValue()), "visibleWhen array rules should render matching dependent fields");
+    assert(getConditionalMin() === null, "visibleWhen exact-match rules should hide non-matching fields");
+    assert(getConditionalOptions() === null, "visibleWhen should hide unrelated fields");
+    assert(!Object.prototype.hasOwnProperty.call(conditionalModal.getValues(), "min"), "hidden visibleWhen fields should be omitted from getValues");
+
+    getConditionalInputType().value = "number";
+    getConditionalInputType().dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(100);
+
+    assert(Boolean(getConditionalMin()), "changing the controlling field should re-render newly visible fields");
+    getConditionalMin().value = "5";
+    getConditionalMin().dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(60);
+
+    getConditionalInputType().value = "text";
+    getConditionalInputType().dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(100);
+
+    assert(getConditionalMin() === null, "visibleWhen-hidden fields should disappear when the rule stops matching");
+    assert(!Object.prototype.hasOwnProperty.call(conditionalModal.getValues(), "min"), "visibleWhen-hidden fields should stay out of submit values");
+
+    conditionalSaveButton()?.click();
+    await wait(120);
+    assert(!Object.prototype.hasOwnProperty.call(conditionalSubmitValues || {}, "min"), "submit values should omit fields hidden by visibleWhen");
+
+    getConditionalInputType().value = "number";
+    getConditionalInputType().dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(100);
+
+    assert(getConditionalMin()?.value === "5", "visibleWhen-hidden fields should restore their previous value when shown again");
+
+    getConditionalInputType().value = "select";
+    getConditionalInputType().dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(100);
+
+    assert(Boolean(getConditionalOptions()), "visibleWhen array rules should render alternate matching fields");
+    assert(getConditionalDefaultValue() === null, "fields hidden by visibleWhen should be removed from the DOM");
+
+    conditionalModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove conditional-visibility modal from DOM");
+
     const apiErrorsModal = createFormModal({
       title: "API Error Mapping",
       submitLabel: "Save",

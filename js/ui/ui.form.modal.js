@@ -72,8 +72,12 @@ export function createFormModal(options = {}) {
 
   const fields = new Map();
   const displays = new Map();
+  const valueStore = {};
   let destroyed = false;
   let modal = null;
+  let lastVisibilitySignature = "";
+
+  seedStoredValuesFromInitialOptions();
 
   function destroyHostedFieldInstances() {
     fields.forEach((field) => {
@@ -87,7 +91,7 @@ export function createFormModal(options = {}) {
     });
   }
 
-  function resolveItemConfig(item) {
+  function resolveItemConfig(item, values = valueStore) {
     if (!item || typeof item !== "object") {
       return item;
     }
@@ -101,11 +105,15 @@ export function createFormModal(options = {}) {
       next.required = false;
     }
     next.readonly = Boolean(next.readonly) || resolveModeFlag(next.readonlyOn, mode);
-    next._hiddenByRule = resolveModeFlag(next.hiddenOn, mode);
+    next._values = values;
+    next._hiddenByRule = resolveModeFlag(next.hiddenOn, mode) || !matchesVisibleWhen(next.visibleWhen, values);
     return next;
   }
 
-  function render() {
+  function render(syncBeforeRender = true) {
+    if (syncBeforeRender) {
+      syncValueStoreFromRenderedFields();
+    }
     destroyHostedFieldInstances();
     renderContext();
     clearNode(refs.rows);
@@ -114,7 +122,7 @@ export function createFormModal(options = {}) {
     displays.clear();
 
     normalizeRows(currentOptions.rows).forEach((row, rowIndex) => {
-      const resolvedRow = row.map((item) => resolveItemConfig(item));
+      const resolvedRow = row.map((item) => resolveItemConfig(item, valueStore));
       const visibleItems = resolvedRow.filter((item) => isVisibleRenderableItem(item));
       if (!visibleItems.length) {
         resolvedRow.forEach((item, itemIndex) => {
@@ -166,6 +174,7 @@ export function createFormModal(options = {}) {
         refs.rows.appendChild(rowEl);
       }
     });
+    lastVisibilitySignature = computeVisibilitySignature();
   }
 
   function renderItem(item, rowIndex, itemIndex) {
@@ -509,6 +518,11 @@ export function createFormModal(options = {}) {
   }
 
   function handleFieldChange(name) {
+    syncValueStoreFromRenderedFields();
+    const nextVisibilitySignature = computeVisibilitySignature();
+    if (nextVisibilitySignature !== lastVisibilitySignature) {
+      render(false);
+    }
     clearFieldError(name);
     if (refs.formError.textContent) {
       clearFormError();
@@ -668,14 +682,27 @@ export function createFormModal(options = {}) {
   }
 
   function getValues() {
+    syncValueStoreFromRenderedFields();
     const values = {};
-    fields.forEach((field, name) => {
-      values[name] = getFieldValue(field);
+    fields.forEach((_field, name) => {
+      if (Object.prototype.hasOwnProperty.call(valueStore, name)) {
+        values[name] = valueStore[name];
+      }
     });
     return values;
   }
 
   function setValues(nextValues = {}) {
+    syncValueStoreFromRenderedFields();
+    const nextStoredValues = {
+      ...valueStore,
+      ...(nextValues && typeof nextValues === "object" ? nextValues : {}),
+    };
+    replaceStoredValues(nextStoredValues);
+    const nextVisibilitySignature = computeVisibilitySignature();
+    if (nextVisibilitySignature !== lastVisibilitySignature) {
+      render(false);
+    }
     Object.keys(nextValues || {}).forEach((name) => {
       const field = fields.get(name);
       if (field) {
@@ -688,6 +715,7 @@ export function createFormModal(options = {}) {
           : String(nextValues[name]);
       }
     });
+    syncValueStoreFromRenderedFields();
   }
 
   function applyApiErrors(response) {
@@ -788,7 +816,8 @@ export function createFormModal(options = {}) {
   }
 
   function update(nextOptions = {}) {
-    const previousValues = getValues();
+    syncValueStoreFromRenderedFields();
+    const previousValues = { ...valueStore };
     const merged = normalizeOptions({
       ...currentOptions,
       ...(nextOptions || {}),
@@ -796,13 +825,17 @@ export function createFormModal(options = {}) {
       initialValues: Object.prototype.hasOwnProperty.call(nextOptions, "initialValues") ? nextOptions.initialValues : currentOptions.initialValues,
     });
     Object.assign(currentOptions, merged);
+    if (Object.prototype.hasOwnProperty.call(nextOptions, "initialValues")) {
+      seedStoredValuesFromInitialOptions();
+    }
     ensureFormModalStyles(resolveTargetDocument(currentOptions.parent));
-    render();
-    setValues({
+    replaceStoredValues({
       ...(currentOptions.initialValues || {}),
       ...previousValues,
       ...((nextOptions.initialValues && typeof nextOptions.initialValues === "object") ? nextOptions.initialValues : {}),
     });
+    render(false);
+    syncValueStoreFromRenderedFields();
     modal.update(buildModalConfig());
   }
 
@@ -840,7 +873,7 @@ export function createFormModal(options = {}) {
     },
   });
 
-  setValues(currentOptions.initialValues || {});
+  syncValueStoreFromRenderedFields();
 
   return {
     ...modal,
@@ -864,6 +897,48 @@ export function createFormModal(options = {}) {
       displays,
     },
   };
+
+  function syncValueStoreFromRenderedFields() {
+    fields.forEach((field, name) => {
+      valueStore[name] = getFieldValue(field);
+    });
+  }
+
+  function replaceStoredValues(nextValues = {}) {
+    Object.keys(valueStore).forEach((name) => {
+      delete valueStore[name];
+    });
+    Object.keys(nextValues || {}).forEach((name) => {
+      valueStore[name] = nextValues[name];
+    });
+  }
+
+  function seedStoredValuesFromInitialOptions() {
+    normalizeRows(currentOptions.rows).forEach((row) => {
+      row.forEach((item) => {
+        if (!item || typeof item !== "object") {
+          return;
+        }
+        const name = String(item.name || "").trim();
+        if (!name || Object.prototype.hasOwnProperty.call(valueStore, name)) {
+          return;
+        }
+        if (Object.prototype.hasOwnProperty.call(item, "value")) {
+          valueStore[name] = item.value;
+        }
+      });
+    });
+    Object.assign(valueStore, currentOptions.initialValues || {});
+  }
+
+  function computeVisibilitySignature() {
+    return normalizeRows(currentOptions.rows)
+      .flatMap((row, rowIndex) => row.map((item, itemIndex) => {
+        const resolved = resolveItemConfig(item, valueStore);
+        return `${rowIndex}:${itemIndex}:${resolved && !resolved._hiddenByRule ? "1" : "0"}`;
+      }))
+      .join("|");
+  }
 }
 
 function resolveTargetDocument(parent) {
@@ -1070,6 +1145,10 @@ function getItemClassName(baseClassName, item) {
 }
 
 function resolveItemValue(item) {
+  const values = item?._values;
+  if (values && typeof values === "object" && Object.prototype.hasOwnProperty.call(values, item.name)) {
+    return values[item.name];
+  }
   if (Object.prototype.hasOwnProperty.call(item, "value")) {
     return item.value;
   }
@@ -1095,6 +1174,20 @@ function normalizeItemType(type) {
     return "ui.treeselect";
   }
   return value;
+}
+
+function matchesVisibleWhen(rule, values) {
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) {
+    return true;
+  }
+  return Object.entries(rule).every(([name, expected]) => matchesVisibleWhenEntry(values?.[name], expected));
+}
+
+function matchesVisibleWhenEntry(actualValue, expectedValue) {
+  if (Array.isArray(expectedValue)) {
+    return expectedValue.some((item) => isSameValue(actualValue, item));
+  }
+  return isSameValue(actualValue, expectedValue);
 }
 
 function getFieldValue(field) {

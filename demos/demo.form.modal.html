@@ -466,6 +466,42 @@ const payload = {
             <pre class="demo-log" data-log-prefix="formModal.resourceTree">No Resource Tree Select events yet.</pre>
           </div>
         </article>
+
+        <article class="demo-stack">
+          <div class="demo-stack__row demo-stack__row--live">
+            <div class="demo-stack__header">
+              <div>
+                <h2>Conditional Visibility</h2>
+                <p>Dependent rows can now stay inside the shared schema with <code>visibleWhen</code> instead of forcing app-local modal row regeneration.</p>
+              </div>
+              <button id="conditionalVisibilityDemoBtn" class="ui-button ui-button-primary" type="button">Open Conditional Visibility</button>
+            </div>
+            <div class="demo-stack__meta">
+              <span class="demo-chip">visibleWhen</span>
+              <span class="demo-chip">helper-owned visibility</span>
+              <span class="demo-chip">value retention</span>
+            </div>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-code">{
+  type: "input",
+  input: "number",
+  name: "min",
+  label: "Min",
+  visibleWhen: { input_type: "number" },
+}
+
+{
+  type: "textarea",
+  name: "options_text",
+  label: "Options",
+  visibleWhen: { input_type: ["select", "checkbox"] },
+}</pre>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-log" data-log-prefix="formModal.conditionalVisibility">No Conditional Visibility events yet.</pre>
+          </div>
+        </article>
       </section>
     </section>
 
@@ -538,6 +574,7 @@ const payload = {
               <tr><td><code>context</code></td><td><code>null</code></td><td>Narrow top strip for acceptance-proof flows such as geodata hub add.</td></tr>
               <tr><td><code>rows</code></td><td><code>[]</code></td><td>Row-based field schema. One or two items per row; hidden-only rows do not render visible gaps.</td></tr>
               <tr><td><code>initialValues</code></td><td><code>{}</code></td><td>Initial payload values, including hidden fields.</td></tr>
+              <tr><td><code>visibleWhen</code></td><td><code>null</code></td><td>Field-level conditional visibility rule. String values mean exact match, arrays mean inclusion, and all keys must match.</td></tr>
               <tr><td><code>extraActions</code></td><td><code>[]</code></td><td>Additive footer actions rendered before helper-owned <code>Cancel</code> and <code>Submit</code>. Reserved IDs: <code>cancel</code>, <code>submit</code>.</td></tr>
               <tr><td><code>extraActionsPlacement</code></td><td><code>"end"</code></td><td>Placement for additive footer actions. Allowed values: <code>start</code>, <code>end</code>. Use <code>start</code> to split extra actions away from helper-owned <code>Cancel</code> and <code>Submit</code>.</td></tr>
               <tr><td><code>submitLabel</code></td><td><code>"Submit"</code></td><td>Primary action label.</td></tr>
@@ -580,7 +617,7 @@ const payload = {
             <tbody>
               <tr><td><code>open()</code></td><td>none</td><td><code>void</code></td></tr>
               <tr><td><code>close()</code></td><td>optional metadata</td><td><code>void</code></td></tr>
-              <tr><td><code>getValues()</code></td><td>none</td><td>Current values object, including hidden fields</td></tr>
+              <tr><td><code>getValues()</code></td><td>none</td><td>Current values object. Hidden rows still participate; fields hidden by <code>visibleWhen</code> are omitted while hidden.</td></tr>
               <tr><td><code>setValues(values)</code></td><td>partial value map</td><td><code>void</code></td></tr>
               <tr><td><code>setErrors(errors)</code></td><td>field error map</td><td><code>void</code></td></tr>
               <tr><td><code>setFormError(message)</code></td><td>string</td><td><code>void</code></td></tr>
@@ -1140,6 +1177,114 @@ const payload = {
       writeLog(`${source}.open`, { ok: true });
     }
 
+    function openConditionalVisibilityModal(source = "formModal.conditionalVisibility") {
+      const formModal = createFormModal({
+        title: "Incident Field Definition",
+        size: "md",
+        busyMessage: "Saving field definition...",
+        submitLabel: "Save Field",
+        rows: [
+          [{ type: "text", content: "Switch the input type to see dependent rows appear and disappear without rebuilding the modal schema." }],
+          [{
+            type: "select",
+            name: "input_type",
+            label: "Input Type",
+            value: "text",
+            required: true,
+            options: [
+              { label: "Text", value: "text" },
+              { label: "Textarea", value: "textarea" },
+              { label: "Number", value: "number" },
+              { label: "Select", value: "select" },
+              { label: "Checkbox", value: "checkbox" },
+            ],
+          }],
+          [{
+            type: "input",
+            input: "text",
+            name: "default_value",
+            label: "Default Value",
+            value: "Caller notes",
+            visibleWhen: {
+              input_type: ["text", "textarea", "number"],
+            },
+          }],
+          [
+            {
+              type: "input",
+              input: "number",
+              name: "min",
+              label: "Min",
+              value: "0",
+              visibleWhen: {
+                input_type: "number",
+              },
+            },
+            {
+              type: "input",
+              input: "number",
+              name: "max",
+              label: "Max",
+              value: "10",
+              visibleWhen: {
+                input_type: "number",
+              },
+            },
+          ],
+          [
+            {
+              type: "input",
+              input: "number",
+              name: "step",
+              label: "Step",
+              value: "1",
+              visibleWhen: {
+                input_type: "number",
+              },
+            },
+            {
+              type: "input",
+              input: "text",
+              name: "unit",
+              label: "Unit",
+              value: "minutes",
+              visibleWhen: {
+                input_type: "number",
+              },
+            },
+          ],
+          [{
+            type: "textarea",
+            name: "options_text",
+            label: "Options",
+            placeholder: "Pending\nDispatched\nResolved",
+            value: "Pending\nDispatched\nResolved",
+            visibleWhen: {
+              input_type: ["select", "checkbox"],
+            },
+            help: "One option per line. The helper omits this field from values while it is hidden.",
+          }],
+        ],
+        onChange(values, ctx) {
+          writeLog(`${source}.change`, {
+            changedFieldName: ctx.changedFieldName,
+            values,
+          });
+        },
+        async onSubmit(values) {
+          writeLog(`${source}.submit`, { values });
+          return false;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, {
+        values: formModal.getValues(),
+      });
+    }
+
     document.getElementById("loginDemoBtn").addEventListener("click", () => openLoginFormModal());
     document.getElementById("accountActionsDemoBtn").addEventListener("click", () => openAccountFooterActionsModal());
     document.getElementById("hubCreateDemoBtn").addEventListener("click", () => openHubFormModal("geo-create", "formModal.hub.geoCreate"));
@@ -1147,6 +1292,7 @@ const payload = {
     document.getElementById("apiErrorsDemoBtn").addEventListener("click", () => openApiErrorMappingModal());
     document.getElementById("uplinkDemoBtn").addEventListener("click", () => openAddUplinkStyleModal());
     document.getElementById("resourceTreeDemoBtn").addEventListener("click", () => openResourceTreeStyleModal());
+    document.getElementById("conditionalVisibilityDemoBtn").addEventListener("click", () => openConditionalVisibilityModal());
   </script>
 </body>
 </html>

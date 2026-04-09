@@ -69,6 +69,12 @@
       assert(closeIcon.getAttribute("width") === "18", "createIcon should apply the requested size");
       assert(closeIcon.getAttribute("aria-label") === "Close", "non-decorative icons should expose an aria-label");
 
+      const viewIcon = createIcon("actions.view");
+      const hideIcon = createIcon("actions.hide");
+      host.append(viewIcon, hideIcon);
+      assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
+      assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
+
       const decorative = createIcon("status.info");
       assert(decorative.getAttribute("aria-hidden") === "true", "decorative icons should be aria-hidden by default");
 
