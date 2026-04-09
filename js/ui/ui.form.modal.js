@@ -954,6 +954,9 @@ function ensureFormModalStyles(targetDocument) {
   if (!head) {
     return;
   }
+  if (doc.querySelector('link[data-ui-bundle="ui"]')) {
+    return;
+  }
   FORM_MODAL_STYLE_HREFS.forEach((href) => {
     if (doc.querySelector(`link[data-ui-loader-href="${escapeCssAttribute(href)}"]`)) {
       return;

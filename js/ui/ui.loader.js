@@ -6,6 +6,8 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.66";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
+const UI_BUNDLE_JS = "../../dist/helpers.ui.bundle.min.js";
+const UI_BUNDLE_CSS = "../../dist/helpers.ui.bundle.min.css";
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
@@ -165,13 +167,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createReauthFormModal",
   },
   "ui.form.modal.status": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
     deps: ["ui.form.modal"],
     export: "createStatusUpdateFormModal",
   },
   "ui.form.modal.reason": {
-    js: "./ui.form.modal.presets.js",
+    js: `./ui.form.modal.presets.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css"],
     deps: ["ui.form.modal"],
     export: "createReasonFormModal",
@@ -593,6 +595,14 @@ export const DEFAULT_COMPONENT_GROUPS = {
 
 const DEFAULT_LOADER_OPTIONS = {
   debug: false,
+  preferBundles: false,
+  bundles: {
+    ui: {
+      prefixes: ["ui."],
+      js: UI_BUNDLE_JS,
+      css: [UI_BUNDLE_CSS],
+    },
+  },
 };
 
 export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, config = {}) {
@@ -601,8 +611,31 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
   const groups = new Map(Object.entries(loaderOptions.groups).map(([name, entries]) => [String(name), uniqueStrings(entries)]));
   const stylePromises = new Map();
   const modulePromises = new Map();
+  const bundlePromises = new Map();
   const failedCss = new Map();
   const failedModules = new Map();
+
+  function resolveBundle(name, _entry, options = {}) {
+    const preferBundles = Object.prototype.hasOwnProperty.call(options, "preferBundles")
+      ? Boolean(options.preferBundles)
+      : Boolean(loaderOptions.preferBundles);
+    if (!preferBundles) {
+      return null;
+    }
+    const componentName = String(name || "");
+    for (const [bundleId, bundle] of Object.entries(loaderOptions.bundles || {})) {
+      const prefixes = uniqueStrings(bundle?.prefixes);
+      if (prefixes.some((prefix) => componentName.startsWith(prefix))) {
+        return {
+          id: bundleId,
+          prefixes,
+          js: String(bundle.js || ""),
+          css: uniqueStrings(bundle.css),
+        };
+      }
+    }
+    return null;
+  }
 
   function has(name) {
     return registry.has(String(name || ""));
@@ -658,10 +691,14 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
   async function ensureStyles(name, options = {}) {
     const entry = resolve(name);
     const parent = getStyleParent(options.parent);
+    const bundle = resolveBundle(name, entry, options);
     if (options.recursive !== false) {
-      for (const depName of entry.deps) {
-        await ensureStyles(depName, options);
-      }
+      await Promise.all(entry.deps.map((depName) => ensureStyles(depName, options)));
+    }
+    if (bundle) {
+      await Promise.all(bundle.css.map((path) => ensureStyleHref(path, parent, { bundleId: bundle.id })));
+      debugLog("ensureStyles.bundle", { name, bundle: bundle.id, cssCount: bundle.css.length });
+      return entry;
     }
     await Promise.all(entry.css.map((path) => ensureStyleHref(path, parent)));
     debugLog("ensureStyles", { name, cssCount: entry.css.length });
@@ -671,9 +708,7 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
   async function load(name, options = {}) {
     const entry = resolve(name);
     if (options.recursive !== false) {
-      for (const depName of entry.deps) {
-        await load(depName, options);
-      }
+      await Promise.all(entry.deps.map((depName) => load(depName, options)));
     }
     if (options.css !== false) {
       await ensureStyles(name, options);
@@ -702,23 +737,29 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
 
   async function importComponent(name, options = {}) {
     const entry = resolve(name);
-    if (options.recursive !== false) {
-      for (const depName of entry.deps) {
-        await importComponent(depName, options);
-      }
-    }
-    if (options.css !== false) {
-      await ensureStyles(name, options);
-    }
     if (modulePromises.has(name)) {
       return modulePromises.get(name);
     }
-    const promise = import(toAbsoluteUrl(entry.js))
-      .then((module) => {
+    const promise = (async () => {
+      if (options.recursive !== false) {
+        await Promise.all(entry.deps.map((depName) => importComponent(depName, options)));
+      }
+      if (options.css !== false) {
+        await ensureStyles(name, options);
+      }
+      const bundle = resolveBundle(name, entry, options);
+      if (bundle) {
+        const module = await importBundleComponent(bundle, entry);
+        failedModules.delete(name);
+        debugLog("import.bundle", { name, bundle: bundle.id, export: entry.export || null });
+        return module;
+      }
+      return import(toAbsoluteUrl(entry.js)).then((module) => {
         failedModules.delete(name);
         debugLog("import", { name, export: entry.export || null });
         return module;
-      })
+      });
+    })()
       .catch((error) => {
         modulePromises.delete(name);
         failedModules.set(name, createFailureRecord({
@@ -731,6 +772,37 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
         throw error;
       });
     modulePromises.set(name, promise);
+    return promise;
+  }
+
+  async function importBundleComponent(bundle, entry) {
+    const modules = await ensureBundleModuleMap(bundle);
+    const bundleKey = normalizeBundleKey(entry.js);
+    const module = modules?.[bundleKey];
+    if (!module) {
+      throw new Error(`uiLoader bundle "${bundle.id}" is missing module "${bundleKey}".`);
+    }
+    return module;
+  }
+
+  async function ensureBundleModuleMap(bundle) {
+    if (bundlePromises.has(bundle.id)) {
+      return bundlePromises.get(bundle.id);
+    }
+    const promise = import(toAbsoluteUrl(bundle.js))
+      .then((module) => {
+        const exportsMap = module?.helperUiBundleModules || module?.default || null;
+        if (!exportsMap || typeof exportsMap !== "object") {
+          throw new Error(`uiLoader bundle "${bundle.id}" did not expose a module map.`);
+        }
+        debugLog("bundle.import", { bundle: bundle.id });
+        return exportsMap;
+      })
+      .catch((error) => {
+        bundlePromises.delete(bundle.id);
+        throw error;
+      });
+    bundlePromises.set(bundle.id, promise);
     return promise;
   }
 
@@ -772,6 +844,10 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
     return Array.from(modulePromises.keys());
   }
 
+  function getLoadedBundles() {
+    return Array.from(bundlePromises.keys());
+  }
+
   function getFailedCss() {
     return Array.from(failedCss.values()).map(cloneFailureRecord);
   }
@@ -786,15 +862,22 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
       groups: getGroups(),
       loadedCss: getLoadedCss(),
       loadedModules: getLoadedModules(),
+      loadedBundles: getLoadedBundles(),
       failedCss: getFailedCss(),
       failedModules: getFailedModules(),
       debug: Boolean(loaderOptions.debug),
+      preferBundles: Boolean(loaderOptions.preferBundles),
     };
   }
 
   function setDebug(nextValue) {
     loaderOptions.debug = Boolean(nextValue);
     return loaderOptions.debug;
+  }
+
+  function setPreferBundles(nextValue) {
+    loaderOptions.preferBundles = Boolean(nextValue);
+    return loaderOptions.preferBundles;
   }
 
   function normalizeEntry(entry = {}) {
@@ -806,7 +889,7 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
     };
   }
 
-  function ensureStyleHref(path, parent) {
+  function ensureStyleHref(path, parent, meta = {}) {
     const href = toAbsoluteUrl(path);
     if (stylePromises.has(href)) {
       return stylePromises.get(href);
@@ -822,6 +905,16 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
       link.rel = "stylesheet";
       link.href = href;
       link.dataset.uiLoaderHref = href;
+      if (meta.bundleId) {
+        link.dataset.uiBundle = String(meta.bundleId);
+      }
+      if (meta.bundleId && href.startsWith("file:")) {
+        parent.appendChild(link);
+        failedCss.delete(href);
+        debugLog("css.load.file-bundle", { href, bundle: meta.bundleId });
+        resolvePromise(link);
+        return;
+      }
       link.addEventListener("load", () => {
         failedCss.delete(href);
         debugLog("css.load", { href });
@@ -873,10 +966,12 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
     getGroups,
     getLoadedCss,
     getLoadedModules,
+    getLoadedBundles,
     getFailedCss,
     getFailedModules,
     getDiagnostics,
     setDebug,
+    setPreferBundles,
   };
 }
 
@@ -910,12 +1005,17 @@ function normalizeLoaderOptions(config = {}) {
   if (!isPlainObject(config)) {
     return {
       ...DEFAULT_LOADER_OPTIONS,
+      bundles: cloneBundles(DEFAULT_LOADER_OPTIONS.bundles),
       groups: cloneGroups(DEFAULT_COMPONENT_GROUPS),
     };
   }
   return {
     ...DEFAULT_LOADER_OPTIONS,
     ...config,
+    bundles: {
+      ...cloneBundles(DEFAULT_LOADER_OPTIONS.bundles),
+      ...(isPlainObject(config.bundles) ? cloneBundles(config.bundles) : {}),
+    },
     groups: {
       ...cloneGroups(DEFAULT_COMPONENT_GROUPS),
       ...(isPlainObject(config.groups) ? cloneGroups(config.groups) : {}),
@@ -927,6 +1027,18 @@ function cloneGroups(groups) {
   const out = {};
   for (const [name, entries] of Object.entries(groups || {})) {
     out[name] = uniqueStrings(entries);
+  }
+  return out;
+}
+
+function cloneBundles(bundles) {
+  const out = {};
+  for (const [name, bundle] of Object.entries(bundles || {})) {
+    out[name] = {
+      prefixes: uniqueStrings(bundle?.prefixes),
+      js: String(bundle?.js || ""),
+      css: uniqueStrings(bundle?.css),
+    };
   }
   return out;
 }
@@ -961,6 +1073,10 @@ function requireName(name, label) {
 
 function toAbsoluteUrl(path) {
   return new URL(String(path || ""), import.meta.url).href;
+}
+
+function normalizeBundleKey(path) {
+  return String(path || "").replace(/\?.*$/, "");
 }
 
 function getStyleParent(parent) {

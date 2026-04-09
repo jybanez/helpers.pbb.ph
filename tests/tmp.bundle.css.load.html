@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body data-status="pending"><pre id="r">start</pre><script>
+const r=document.getElementById('r');
+const link=document.createElement('link');
+link.rel='stylesheet';
+link.href='file:///C:/wamp64/www/hotline-helpers/dist/helpers.ui.bundle.min.css';
+link.addEventListener('load',()=>{document.body.dataset.status='pass';r.textContent='PASS';});
+link.addEventListener('error',()=>{document.body.dataset.status='fail';r.textContent='FAIL';});
+document.head.appendChild(link);
+</script></body></html>

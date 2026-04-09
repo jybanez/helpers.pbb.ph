@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loader Bundle Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .demo-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid #334563;
+      border-radius: 10px;
+      background: #0b1423;
+      color: #d7e0f4;
+      cursor: pointer;
+      font: inherit;
+    }
+    .demo-btn:hover {
+      border-color: #4a5f86;
+      background: #101a2b;
+    }
+    .demo-btn--primary {
+      border-color: #4f78cf;
+      background: #152848;
+      color: #ffffff;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 10px;
+      border: 1px solid #334563;
+      border-radius: 999px;
+      background: #0b1423;
+      color: #b7c9eb;
+      font-size: 12px;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .status-card {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #0b1220;
+    }
+    .status-card strong,
+    .status-card span {
+      margin: 0;
+    }
+    .status-card span {
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    .preview {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #0b1220;
+      min-height: 84px;
+    }
+    .preview-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .preview-row .ui-icon {
+      width: 20px;
+      height: 20px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    #log {
+      min-height: 170px;
+      color: #b2c2e5;
+    }
+  </style>
+  <script>
+    window.demoMeta = {
+      title: "Loader Bundle",
+      overview: "Optional minified distribution path for the shared `ui.*` helper surface. This demo shows how to generate the bundle, opt into it at runtime, and inspect loader diagnostics for loaded CSS, requested modules, and loaded bundles.",
+      useWhen: [
+        "Use it when a downstream app wants fewer helper network requests while keeping the source tree modular in the upstream repo.",
+        "Use it when the app already relies heavily on `ui.*` helpers such as icons, modals, selects, and device-primer flows."
+      ],
+      avoidWhen: [
+        "Do not treat it as a mandatory replacement for the default loader path. The modular loader remains the default contract.",
+        "Do not assume it covers `incident.*` helpers yet. The current bundle scope is `ui.*` only."
+      ],
+      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js` and `dist/helpers.ui.bundle.min.css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`.",
+      defaultSampleCode: `npm run build:ui-bundle\n\nconst loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {\n  preferBundles: true,\n});\n\nconst createFormModal = await loader.get(\"ui.form.modal\");`,
+      constructor: [
+        { factory: "<code>createUiLoader(DEFAULT_COMPONENT_REGISTRY, config)</code>", arguments: "registry and loader config", returns: "isolated loader instance" }
+      ],
+      options: [
+        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching `ui.*` entries load through the generated bundle map instead of per-module imports." },
+        { option: "<code>bundles</code>", default: "<code>{ ui }</code>", description: "Optional bundle registry override. Current built-in bundle covers `ui.*` entries and points to `dist/helpers.ui.bundle.min.js` plus CSS." },
+        { option: "<code>debug</code>", default: "<code>false</code>", description: "Enables loader debug logging for CSS/module/bundle resolution." }
+      ],
+      propertiesText: "The loader is stateful. Use `getDiagnostics()` to inspect what it has loaded instead of reading internal maps directly.",
+      methods: [
+        { method: "<code>uiLoader.setPreferBundles(flag)</code>", arguments: "boolean", returns: "normalized boolean", description: "Switches bundle preference for future loads on the current loader instance." },
+        { method: "<code>loader.get(name)</code>", arguments: "registry key", returns: "resolved export", description: "Loads a component export using either the modular path or the preferred bundle path." },
+        { method: "<code>loader.getDiagnostics()</code>", arguments: "none", returns: "diagnostics object", description: "Returns loaded CSS, requested modules, loaded bundles, and failure tracking." }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1>Loader Bundle Demo</h1>
+      <p class="muted">Dedicated reference for the optional minified `ui.*` bundle path. Use this page to compare modular vs bundled loader sessions, inspect current diagnostics, and exercise a few real helper loads through the selected mode.</p>
+      <div class="chips">
+        <span class="chip">optional distribution</span>
+        <span class="chip">minified JS + CSS</span>
+        <span class="chip">bundle-backed `ui.*` only</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Build And Opt-In</h2>
+      <p class="muted">The source tree stays modular. The build step just produces a minified bundle for downstream apps that want fewer helper requests.</p>
+      <pre>npm run build:ui-bundle
+
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+
+const bundledLoader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {
+  preferBundles: true,
+});
+
+const createFormModal = await bundledLoader.get("ui.form.modal");</pre>
+      <p class="muted">For clean request-count comparisons in a real app, refresh the page between modular and bundled runs so previously loaded CSS/modules do not stay warm in memory.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Live Session</h2>
+      <div class="row">
+        <button id="newModularLoaderBtn" class="demo-btn demo-btn--primary" type="button">New Modular Loader</button>
+        <button id="newBundledLoaderBtn" class="demo-btn demo-btn--primary" type="button">New Bundled Loader</button>
+        <button id="enableBundleBtn" class="demo-btn" type="button">Enable Bundle Preference</button>
+        <button id="disableBundleBtn" class="demo-btn" type="button">Disable Bundle Preference</button>
+      </div>
+      <div class="row">
+        <button id="loadIconsBtn" class="demo-btn" type="button">Load ui.icons</button>
+        <button id="loadFormModalBtn" class="demo-btn" type="button">Load ui.form.modal</button>
+        <button id="loadDevicePrimerBtn" class="demo-btn" type="button">Load ui.device.primer</button>
+        <button id="openModalBtn" class="demo-btn" type="button">Open Sample Form Modal</button>
+        <button id="refreshDiagnosticsBtn" class="demo-btn" type="button">Refresh Diagnostics</button>
+      </div>
+      <div class="status-grid">
+        <div class="status-card">
+          <strong>Current Mode</strong>
+          <span id="currentModeText">No loader yet</span>
+        </div>
+        <div class="status-card">
+          <strong>Bundle Preference</strong>
+          <span id="bundlePrefText">n/a</span>
+        </div>
+        <div class="status-card">
+          <strong>Loaded Bundles</strong>
+          <span id="bundleCountText">0</span>
+        </div>
+        <div class="status-card">
+          <strong>Loaded Modules</strong>
+          <span id="moduleCountText">0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Preview Surface</h2>
+      <p class="muted">This area uses the currently selected loader instance. The icon preview is immediate; the sample form modal lets you verify a real helper with dependencies and helper-owned chrome.</p>
+      <div id="previewHost" class="preview">
+        <div class="muted">No preview yet.</div>
+      </div>
+      <pre id="diagnostics">No diagnostics yet.</pre>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+
+    const currentModeText = document.getElementById("currentModeText");
+    const bundlePrefText = document.getElementById("bundlePrefText");
+    const bundleCountText = document.getElementById("bundleCountText");
+    const moduleCountText = document.getElementById("moduleCountText");
+    const diagnosticsEl = document.getElementById("diagnostics");
+    const logEl = document.getElementById("log");
+    const previewHost = document.getElementById("previewHost");
+
+    let currentLoader = null;
+    let currentMode = "none";
+    let currentCreateFormModal = null;
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      logEl.textContent = logEl.textContent === "No events yet." ? line : `${line}\n${logEl.textContent}`;
+    }
+
+    function clearPreview(message = "No preview yet.") {
+      previewHost.replaceChildren();
+      previewHost.appendChild(document.createElement("div")).className = "muted";
+      previewHost.firstChild.textContent = message;
+    }
+
+    function createLoader(preferBundles) {
+      currentLoader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {
+        preferBundles,
+      });
+      currentCreateFormModal = null;
+      currentMode = preferBundles ? "bundled" : "modular";
+      clearPreview(`Fresh ${currentMode} loader created.`);
+      refreshDiagnostics();
+      writeLog("loader.create", {
+        mode: currentMode,
+        preferBundles,
+      });
+    }
+
+    function ensureLoader() {
+      if (!currentLoader) {
+        createLoader(false);
+      }
+      return currentLoader;
+    }
+
+    function refreshDiagnostics() {
+      const loader = ensureLoader();
+      const diagnostics = loader.getDiagnostics();
+      currentModeText.textContent = currentMode;
+      bundlePrefText.textContent = diagnostics.preferBundles ? "enabled" : "disabled";
+      bundleCountText.textContent = String(diagnostics.loadedBundles.length);
+      moduleCountText.textContent = String(diagnostics.loadedModules.length);
+      diagnosticsEl.textContent = JSON.stringify(diagnostics, null, 2);
+      return diagnostics;
+    }
+
+    async function loadIcons() {
+      const loader = ensureLoader();
+      const icons = await loader.get("ui.icons");
+      const row = document.createElement("div");
+      row.className = "preview-row";
+      [
+        "actions.close",
+        "actions.search",
+        "actions.view",
+        "actions.hide",
+      ].forEach((name) => {
+        const pill = document.createElement("span");
+        pill.className = "chip";
+        pill.appendChild(icons.createIcon(name, { size: 18, title: name, decorative: false }));
+        pill.append(` ${name}`);
+        row.appendChild(pill);
+      });
+      previewHost.replaceChildren(row);
+      writeLog("loader.get.ui.icons", {
+        mode: currentMode,
+        loadedBundles: loader.getDiagnostics().loadedBundles,
+      });
+      refreshDiagnostics();
+    }
+
+    async function loadFormModal() {
+      const loader = ensureLoader();
+      currentCreateFormModal = await loader.get("ui.form.modal");
+      writeLog("loader.get.ui.form.modal", {
+        mode: currentMode,
+        loadedBundles: loader.getDiagnostics().loadedBundles,
+      });
+      refreshDiagnostics();
+    }
+
+    async function loadDevicePrimer() {
+      const loader = ensureLoader();
+      const createDevicePrimer = await loader.get("ui.device.primer");
+      writeLog("loader.get.ui.device.primer", {
+        mode: currentMode,
+        exportType: typeof createDevicePrimer,
+        loadedBundles: loader.getDiagnostics().loadedBundles,
+      });
+      refreshDiagnostics();
+    }
+
+    async function openSampleModal() {
+      await loadFormModal();
+      const formModal = currentCreateFormModal({
+        title: currentMode === "bundled" ? "Bundled Loader Sample" : "Modular Loader Sample",
+        submitLabel: "Save",
+        busyMessage: "Saving sample...",
+        rows: [
+          [{ type: "text", content: "This modal uses the current loader session so you can validate a real helper flow through the selected mode." }],
+          [{ type: "input", input: "text", name: "name", label: "Name", value: "Operator One", required: true }],
+          [{ type: "input", input: "password", name: "password", label: "Password", value: "secret", required: true }],
+        ],
+        async onSubmit(values) {
+          writeLog("formModal.submit", {
+            mode: currentMode,
+            values,
+          });
+          return false;
+        },
+        onClose(meta) {
+          writeLog("formModal.close", meta || {});
+        },
+      });
+      formModal.open();
+      writeLog("formModal.open", {
+        mode: currentMode,
+      });
+      refreshDiagnostics();
+    }
+
+    document.getElementById("newModularLoaderBtn").addEventListener("click", () => createLoader(false));
+    document.getElementById("newBundledLoaderBtn").addEventListener("click", () => createLoader(true));
+    document.getElementById("enableBundleBtn").addEventListener("click", () => {
+      const loader = ensureLoader();
+      loader.setPreferBundles(true);
+      currentMode = "hybrid-bundle-preferred";
+      writeLog("loader.setPreferBundles", { value: true });
+      refreshDiagnostics();
+    });
+    document.getElementById("disableBundleBtn").addEventListener("click", () => {
+      const loader = ensureLoader();
+      loader.setPreferBundles(false);
+      currentMode = "modular-preferred";
+      writeLog("loader.setPreferBundles", { value: false });
+      refreshDiagnostics();
+    });
+    document.getElementById("loadIconsBtn").addEventListener("click", () => {
+      loadIcons().catch((error) => writeLog("loader.get.ui.icons.error", { message: String(error?.message || error) }));
+    });
+    document.getElementById("loadFormModalBtn").addEventListener("click", () => {
+      loadFormModal().catch((error) => writeLog("loader.get.ui.form.modal.error", { message: String(error?.message || error) }));
+    });
+    document.getElementById("loadDevicePrimerBtn").addEventListener("click", () => {
+      loadDevicePrimer().catch((error) => writeLog("loader.get.ui.device.primer.error", { message: String(error?.message || error) }));
+    });
+    document.getElementById("openModalBtn").addEventListener("click", () => {
+      openSampleModal().catch((error) => writeLog("formModal.open.error", { message: String(error?.message || error) }));
+    });
+    document.getElementById("refreshDiagnosticsBtn").addEventListener("click", () => refreshDiagnostics());
+
+    createLoader(false);
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.76`
+- Latest documented release: `v0.21.77`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.77
+
+- Added an optional minified `ui.*` distribution bundle at `dist/helpers.ui.bundle.min.js` plus `dist/helpers.ui.bundle.min.css`, generated through `npm run build:ui-bundle`.
+- Extended `uiLoader` with opt-in bundle preference via `preferBundles` / `setPreferBundles(true)`, while keeping the default modular source-loading path unchanged.
+- Hardened loader request behavior by parallelizing dependency walks and normalizing `ui.form.modal.presets.js` versioned URLs so the same helper file is not referenced under mixed cache keys.
 
 ### v0.21.76
 

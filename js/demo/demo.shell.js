@@ -96,6 +96,7 @@ const DEMO_GROUPS = [
       { href: "./demo.tree.select.html", label: "Tree Select" },
       { href: "./demo.fieldset.html", label: "Fieldset" },
       { href: "./demo.device.primer.html", label: "Device Primer" },
+      { href: "./demo.loader.bundle.html", label: "Loader Bundle" },
       { href: "./demo.property.editor.html", label: "Property Editor" },
       { href: "./demo.toggle.button.html", label: "Toggle Button" },
       { href: "./demo.toggle.group.html", label: "Toggle Group" },
