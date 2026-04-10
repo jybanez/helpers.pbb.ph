@@ -254,13 +254,13 @@ Reusable shared UI utilities live under `js/ui`:
   - `getVoices()` returns available speech voices so UI can render a voice selector; per-toast `voiceName` override is supported in `show(message, { voiceName })`
 - `ui.form.modal.js`
   - `createFormModal(options)` schema-driven modal form helper for short login/re-auth/CRUD flows using a strict row-based body model over `createActionModal(...)`
-  - exposes helper-owned values, field errors, form error, busy submit lifecycle, declarative mode rules, hidden/display fields, and hosted `ui.select` / `ui.treeSelect` integration without widening the base modal shell contract
+- exposes helper-owned values, field errors, form error, busy submit lifecycle, declarative mode rules, hidden/display fields, hosted `ui.select` / `ui.treeSelect`, and helper-owned avatar-file picking without widening the base modal shell contract
 - `ui.form.modal.presets.js`
   - `createLoginFormModal(options)` opinionated login wrapper over `createFormModal(...)` with field-name remapping support
   - `createReauthFormModal(options)` opinionated re-auth wrapper over `createFormModal(...)` with locked identifier support and field-name remapping
   - `createStatusUpdateFormModal(options)` operational status-change wrapper over `createFormModal(...)` with app-supplied status options and field-name remapping
   - `createReasonFormModal(options)` categorized reason-required wrapper over `createFormModal(...)` with app-supplied reason options and field-name remapping
-  - `createAccountFormModal(options)` opinionated account/profile wrapper over `createFormModal(...)` with helper-owned Name and Email rows plus additive `extraRows`
+- `createAccountFormModal(options)` opinionated account/profile wrapper over `createFormModal(...)` with helper-owned optional avatar picker, Name, and Email rows plus additive `extraRows`
   - `createChangePasswordFormModal(options)` opinionated password-change wrapper over `createFormModal(...)` with helper-owned current/new/confirm password rows
 - `ui.select.js`
   - `createSelect(container, items, options)` single/multi select with optional search and keyboard navigation (`ArrowUp/ArrowDown/Home/End/Enter/Escape`, optional `selectOnTab`)
@@ -2585,6 +2585,7 @@ Supported V1 item types:
 - `display`
 - `ui.select`
 - `ui.treeSelect`
+- `avatar`
 - `input`
 - `textarea`
 - `select`
@@ -2646,6 +2647,24 @@ Field properties:
 - `selectOnTab`
 - `clearable`
 - `defaultExpanded`
+
+`avatar` field properties:
+
+- `accept`
+- `capture`
+- `previewUrl` or `src`
+- `previewAlt`
+- `placeholderText`
+- `selectLabel`
+- `changeLabel`
+- `emptyText`
+- `previewText`
+- `required`
+
+Avatar behavior notes:
+
+- avatar fields return the selected `File` object from `getValues()` and submit payloads
+- preview URLs are visual-only and are not treated as payload values
 
 Row model:
 
@@ -2766,7 +2785,7 @@ Preset summary:
 | `createReauthFormModal(...)` | Re-auth/session confirmation | no | `identifier`, `password` |
 | `createStatusUpdateFormModal(...)` | Operational status update | `statusOptions` | `status`, `remarks`, `notify` |
 | `createReasonFormModal(...)` | Categorized reason-required flow | `reasonOptions` | `reasonCode`, `reasonDetails`, `confirmText`, `notify` |
-| `createAccountFormModal(...)` | Shared account/profile edit flow | no | `name`, `email` |
+| `createAccountFormModal(...)` | Shared account/profile edit flow | optional helper-owned avatar picker | `avatar`, `name`, `email` |
 | `createChangePasswordFormModal(...)` | Shared password-change flow | no | `currentPassword`, `newPassword`, `confirmPassword` |
 
 Common preset rules:
@@ -2778,7 +2797,7 @@ Common preset rules:
 | Busy behavior | Presets reuse `createFormModal(...)` busy submit handling. |
 | Submit behavior | App code still owns the actual `onSubmit(values, ctx)` implementation. |
 | Session expiry detection | Re-auth auto-launch is app-owned. `createReauthFormModal(...)` does not monitor timeout state or open itself. |
-| Cross-origin Workspace bridge | Login, re-auth, account, and change-password presets can delegate through `modal.form.open` when running in a cross-origin Workspace iframe and same-origin parent mounting is unavailable. Bridged account presets also preserve serializable `extraActions` and return `reason: "action"` plus `actionId` to the child app. |
+| Cross-origin Workspace bridge | Login, re-auth, account, and change-password presets can delegate through `modal.form.open` when running in a cross-origin Workspace iframe and same-origin parent mounting is unavailable. Bridged account presets also preserve serializable `extraActions` and return `reason: "action"` plus `actionId` to the child app. Account avatar upload is local-render only because selected `File` objects are not serialized through the current bridge contract. |
 
 Preset options:
 
@@ -2788,7 +2807,7 @@ Preset options:
 | `createReauthFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierValue`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createStatusUpdateFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `statusOptions`, `statusLabel`, `remarksLabel`, `remarksPlaceholder`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
 | `createReasonFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `reasonOptions`, `reasonLabel`, `detailsLabel`, `detailsPlaceholder`, `confirmPhrase`, `confirmLabel`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
-| `createAccountFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `nameLabel`, `namePlaceholder`, `emailLabel`, `emailPlaceholder`, `fields`, `initialValues`, `extraRows`, `extraActions`, `extraActionsPlacement`, `onSubmit` |
+| `createAccountFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `avatar`, `nameLabel`, `namePlaceholder`, `emailLabel`, `emailPlaceholder`, `fields`, `initialValues`, `extraRows`, `extraActions`, `extraActionsPlacement`, `onSubmit` |
 | `createChangePasswordFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `currentPasswordLabel`, `currentPasswordPlaceholder`, `newPasswordLabel`, `newPasswordPlaceholder`, `confirmPasswordLabel`, `confirmPasswordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 
 Returned API:

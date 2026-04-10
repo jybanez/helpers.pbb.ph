@@ -85,6 +85,8 @@ export function createFormModal(options = {}) {
         field.control?.__uiSelectInstance?.destroy?.();
       } else if (field?.type === "ui.treeselect") {
         field.control?.__uiTreeSelectInstance?.destroy?.();
+      } else if (field?.type === "avatar") {
+        field.control?.__uiAvatarFieldInstance?.destroy?.();
       } else if (field?.type === "input") {
         field.control?.__uiPasswordInstance?.destroy?.();
       }
@@ -203,7 +205,7 @@ export function createFormModal(options = {}) {
     if (type === "display") {
       return renderDisplayItem(item);
     }
-    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select" || type === "ui.treeselect") {
+    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select" || type === "ui.treeselect" || type === "avatar") {
       return renderField(item, type, rowIndex, itemIndex);
     }
     console.warn(`[createFormModal] Unsupported item type "${type}".`);
@@ -313,6 +315,8 @@ export function createFormModal(options = {}) {
         label.textContent = labelText;
         wrapper.appendChild(label);
       }
+      wrapper.appendChild(control);
+    } else if (type === "avatar") {
       wrapper.appendChild(control);
     } else if (type === "checkbox") {
       label.append(control, createElement("span", {
@@ -432,6 +436,166 @@ export function createFormModal(options = {}) {
       host.__uiTreeSelectInstance = treeSelectInstance;
       control = host;
       return control;
+    }
+
+    if (type === "avatar") {
+      const host = createElement("div", {
+        className: "ui-form-modal-avatar-host",
+      });
+      const trigger = createElement("button", {
+        className: "ui-form-modal-avatar-picker",
+        attrs: {
+          id,
+          type: "button",
+          ...(item.disabled ? { disabled: "disabled" } : {}),
+          ...(describedBy ? { "aria-describedby": describedBy } : {}),
+          "aria-label": String(item.ariaLabel || item.label || "Choose profile photo"),
+        },
+      });
+      const circle = createElement("span", {
+        className: "ui-form-modal-avatar-circle",
+      });
+      const image = createElement("img", {
+        className: "ui-form-modal-avatar-image",
+        attrs: {
+          alt: String(item.previewAlt || item.label || "Selected profile photo"),
+          hidden: "hidden",
+        },
+      });
+      const placeholder = createElement("span", {
+        className: "ui-form-modal-avatar-placeholder",
+        text: String(item.placeholderText || "Photo"),
+      });
+      const caption = createElement("span", {
+        className: "ui-form-modal-avatar-caption",
+      });
+      const meta = createElement("span", {
+        className: "ui-form-modal-avatar-meta",
+      });
+      const input = createElement("input", {
+        className: "ui-form-modal-avatar-input",
+        attrs: {
+          type: "file",
+          tabindex: "-1",
+          hidden: "hidden",
+          ...(item.accept ? { accept: String(item.accept) } : { accept: "image/*" }),
+          ...(item.capture ? { capture: String(item.capture) } : {}),
+        },
+      });
+
+      let currentFile = value instanceof File ? value : null;
+      let currentPreviewUrl = currentFile ? "" : normalizeAvatarPreviewUrl(item.previewUrl || item.src || "");
+      let objectUrl = "";
+      let pendingPreviewSrc = "";
+
+      circle.append(image, placeholder);
+      trigger.append(circle, caption, meta);
+      host.append(trigger, input);
+
+      function revokeObjectUrl() {
+        if (!objectUrl) {
+          return;
+        }
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = "";
+      }
+
+      function showLoadedImage() {
+        if (!pendingPreviewSrc) {
+          return;
+        }
+        image.hidden = false;
+        placeholder.hidden = true;
+        caption.textContent = String(item.changeLabel || "Change photo");
+        meta.textContent = currentFile?.name || String(item.previewText || "Current profile photo");
+        trigger.dataset.state = currentFile ? "selected" : "preview";
+      }
+
+      function showPlaceholderState() {
+        image.removeAttribute("src");
+        image.hidden = true;
+        placeholder.hidden = false;
+        caption.textContent = String(item.selectLabel || "Choose photo");
+        meta.textContent = String(item.emptyText || "Click to choose a profile photo.");
+        trigger.dataset.state = "empty";
+      }
+
+      function syncPreview() {
+        revokeObjectUrl();
+        pendingPreviewSrc = "";
+        let previewSrc = "";
+        if (currentFile instanceof File) {
+          objectUrl = URL.createObjectURL(currentFile);
+          previewSrc = objectUrl;
+        } else if (currentPreviewUrl) {
+          previewSrc = currentPreviewUrl;
+        }
+        if (previewSrc) {
+          pendingPreviewSrc = previewSrc;
+          image.src = previewSrc;
+          image.hidden = true;
+          placeholder.hidden = false;
+          caption.textContent = currentFile?.name ? String(item.changeLabel || "Change photo") : String(item.previewLoadingText || "Loading photo...");
+          meta.textContent = currentFile?.name || String(item.previewText || "Current profile photo");
+          trigger.dataset.state = "loading";
+        } else {
+          showPlaceholderState();
+        }
+      }
+
+      const avatarInstance = {
+        input,
+        trigger,
+        getValue() {
+          return currentFile;
+        },
+        setValue(nextValue) {
+          if (nextValue instanceof File) {
+            currentFile = nextValue;
+          } else {
+            currentFile = null;
+            if (typeof nextValue === "string") {
+              currentPreviewUrl = normalizeAvatarPreviewUrl(nextValue);
+            }
+          }
+          input.value = "";
+          syncPreview();
+        },
+        hasPreview() {
+          return Boolean(currentFile || currentPreviewUrl);
+        },
+        destroy() {
+          revokeObjectUrl();
+          input.value = "";
+        },
+      };
+
+      trigger.addEventListener("click", () => {
+        if (item.disabled || item.readonly) {
+          return;
+        }
+        input.value = "";
+        input.click();
+      });
+      image.addEventListener("load", () => {
+        showLoadedImage();
+      });
+      image.addEventListener("error", () => {
+        pendingPreviewSrc = "";
+        if (!(currentFile instanceof File)) {
+          currentPreviewUrl = "";
+        }
+        showPlaceholderState();
+      });
+      input.addEventListener("change", () => {
+        currentFile = input.files?.[0] || null;
+        syncPreview();
+        handleFieldChange(name);
+      });
+
+      host.__uiAvatarFieldInstance = avatarInstance;
+      syncPreview();
+      return host;
     }
 
     if (type === "input") {
@@ -591,6 +755,12 @@ export function createFormModal(options = {}) {
         if (field.config.required && isEmpty) {
           message = "This field is required.";
         }
+      } else if (field.type === "avatar") {
+        const value = getFieldValue(field);
+        const hasPreview = field.control?.__uiAvatarFieldInstance?.hasPreview?.() === true;
+        if (field.config.required && !value && !hasPreview) {
+          message = "Please choose a photo.";
+        }
       } else if (field.config.required && !getFieldValue(field)) {
         message = "This field is required.";
       } else {
@@ -635,7 +805,7 @@ export function createFormModal(options = {}) {
     if (field?.type === "hidden") {
       return;
     }
-    const focusTarget = field?.type === "ui.select" || field?.type === "ui.treeselect"
+    const focusTarget = field?.type === "ui.select" || field?.type === "ui.treeselect" || field?.type === "avatar"
       ? getFieldAriaTarget(field)
       : getFieldAriaTarget(field) || field?.control;
     if (focusTarget && typeof focusTarget.focus === "function") {
@@ -1098,6 +1268,10 @@ function normalizeInputType(value) {
   return "text";
 }
 
+function normalizeAvatarPreviewUrl(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function normalizeTone(value) {
   const tone = String(value || "info").trim().toLowerCase();
   if (tone === "danger" || tone === "warning" || tone === "success" || tone === "info") {
@@ -1200,6 +1374,9 @@ function getFieldValue(field) {
   if (field.type === "ui.treeselect") {
     return field.control?.__uiTreeSelectInstance?.getValue?.() ?? null;
   }
+  if (field.type === "avatar") {
+    return field.control?.__uiAvatarFieldInstance?.getValue?.() ?? null;
+  }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     return field.control.__uiPasswordInstance.getValue();
   }
@@ -1226,6 +1403,10 @@ function setFieldValue(field, value) {
     field.control?.__uiTreeSelectInstance?.setValue?.(value);
     return;
   }
+  if (field.type === "avatar") {
+    field.control?.__uiAvatarFieldInstance?.setValue?.(value);
+    return;
+  }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     field.control.__uiPasswordInstance.setValue(value == null ? "" : String(value));
     return;
@@ -1246,6 +1427,9 @@ function getFieldAriaTarget(field) {
   }
   if (field.type === "ui.treeselect") {
     return field.control?.querySelector?.(".ui-tree-select-trigger") || null;
+  }
+  if (field.type === "avatar") {
+    return field.control?.querySelector?.(".ui-form-modal-avatar-picker") || null;
   }
   if (field.type === "input" && field.control?.__uiPasswordInstance) {
     return field.control.__uiPasswordInstance.input || null;

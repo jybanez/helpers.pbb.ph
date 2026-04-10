@@ -38,6 +38,8 @@
 
     const results = document.getElementById("results");
     const failures = [];
+    const avatarPreviewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#2d4775"/><stop offset="1" stop-color="#111827"/></linearGradient></defs><rect width="128" height="128" rx="64" fill="url(#g)"/><circle cx="64" cy="48" r="22" fill="#d7e0f4" fill-opacity="0.92"/><path d="M29 106c7-19 22-29 35-29s28 10 35 29" fill="#d7e0f4" fill-opacity="0.92"/></svg>`;
+    const avatarPreviewUrl = `data:image/svg+xml;utf8,${encodeURIComponent(avatarPreviewSvg)}`;
 
     const presetLoginModal = createLoginFormModal({
       fields: {
@@ -270,8 +272,13 @@
     assert(document.querySelector(".ui-modal-root") === null, "reason preset should close on successful native form submit");
 
     const accountExtraActionCalls = [];
+    let accountSubmitValues = null;
     const accountModal = createAccountFormModal({
+      avatar: {
+        previewUrl: avatarPreviewUrl,
+      },
       fields: {
+        avatar: "avatar_file",
         name: "display_name",
         email: "contact_email",
       },
@@ -298,7 +305,8 @@
           return false;
         },
       }],
-      async onSubmit() {
+      async onSubmit(values) {
+        accountSubmitValues = values;
         await wait(80);
         return true;
       },
@@ -306,6 +314,8 @@
 
     accountModal.open();
     await wait(80);
+    assert(Boolean(document.querySelector(".ui-form-modal-avatar-picker")), "account preset should render the helper-owned avatar picker when enabled");
+    assert(document.querySelector(".ui-form-modal-avatar-image")?.hidden === false, "account preset avatar picker should show the current preview when previewUrl is provided");
     assert(Boolean(document.querySelector('input[name="display_name"]')), "account preset should render remapped name field");
     assert(Boolean(document.querySelector('input[name="contact_email"]')), "account preset should render remapped email field");
     assert(Boolean(document.querySelector('input[name="contact_number"]')), "account preset should append additive extra rows");
@@ -318,8 +328,21 @@
     assert(accountExtraActionCalls[0]?.actionId === "change-password", "account preset should pass the extra action id to callbacks");
     assert(document.querySelector(".ui-modal-root") !== null, "account preset extra action should keep modal open by default");
 
-    accountModal.destroy();
+    const avatarInput = document.querySelector(".ui-form-modal-avatar-input");
+    const selectedAvatar = new File(["avatar"], "operator.png", { type: "image/png" });
+    Object.defineProperty(avatarInput, "files", {
+      configurable: true,
+      value: [selectedAvatar],
+    });
+    avatarInput.dispatchEvent(new Event("change", { bubbles: true }));
     await wait(80);
+    assert(accountModal.getValues().avatar_file instanceof File, "account preset should expose the selected avatar as a File in getValues()");
+    assert(accountModal.getValues().avatar_file.name === "operator.png", "account preset should keep the selected avatar file metadata");
+    accountModal.refs.form.requestSubmit();
+    await wait(500);
+    assert(accountSubmitValues?.avatar_file instanceof File, "account preset should include the selected avatar File in submit values");
+    assert(accountSubmitValues?.avatar_file?.name === "operator.png", "account preset should submit the selected avatar file under the remapped field name");
+    assert(document.querySelector(".ui-modal-root") === null, "account preset should close on successful submit after avatar selection");
 
     const changePasswordModal = createChangePasswordFormModal({
       fields: {

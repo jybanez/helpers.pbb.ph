@@ -516,6 +516,62 @@ function buildAccountBridgePayload(options, state) {
   };
 }
 
+function buildAccountAvatarRow(options, fields) {
+  const avatar = normalizeAccountAvatarOptions(options.avatar);
+  if (!avatar) {
+    return null;
+  }
+  return [{
+    type: "avatar",
+    name: fields.avatar,
+    span: 2,
+    accept: avatar.accept,
+    capture: avatar.capture,
+    label: avatar.label,
+    help: avatar.help,
+    placeholderText: avatar.placeholderText,
+    selectLabel: avatar.selectLabel,
+    changeLabel: avatar.changeLabel,
+    emptyText: avatar.emptyText,
+    previewText: avatar.previewText,
+    previewAlt: avatar.previewAlt,
+    previewUrl: avatar.previewUrl,
+    required: avatar.required,
+    disabled: avatar.disabled,
+    readonly: avatar.readonly,
+  }];
+}
+
+function hasAccountAvatar(options = {}) {
+  return Boolean(normalizeAccountAvatarOptions(options.avatar));
+}
+
+function normalizeAccountAvatarOptions(value) {
+  if (value === false || value == null) {
+    return null;
+  }
+  const options = value === true ? {} : (value && typeof value === "object" ? value : {});
+  const previewUrl = typeof options.previewUrl === "string" && options.previewUrl.trim()
+    ? options.previewUrl.trim()
+    : (typeof options.src === "string" && options.src.trim() ? options.src.trim() : "");
+  return {
+    label: typeof options.label === "string" ? options.label.trim() : "",
+    help: typeof options.help === "string" ? options.help.trim() : "",
+    accept: typeof options.accept === "string" && options.accept.trim() ? options.accept.trim() : "image/*",
+    capture: typeof options.capture === "string" && options.capture.trim() ? options.capture.trim() : "",
+    placeholderText: typeof options.placeholderText === "string" && options.placeholderText.trim() ? options.placeholderText.trim() : "Photo",
+    selectLabel: typeof options.selectLabel === "string" && options.selectLabel.trim() ? options.selectLabel.trim() : "Choose photo",
+    changeLabel: typeof options.changeLabel === "string" && options.changeLabel.trim() ? options.changeLabel.trim() : "Change photo",
+    emptyText: typeof options.emptyText === "string" && options.emptyText.trim() ? options.emptyText.trim() : "Click to choose a profile photo.",
+    previewText: typeof options.previewText === "string" && options.previewText.trim() ? options.previewText.trim() : "Current profile photo",
+    previewAlt: typeof options.previewAlt === "string" && options.previewAlt.trim() ? options.previewAlt.trim() : "Profile photo preview",
+    previewUrl,
+    required: options.required === true,
+    disabled: options.disabled === true,
+    readonly: options.readonly === true,
+  };
+}
+
 function buildChangePasswordBridgePayload(options, state) {
   const fields = normalizeFieldMap(options.fields, {
     currentPassword: "current_password",
@@ -762,15 +818,17 @@ export function createReasonFormModal(options = {}) {
 }
 
 export function createAccountFormModal(options = {}) {
-  if (shouldUseCrossOriginFormBridge(options)) {
+  if (shouldUseCrossOriginFormBridge(options) && !hasAccountAvatar(options)) {
     return createDelegatedPresetFormModal("account", options, buildAccountBridgePayload);
   }
   const fields = normalizeFieldMap(options.fields, {
+    avatar: "avatar",
     name: "name",
     email: "email",
   });
   const message = String(options.message || "").trim();
   const extraRows = normalizeRows(options.extraRows);
+  const avatarRow = buildAccountAvatarRow(options, fields);
 
   return createFormModal({
     ...options,
@@ -780,6 +838,7 @@ export function createAccountFormModal(options = {}) {
     submitLabel: options.submitLabel || "Save",
     rows: [
       ...(message ? [[{ type: "text", content: message }]] : []),
+      ...(avatarRow ? [avatarRow] : []),
       [{
         type: "input",
         input: "text",

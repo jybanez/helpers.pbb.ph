@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.77`
+- Latest documented release: `v0.21.78`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.78
+
+- Added a helper-owned `avatar` field type to `createFormModal(...)` for circular profile-photo selection with live preview and `File`-based submit values.
+- Extended `createAccountFormModal(...)` with additive `avatar` support, removed the need for user-facing avatar-path editing in the preset flow, and kept avatar upload local-render only when cross-origin Workspace bridging is active.
+- Updated the dedicated account preset demo and preset regression coverage to exercise avatar preview and selected-file submission behavior.
 
 ### v0.21.77
 
