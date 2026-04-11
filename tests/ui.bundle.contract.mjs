@@ -18,6 +18,7 @@ if (!fs.existsSync(bundleCssPath)) {
 const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
 const icons = await loader.get("ui.icons", { css: false });
 const createFormModal = await loader.get("ui.form.modal", { css: false });
+const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
 
 if (typeof icons?.createIcon !== "function") {
@@ -28,11 +29,19 @@ if (typeof createFormModal !== "function") {
   throw new Error("Bundle-backed ui.form.modal did not resolve to a factory function.");
 }
 
+if (typeof incidentTypes !== "function") {
+  throw new Error("Bundle-backed incident.types did not resolve to a factory function.");
+}
+
 if (!diagnostics.loadedBundles.includes("ui")) {
   throw new Error("Loader did not record the shared ui bundle as loaded.");
 }
 
-if (!diagnostics.loadedModules.includes("ui.icons") || !diagnostics.loadedModules.includes("ui.form.modal")) {
+if (
+  !diagnostics.loadedModules.includes("ui.icons") ||
+  !diagnostics.loadedModules.includes("ui.form.modal") ||
+  !diagnostics.loadedModules.includes("incident.types")
+) {
   throw new Error("Loader did not record bundle-backed module requests.");
 }
 

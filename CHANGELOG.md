@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.79`
+- Latest documented release: `v0.21.80`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.80
+
+- Expanded the generated helper bundle and bundle-preferring loader path so `incident.*` registry entries now resolve from `dist/helpers.ui.bundle.min.js` and `.css` alongside `ui.*`.
+- This removes the bundle-mode source fallback where incident helpers could re-fetch shared `ui.*` modules through direct ESM imports after the main helper bundle was already loaded.
 
 ### v0.21.79
 

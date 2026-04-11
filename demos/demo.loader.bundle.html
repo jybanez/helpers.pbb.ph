@@ -136,23 +136,24 @@
   <script>
     window.demoMeta = {
       title: "Loader Bundle",
-      overview: "Optional minified distribution path for the shared `ui.*` helper surface. This demo shows how to generate the bundle, opt into it at runtime, and inspect loader diagnostics for loaded CSS, requested modules, and loaded bundles.",
+      overview: "Optional minified distribution path for the shared `ui.*` and `incident.*` helper surface. This demo shows how to generate the bundle, opt into it at runtime, and inspect loader diagnostics for loaded CSS, requested modules, and loaded bundles.",
       useWhen: [
         "Use it when a downstream app wants fewer helper network requests while keeping the source tree modular in the upstream repo.",
-        "Use it when the app already relies heavily on `ui.*` helpers such as icons, modals, selects, and device-primer flows."
+        "Use it when the app already relies heavily on `ui.*` helpers such as icons, modals, selects, and device-primer flows.",
+        "Use it when the app also mounts `incident.*` helpers and wants to avoid source-mode fallback for their shared `ui.*` dependencies."
       ],
       avoidWhen: [
         "Do not treat it as a mandatory replacement for the default loader path. The modular loader remains the default contract.",
-        "Do not assume it covers `incident.*` helpers yet. The current bundle scope is `ui.*` only."
+        "Do not assume bundle preference removes the need to refresh vendored helper assets. The bundle is still a generated release artifact."
       ],
-      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js` and `dist/helpers.ui.bundle.min.css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`.",
+      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js` and `dist/helpers.ui.bundle.min.css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`. Current bundle scope covers both `ui.*` and `incident.*` registry entries.",
       defaultSampleCode: `npm run build:ui-bundle\n\nconst loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {\n  preferBundles: true,\n});\n\nconst createFormModal = await loader.get(\"ui.form.modal\");`,
       constructor: [
         { factory: "<code>createUiLoader(DEFAULT_COMPONENT_REGISTRY, config)</code>", arguments: "registry and loader config", returns: "isolated loader instance" }
       ],
       options: [
-        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching `ui.*` entries load through the generated bundle map instead of per-module imports." },
-        { option: "<code>bundles</code>", default: "<code>{ ui }</code>", description: "Optional bundle registry override. Current built-in bundle covers `ui.*` entries and points to `dist/helpers.ui.bundle.min.js` plus CSS." },
+        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching `ui.*` and `incident.*` entries load through the generated bundle map instead of per-module imports." },
+        { option: "<code>bundles</code>", default: "<code>{ ui }</code>", description: "Optional bundle registry override. Current built-in bundle covers both `ui.*` and `incident.*` entries and points to `dist/helpers.ui.bundle.min.js` plus CSS." },
         { option: "<code>debug</code>", default: "<code>false</code>", description: "Enables loader debug logging for CSS/module/bundle resolution." }
       ],
       propertiesText: "The loader is stateful. Use `getDiagnostics()` to inspect what it has loaded instead of reading internal maps directly.",
@@ -169,11 +170,11 @@
   <main class="page">
     <section class="panel">
       <h1>Loader Bundle Demo</h1>
-      <p class="muted">Dedicated reference for the optional minified `ui.*` bundle path. Use this page to compare modular vs bundled loader sessions, inspect current diagnostics, and exercise a few real helper loads through the selected mode.</p>
+      <p class="muted">Dedicated reference for the optional minified `ui.*` and `incident.*` bundle path. Use this page to compare modular vs bundled loader sessions, inspect current diagnostics, and exercise a few real helper loads through the selected mode.</p>
       <div class="chips">
         <span class="chip">optional distribution</span>
         <span class="chip">minified JS + CSS</span>
-        <span class="chip">bundle-backed `ui.*` only</span>
+        <span class="chip">bundle-backed `ui.*` + `incident.*`</span>
       </div>
     </section>
 

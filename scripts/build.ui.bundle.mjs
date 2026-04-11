@@ -8,7 +8,7 @@ const loaderUrl = pathToFileURL(path.join(repoRoot, "js", "ui", "ui.loader.js"))
 const { DEFAULT_COMPONENT_REGISTRY } = await import(loaderUrl);
 
 const uiEntries = Object.entries(DEFAULT_COMPONENT_REGISTRY)
-  .filter(([name, entry]) => name.startsWith("ui.") && entry?.js);
+  .filter(([name, entry]) => (name.startsWith("ui.") || name.startsWith("incident.")) && entry?.js);
 
 const jsModuleKeys = unique(uiEntries.map(([, entry]) => stripQuery(entry.js)));
 const cssAssetKeys = unique(uiEntries.flatMap(([, entry]) => {

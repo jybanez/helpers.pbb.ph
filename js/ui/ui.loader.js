@@ -598,7 +598,7 @@ const DEFAULT_LOADER_OPTIONS = {
   preferBundles: false,
   bundles: {
     ui: {
-      prefixes: ["ui."],
+      prefixes: ["ui.", "incident."],
       js: UI_BUNDLE_JS,
       css: [UI_BUNDLE_CSS],
     },
