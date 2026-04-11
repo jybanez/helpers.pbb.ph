@@ -7,8 +7,12 @@ const DEFAULT_OPTIONS = {
   ariaLabel: "Primary navigation",
   brandText: "App",
   brandSubtitle: "",
+  brandMedia: null,
   items: [],
   actions: [],
+  contentStart: null,
+  contentCenter: null,
+  contentEnd: null,
   sticky: false,
   activeId: "",
   iconPosition: "start", // start | end
@@ -55,6 +59,57 @@ export function createNavbar(container, data = {}, options = {}) {
     target.appendChild(content);
   }
 
+  function appendRenderable(target, value, meta = {}) {
+    if (!target) {
+      return;
+    }
+
+    const resolved = typeof value === "function"
+      ? value({
+          ...meta,
+          options: { ...currentOptions },
+          createElement,
+        })
+      : value;
+
+    if (resolved == null || resolved === false) {
+      return;
+    }
+
+    if (Array.isArray(resolved)) {
+      resolved.forEach((entry) => appendRenderable(target, entry, meta));
+      return;
+    }
+
+    if (resolved instanceof Node) {
+      target.appendChild(resolved);
+      return;
+    }
+
+    target.appendChild(createElement("span", {
+      className: meta?.className || "",
+      ...(meta?.asHtml ? { html: String(resolved) } : { text: String(resolved) }),
+    }));
+  }
+
+  function renderSlot(slotName, value) {
+    if (value == null || value === false) {
+      return null;
+    }
+    const slot = createElement("div", {
+      className: `ui-navbar-slot ui-navbar-slot-${slotName}`,
+    });
+    appendRenderable(slot, value, {
+      slot: slotName,
+      className: "ui-navbar-slot-text",
+      asText: true,
+    });
+    if (!slot.childNodes.length) {
+      return null;
+    }
+    return slot;
+  }
+
   function render() {
     if (!container || container.nodeType !== 1) {
       return;
@@ -75,18 +130,31 @@ export function createNavbar(container, data = {}, options = {}) {
       className: "ui-navbar-brand",
       attrs: { type: "button" },
     });
+    const brandText = createElement("span", { className: "ui-navbar-brand-text" });
+    if (currentOptions.brandMedia != null && currentOptions.brandMedia !== false) {
+      const brandMedia = createElement("span", { className: "ui-navbar-brand-media" });
+      appendRenderable(brandMedia, currentOptions.brandMedia, {
+        slot: "brandMedia",
+        className: "ui-navbar-brand-media-content",
+        asHtml: true,
+      });
+      if (brandMedia.childNodes.length) {
+        brand.appendChild(brandMedia);
+      }
+    }
     const brandLabel = createElement("span", {
       className: "ui-navbar-brand-label",
       text: currentOptions.brandText,
     });
-    brand.appendChild(brandLabel);
+    brandText.appendChild(brandLabel);
     if (String(currentOptions.brandSubtitle || "").trim()) {
       brand.classList.add("has-subtitle");
-      brand.appendChild(createElement("span", {
+      brandText.appendChild(createElement("span", {
         className: "ui-navbar-brand-subtitle",
         text: String(currentOptions.brandSubtitle).trim(),
       }));
     }
+    brand.appendChild(brandText);
     events.on(brand, "click", () => currentOptions.onNavigate?.({ id: "brand", label: currentOptions.brandText }));
 
     const list = createElement("div", { className: "ui-navbar-items" });
@@ -145,7 +213,30 @@ export function createNavbar(container, data = {}, options = {}) {
       actions.appendChild(btn);
     });
 
-    root.append(brand, list, actions);
+    const start = createElement("div", { className: "ui-navbar-start" });
+    const center = createElement("div", { className: "ui-navbar-center" });
+    const end = createElement("div", { className: "ui-navbar-end" });
+
+    start.appendChild(brand);
+    const contentStart = renderSlot("start", currentOptions.contentStart);
+    if (contentStart) {
+      start.appendChild(contentStart);
+    }
+    start.appendChild(list);
+
+    const contentCenter = renderSlot("center", currentOptions.contentCenter);
+    if (contentCenter) {
+      center.appendChild(contentCenter);
+      center.classList.add("has-content");
+    }
+
+    const contentEnd = renderSlot("end", currentOptions.contentEnd);
+    if (contentEnd) {
+      end.appendChild(contentEnd);
+    }
+    end.appendChild(actions);
+
+    root.append(start, center, end);
     container.appendChild(root);
   }
 

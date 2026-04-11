@@ -47,6 +47,20 @@
       const navbar = createNavbar(host, {}, {
         brandText: "Workspace",
         brandSubtitle: "Build app-DWv_LvMM",
+        brandMedia: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z"/></svg>',
+        contentStart: "Operations",
+        contentCenter: () => {
+          const badge = document.createElement("span");
+          badge.className = "center-badge";
+          badge.textContent = "Realtime Connected";
+          return badge;
+        },
+        contentEnd: () => {
+          const badge = document.createElement("span");
+          badge.className = "end-badge";
+          badge.textContent = "Region 7";
+          return badge;
+        },
         items: [
           { id: "dashboard", label: "Dashboard" },
           {
@@ -84,9 +98,17 @@
       const brandButton = host.querySelector(".ui-navbar-brand");
       const brandLabel = host.querySelector(".ui-navbar-brand-label");
       const brandSubtitle = host.querySelector(".ui-navbar-brand-subtitle");
+      const brandMedia = host.querySelector(".ui-navbar-brand-media svg");
+      const contentStart = host.querySelector(".ui-navbar-slot-start");
+      const contentCenter = host.querySelector(".ui-navbar-slot-center .center-badge");
+      const contentEnd = host.querySelector(".ui-navbar-slot-end .end-badge");
       assert(Boolean(brandButton), "brand button should render");
       assert(Boolean(brandLabel) && brandLabel.textContent.trim() === "Workspace", "brand label should render");
       assert(Boolean(brandSubtitle) && brandSubtitle.textContent.trim() === "Build app-DWv_LvMM", "brand subtitle should render");
+      assert(Boolean(brandMedia), "brand media should render");
+      assert(Boolean(contentStart) && contentStart.textContent.includes("Operations"), "start slot should render text content");
+      assert(Boolean(contentCenter) && contentCenter.textContent.trim() === "Realtime Connected", "center slot should render callback content");
+      assert(Boolean(contentEnd) && contentEnd.textContent.trim() === "Region 7", "end slot should render callback content");
 
       const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
       assert(navButtons.length === 2, "navbar should render 2 primary items");
@@ -115,9 +137,10 @@
       await wait(50);
       assert(events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout"), "existing action-menu behavior should remain intact");
 
-      navbar.update({}, { brandSubtitle: "" });
+      navbar.update({}, { brandSubtitle: "", contentCenter: null });
       await wait(10);
       assert(!host.querySelector(".ui-navbar-brand-subtitle"), "brand subtitle should not render after clearing");
+      assert(!host.querySelector(".ui-navbar-slot-center .center-badge"), "center slot should clear after update");
 
       navbar.destroy();
       finish();

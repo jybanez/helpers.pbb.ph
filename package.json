@@ -1,6 +1,6 @@
 {
   "name": "hotline-helpers",
-  "version": "0.21.78",
+  "version": "0.21.79",
   "description": "Shared helpers.pbb.ph source with optional minified bundle generation.",
   "type": "module",
   "scripts": {

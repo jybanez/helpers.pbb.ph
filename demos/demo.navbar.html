@@ -15,6 +15,9 @@
     .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 12px; background: #0b1220; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
     .log { min-height: 220px; color: #b2c2e5; }
+    .demo-nav-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid #35507c; background: #13233d; color: #d7e0f4; font-size: 12px; line-height: 1; white-space: nowrap; }
+    .demo-nav-dot { width: 8px; height: 8px; border-radius: 999px; background: #88f0b5; box-shadow: 0 0 0 3px rgba(136, 240, 181, 0.18); }
+    .demo-nav-badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(159, 178, 216, 0.1); color: #bcd0f4; font-size: 12px; line-height: 1; white-space: nowrap; }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -23,7 +26,7 @@
   <script>
     window.demoMeta = {
       title: "Navbar",
-      overview: "Shared top navigation helper for app shells, section switching, compact item/action menus, and optional brand subtitle/meta text.",
+      overview: "Shared top navigation helper for app shells, section switching, compact item/action menus, optional brand media, and additive custom-content slots.",
       useWhen: [
         "Use <code>createNavbar(...)</code> for top-level app or shell navigation that needs a shared PBB look-and-feel.",
         "Use <code>items[].menuItems</code> for primary-nav menus such as Workspace-style <code>Apps</code> without post-render menu wiring.",
@@ -33,8 +36,8 @@
         "Do not use it for side navigation or breadcrumbs; use the dedicated helpers for those surfaces.",
         "Do not push page-specific layout or content rendering into the navbar helper."
       ],
-      description: "The navbar helper owns brand, primary items, and right-side actions. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can also render one muted secondary line through <code>brandSubtitle</code> for compact shell metadata.",
-      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n    { id: \"reports\", label: \"Reports\", icon: iconBookmark },\n  ],\n  actions: [\n    { id: \"help\", label: \"Help\", icon: iconHelp },\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"clear-cache\", label: \"Clear Cache\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
+      description: "The navbar helper owns brand, primary items, and right-side actions. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>.",
+      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    { id: \"reports\", label: \"Reports\", icon: iconBookmark },\n  ],\n  actions: [\n    { id: \"help\", label: \"Help\", icon: iconHelp },\n  ],\n});",
       constructor: [
         { factory: "<code>createNavbar(container, data, options)</code>", arguments: "target container, unused data object, navbar options", returns: "Navbar instance" }
       ],
@@ -43,8 +46,10 @@
         { option: "<code>ariaLabel</code>", default: "<code>\"Primary\"</code>", description: "Accessible label for the navigation landmark." },
         { option: "<code>brandText</code>", default: "<code>\"App\"</code>", description: "Brand button text shown at the start of the bar." },
         { option: "<code>brandSubtitle</code>", default: "<code>\"\"</code>", description: "Optional muted second line under the brand text for compact shell metadata such as build stamps." },
+        { option: "<code>brandMedia</code>", default: "<code>null</code>", description: "Optional brand icon/logo content. Accepts an HTML string, DOM node, array, or render callback." },
         { option: "<code>items</code>", default: "<code>[]</code>", description: "Primary navigation items. Each item supports <code>id</code>, <code>label</code>, <code>icon</code>, <code>iconPosition</code>, <code>iconOnly</code>, <code>disabled</code>, plus optional <code>menuItems</code> and <code>menuOptions</code>." },
         { option: "<code>actions</code>", default: "<code>[]</code>", description: "Right-side actions. Items may also provide <code>menuItems</code> and optional <code>menuOptions</code>." },
+        { option: "<code>contentStart</code>, <code>contentCenter</code>, <code>contentEnd</code>", default: "<code>null</code>", description: "Additive navbar slots for custom content. Each accepts text, DOM nodes, arrays, or a render callback." },
         { option: "<code>sticky</code>", default: "<code>false</code>", description: "Adds the shared sticky class to the bar.", values: ["true", "false"] },
         { option: "<code>activeId</code>", default: "<code>\"\"</code>", description: "Marks the active primary item." },
         { option: "<code>iconPosition</code>", default: "<code>\"start\"</code>", description: "Global icon placement for items and actions.", values: ["start", "end"] },
@@ -93,10 +98,25 @@
         <button id="toggleStickyBtn" class="ui-button ui-button-ghost" type="button">Toggle Sticky</button>
         <button id="toggleActionIconsBtn" class="ui-button ui-button-ghost" type="button">Toggle Icon-Only Actions</button>
         <button id="toggleSubtitleBtn" class="ui-button ui-button-ghost" type="button">Toggle Brand Subtitle</button>
+        <button id="toggleCustomContentBtn" class="ui-button ui-button-ghost" type="button">Toggle Custom Content</button>
       </div>
       <pre>const navbar = createNavbar(host, {}, {
   brandText: "Hotline UI",
   brandSubtitle: "Build app-DWv_LvMM",
+  brandMedia: iconShield,
+  contentStart: "Operations",
+  contentCenter: () => {
+    const pill = document.createElement("span");
+    pill.className = "demo-nav-pill";
+    pill.innerHTML = '<span class="demo-nav-dot"></span>Realtime Connected';
+    return pill;
+  },
+  contentEnd: () => {
+    const badge = document.createElement("span");
+    badge.className = "demo-nav-badge";
+    badge.textContent = "Region 7";
+    return badge;
+  },
   activeId: "dashboard",
   items: [
     { id: "dashboard", label: "Dashboard", icon: iconGrid },
@@ -141,11 +161,13 @@
     const iconBookmark = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4z"/></svg>';
     const iconHelp = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18h.01M9.09 9a3 3 0 115.82 1c0 2-3 2-3 4"/></svg>';
     const iconUser = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"/></svg>';
+    const iconShield = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v5.5c0 4.5-3 6.9-8 8-5-1.1-8-3.5-8-8V7.5L12 3zm0 4.2a2.2 2.2 0 100 4.4 2.2 2.2 0 000-4.4zm0 11.2c2.05-.58 3.38-1.43 4.18-2.69.24-.38.08-.89-.36-1.01-1.13-.31-2.42-.46-3.82-.46s-2.69.15-3.82.46c-.44.12-.6.63-.36 1.01.8 1.26 2.13 2.11 4.18 2.69z"/></svg>';
 
     let activeId = "dashboard";
     let sticky = false;
     let actionIconOnly = false;
     let brandSubtitle = "Build app-DWv_LvMM";
+    let showCustomContent = true;
     const items = [
       { id: "dashboard", label: "Dashboard", icon: iconGrid },
       {
@@ -166,9 +188,33 @@
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
     }
 
+    function renderCenterContent() {
+      if (!showCustomContent) {
+        return null;
+      }
+      const pill = document.createElement("span");
+      pill.className = "demo-nav-pill";
+      pill.innerHTML = '<span class="demo-nav-dot"></span>Realtime Connected';
+      return pill;
+    }
+
+    function renderEndContent() {
+      if (!showCustomContent) {
+        return null;
+      }
+      const badge = document.createElement("span");
+      badge.className = "demo-nav-badge";
+      badge.textContent = "Region 7";
+      return badge;
+    }
+
     const navbar = createNavbar(host, {}, {
       brandText: "Hotline UI",
       brandSubtitle,
+      brandMedia: iconShield,
+      contentStart: showCustomContent ? "Operations" : null,
+      contentCenter: renderCenterContent,
+      contentEnd: renderEndContent,
       activeId,
       items,
       actions: [
@@ -214,6 +260,10 @@
       navbar.update({}, {
         brandText: "Hotline UI",
         brandSubtitle,
+        brandMedia: iconShield,
+        contentStart: showCustomContent ? "Operations" : null,
+        contentCenter: renderCenterContent,
+        contentEnd: renderEndContent,
         activeId,
         items,
         sticky,
@@ -258,6 +308,11 @@
       brandSubtitle = brandSubtitle ? "" : "Build app-DWv_LvMM";
       sync();
       writeLog("navbar.update", { brandSubtitle });
+    });
+    document.getElementById("toggleCustomContentBtn").addEventListener("click", () => {
+      showCustomContent = !showCustomContent;
+      sync();
+      writeLog("navbar.update", { showCustomContent });
     });
     document.getElementById("themeToggle").addEventListener("click", () => {
       const next = page.dataset.theme === "dark" ? "light" : "dark";

@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.78`
+- Latest documented release: `v0.21.79`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.79
+
+- Extended `createNavbar(...)` with optional `brandMedia` so app shells can render an icon or logo beside the brand text without replacing the helper layout.
+- Added additive navbar custom-content slots through `contentStart`, `contentCenter`, and `contentEnd`, with demo/manual/regression coverage for text, DOM-node, and callback-backed content.
 
 ### v0.21.78
 
