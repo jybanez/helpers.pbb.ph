@@ -340,13 +340,15 @@ export function createPropertyEditor(container, data = {}, options = {}) {
     input.checked = Boolean(property.value);
     input.indeterminate = Boolean(property.mixed);
     input.addEventListener("change", () => {
+      label.textContent = formatBoolean(input.checked);
       updatePropertyValue(section.id, property.id, Boolean(input.checked), { source: input, previousValue: property.value, mixedCleared: property.mixed });
     });
     wrap.appendChild(input);
-    wrap.appendChild(createElement("span", {
+    const label = createElement("span", {
       className: "ui-property-editor-boolean-label",
       text: property.mixed ? currentOptions.mixedLabel : formatBoolean(input.checked),
-    }));
+    });
+    wrap.appendChild(label);
     return wrap;
   }
 
@@ -384,7 +386,7 @@ export function createPropertyEditor(container, data = {}, options = {}) {
       },
     });
     if (property.mixed) {
-      const mixed = createElement("option", { text: currentOptions.mixedLabel, attrs: { value: "" } });
+      const mixed = createElement("option", { text: currentOptions.mixedLabel, attrs: { value: "" }, dataset: { mixed: "true" } });
       select.appendChild(mixed);
       select.value = "";
     }
@@ -399,6 +401,10 @@ export function createPropertyEditor(container, data = {}, options = {}) {
       select.value = String(property.value);
     }
     select.addEventListener("change", () => {
+      const mixedOption = select.querySelector('[data-mixed="true"]');
+      if (mixedOption) {
+        mixedOption.remove();
+      }
       updatePropertyValue(section.id, property.id, select.value, { source: select, previousValue: property.value, mixedCleared: property.mixed });
     });
     return select;
@@ -493,6 +499,75 @@ export function createPropertyEditor(container, data = {}, options = {}) {
     return button;
   }
 
+  function findPropertyRow(propertyId) {
+    if (!root) {
+      return null;
+    }
+    const rows = root.querySelectorAll(".ui-property-editor-row");
+    for (const row of rows) {
+      if (row?.dataset?.propertyId === propertyId) {
+        return row;
+      }
+    }
+    return null;
+  }
+
+  function updatePropertyRowUi(property) {
+    const row = findPropertyRow(property.id);
+    if (!row) {
+      return;
+    }
+    row.classList.toggle("is-mixed", Boolean(property.mixed));
+    row.classList.toggle("is-invalid", Boolean(getPropertyError(property.id)));
+
+    const mixedNode = row.querySelector(".ui-property-editor-mixed");
+    if (property.mixed) {
+      if (!mixedNode) {
+        const valueCell = row.querySelector(".ui-property-editor-value");
+        if (valueCell) {
+          valueCell.appendChild(createElement("div", {
+            className: "ui-property-editor-mixed",
+            text: currentOptions.mixedLabel,
+          }));
+        }
+      }
+    } else if (mixedNode) {
+      mixedNode.remove();
+    }
+
+    const errorText = getPropertyError(property.id);
+    const errorNode = row.querySelector(".ui-property-editor-error");
+    if (errorText) {
+      if (errorNode) {
+        errorNode.textContent = errorText;
+      } else {
+        const valueCell = row.querySelector(".ui-property-editor-value");
+        if (valueCell) {
+          valueCell.appendChild(createElement("div", {
+            className: "ui-property-editor-error",
+            text: errorText,
+          }));
+        }
+      }
+    } else if (errorNode) {
+      errorNode.remove();
+    }
+
+    if (!errorText) {
+      row.querySelectorAll("[aria-invalid=\"true\"]").forEach((node) => node.removeAttribute("aria-invalid"));
+    }
+
+    if (!property.mixed) {
+      row.querySelectorAll(".ui-property-editor-input, .ui-property-editor-textarea").forEach((input) => {
+        if (property.placeholder) {
+          input.setAttribute("placeholder", property.placeholder);
+        } else {
+          input.removeAttribute("placeholder");
+        }
+      });
+    }
+  }
+
   function updatePropertyValue(sectionId, propertyId, value, meta = {}) {
     const property = findProperty(sectionId, propertyId);
     if (!property) {
@@ -512,7 +587,7 @@ export function createPropertyEditor(container, data = {}, options = {}) {
       previousValue,
       mixedCleared: Boolean(meta.mixedCleared),
     });
-    render();
+    updatePropertyRowUi(property);
   }
 
   function emitAction(section, property, action) {

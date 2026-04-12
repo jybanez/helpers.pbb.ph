@@ -79,9 +79,11 @@
       assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-input')?.type === "password", "password property rows should render masked by default");
 
       const nameInput = host.querySelector('input[type="text"]');
+      nameInput.focus();
       nameInput.value = "Rectangle B";
       nameInput.dispatchEvent(new Event("input", { bubbles: true }));
       assert(events.some((event) => event.type === "change" && event.propertyId === "name" && event.value === "Rectangle B"), "text property changes should emit structured events");
+      assert(document.activeElement === nameInput, "text input should keep focus after property updates");
 
       const checkbox = host.querySelector('.ui-property-editor-checkbox');
       checkbox.checked = false;
