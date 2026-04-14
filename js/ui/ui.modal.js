@@ -89,6 +89,12 @@ export function createModal(options = {}) {
   const busySpinner = createElement("span", {
     className: "ui-modal-busy-spinner",
     attrs: { "aria-hidden": "true" },
+    html: `
+      <svg class="ui-modal-busy-spinner-svg" viewBox="0 0 50 50" aria-hidden="true">
+        <circle class="ui-modal-busy-spinner-track" cx="25" cy="25" r="20" fill="none"></circle>
+        <circle class="ui-modal-busy-spinner-indicator" cx="25" cy="25" r="20" fill="none"></circle>
+      </svg>
+    `,
   });
   const busyMessage = createElement("div", {
     className: "ui-modal-busy-message",

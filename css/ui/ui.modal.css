@@ -272,10 +272,33 @@
 .ui-modal-busy-spinner {
   width: 90px;
   height: 90px;
-  border-radius: 999px;
-  border: 8px solid rgba(125, 163, 228, 0.2);
-  border-top-color: #79a9ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   animation: ui-modal-spin 760ms linear infinite;
+}
+
+.ui-modal-busy-spinner-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ui-modal-busy-spinner-track,
+.ui-modal-busy-spinner-indicator {
+  stroke-width: 8px;
+}
+
+.ui-modal-busy-spinner-track {
+  stroke: rgba(125, 163, 228, 0.2);
+}
+
+.ui-modal-busy-spinner-indicator {
+  stroke: #79a9ff;
+  stroke-linecap: round;
+  stroke-dasharray: 70 55;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
 }
 
 .ui-modal-busy-message {
