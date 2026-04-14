@@ -12,9 +12,9 @@
 }
 
 .hh-incident-teams-assignments-editor .hh-icon-button {
-  border: 1px solid #8b2635;
-  background: #3a151c;
-  color: #ffced4;
+  border: 1px solid color-mix(in srgb, var(--hh-danger) 55%, var(--hh-border));
+  background: color-mix(in srgb, var(--hh-danger) 18%, var(--hh-bg));
+  color: color-mix(in srgb, var(--hh-danger) 35%, var(--hh-text));
   border-radius: 7px;
   padding: 6px 10px;
   cursor: pointer;
@@ -57,7 +57,7 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--hh-border);
-  background: #000;
+  background: var(--hh-bg);
   position: relative;
   z-index: 2;
   line-height: 1;
@@ -65,17 +65,17 @@
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-future .hh-step-icon {
-  color: #99a6c2;
-  border-color: #667188;
+  color: var(--hh-text-soft);
+  border-color: var(--hh-border-strong);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-future::after {
-  background: #667188;
+  background: var(--hh-border-strong);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-current .hh-step-icon {
-  color: #f4be49;
-  border-color: #f4be49;
+  color: var(--hh-warning);
+  border-color: var(--hh-warning);
   font-size: 0;
 }
 
@@ -97,25 +97,25 @@
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-current::after {
-  background: #f4be49;
+  background: var(--hh-warning);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-complete .hh-step-icon {
-  color: #5ad27f;
-  border-color: #5ad27f;
+  color: var(--hh-success);
+  border-color: var(--hh-success);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-complete::after {
-  background: #5ad27f;
+  background: var(--hh-success);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-cancelled .hh-step-icon {
-  color: #ff5f67;
-  border-color: #ff5f67;
+  color: var(--hh-danger);
+  border-color: var(--hh-danger);
 }
 
 .hh-incident-teams-assignments-editor .hh-step.is-cancelled::after {
-  background: #ff5f67;
+  background: var(--hh-danger);
 }
 
 .hh-incident-teams-assignments-editor .hh-actions {
@@ -126,8 +126,8 @@
 }
 
 .hh-incident-teams-assignments-editor .hh-cancelled-block {
-  border: 1px solid #6d2830;
-  background: #31141a;
+  border: 1px solid color-mix(in srgb, var(--hh-danger) 45%, var(--hh-border));
+  background: color-mix(in srgb, var(--hh-danger) 16%, var(--hh-bg));
   border-radius: 8px;
   padding: 8px;
 }

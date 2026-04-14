@@ -23,9 +23,9 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  border: 1px solid #7f2940;
-  color: #ffc3d1;
-  background: #41121e;
+  border: 1px solid color-mix(in srgb, var(--hh-danger) 55%, var(--hh-border));
+  color: color-mix(in srgb, var(--hh-danger) 35%, var(--hh-text));
+  background: color-mix(in srgb, var(--hh-danger) 18%, var(--hh-bg));
   cursor: pointer;
 }
 

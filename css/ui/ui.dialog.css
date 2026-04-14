@@ -34,16 +34,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
   border-radius: 999px;
   color: var(--ui-dialog-accent, #9fb2d8);
   background: rgba(255, 255, 255, 0.04);
 }
 
 .ui-dialog-variant-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 36px;
   fill: currentColor;
 }
 

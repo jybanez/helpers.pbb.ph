@@ -5,7 +5,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Versioning
 
 - Current stable line: `v0.21.x`
-- Latest documented release: `v0.21.80`
+- Latest documented release: `v0.21.83`
 - Next planned line: `v0.22.x`
 
 ## Release Line Index
@@ -33,6 +33,18 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - `v0.1.x`: initial public prototype
 
 ## Releases
+
+### v0.21.83
+
+- Brought toast semantic icon sizing in line with the upgraded dialog icon language so toast status badges are larger and more legible.
+
+### v0.21.82
+
+- Refined shared dialog semantic icons for `uiAlert(...)`, `uiConfirm(...)`, and `uiPrompt(...)` so success/info/warning/error variants use more legible glyphs and a larger visual treatment.
+
+### v0.21.81
+
+- Updated incident-type and team-assignment helper styles to use shared theme tokens instead of hard-coded colors, so the panels, drawers, and chips adapt to the active UI theme.
 
 ### v0.21.80
 

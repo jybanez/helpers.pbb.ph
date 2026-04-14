@@ -1423,6 +1423,10 @@ Demo pages load:
 </script>
 ```
 
+Theme note:
+
+- Incident helpers still expose `options.theme` (`"dark"` or `"light"`), but their palette now derives from the shared helper `--ui-*` tokens through the local `--hh-*` layer. This keeps incident cards, drawers, chips, and status surfaces aligned with the active helper theme instead of using an isolated hard-coded palette.
+
 ## Detailed Usage Reference
 
 ### `incidentBase(container, data, options)`
@@ -1472,6 +1476,7 @@ Optional options:
 - `editable` (default `true`)
 - `headerText` (default `"Dispatch Details"`)
 - `drawerHeaderText` (default `"Select Teams to Dispatch"`)
+- `theme` (default `"dark"`), used to set the helper variant while inheriting colors from the shared `--ui-*` theme tokens
 - `onOpenDrawer()`, `onCloseDrawer()`
 - `onAssignTeam(newAssignmentPayload)`
 
@@ -1559,6 +1564,7 @@ Optional options:
 
 - `headerText` (default `"Incident Details"`)
 - `drawerHeaderText` (default `"Select Reported Incidents"`)
+- `theme` (default `"dark"`), used to set the helper variant while inheriting colors from the shared `--ui-*` theme tokens
 - `noticeAlreadyExists(incidentType)`
 - `onOpenDrawer()`, `onCloseDrawer()`, `onAddIncidentType(payload)`
 
