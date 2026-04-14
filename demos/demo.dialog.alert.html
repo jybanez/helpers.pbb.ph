@@ -101,6 +101,7 @@
       </div>
       <div class="row">
         <button id="alertBtn" class="ui-button" type="button">Alert (Info)</button>
+        <button id="singleLineAlertBtn" class="ui-button ui-button-secondary" type="button">Alert (Single Line Busy)</button>
         <button id="successAlertBtn" class="ui-button ui-button-primary" type="button">Alert (Success)</button>
         <button id="iconlessAlertBtn" class="ui-button ui-button-ghost" type="button">Alert (No Icon)</button>
         <button id="asyncAlertBtn" class="ui-button ui-button-danger" type="button">Alert (Async Ack)</button>
@@ -150,6 +151,20 @@
         ...getDialogSpeechOptions(),
       });
       writeLog("dialog.alert", { ok: true });
+    });
+    document.getElementById("singleLineAlertBtn").addEventListener("click", async () => {
+      await uiAlert("Please review this notice.", {
+        title: "Alert",
+        variant: "info",
+        okText: "Defer",
+        busyMessage: "Deferring...",
+        ...getDialogSpeechOptions(),
+        onAcknowledge: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          return true;
+        },
+      });
+      writeLog("dialog.singleLineAlert", { acknowledged: true });
     });
     document.getElementById("successAlertBtn").addEventListener("click", async () => {
       await uiAlert("Barangay uplink synchronized successfully.", {

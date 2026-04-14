@@ -5,10 +5,18 @@
   gap: var(--ui-space-2, 8px);
 }
 
+.ui-dialog-body--compact {
+  align-items: center;
+}
+
 .ui-dialog-text {
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.ui-dialog-body--compact .ui-dialog-text {
+  align-self: center;
 }
 
 .ui-dialog-message {
@@ -50,6 +58,7 @@
 
 .ui-dialog .ui-modal {
   overflow: hidden;
+  min-height: 280px;
 }
 
 .ui-dialog .ui-modal-header {

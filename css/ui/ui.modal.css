@@ -49,6 +49,7 @@
 
 .ui-modal.is-busy {
   overflow: hidden;
+  min-height: 240px;
 }
 
 .ui-modal-root.is-open .ui-modal {

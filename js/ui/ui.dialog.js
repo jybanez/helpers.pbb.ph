@@ -393,7 +393,11 @@ function getDefaultActionVariant(dialogVariant, fallback = "primary") {
 }
 
 function createDialogContent(message, options, variant, extraContent = null) {
-  const content = createElement("div", { className: `ui-dialog-body${extraContent ? " ui-dialog-prompt-body" : ""}` });
+  const description = String(options.description || "").trim();
+  const isCompact = !description && !extraContent;
+  const content = createElement("div", {
+    className: `ui-dialog-body${extraContent ? " ui-dialog-prompt-body" : ""}${isCompact ? " ui-dialog-body--compact" : ""}`,
+  });
   const iconMarkup = resolveVariantIcon(options, variant);
   const textStack = createElement("div", { className: "ui-dialog-text" });
   const errorEl = createElement("p", {
@@ -410,7 +414,6 @@ function createDialogContent(message, options, variant, extraContent = null) {
   }
   const messageEl = createElement("p", { className: "ui-dialog-message", text: String(message || "") });
   textStack.appendChild(messageEl);
-  const description = String(options.description || "").trim();
   if (description) {
     const descriptionEl = createElement("p", {
       className: "ui-dialog-description",
@@ -423,16 +426,24 @@ function createDialogContent(message, options, variant, extraContent = null) {
   if (extraContent) {
     content.appendChild(extraContent);
   }
+  function syncCompactLayout(hasError) {
+    if (!isCompact) {
+      return;
+    }
+    content.classList.toggle("ui-dialog-body--compact", !hasError);
+  }
   return {
     content,
     setError(messageText) {
       const value = String(messageText || "").trim();
       errorEl.textContent = value;
       errorEl.hidden = !value;
+      syncCompactLayout(Boolean(value));
     },
     clearError() {
       errorEl.textContent = "";
       errorEl.hidden = true;
+      syncCompactLayout(false);
     },
   };
 }
