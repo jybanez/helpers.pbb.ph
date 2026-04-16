@@ -172,11 +172,20 @@ export function createNavbar(container, data = {}, options = {}) {
       }
       const menuItems = Array.isArray(item.menuItems) ? item.menuItems : [];
       if (menuItems.length) {
+        entries.push({
+          id: `mobile-group:${item.id || entries.length}`,
+          label: item.label ?? String(item.id ?? "Menu"),
+          icon: item.icon || "",
+          disabled: true,
+          className: "ui-navbar-mobile-menu-group",
+          __mobileKind: "group-label",
+        });
         menuItems.forEach((menuItem, index) => {
           entries.push({
             id: menuItem?.id || `${item.id || "item"}:${index}`,
-            label: `${item.label}: ${menuItem?.label ?? menuItem?.id ?? index}`,
-            icon: menuItem?.icon || item.icon || "",
+            label: menuItem?.label ?? menuItem?.id ?? String(index),
+            icon: menuItem?.icon || "",
+            className: "ui-navbar-mobile-menu-child",
             disabled: Boolean(menuItem?.disabled),
             danger: Boolean(menuItem?.danger),
             __mobileKind: "item-menu",
@@ -202,11 +211,20 @@ export function createNavbar(container, data = {}, options = {}) {
       }
       const menuItems = Array.isArray(action.menuItems) ? action.menuItems : [];
       if (menuItems.length) {
+        entries.push({
+          id: `mobile-group:${action.id || entries.length}`,
+          label: action.label ?? String(action.id ?? "Action"),
+          icon: action.icon || "",
+          disabled: true,
+          className: "ui-navbar-mobile-menu-group",
+          __mobileKind: "group-label",
+        });
         menuItems.forEach((menuItem, index) => {
           entries.push({
             id: menuItem?.id || `${action.id || "action"}:${index}`,
-            label: `${action.label}: ${menuItem?.label ?? menuItem?.id ?? index}`,
-            icon: menuItem?.icon || action.icon || "",
+            label: menuItem?.label ?? menuItem?.id ?? String(index),
+            icon: menuItem?.icon || "",
+            className: "ui-navbar-mobile-menu-child",
             disabled: Boolean(menuItem?.disabled),
             danger: Boolean(menuItem?.danger),
             __mobileKind: "action-menu",

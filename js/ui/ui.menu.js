@@ -48,7 +48,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
     currentItems.forEach((item, index) => {
       const disabled = Boolean(item?.disabled);
       const row = createElement("button", {
-        className: `ui-menu-item${disabled ? " is-disabled" : ""}${item?.danger ? " is-danger" : ""}`,
+        className: `ui-menu-item${disabled ? " is-disabled" : ""}${item?.danger ? " is-danger" : ""}${item?.className ? ` ${String(item.className).trim()}` : ""}`,
         attrs: {
           type: "button",
           role: "menuitem",

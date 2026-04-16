@@ -1093,6 +1093,7 @@ Methods:
   - `contentCenterMobile`
   - `contentEndMobile`
   - When explicit `content*Mobile` entries are omitted, narrow-screen menus fall back to the text content of `contentStart`, `contentCenter`, and `contentEnd`, then list `items[]`, then `actions[]`.
+  - Menu-backed items and actions are grouped under their parent label in the mobile hamburger menu rather than being flattened as `Parent: Child`.
   - The hamburger path is viewport-aware: it activates only inside the mobile breakpoint and auto-closes when the navbar returns to desktop width.
 - `items[]` and `actions[]` support the same icon contract (`icon`, `iconPosition`, `iconOnly`).
 - `items[]` can render dropdown menus by providing:

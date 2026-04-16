@@ -153,42 +153,66 @@
       const mobileToggle = host.querySelector(".ui-navbar-mobile-toggle");
       assert(Boolean(mobileToggle), "mobile-collapsible navbar should render a hamburger toggle");
       assert(!mobileToggle.disabled, "mobile hamburger toggle should enable inside the mobile viewport");
+      const getMobileMenu = () => {
+        const menuId = mobileToggle.getAttribute("aria-controls");
+        return menuId ? document.getElementById(menuId) : null;
+      };
       mobileToggle.click();
-      const mobileMenu = await waitFor(() => document.querySelector(".ui-menu.is-open"));
+      const mobileMenu = await waitFor(() => {
+        const menu = getMobileMenu();
+        return menu?.classList.contains("is-open") ? menu : null;
+      });
       assert(Boolean(mobileMenu), "mobile hamburger toggle should open a menu");
       const mobileMenuLabels = Array.from(mobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
       assert(
-        mobileMenuLabels.slice(0, 7).join("|") === [
+        mobileMenuLabels.slice(0, 9).join("|") === [
           "Operations",
           "Realtime Connected",
           "Region 7",
           "Dashboard",
-          "Apps: Relay",
-          "Apps: Workspace",
-          "Profile: Logout",
+          "Apps",
+          "Relay",
+          "Workspace",
+          "Profile",
+          "Logout",
         ].join("|"),
-        "mobile menu should order content entries before items and actions"
+        "mobile menu should order content entries first and group menu-backed items/actions under their parent labels"
       );
       const mobileDashboard = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Dashboard"));
       mobileDashboard.click();
-      await wait(50);
+      await waitFor(() => {
+        const menu = getMobileMenu();
+        return !menu || !menu.classList.contains("is-open");
+      });
       assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "mobile menu should navigate direct navbar items");
 
       mobileToggle.click();
-      await waitFor(() => document.querySelector(".ui-menu.is-open"));
-      const mobileWorkspace = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Apps: Workspace"));
+      const mobileWorkspaceMenu = await waitFor(() => {
+        const menu = getMobileMenu();
+        return menu?.classList.contains("is-open") ? menu : null;
+      });
+      const mobileWorkspace = Array.from(mobileWorkspaceMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Workspace");
       mobileWorkspace.click();
-      await wait(50);
+      await waitFor(() => {
+        const menu = getMobileMenu();
+        return !menu || !menu.classList.contains("is-open");
+      });
       assert(
         events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:workspace" && event.source === "mobile-menu"),
         "mobile menu should flatten menu-backed navbar items and emit selection callbacks"
       );
 
       mobileToggle.click();
-      await waitFor(() => document.querySelector(".ui-menu.is-open"));
-      const mobileLogout = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Profile: Logout"));
+      const mobileLogoutMenu = await waitFor(() => {
+        const menu = getMobileMenu();
+        return menu?.classList.contains("is-open") ? menu : null;
+      });
+      const mobileLogout = Array.from(mobileLogoutMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Logout");
       mobileLogout.click();
-      await wait(50);
+      await waitFor(() => {
+        const menu = getMobileMenu();
+        return !menu || !menu.classList.contains("is-open");
+      });
       assert(
         events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout" && event.source === "mobile-menu"),
         "mobile menu should flatten menu-backed actions and emit action selection callbacks"

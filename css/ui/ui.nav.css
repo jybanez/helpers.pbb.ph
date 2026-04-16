@@ -488,6 +488,22 @@
   cursor: not-allowed;
 }
 
+.ui-menu-item.ui-navbar-mobile-menu-group {
+  margin-top: 2px;
+  opacity: 1;
+  color: var(--ui-text-muted, #9fb2d8);
+}
+
+.ui-menu-item.ui-navbar-mobile-menu-group:hover,
+.ui-menu-item.ui-navbar-mobile-menu-group.is-active {
+  background: transparent;
+  border-color: transparent;
+}
+
+.ui-menu-item.ui-navbar-mobile-menu-child {
+  padding-left: 32px;
+}
+
 .ui-menu-item-icon svg {
   width: 14px;
   height: 14px;
