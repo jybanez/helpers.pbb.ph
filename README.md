@@ -1087,6 +1087,13 @@ Methods:
   - `contentStart`
   - `contentCenter`
   - `contentEnd`
+- Mobile-collapse helpers:
+  - `mobileCollapse` (default `true`) keeps the brand visible on narrow screens and moves the rest into a hamburger menu.
+  - `contentStartMobile`
+  - `contentCenterMobile`
+  - `contentEndMobile`
+  - When explicit `content*Mobile` entries are omitted, narrow-screen menus fall back to the text content of `contentStart`, `contentCenter`, and `contentEnd`, then list `items[]`, then `actions[]`.
+  - The hamburger path is viewport-aware: it activates only inside the mobile breakpoint and auto-closes when the navbar returns to desktop width.
 - `items[]` and `actions[]` support the same icon contract (`icon`, `iconPosition`, `iconOnly`).
 - `items[]` can render dropdown menus by providing:
   - `menuItems: []`
@@ -1239,6 +1246,7 @@ createNavbar(document.getElementById("navbarHost"), {}, {
   brandText: "Hotline UI",
   brandSubtitle: "Build app-DWv_LvMM",
   brandMedia: "<svg viewBox='0 0 24 24'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z'/></svg>",
+  mobileCollapse: true,
   contentCenter() {
     const pill = document.createElement("span");
     pill.textContent = "Realtime Connected";

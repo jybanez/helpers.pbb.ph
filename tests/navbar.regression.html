@@ -33,6 +33,7 @@
     const results = document.getElementById("results");
     const host = document.getElementById("host");
     const events = [];
+    const originalMatchMedia = window.matchMedia?.bind(window);
 
     window.addEventListener("error", (event) => {
       failures.push(`error: ${event.message}`);
@@ -137,10 +138,82 @@
       await wait(50);
       assert(events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout"), "existing action-menu behavior should remain intact");
 
+      window.matchMedia = (query) => ({
+        matches: query === "(max-width: 720px)",
+        media: query,
+        onchange: null,
+        addListener() {},
+        removeListener() {},
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent() { return false; },
+      });
+      navbar.update({}, {});
+      await wait(20);
+      const mobileToggle = host.querySelector(".ui-navbar-mobile-toggle");
+      assert(Boolean(mobileToggle), "mobile-collapsible navbar should render a hamburger toggle");
+      assert(!mobileToggle.disabled, "mobile hamburger toggle should enable inside the mobile viewport");
+      mobileToggle.click();
+      const mobileMenu = await waitFor(() => document.querySelector(".ui-menu.is-open"));
+      assert(Boolean(mobileMenu), "mobile hamburger toggle should open a menu");
+      const mobileMenuLabels = Array.from(mobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
+      assert(
+        mobileMenuLabels.slice(0, 7).join("|") === [
+          "Operations",
+          "Realtime Connected",
+          "Region 7",
+          "Dashboard",
+          "Apps: Relay",
+          "Apps: Workspace",
+          "Profile: Logout",
+        ].join("|"),
+        "mobile menu should order content entries before items and actions"
+      );
+      const mobileDashboard = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Dashboard"));
+      mobileDashboard.click();
+      await wait(50);
+      assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "mobile menu should navigate direct navbar items");
+
+      mobileToggle.click();
+      await waitFor(() => document.querySelector(".ui-menu.is-open"));
+      const mobileWorkspace = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Apps: Workspace"));
+      mobileWorkspace.click();
+      await wait(50);
+      assert(
+        events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:workspace" && event.source === "mobile-menu"),
+        "mobile menu should flatten menu-backed navbar items and emit selection callbacks"
+      );
+
+      mobileToggle.click();
+      await waitFor(() => document.querySelector(".ui-menu.is-open"));
+      const mobileLogout = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Profile: Logout"));
+      mobileLogout.click();
+      await wait(50);
+      assert(
+        events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout" && event.source === "mobile-menu"),
+        "mobile menu should flatten menu-backed actions and emit action selection callbacks"
+      );
+
+      if (originalMatchMedia) {
+        window.matchMedia = originalMatchMedia;
+      }
+      navbar.update({}, {});
+      await wait(20);
+
       navbar.update({}, { brandSubtitle: "", contentCenter: null });
       await wait(10);
       assert(!host.querySelector(".ui-navbar-brand-subtitle"), "brand subtitle should not render after clearing");
       assert(!host.querySelector(".ui-navbar-slot-center .center-badge"), "center slot should clear after update");
+      assert(!host.querySelector(".ui-navbar-center"), "center region should collapse when it has no content");
+
+      navbar.update({}, { items: [], actions: [], contentEnd: null });
+      await wait(10);
+      assert(!host.querySelector(".ui-navbar-items"), "items wrapper should not render when there are no items");
+      assert(!host.querySelector(".ui-navbar-actions"), "actions wrapper should not render when there are no actions");
+      assert(!host.querySelector(".ui-navbar-end"), "end region should collapse when it has no end content or actions");
+      const root = host.querySelector(".ui-navbar");
+      assert(root && !root.classList.contains("has-items"), "root should drop has-items class when items are cleared");
+      assert(root && !root.classList.contains("has-actions"), "root should drop has-actions class when actions are cleared");
 
       navbar.destroy();
       finish();
@@ -151,6 +224,18 @@
 
     function wait(ms) {
       return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    async function waitFor(predicate, timeoutMs = 1500, stepMs = 20) {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        const value = predicate();
+        if (value) {
+          return value;
+        }
+        await wait(stepMs);
+      }
+      return null;
     }
 
     function assert(condition, message) {

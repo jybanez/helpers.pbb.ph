@@ -8,6 +8,11 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Latest documented release: `v0.21.83`
 - Next planned line: `v0.22.x`
 
+## Unreleased
+
+- Navbar narrow-screen behavior now supports a shared hamburger-collapse mode that keeps the brand visible and flattens mobile content, items, and actions into one menu.
+- Added `mobileCollapse`, `contentStartMobile`, `contentCenterMobile`, and `contentEndMobile` to `createNavbar(...)`, with mobile menu ordering of content entries first, then primary items, then actions.
+
 ## Release Line Index
 
 - `v0.21.x`: shared window manager, iframe host, and desktop-style workspace foundations

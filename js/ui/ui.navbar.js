@@ -13,7 +13,11 @@ const DEFAULT_OPTIONS = {
   contentStart: null,
   contentCenter: null,
   contentEnd: null,
+  contentStartMobile: null,
+  contentCenterMobile: null,
+  contentEndMobile: null,
   sticky: false,
+  mobileCollapse: true,
   activeId: "",
   iconPosition: "start", // start | end
   iconOnly: false,
@@ -24,6 +28,14 @@ const DEFAULT_OPTIONS = {
   onActionMenuSelect: null,
   onActionMenuOpenChange: null,
 };
+
+const MOBILE_TOGGLE_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+  </svg>
+`;
+
+const MOBILE_COLLAPSE_QUERY = "(max-width: 720px)";
 
 export function createNavbar(container, data = {}, options = {}) {
   const events = createEventBag();
@@ -59,18 +71,23 @@ export function createNavbar(container, data = {}, options = {}) {
     target.appendChild(content);
   }
 
+  function resolveRenderableValue(value, meta = {}) {
+    if (typeof value === "function") {
+      return value({
+        ...meta,
+        options: { ...currentOptions },
+        createElement,
+      });
+    }
+    return value;
+  }
+
   function appendRenderable(target, value, meta = {}) {
     if (!target) {
       return;
     }
 
-    const resolved = typeof value === "function"
-      ? value({
-          ...meta,
-          options: { ...currentOptions },
-          createElement,
-        })
-      : value;
+    const resolved = resolveRenderableValue(value, meta);
 
     if (resolved == null || resolved === false) {
       return;
@@ -90,6 +107,127 @@ export function createNavbar(container, data = {}, options = {}) {
       className: meta?.className || "",
       ...(meta?.asHtml ? { html: String(resolved) } : { text: String(resolved) }),
     }));
+  }
+
+  function createTextFallbackMobileEntry(label, id) {
+    const value = String(label || "").trim();
+    if (!value) {
+      return null;
+    }
+    return {
+      id: id || `mobile:${value.toLowerCase().replace(/\s+/g, "-")}`,
+      label: value,
+      disabled: true,
+    };
+  }
+
+  function normalizeMobileContentEntries(value, slotName) {
+    const resolved = resolveRenderableValue(value, { slot: slotName });
+    if (resolved == null || resolved === false) {
+      return [];
+    }
+    if (Array.isArray(resolved)) {
+      return resolved.flatMap((entry, index) => normalizeMobileContentEntries(entry, `${slotName}:${index}`));
+    }
+    if (resolved instanceof Node) {
+      const entry = createTextFallbackMobileEntry(resolved.textContent, `mobile:${slotName}`);
+      return entry ? [entry] : [];
+    }
+    if (typeof resolved === "object") {
+      if (typeof resolved.label === "string" && resolved.label.trim()) {
+        return [{ ...resolved }];
+      }
+      return [];
+    }
+    const entry = createTextFallbackMobileEntry(resolved, `mobile:${slotName}`);
+    return entry ? [entry] : [];
+  }
+
+  function buildMobileMenuItems() {
+    const entries = [];
+    const pushEntries = (items) => {
+      items.forEach((item) => {
+        if (item && item.label) {
+          entries.push(item);
+        }
+      });
+    };
+
+    pushEntries(normalizeMobileContentEntries(
+      currentOptions.contentStartMobile ?? currentOptions.contentStart,
+      "start"
+    ));
+    pushEntries(normalizeMobileContentEntries(
+      currentOptions.contentCenterMobile ?? currentOptions.contentCenter,
+      "center"
+    ));
+    pushEntries(normalizeMobileContentEntries(
+      currentOptions.contentEndMobile ?? currentOptions.contentEnd,
+      "end"
+    ));
+
+    (Array.isArray(currentOptions.items) ? currentOptions.items : []).forEach((item) => {
+      if (!item) {
+        return;
+      }
+      const menuItems = Array.isArray(item.menuItems) ? item.menuItems : [];
+      if (menuItems.length) {
+        menuItems.forEach((menuItem, index) => {
+          entries.push({
+            id: menuItem?.id || `${item.id || "item"}:${index}`,
+            label: `${item.label}: ${menuItem?.label ?? menuItem?.id ?? index}`,
+            icon: menuItem?.icon || item.icon || "",
+            disabled: Boolean(menuItem?.disabled),
+            danger: Boolean(menuItem?.danger),
+            __mobileKind: "item-menu",
+            __item: item,
+            __menuItem: menuItem,
+          });
+        });
+        return;
+      }
+      entries.push({
+        id: item.id || `item:${entries.length}`,
+        label: item.label ?? String(item.id ?? "Item"),
+        icon: item.icon || "",
+        disabled: Boolean(item.disabled),
+        __mobileKind: "item",
+        __item: item,
+      });
+    });
+
+    (Array.isArray(currentOptions.actions) ? currentOptions.actions : []).forEach((action) => {
+      if (!action) {
+        return;
+      }
+      const menuItems = Array.isArray(action.menuItems) ? action.menuItems : [];
+      if (menuItems.length) {
+        menuItems.forEach((menuItem, index) => {
+          entries.push({
+            id: menuItem?.id || `${action.id || "action"}:${index}`,
+            label: `${action.label}: ${menuItem?.label ?? menuItem?.id ?? index}`,
+            icon: menuItem?.icon || action.icon || "",
+            disabled: Boolean(menuItem?.disabled),
+            danger: Boolean(menuItem?.danger),
+            __mobileKind: "action-menu",
+            __action: action,
+            __menuItem: menuItem,
+          });
+        });
+        return;
+      }
+      entries.push({
+        id: action.id || `action:${entries.length}`,
+        label: action.label ?? String(action.id ?? "Action"),
+        icon: action.icon || "",
+        disabled: Boolean(action.disabled),
+        danger: Boolean(action.danger),
+        __mobileKind: "action",
+        __action: action,
+      });
+    });
+
+    return entries;
   }
 
   function renderSlot(slotName, value) {
@@ -157,8 +295,12 @@ export function createNavbar(container, data = {}, options = {}) {
     brand.appendChild(brandText);
     events.on(brand, "click", () => currentOptions.onNavigate?.({ id: "brand", label: currentOptions.brandText }));
 
-    const list = createElement("div", { className: "ui-navbar-items" });
-    (currentOptions.items || []).forEach((item) => {
+    const itemDefs = Array.isArray(currentOptions.items) ? currentOptions.items : [];
+    let list = null;
+    itemDefs.forEach((item) => {
+      if (!list) {
+        list = createElement("div", { className: "ui-navbar-items" });
+      }
       const btn = createElement("button", {
         className: `ui-navbar-item${String(item?.id) === String(currentOptions.activeId) ? " is-active" : ""}`,
         attrs: {
@@ -187,8 +329,12 @@ export function createNavbar(container, data = {}, options = {}) {
       list.appendChild(btn);
     });
 
-    const actions = createElement("div", { className: "ui-navbar-actions" });
-    (currentOptions.actions || []).forEach((action) => {
+    const actionDefs = Array.isArray(currentOptions.actions) ? currentOptions.actions : [];
+    let actions = null;
+    actionDefs.forEach((action) => {
+      if (!actions) {
+        actions = createElement("div", { className: "ui-navbar-actions" });
+      }
       const btn = createElement("button", {
         className: "ui-button ui-navbar-action",
         attrs: { type: "button", ...(action?.disabled ? { disabled: "disabled" } : {}) },
@@ -222,7 +368,61 @@ export function createNavbar(container, data = {}, options = {}) {
     if (contentStart) {
       start.appendChild(contentStart);
     }
-    start.appendChild(list);
+    if (list) {
+      start.appendChild(list);
+    }
+
+    const mobileMenuItems = Boolean(currentOptions.mobileCollapse) ? buildMobileMenuItems() : [];
+    if (mobileMenuItems.length) {
+      const mobileToggle = createElement("button", {
+        className: "ui-button ui-navbar-mobile-toggle",
+        attrs: {
+          type: "button",
+          "aria-label": "Open navigation menu",
+          title: "Menu",
+        },
+      });
+      mobileToggle.appendChild(createElement("span", {
+        className: "ui-nav-icon ui-navbar-mobile-toggle-icon",
+        html: MOBILE_TOGGLE_ICON,
+      }));
+      const mobileMenu = createMenu(mobileToggle, mobileMenuItems, {
+        placement: "bottom-end",
+        onSelect: (entry, meta) => {
+          switch (entry?.__mobileKind) {
+            case "item":
+              currentOptions.onNavigate?.(entry.__item);
+              break;
+            case "item-menu":
+              currentOptions.onItemMenuSelect?.(entry.__item, entry.__menuItem, { ...meta, source: "mobile-menu" });
+              break;
+            case "action":
+              currentOptions.onAction?.(entry.__action);
+              break;
+            case "action-menu":
+              currentOptions.onActionMenuSelect?.(entry.__action, entry.__menuItem, { ...meta, source: "mobile-menu" });
+              break;
+            default:
+              break;
+          }
+        },
+      });
+      navMenus.push(mobileMenu);
+      root.classList.add("is-mobile-collapsible", "has-mobile-menu");
+      start.appendChild(mobileToggle);
+      const syncMobileCollapseState = () => {
+        const isMobileViewport = typeof window !== "undefined"
+          && typeof window.matchMedia === "function"
+          && window.matchMedia(MOBILE_COLLAPSE_QUERY).matches;
+        root.classList.toggle("is-mobile-active", isMobileViewport);
+        mobileToggle.disabled = !isMobileViewport;
+        if (!isMobileViewport) {
+          mobileMenu.close();
+        }
+      };
+      syncMobileCollapseState();
+      events.on(window, "resize", syncMobileCollapseState);
+    }
 
     const contentCenter = renderSlot("center", currentOptions.contentCenter);
     if (contentCenter) {
@@ -234,9 +434,38 @@ export function createNavbar(container, data = {}, options = {}) {
     if (contentEnd) {
       end.appendChild(contentEnd);
     }
-    end.appendChild(actions);
+    if (actions) {
+      end.appendChild(actions);
+    }
 
-    root.append(start, center, end);
+    if (brand.childNodes.length) {
+      root.classList.add("has-brand");
+    }
+    if (contentStart) {
+      root.classList.add("has-start-slot");
+    }
+    if (list) {
+      root.classList.add("has-items");
+    }
+    if (contentCenter) {
+      root.classList.add("has-center-slot");
+    }
+    if (contentEnd) {
+      root.classList.add("has-end-slot");
+    }
+    if (actions) {
+      root.classList.add("has-actions");
+    }
+
+    if (start.childNodes.length) {
+      root.appendChild(start);
+    }
+    if (center.childNodes.length) {
+      root.appendChild(center);
+    }
+    if (end.childNodes.length) {
+      root.appendChild(end);
+    }
     container.appendChild(root);
   }
 
