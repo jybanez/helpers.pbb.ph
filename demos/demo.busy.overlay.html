@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busy Overlay Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host {
+      position: relative;
+      min-height: 280px;
+      border: 1px solid #2b3750;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #0d1627 0%, #0a1220 100%);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .host-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .host-card {
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #111b2f;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+    }
+    .host-card strong { font-size: 14px; }
+    .host-card span { color: #9fb2d8; font-size: 12px; }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    #log { min-height: 180px; color: #b2c2e5; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.busy.overlay"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Busy Overlay",
+      overview: "Shared busy-state overlay for fullscreen or scoped loading surfaces, reusing the same spinner language as modal busy states.",
+      useWhen: [
+        "Use <code>createBusyOverlay(...)</code> when an async operation needs a shared blocking overlay instead of ad-hoc per-page spinners.",
+        "Use fullscreen mode for whole-screen blocking work such as startup hydration or route-level fetches.",
+        "Use scoped mode when only one panel or card grid is busy and the rest of the page should remain visible."
+      ],
+      avoidWhen: [
+        "Do not use it as a replacement for modal busy states inside <code>createModal(...)</code>; modal-owned busy still belongs to the modal shell.",
+        "Do not show a cancel action unless the app can actually abort or unwind the underlying work."
+      ],
+      description: "The helper supports two entry points: <code>createBusyOverlay(options)</code> for fullscreen overlays and <code>createBusyOverlay(container, options)</code> for scoped overlays. Both reuse the same ring spinner treatment used by shared modal busy states.",
+      defaultSampleCode: `const fullscreenBusy = createBusyOverlay({\n  text: "Loading workspace...",\n  cancel: {\n    label: "Cancel",\n    onCancel({ hide }) {\n      abortController.abort();\n      hide();\n    },\n  },\n});\n\nconst panelBusy = createBusyOverlay(container, {\n  text: "Refreshing panel...",\n  visible: false,\n});`,
+      constructor: [
+        { factory: "<code>createBusyOverlay(options)</code>", arguments: "fullscreen options", returns: "busy-overlay instance" },
+        { factory: "<code>createBusyOverlay(container, options)</code>", arguments: "host element and scoped options", returns: "busy-overlay instance" }
+      ],
+      options: [
+        { option: "<code>text</code>", default: "<code>\"\"</code>", description: "Optional message shown below the spinner." },
+        { option: "<code>visible</code>", default: "<code>true</code>", description: "Initial visibility." },
+        { option: "<code>backdrop</code>", default: "<code>true</code>", description: "Shows the dimmed overlay scrim behind the spinner." },
+        { option: "<code>blockInteraction</code>", default: "<code>true</code>", description: "Blocks pointer/focus interactions while the overlay is visible." },
+        { option: "<code>lockScroll</code>", default: "<code>true</code>", description: "Locks body scrolling for fullscreen overlays while visible." },
+        { option: "<code>cancel</code>", default: "<code>null</code>", description: "Optional cancel handler or <code>{ label, onCancel }</code> object. Returning <code>false</code> keeps the overlay visible." }
+      ],
+      methods: [
+        { method: "<code>show(nextOptions?)</code>", arguments: "optional partial options", returns: "<code>void</code>" },
+        { method: "<code>hide()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>update(nextOptions)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>setText(text)</code>", arguments: "string", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Busy Overlay Demo</h1>
+      <p class="muted">Shared blocking overlay for fullscreen and scoped busy states, using the same ring spinner language as modal busy overlays.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Scoped Surface</h2>
+      <div class="row">
+        <button id="showScopedBtn" class="ui-button" type="button">Show Scoped Overlay</button>
+        <button id="showScopedCancelableBtn" class="ui-button" type="button">Show Scoped Cancelable</button>
+        <button id="hideScopedBtn" class="ui-button ui-button-ghost" type="button">Hide Scoped Overlay</button>
+        <button id="retitleScopedBtn" class="ui-button ui-button-borderless" type="button">Change Scoped Text</button>
+      </div>
+      <div id="scopedHost" class="host">
+        <div class="host-grid">
+          <article class="host-card">
+            <strong>Dispatch Queue</strong>
+            <span>4 active assignments waiting on route confirmation.</span>
+          </article>
+          <article class="host-card">
+            <strong>Incident Feed</strong>
+            <span>12 new updates in the last 15 minutes.</span>
+          </article>
+          <article class="host-card">
+            <strong>Resource Catalog</strong>
+            <span>Synchronizing grouped asset availability.</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Fullscreen Surface</h2>
+      <div class="row">
+        <button id="showFullscreenBtn" class="ui-button" type="button">Show Fullscreen Overlay</button>
+        <button id="showFullscreenCancelableBtn" class="ui-button" type="button">Show Fullscreen Cancelable</button>
+        <button id="hideFullscreenBtn" class="ui-button ui-button-ghost" type="button">Hide Fullscreen Overlay</button>
+      </div>
+      <p class="muted">Fullscreen overlays mount on <code>document.body</code> and lock body scrolling while visible.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createBusyOverlay = await uiLoader.get("ui.busy.overlay");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const scopedHost = document.getElementById("scopedHost");
+
+    const scopedOverlay = createBusyOverlay(scopedHost, {
+      text: "Refreshing dispatch data...",
+      visible: false,
+    });
+    const fullscreenOverlay = createBusyOverlay({
+      text: "Loading workspace...",
+      visible: false,
+    });
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    document.getElementById("showScopedBtn").addEventListener("click", () => {
+      scopedOverlay.show({ text: "Refreshing dispatch data...", cancel: null });
+      writeLog("scoped.show", scopedOverlay.getState());
+    });
+    document.getElementById("showScopedCancelableBtn").addEventListener("click", () => {
+      scopedOverlay.show({
+        text: "Syncing grouped resources...",
+        cancel: {
+          label: "Cancel Refresh",
+          async onCancel({ hide }) {
+            writeLog("scoped.cancel", { requested: true });
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            hide();
+          },
+        },
+      });
+      writeLog("scoped.show.cancelable", scopedOverlay.getState());
+    });
+    document.getElementById("hideScopedBtn").addEventListener("click", () => {
+      scopedOverlay.hide();
+      writeLog("scoped.hide", scopedOverlay.getState());
+    });
+    document.getElementById("retitleScopedBtn").addEventListener("click", () => {
+      scopedOverlay.setText("Rechecking caller-linked assets...");
+      scopedOverlay.show();
+      writeLog("scoped.setText", scopedOverlay.getState());
+    });
+
+    document.getElementById("showFullscreenBtn").addEventListener("click", () => {
+      fullscreenOverlay.show({
+        text: "Loading workspace shell...",
+        cancel: null,
+      });
+      writeLog("fullscreen.show", fullscreenOverlay.getState());
+      window.setTimeout(() => {
+        fullscreenOverlay.hide();
+        writeLog("fullscreen.autoHide", fullscreenOverlay.getState());
+      }, 1400);
+    });
+    document.getElementById("showFullscreenCancelableBtn").addEventListener("click", () => {
+      fullscreenOverlay.show({
+        text: "Requesting remote session bootstrap...",
+        cancel: {
+          label: "Cancel Bootstrap",
+          async onCancel() {
+            writeLog("fullscreen.cancel", { requested: true });
+            await new Promise((resolve) => setTimeout(resolve, 350));
+          },
+        },
+      });
+      writeLog("fullscreen.show.cancelable", fullscreenOverlay.getState());
+    });
+    document.getElementById("hideFullscreenBtn").addEventListener("click", () => {
+      fullscreenOverlay.hide();
+      writeLog("fullscreen.hide", fullscreenOverlay.getState());
+    });
+  </script>
+</body>
+</html>

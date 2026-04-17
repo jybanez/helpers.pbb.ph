@@ -92,6 +92,7 @@ const DEMO_GROUPS = [
       { href: "./demo.drawers.html", label: "Drawers" },
       { href: "./demo.ui.html", label: "Overview" },
       { href: "./demo.toast.html", label: "Toast" },
+      { href: "./demo.busy.overlay.html", label: "Busy Overlay" },
       { href: "./demo.select.html", label: "Select" },
       { href: "./demo.tree.select.html", label: "Tree Select" },
       { href: "./demo.fieldset.html", label: "Fieldset" },

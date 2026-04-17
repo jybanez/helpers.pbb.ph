@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Busy Overlay Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.busy.overlay.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+    #scopedHost {
+      min-height: 180px;
+      border: 1px solid #2b3750;
+      border-radius: 12px;
+      background: #0b1220;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="scopedHost"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createBusyOverlay } from "../js/ui/ui.busy.overlay.js";
+
+    const host = document.getElementById("scopedHost");
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const scoped = createBusyOverlay(host, {
+      text: "Refreshing panel...",
+      visible: false,
+    });
+
+    const scopedRoot = host.querySelector(".ui-busy-overlay");
+    assert(Boolean(scopedRoot), "scoped overlay should mount inside the target host");
+    assert(scopedRoot.hidden === true, "scoped overlay should respect visible:false");
+    assert(host.style.position === "relative", "scoped overlay should manage static host positioning");
+
+    scoped.show();
+    await tick(40);
+    assert(scopedRoot.hidden === false, "scoped overlay should show");
+    assert(scopedRoot.classList.contains("is-scoped"), "scoped overlay should expose scoped class");
+    assert(scopedRoot.querySelector(".ui-busy-overlay-message").textContent.includes("Refreshing"), "scoped overlay should render text");
+    assert(host.getAttribute("aria-busy") === "true", "scoped host should expose aria-busy while visible");
+
+    scoped.setText("Applying filters...");
+    await tick(10);
+    assert(scopedRoot.querySelector(".ui-busy-overlay-message").textContent.includes("Applying filters"), "setText should update the visible message");
+
+    let scopedCancelCalls = 0;
+    scoped.show({
+      text: "Cancelable refresh...",
+      cancel: {
+        label: "Cancel Refresh",
+        async onCancel() {
+          scopedCancelCalls += 1;
+          await tick(40);
+        },
+      },
+    });
+    await tick(20);
+    const scopedCancel = scopedRoot.querySelector(".ui-busy-overlay-cancel");
+    assert(scopedCancel.hidden === false, "cancel button should render when cancel handler exists");
+    assert(scopedCancel.textContent.includes("Cancel Refresh"), "cancel button should use custom label");
+    scopedCancel.click();
+    await tick(100);
+    assert(scopedCancelCalls === 1, "cancel handler should fire once");
+    assert(scopedRoot.hidden === true, "overlay should hide after cancel resolves");
+    assert(host.getAttribute("aria-busy") !== "true", "aria-busy should clear after hide");
+
+    scoped.destroy();
+    await tick(20);
+    assert(host.querySelector(".ui-busy-overlay") === null, "destroy should remove scoped overlay DOM");
+    assert(host.style.position === "", "destroy should restore host position styling");
+
+    let fullscreenCancelCalls = 0;
+    const fullscreen = createBusyOverlay({
+      text: "Loading workspace...",
+      cancel: {
+        label: "Cancel Load",
+        async onCancel({ hide }) {
+          fullscreenCancelCalls += 1;
+          await tick(30);
+          hide();
+        },
+      },
+    });
+    await tick(40);
+    const fullscreenRoot = document.body.querySelector(".ui-busy-overlay.is-fullscreen");
+    assert(Boolean(fullscreenRoot), "fullscreen overlay should mount on document.body");
+    assert(fullscreenRoot.hidden === false, "fullscreen overlay should default to visible");
+    assert(document.body.style.overflow === "hidden", "fullscreen overlay should lock body scroll while visible");
+    assert(fullscreenRoot.querySelector(".ui-busy-overlay-cancel").hidden === false, "fullscreen cancel button should render");
+    fullscreenRoot.querySelector(".ui-busy-overlay-cancel").click();
+    await tick(100);
+    assert(fullscreenCancelCalls === 1, "fullscreen cancel handler should fire");
+    assert(fullscreenRoot.hidden === true, "fullscreen overlay should hide after cancel");
+    assert(document.body.style.overflow === "", "fullscreen hide should restore body overflow");
+
+    fullscreen.show({ text: "Second pass..." });
+    await tick(30);
+    assert(fullscreen.isVisible() === true, "show should mark fullscreen overlay visible again");
+    fullscreen.destroy();
+    await tick(20);
+    assert(document.body.querySelector(".ui-busy-overlay.is-fullscreen") === null, "destroy should remove fullscreen overlay DOM");
+    assert(document.body.style.overflow === "", "destroy should leave body overflow restored");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function tick(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

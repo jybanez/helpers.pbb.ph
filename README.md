@@ -31,6 +31,7 @@ css/
     ui.dialog.css
     ui.iframe.host.css
     ui.toast.css
+    ui.busy.overlay.css
     ui.form.modal.css
     ui.select.css
     ui.tree.select.css
@@ -82,6 +83,7 @@ js/
     ui.dialog.js
     ui.semantic.icons.js
     ui.toast.js
+    ui.busy.overlay.js
     ui.workspace.bridge.js
     ui.form.modal.js
     ui.form.modal.presets.js
@@ -252,6 +254,9 @@ Reusable shared UI utilities live under `js/ui`:
   - speech is opt-in (`speak: false` by default); can be overridden per-toast via `show(message, { speak: true | false })`
   - when speech is enabled, auto-dismiss countdown can start after speech ends via `waitForSpeechBeforeDismiss` (default `true`)
   - `getVoices()` returns available speech voices so UI can render a voice selector; per-toast `voiceName` override is supported in `show(message, { voiceName })`
+- `ui.busy.overlay.js`
+  - `createBusyOverlay(options)` fullscreen blocking busy overlay with shared spinner treatment, optional text, and optional cancel handling
+  - `createBusyOverlay(container, options)` scoped busy overlay for one host surface while keeping the same spinner and cancel contract
 - `ui.form.modal.js`
   - `createFormModal(options)` schema-driven modal form helper for short login/re-auth/CRUD flows using a strict row-based body model over `createActionModal(...)`
 - exposes helper-owned values, field errors, form error, busy submit lifecycle, declarative mode rules, hidden/display fields, hosted `ui.select` / `ui.treeSelect`, and helper-owned avatar-file picking without widening the base modal shell contract
@@ -451,7 +456,7 @@ Application integrations should use the registry loader.
 Public component families:
 
 - Modal and feedback:
-  - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`
+  - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
 - Data, timeline, and inspection:
@@ -3052,6 +3057,71 @@ toasts.show("Unable to reach gateway.", { type: "error", speak: true });
 Related demos:
 
 - `demos/demo.tree.html`
+
+### `createBusyOverlay(options)` / `createBusyOverlay(container, options)` (`js/ui/ui.busy.overlay.js`)
+
+Purpose:
+
+- Show a shared busy overlay with the same spinner styling used by modal busy states.
+- Support both fullscreen blocking overlays and scoped overlays on a specific host surface.
+
+Factory:
+
+```js
+import { createBusyOverlay } from "./js/ui/ui.busy.overlay.js";
+
+const fullscreenBusy = createBusyOverlay({
+  text: "Loading records...",
+  cancel: {
+    label: "Cancel",
+    onCancel({ hide }) {
+      abortController.abort();
+      hide();
+    },
+  },
+});
+
+const panelBusy = createBusyOverlay(container, {
+  text: "Refreshing panel...",
+  visible: false,
+});
+```
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `text` | `string` | `""` | no | Optional message shown below the spinner. |
+| `visible` | `boolean` | `true` | no | Controls initial visibility. |
+| `fullscreen` | `boolean` | auto | no | Fullscreen when no target is passed; scoped when a target element is provided. |
+| `backdrop` | `boolean` | `true` | no | Shows or suppresses the dimmed overlay scrim. |
+| `blockInteraction` | `boolean` | `true` | no | Blocks pointer/focus interactions on the covered surface while visible. |
+| `lockScroll` | `boolean` | `true` | no | Locks body scrolling for fullscreen overlays while visible. |
+| `cancel` | `function \| { label?, onCancel }` | `null` | no | Optional cancel handler. Returning `false` from `onCancel` keeps the overlay visible. |
+| `className` | `string` | `""` | no | Extra root class for host-specific styling. |
+| `zIndex` | `string \| number` | `""` | no | Optional root z-index override. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `show` | `nextOptions?` | `void` | Shows the overlay and optionally merges partial options. |
+| `hide` | none | `void` | Hides the overlay and restores blocked state. |
+| `update` | `nextOptions` | `void` | Applies partial option updates without recreating the instance. |
+| `setText` | `text` | `void` | Convenience helper for message updates. |
+| `isVisible` | none | `boolean` | Returns current visibility. |
+| `getState` | none | `object` | Returns normalized overlay state. |
+| `destroy` | none | `void` | Removes DOM, listeners, and helper-managed host/body state. |
+
+Behavior notes:
+
+- Fullscreen overlays mount on `document.body` and lock body scrolling by default.
+- Scoped overlays mount inside the target container and will temporarily set `position: relative` on the host when needed.
+- The cancel button is only shown when a real cancel handler is provided; hiding the overlay without canceling app-owned work is intentionally not the default.
+
+Related demos:
+
+- `demos/demo.busy.overlay.html`
 
 ### `createGrid(container, rows, options)` (`js/ui/ui.grid.js`)
 

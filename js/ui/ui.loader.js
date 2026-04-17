@@ -124,6 +124,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createToastStack",
   },
+  "ui.busy.overlay": {
+    js: "./ui.busy.overlay.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.busy.overlay.css"],
+    deps: [],
+    export: "createBusyOverlay",
+  },
   "ui.form.modal": {
     js: `./ui.form.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css", "../../css/ui/ui.select.css", "../../css/ui/ui.tree.select.css", "../../css/ui/ui.password.css"],

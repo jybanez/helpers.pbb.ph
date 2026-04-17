@@ -12,6 +12,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 - Navbar narrow-screen behavior now supports a shared hamburger-collapse mode that keeps the brand visible and flattens mobile content, items, and actions into one menu.
 - Added `mobileCollapse`, `contentStartMobile`, `contentCenterMobile`, and `contentEndMobile` to `createNavbar(...)`, with mobile menu ordering of content entries first, then primary items, then actions.
+- Added `ui.busy.overlay` as a shared fullscreen-or-scoped busy-state helper with the same spinner styling used by modal busy overlays, plus optional text and explicit cancel handling.
 
 ## Release Line Index
 
