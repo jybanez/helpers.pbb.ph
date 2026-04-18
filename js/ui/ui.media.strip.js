@@ -34,6 +34,18 @@ export function createMediaStrip(container, items = [], options = {}) {
   let activeIndex = -1;
   const stripEvents = createEventBag();
 
+  function getViewerItems() {
+    return getViewerItemsFromStripItems(currentItems);
+  }
+
+  function findStripIndexById(id) {
+    return currentItems.findIndex((item) => String(item.id) === String(id));
+  }
+
+  function findViewerIndexById(id) {
+    return getViewerItems().findIndex((item) => String(item.id) === String(id));
+  }
+
   function ensureViewer() {
     if (viewerApi) {
       return viewerApi;
@@ -47,7 +59,7 @@ export function createMediaStrip(container, items = [], options = {}) {
 
   function getViewerOptions() {
     return {
-      items: currentItems.map((item) => ({
+      items: getViewerItems().map((item) => ({
         id: item.id,
         type: item.type,
         src: item.srcUrl,
@@ -72,9 +84,10 @@ export function createMediaStrip(container, items = [], options = {}) {
       showToolbar: currentOptions.showViewerToolbar,
       showAudiograph: currentOptions.showViewerAudiograph,
       className: currentOptions.viewerClassName,
-      onOpen: (_item, index) => {
-        activeIndex = Number(index);
-        currentOptions.onOpen?.(currentItems[activeIndex] || null, activeIndex);
+      onOpen: (viewerItem, index) => {
+        const stripIndex = findStripIndexById(viewerItem?.id);
+        activeIndex = stripIndex;
+        currentOptions.onOpen?.(stripIndex >= 0 ? currentItems[stripIndex] || null : null, stripIndex);
       },
       onClose: () => {
         const closedIndex = activeIndex;
@@ -82,8 +95,8 @@ export function createMediaStrip(container, items = [], options = {}) {
         activeIndex = -1;
         currentOptions.onClose?.(closedItem, closedIndex);
       },
-      onChange: (_item, index) => {
-        activeIndex = Number(index);
+      onChange: (viewerItem) => {
+        activeIndex = findStripIndexById(viewerItem?.id);
       },
     };
   }
@@ -101,15 +114,18 @@ export function createMediaStrip(container, items = [], options = {}) {
 
     currentItems.forEach((item, index) => {
       const thumb = createElement("button", {
-        className: "ui-media-thumb",
+        className: `ui-media-thumb ${item.processing ? "is-processing" : ""}`.trim(),
         attrs: {
           type: "button",
-          "aria-label": item.alt || item.title || `Media ${index + 1}`,
+          "aria-label": item.alt || item.title || item.processingLabel || (item.processing ? `Processing media ${index + 1}` : `Media ${index + 1}`),
+          ...(item.processing ? { disabled: "disabled", "aria-disabled": "true" } : {}),
         },
         dataset: { mediaId: item.id || String(index) },
       });
 
-      if (item.type === "video" && !item.thumbUrl) {
+      if (item.processing && !item.srcUrl) {
+        thumb.appendChild(createProcessingPlaceholder(item, index));
+      } else if (item.type === "video" && !item.thumbUrl) {
         const videoThumb = createElement("video", {
           className: "ui-media-thumb-video",
           attrs: {
@@ -132,7 +148,7 @@ export function createMediaStrip(container, items = [], options = {}) {
         thumb.appendChild(image);
       }
 
-      if (item.type === "video") {
+      if (item.type === "video" && !item.processing) {
         const overlay = createElement("span", {
           className: "ui-media-thumb-play",
           html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12l10-6z"></path></svg>',
@@ -140,7 +156,9 @@ export function createMediaStrip(container, items = [], options = {}) {
         thumb.appendChild(overlay);
       }
 
-      stripEvents.on(thumb, "click", () => openByIndex(index));
+      if (!item.processing) {
+        stripEvents.on(thumb, "click", () => openByIndex(index));
+      }
       root.appendChild(thumb);
     });
 
@@ -153,9 +171,17 @@ export function createMediaStrip(container, items = [], options = {}) {
       return;
     }
     const safeIndex = Math.max(0, Math.min(currentItems.length - 1, Number(index) || 0));
+    const item = currentItems[safeIndex];
+    if (!item || item.processing || !item.srcUrl) {
+      return;
+    }
+    const viewerIndex = findViewerIndexById(item.id);
+    if (viewerIndex === -1) {
+      return;
+    }
     activeIndex = safeIndex;
     ensureViewer().update(getViewerOptions());
-    viewerApi.open(safeIndex);
+    viewerApi.open(viewerIndex);
   }
 
   function openById(id) {
@@ -225,9 +251,12 @@ function normalizeItems(items, options = {}) {
       const path = resolveUrl(String(item?.path || item?.srcUrl || item?.src || ""), normalizedOptions.baseUrl);
       const thumb = resolveUrl(String(item?.thumbUrl || item?.thumb || ""), normalizedOptions.baseUrl);
       const src = resolveUrl(String(item?.srcUrl || item?.src || path || thumb || ""), normalizedOptions.baseUrl);
+      const processing = Boolean(item?.processing || item?.metadata?.processing) && !src;
       return {
         id: item?.id ?? String(index),
         type: normalizedType,
+        processing,
+        processingLabel: String(item?.processingLabel || "").trim(),
         thumbUrl: thumb || (normalizedType === "image" ? src : ""),
         srcUrl: src,
         alt: item?.alt || "",
@@ -239,7 +268,32 @@ function normalizeItems(items, options = {}) {
         raw: item,
       };
     })
-    .filter((item) => (item.type === "image" || item.type === "video") && Boolean(item.srcUrl));
+    .filter((item) => (item.type === "image" || item.type === "video") && (Boolean(item.srcUrl) || item.processing));
+}
+
+function createProcessingPlaceholder(item, index) {
+  const placeholder = createElement("span", {
+    className: "ui-media-thumb-processing",
+  });
+  placeholder.appendChild(createElement("span", {
+    className: "ui-media-thumb-processing-spinner",
+    attrs: { "aria-hidden": "true" },
+  }));
+  if (item.processingLabel) {
+    placeholder.appendChild(createElement("span", {
+      className: "ui-media-thumb-processing-label",
+      text: item.processingLabel,
+    }));
+  }
+  placeholder.appendChild(createElement("span", {
+    className: "ui-media-thumb-processing-sr",
+    text: item.processingLabel || item.alt || item.title || `Processing media ${index + 1}`,
+  }));
+  return placeholder;
+}
+
+function getViewerItemsFromStripItems(items) {
+  return items.filter((item) => !item.processing && Boolean(item.srcUrl));
 }
 
 function resolveUrl(url, baseUrl) {

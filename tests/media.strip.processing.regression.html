@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Media Strip Processing Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.media.strip.css">
+  <link rel="stylesheet" href="../css/ui/ui.media.viewer.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createMediaStrip } from "../js/ui/ui.media.strip.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const opened = [];
+    const resolvedSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120"><rect width="160" height="120" rx="12" fill="#1f365c"/><circle cx="80" cy="60" r="28" fill="#b8d4ff"/></svg>`;
+    const resolvedUrl = `data:image/svg+xml;utf8,${encodeURIComponent(resolvedSvg)}`;
+
+    try {
+      const strip = createMediaStrip(host, [
+        {
+          id: "pending-1",
+          type: "video",
+          processing: true,
+          processingLabel: "Processing…",
+          title: "Pending video",
+        },
+        {
+          id: "resolved-1",
+          type: "image",
+          srcUrl: resolvedUrl,
+          thumbUrl: resolvedUrl,
+          title: "Resolved image",
+        },
+      ], {
+        onOpen(item, index) {
+          opened.push({ id: item?.id, index });
+        },
+      });
+
+      const initialState = strip.getState();
+      assert(initialState.items.length === 2, "media strip should retain processing items without srcUrl");
+      assert(initialState.items[0]?.processing === true, "processing item should stay marked as processing in state");
+
+      const pendingThumb = document.querySelector('[data-media-id="pending-1"]');
+      assert(Boolean(pendingThumb), "processing item should render a placeholder thumb");
+      assert(pendingThumb?.classList.contains("is-processing"), "processing placeholder should carry the processing state class");
+      assert(pendingThumb?.disabled === true, "processing placeholder should be non-clickable");
+      assert(Boolean(pendingThumb?.querySelector(".ui-media-thumb-processing-spinner")), "processing placeholder should render a spinner");
+      assert((pendingThumb?.querySelector(".ui-media-thumb-processing-label")?.textContent || "").includes("Processing"), "processing placeholder should render the optional processing label");
+
+      strip.openById("pending-1");
+      await wait(80);
+      assert(opened.length === 0, "processing placeholder should not open the viewer");
+
+      strip.openById("resolved-1");
+      await wait(80);
+      assert(opened[0]?.id === "resolved-1", "resolved media should still open normally");
+      document.querySelector(".ui-media-viewer-close")?.click();
+      await wait(80);
+
+      strip.update([
+        {
+          id: "pending-1",
+          type: "video",
+          srcUrl: resolvedUrl,
+          thumbUrl: resolvedUrl,
+          title: "Resolved pending video",
+        },
+        {
+          id: "resolved-1",
+          type: "image",
+          srcUrl: resolvedUrl,
+          thumbUrl: resolvedUrl,
+          title: "Resolved image",
+        },
+      ]);
+      await wait(80);
+
+      const updatedState = strip.getState();
+      assert(updatedState.items[0]?.processing === false, "processing item should resolve out of processing state after update");
+      const resolvedPendingThumb = document.querySelector('[data-media-id="pending-1"]');
+      assert(Boolean(resolvedPendingThumb?.querySelector(".ui-media-thumb-image")), "resolved processing item should render a normal thumb");
+      assert(!resolvedPendingThumb?.classList.contains("is-processing"), "resolved processing item should no longer render as processing");
+
+      strip.openById("pending-1");
+      await wait(80);
+      assert(opened.some((entry) => entry.id === "pending-1"), "resolved placeholder should open normally after update");
+
+      strip.destroy();
+      assert(host.innerHTML === "", "destroy should clear the host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Media strip processing regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

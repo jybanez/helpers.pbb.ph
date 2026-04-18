@@ -4398,6 +4398,8 @@ Recommended item shape:
 | `src` | `string` | Full-size source URL. |
 | `thumb` | `string` | Thumbnail URL. |
 | `title` | `string` | Optional visible title/label. |
+| `processing` | `boolean` | Optional pending-media flag. When `true`, image/video items survive normalization without `srcUrl` and render as non-clickable placeholders. |
+| `processingLabel` | `string` | Optional short text shown on a pending placeholder card. |
 
 Options:
 
@@ -4442,6 +4444,7 @@ Behavior notes:
 - `ui.media.strip` now delegates full-view behavior to `ui.media.viewer` so zoom/pan/video viewing stays centralized in one component.
 - Keep thumbnails lightweight; full-size assets belong in the viewer/player layer.
 - Use `baseUrl` when items carry relative asset paths from app APIs.
+- Pending image/video items with `processing: true` render a placeholder even without `srcUrl`, do not open the viewer while still processing, and can later resolve in place when the host calls `update(...)` with the same `id` plus real media URLs.
 
 Related demos:
 

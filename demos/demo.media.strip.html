@@ -104,14 +104,16 @@
         "Do not use it as a standalone full viewer; use <code>createMediaViewer(...)</code> when the viewer itself is the main surface.",
         "Do not use it for generic file upload workflows with queue management."
       ],
-      description: "This demo keeps two layouts side by side: scroll and wrap. Viewer options stay shared between both strips, and relative sample-media paths resolve through <code>baseUrl</code>.",
-      defaultSampleCode: `const strip = createMediaStrip(host, items, {\n  layout: "scroll",\n  autoplay: true,\n  baseUrl: mediaBaseUrl,\n  viewerFit: "contain",\n  showViewerFooter: true,\n  showViewerToolbar: true,\n  onOpen(item, index) {\n    writeLog("media.open", { index, id: item?.id });\n  },\n});`,
+      description: "This demo keeps two layouts side by side: scroll and wrap. Viewer options stay shared between both strips, relative sample-media paths resolve through <code>baseUrl</code>, and pending media can now render as processing placeholders before final URLs exist.",
+      defaultSampleCode: `const items = [{\n  id: "pending-video-1",\n  type: "video",\n  processing: true,\n  processingLabel: "Processing…",\n}, ...resolvedItems];\n\nconst strip = createMediaStrip(host, items, {\n  layout: "scroll",\n  autoplay: true,\n  baseUrl: mediaBaseUrl,\n  viewerFit: "contain",\n  showViewerFooter: true,\n  showViewerToolbar: true,\n  onOpen(item, index) {\n    writeLog("media.open", { index, id: item?.id });\n  },\n});`,
       constructor: [
         { factory: "<code>createMediaStrip(container, items, options)</code>", arguments: "<code>container</code>, media item array, strip <code>options</code>", returns: "Media-strip instance with update/open/state methods" }
       ],
       options: [
         { option: "<code>layout</code>", default: "<code>\"scroll\"</code>", description: "Thumbnail arrangement mode.", values: ["scroll", "wrap"] },
         { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative sample-media paths." },
+        { option: "<code>processing</code>", default: "<code>false</code>", description: "When <code>true</code>, image/video items can render a non-clickable processing placeholder even without <code>srcUrl</code>." },
+        { option: "<code>processingLabel</code>", default: "<code>\"\"</code>", description: "Optional short text shown on a pending placeholder card." },
         { option: "<code>viewerFit</code>", default: "<code>\"contain\"</code>", description: "Viewer fit mode passed to the shared media viewer.", values: ["contain", "cover", "original"] },
         { option: "<code>showViewerFooter</code>", default: "<code>true</code>", description: "Shows the viewer footer area.", values: ["true", "false"] },
         { option: "<code>showViewerToolbar</code>", default: "<code>true</code>", description: "Shows the viewer toolbar.", values: ["true", "false"] },
@@ -141,12 +143,12 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Media Strip Demo</h1>
-      <p class="muted">Dedicated thumbnail-strip demo for incident photos/videos, shared viewer delegation, and viewer option syncing.</p>
+      <p class="muted">Dedicated thumbnail-strip demo for incident photos/videos, shared viewer delegation, viewer option syncing, and pending-media placeholders.</p>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Thumbnail Browser</h2>
-      <p class="muted">Both strip layouts share the same viewer options. Relative sample-media paths resolve against the repo base URL.</p>
+      <p class="muted">Both strip layouts share the same viewer options. Relative sample-media paths resolve against the repo base URL. The first card shows the new pending processing placeholder contract.</p>
       <div class="control-grid">
         <label for="mediaStripFitSelect">Viewer fit</label>
         <select id="mediaStripFitSelect" class="ui-input">
@@ -257,7 +259,22 @@
     }
 
     const mediaBaseUrl = new URL("../", window.location.href).href.replace(/\/+$/, "");
-    const mediaItems = await loadMediaItems();
+    const mediaItems = [
+      {
+        id: "pending-video-1",
+        type: "video",
+        processing: true,
+        processingLabel: "Processing…",
+        title: "Pending Caller Video",
+        alt: "Pending caller video",
+      },
+      ...(await loadMediaItems()),
+    ];
+    const mediaItemsNoProcessingLabel = mediaItems.map((item) => (
+      item?.id === "pending-video-1"
+        ? { ...item, processingLabel: "" }
+        : item
+    ));
     const stripOptions = () => ({
       autoplay: true,
       baseUrl: mediaBaseUrl,
@@ -278,7 +295,7 @@
       ...stripOptions(),
     });
 
-    const mediaStripWrap = createMediaStrip(document.getElementById("mediaStripHostWrap"), mediaItems, {
+    const mediaStripWrap = createMediaStrip(document.getElementById("mediaStripHostWrap"), mediaItemsNoProcessingLabel, {
       layout: "wrap",
       ...stripOptions(),
     });
@@ -289,7 +306,7 @@
         layout: "scroll",
         ...nextOptions,
       });
-      mediaStripWrap.update(mediaItems, {
+      mediaStripWrap.update(mediaItemsNoProcessingLabel, {
         layout: "wrap",
         ...nextOptions,
       });
