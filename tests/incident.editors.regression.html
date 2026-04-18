@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incident Editors Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/incident/incident.css">
+  <link rel="stylesheet" href="../css/incident/incident.base.css">
+  <link rel="stylesheet" href="../css/incident/incident.types.css">
+  <link rel="stylesheet" href="../css/incident/incident.types.details.editor.css">
+  <link rel="stylesheet" href="../css/incident/incident.teams.assignments.css">
+  <link rel="stylesheet" href="../css/incident/incident.teams.assignments.editor.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      display: grid;
+      gap: 16px;
+      max-width: 960px;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host">
+    <div id="incidentTypesHost"></div>
+    <div id="assignmentsHost"></div>
+  </div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { incidentTypes } from "../js/incident/incident.types.js";
+    import { incidentTeamsAssignments } from "../js/incident/incident.teams.assignments.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const typeEvents = [];
+    const assignmentEvents = [];
+
+    const typeApi = incidentTypes(document.getElementById("incidentTypesHost"), [], {
+      editable: true,
+      theme: "dark",
+      incident_id: 30,
+      categories: [{ id: 1, name: "Fire" }],
+      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire" }],
+      resources: [],
+      removeIncidentType() {},
+      onItemChange(nextItem, meta) {
+        typeEvents.push({ kind: "item", nextItem, meta });
+      },
+      onChange(nextList, meta) {
+        typeEvents.push({ kind: "list", nextList, meta });
+      },
+    });
+
+    typeApi.setList([{
+      incident_id: 30,
+      incident_type_id: 10,
+      incident_type_category_id: 1,
+      incident_type_category_name: "Fire",
+      name: "Building Fire",
+      fields: [{ field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 }],
+      detail_entries: [],
+      resources: [],
+      resources_needed: [],
+    }]);
+
+    const typeData = typeApi.getData();
+    assert(Boolean(typeData[0]?._client_key), "incident types should assign _client_key to unsaved rows");
+
+    const typeInput = document.querySelector("#incidentTypesHost .hh-field-row .hh-input");
+    typeInput.value = "Warehouse";
+    typeInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const typeItemEvent = typeEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "field");
+    const typeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "field");
+    assert(typeItemEvent?.nextItem?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onItemChange should emit the updated item after field edits");
+    assert(typeListEvent?.nextList?.[0]?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onChange should emit the updated list after field edits");
+
+    const removeButton = document.querySelector("#incidentTypesHost .hh-remove");
+    removeButton.click();
+    const removeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "remove");
+    assert(Array.isArray(removeListEvent?.nextList) && removeListEvent.nextList.length === 0, "incident types remove should emit the proposed next list without the removed row");
+
+    const assignmentsApi = incidentTeamsAssignments(document.getElementById("assignmentsHost"), [], {
+      theme: "dark",
+      editable: true,
+      incident_id: 30,
+      operator_id: 7,
+      categories: [{ id: 2, name: "Medical" }],
+      teams: [{ id: 91, name: "Responder One", team_category_id: 2 }],
+      noticeAlreadyExist() {},
+      confirmStatus() { return true; },
+      confirmCancel() { return true; },
+      confirmDelete() { return true; },
+      onItemChange(nextItem, meta) {
+        assignmentEvents.push({ kind: "item", nextItem, meta });
+      },
+      onChange(nextList, meta) {
+        assignmentEvents.push({ kind: "list", nextList, meta });
+      },
+    });
+
+    assignmentsApi.setList([{
+      incident_id: 30,
+      team_id: 91,
+      assigned_by_operator_id: 7,
+      status: "requested",
+      contact_person: "",
+      team: { id: 91, name: "Responder One", category: { name: "Medical" } },
+    }]);
+
+    const assignmentData = assignmentsApi.getData();
+    assert(Boolean(assignmentData[0]?._client_key), "team assignments should assign _client_key to unsaved rows");
+
+    const contactInput = document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input");
+    contactInput.value = "Ana";
+    contactInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const contactItemEvent = assignmentEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "contact");
+    const contactListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "contact");
+    assert(contactItemEvent?.nextItem?.contact_person === "Ana", "team assignments onItemChange should emit the updated item after contact edits");
+    assert(contactListEvent?.nextList?.[0]?.contact_person === "Ana", "team assignments onChange should emit the updated list after contact edits");
+
+    const nextStatusButton = document.querySelector("#assignmentsHost .hh-actions .hh-button");
+    nextStatusButton.click();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    const statusItemEvent = assignmentEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "status");
+    const statusListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "status");
+    assert(statusItemEvent?.nextItem?.status === "accepted", "team assignments status change should emit the candidate next item");
+    assert(statusListEvent?.nextList?.[0]?.status === "accepted", "team assignments status change should emit the candidate next list");
+
+    typeApi.destroy();
+    assignmentsApi.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -81,10 +81,10 @@
       ],
       description: "This helper owns the list shell, team-selection drawer, per-assignment timeline/status controls, and editable assignment sub-rows. The app still owns team catalogs, confirmation rules, persistence, and post-action workflow decisions.",
       sectionSamples: {
-        "editable team assignments": `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onAssignTeam(assignment) {\n    persistAssignment(assignment);\n  },\n  onStatusNext(id, nextStatus) {\n    persistStatus(id, nextStatus);\n  },\n  onAllocateChange(id, resourceTypeId, allocated) {\n    persistAllocation(id, resourceTypeId, allocated);\n  },\n});`,
+        "editable team assignments": `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onAssignTeam(assignment) {\n    persistAssignment(assignment);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
         "read-only team assignments": `incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: false,\n});`
       },
-      defaultSampleCode: `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n});`,
+      defaultSampleCode: `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
       constructor: [
         { factory: "<code>incidentTeamsAssignments(container, data, options)</code>", arguments: "assignment host, incident/assignment data, and domain options", returns: "Team-assignment list instance with drawer, list, and lifecycle methods" }
       ],
@@ -101,6 +101,8 @@
         { option: "<code>onOpenDrawer</code>", default: "<code>undefined</code>", description: "Called when the dispatch drawer opens." },
         { option: "<code>onCloseDrawer</code>", default: "<code>undefined</code>", description: "Called when the dispatch drawer closes." },
         { option: "<code>onAssignTeam</code>", default: "<code>undefined</code>", description: "Receives a normalized assignment payload when a team is dispatched from the drawer." },
+        { option: "<code>onItemChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next assignment item plus a small <code>meta</code> reason payload." },
+        { option: "<code>onChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next assignment list plus the same <code>meta</code> payload." },
         { option: "<code>confirmStatus</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before progressing an assignment status." },
         { option: "<code>confirmCancel</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before cancelling an assignment." },
         { option: "<code>confirmDelete</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before deleting an assignment." },
@@ -116,6 +118,8 @@
         { event: "<code>onOpenDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
         { event: "<code>onCloseDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
         { event: "<code>onAssignTeam(assignment)</code>", arguments: "normalized assignment payload for the selected team", returns: "<code>void</code>" },
+        { event: "<code>onItemChange(nextItem, meta)</code>", arguments: "candidate next assignment plus a normalized mutation meta payload such as <code>{ reason: \"status\" }</code>", returns: "<code>void</code>" },
+        { event: "<code>onChange(nextList, meta)</code>", arguments: "candidate next assignment list plus the same normalized mutation meta payload", returns: "<code>void</code>" },
         { event: "<code>onStatusNext(assignmentId, nextStatus)</code>", arguments: "assignment id and next timeline status", returns: "<code>void</code>" },
         { event: "<code>onCancel(assignmentId, fromStatus, reasonCode, reasonNote)</code>", arguments: "assignment id, current status, cancellation reason code, and note", returns: "<code>void</code>" },
         { event: "<code>onDelete(assignmentId)</code>", arguments: "assignment id", returns: "<code>void</code>" },
@@ -123,7 +127,7 @@
         { event: "<code>onNoteAdd(assignmentId, note)</code>", arguments: "assignment id and note payload", returns: "<code>void</code>" },
         { event: "<code>onAllocateChange(assignmentId, resourceTypeId, allocated)</code>", arguments: "assignment id, resource type id, and next allocated quantity", returns: "<code>void</code>" }
       ],
-      propertiesText: "The instance tracks normalized assignment <code>list</code> data, merged <code>options</code>, and current <code>drawerState</code>. Individual assignment cards keep domain details such as dispatch status, contact person, notes, cancellation metadata, and resource allocations. Aggregate state is available through <code>getData()</code> and <code>getState()</code>.",
+      propertiesText: "The instance tracks normalized assignment <code>list</code> data, merged <code>options</code>, and current <code>drawerState</code>. Individual assignment cards keep domain details such as dispatch status, contact person, notes, cancellation metadata, and resource allocations. Aggregate state is available through <code>getData()</code> and <code>getState()</code>. Unsaved rows retain a stable <code>_client_key</code> for host-side reconciliation.",
       methods: [
         { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement assignment data and optional option patch", returns: "<code>void</code>" },
         { method: "<code>setList(items)</code>", arguments: "replacement assignment array", returns: "<code>void</code>" },
@@ -269,7 +273,7 @@
           theme,
           debug,
           lookups,
-          incident_id: incidentState.id,
+          incident_id: incidentState?.id ?? 0,
           operator_id: 3,
           categories: incidentCategories,
           teams,
@@ -297,6 +301,16 @@
             incidentState.team_assignments = listState;
             addEvent("incidentTeamsAssignments.onAssignTeam", withMeta);
             syncColumns();
+          },
+          onItemChange(nextItem, meta) {
+            addEvent("incidentTeamsAssignments.onItemChange", { nextItem, meta });
+          },
+          onChange(nextList, meta) {
+            addEvent("incidentTeamsAssignments.onChange", {
+              meta,
+              count: nextList.length,
+              keys: nextList.map((item) => item.id ?? item._client_key ?? item.team_id ?? null)
+            });
           },
           confirmStatus(toStatus) {
             return window.confirm(`Confirm move to ${toStatus}?`);
@@ -384,7 +398,7 @@
           theme,
           debug,
           lookups,
-          incident_id: incidentState.id,
+          incident_id: incidentState?.id ?? 0,
           operator_id: 3,
           categories: incidentCategories,
           teams,

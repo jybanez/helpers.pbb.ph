@@ -738,6 +738,8 @@ Optional list options:
 - `headerText` (default `"Dispatch Details"`)
 - `drawerHeaderText` (default `"Select Teams to Dispatch"`)
 - `onAssignTeam(newAssignment)`
+- `onItemChange(nextItem, meta)`
+- `onChange(nextList, meta)`
 - `onOpenDrawer()`
 - `onCloseDrawer()`
 
@@ -784,6 +786,7 @@ Editor callbacks:
 - `onContactChange(assignmentId, value)`
 - `onNoteAdd(assignmentId, note)`
 - `onAllocateChange(assignmentId, resourceTypeId, allocated)`
+- `onItemChange(nextItem, meta)`
 
 Confirm handlers (required in editor):
 
@@ -801,6 +804,13 @@ Runtime methods:
 - `incidentTeamsAssignments.getData()` -> array of assignment payloads from child instances
 - `incidentTeamsAssignments.getState()` -> `{ list, options, drawerState }`
 
+Normalized change contract:
+
+- unsaved assignment rows now always carry a stable `_client_key`
+- `onItemChange(nextItem, meta)` emits normalized candidate item payloads for add/contact/allocation/status/cancel/note/remove interactions
+- `onChange(nextList, meta)` emits the corresponding normalized candidate list
+- persistence, debounce/autosave timing, optimistic behavior, rollback/conflict handling, and canonical state ownership remain app-owned
+
 ## Incident Types Helpers
 
 `incidentTypes` supports list rendering for incident type cards.
@@ -811,7 +821,7 @@ Runtime methods:
 - `drawerHeaderText` default: `"Select Reported Incidents"`
 - required: `categories` (incident categories array)
 - required: `incidentTypes` (incident types array)
-- optional callbacks: `noticeAlreadyExists(incidentType)`, `onOpenDrawer()`, `onCloseDrawer()`, `onAddIncidentType(payload)`
+- optional callbacks: `noticeAlreadyExists(incidentType)`, `onOpenDrawer()`, `onCloseDrawer()`, `onAddIncidentType(payload)`, `onItemChange(nextItem, meta)`, `onChange(nextList, meta)`
 - accepts incident payload or normalized incident-type item array
 - `setList(items[])` replaces list and re-renders
 - `getData()` returns current child payload array
@@ -824,6 +834,7 @@ Single item shape used by editor/viewer:
 ```js
 {
   id,
+  _client_key,
   incident_id,
   incident_type_id,
   incident_type_category_id,
@@ -841,6 +852,7 @@ Single item shape used by editor/viewer:
 - `removeIncidentType(incidentTypeData)` (required in editor)
 - `onFieldChange(incidentTypeId, fieldKey, value)`
 - `onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded)`
+- `onItemChange(nextItem, meta)`
 
 `incidentTypesDetailsEditor` methods:
 
@@ -876,6 +888,7 @@ Behavior implemented:
   - labels from `resources[].name`
   - quantities resolved by `resource_type_id`
   - editor uses numeric inputs; viewer uses text
+- unsaved incident-type rows now always carry a stable `_client_key`, even when they already have a lookup `incident_type_id` but do not yet have a persisted row `id`
 - Missing required data/options:
   - logs console error
   - renders nothing
@@ -1493,6 +1506,8 @@ Optional options:
 - `theme` (default `"dark"`), used to set the helper variant while inheriting colors from the shared `--ui-*` theme tokens
 - `onOpenDrawer()`, `onCloseDrawer()`
 - `onAssignTeam(newAssignmentPayload)`
+- `onItemChange(nextItem, meta)`
+- `onChange(nextList, meta)`
 
 Methods:
 
@@ -1541,6 +1556,7 @@ Callbacks:
 - `onContactChange(assignmentId, value)`
 - `onNoteAdd(assignmentId, note)`
 - `onAllocateChange(assignmentId, resourceTypeId, allocated)`
+- `onItemChange(nextItem, meta)`
 
 Notes:
 
@@ -1581,6 +1597,8 @@ Optional options:
 - `theme` (default `"dark"`), used to set the helper variant while inheriting colors from the shared `--ui-*` theme tokens
 - `noticeAlreadyExists(incidentType)`
 - `onOpenDrawer()`, `onCloseDrawer()`, `onAddIncidentType(payload)`
+- `onItemChange(nextItem, meta)`
+- `onChange(nextList, meta)`
 
 Methods:
 
@@ -1604,6 +1622,7 @@ Optional callbacks:
 
 - `onFieldChange(incidentTypeId, fieldKey, value)`
 - `onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded)`
+- `onItemChange(nextItem, meta)`
 
 Methods:
 
@@ -1617,6 +1636,7 @@ Field support:
 
 - `text`, `number`, `textarea`, `select`, `multiselect`
 - `multiselect` stored as comma-separated string in `detail_entries[].field_value`
+- unsaved rows retain stable `_client_key` values for host-side reconciliation
 
 ### `incidentTypesDetailsViewer(container, data, options)`
 

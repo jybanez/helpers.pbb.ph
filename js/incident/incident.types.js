@@ -18,6 +18,8 @@ const DEFAULT_OPTIONS = {
   drawerHeaderText: "Select Reported Incidents",
 };
 
+let incidentTypeClientKeySeed = 0;
+
 export function incidentTypes(container, data, options = {}) {
   let currentData = data;
   let currentOptions = normalizeOptions(options);
@@ -34,6 +36,34 @@ export function incidentTypes(container, data, options = {}) {
   let drawerEvents = null;
   let drawerApi = null;
   let drawerElements = null;
+
+  function replaceListItemByKey(key, nextItem) {
+    const normalizedItem = normalizeIncidentTypeItem(nextItem, currentOptions);
+    list = list.map((item, index) => (getItemKey(item, index) === key ? normalizedItem : item));
+    return normalizedItem;
+  }
+
+  function buildListProposalByKey(key, nextItem, meta = {}) {
+    if (meta.reason === "remove") {
+      return cloneData(list).filter((item, index) => getItemKey(item, index) !== key);
+    }
+    return cloneData(list).map((item, index) => (
+      getItemKey(item, index) === key ? cloneData(nextItem) : cloneData(item)
+    ));
+  }
+
+  function emitNormalizedChange(nextItem, meta = {}) {
+    const nextList = Array.isArray(meta.nextList) ? meta.nextList : cloneData(list);
+    const nextMeta = {
+      ...meta,
+      item: nextItem ? cloneData(nextItem) : null,
+      key: meta.key || null,
+    };
+    if (nextItem) {
+      currentOptions.onItemChange?.(cloneData(nextItem), nextMeta);
+    }
+    currentOptions.onChange?.(cloneData(nextList), nextMeta);
+  }
 
   function shellSignature(optionsValue) {
     return JSON.stringify({
@@ -195,6 +225,12 @@ export function incidentTypes(container, data, options = {}) {
         const payload = createInitialPayload(incidentType);
         list = [...list, payload];
         currentOptions.onAddIncidentType?.(cloneData(payload));
+        emitNormalizedChange(payload, {
+          reason: "add",
+          localStateChanged: true,
+          key: getItemKey(payload, list.length - 1),
+          nextList: cloneData(list),
+        });
         closeDrawer();
         reconcile();
       });
@@ -298,6 +334,27 @@ export function incidentTypes(container, data, options = {}) {
       removeIncidentType: (incidentTypeData) => currentOptions.removeIncidentType?.(incidentTypeData),
       onFieldChange: (...args) => currentOptions.onFieldChange?.(...args),
       onResourceChange: (...args) => currentOptions.onResourceChange?.(...args),
+      onItemChange: (nextItem, meta = {}) => {
+        const nextMeta = { ...meta, key };
+        if (meta.localStateChanged !== false) {
+          replaceListItemByKey(key, nextItem);
+        }
+        if (meta.reason === "remove") {
+          emitNormalizedChange(nextItem, {
+            ...nextMeta,
+            nextList: buildListProposalByKey(key, nextItem, meta),
+            localStateChanged: false,
+          });
+          return;
+        }
+        const nextList = meta.localStateChanged === false
+          ? buildListProposalByKey(key, nextItem, meta)
+          : cloneData(list);
+        emitNormalizedChange(nextItem, {
+          ...nextMeta,
+          nextList,
+        });
+      },
     };
     const mode = itemMode();
     const instance = mode === "editor"
@@ -569,6 +626,10 @@ function normalizeIncidentTypeItem(item, options) {
 
   return {
     id: source.id ?? source.incident_type_id ?? null,
+    _client_key:
+      source._client_key ??
+      source.client_key ??
+      (source.id == null ? createIncidentTypeClientKey() : null),
     incident_id: source.incident_id ?? null,
     incident_type_id: source.incident_type_id ?? source.id ?? null,
     incident_type_category_id: source.incident_type_category_id ?? null,
@@ -599,6 +660,9 @@ function resolveCategoryName(categoryId, options) {
 function getItemKey(item, index) {
   if (item?.id !== undefined && item?.id !== null) {
     return `id:${item.id}`;
+  }
+  if (item?._client_key) {
+    return `client:${item._client_key}`;
   }
   return `fallback:${item?.incident_id ?? "i"}:${item?.incident_type_id ?? "t"}:${index}`;
 }
@@ -641,4 +705,9 @@ function cloneData(value) {
   } catch (_) {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+function createIncidentTypeClientKey() {
+  incidentTypeClientKeySeed += 1;
+  return `incident-type-${incidentTypeClientKeySeed}`;
 }

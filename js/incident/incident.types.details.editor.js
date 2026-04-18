@@ -99,6 +99,14 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     });
   }
 
+  function emitItemChange(reason, meta = {}) {
+    currentOptions.onItemChange?.(cloneData(currentData), {
+      reason,
+      localStateChanged: true,
+      ...meta,
+    });
+  }
+
   function createFieldInput(field, value) {
     const inputType = String(field?.input_type || "text").toLowerCase();
     if (inputType === "textarea") {
@@ -209,6 +217,10 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     removeBtn.innerHTML = '<span aria-hidden="true">\u2715</span>';
     bind(removeBtn, "click", () => {
       currentOptions.removeIncidentType?.(cloneData(currentData));
+      currentOptions.onItemChange?.(cloneData(currentData), {
+        reason: "remove",
+        localStateChanged: false,
+      });
     });
 
     header.append(titleWrap, removeBtn);
@@ -262,12 +274,20 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
         const value = getInputValue(input, field);
         setFieldValue(field, value);
         currentOptions.onFieldChange?.(currentData.incident_type_id, field?.field_key, value);
+        emitItemChange("field", {
+          fieldKey: String(field?.field_key || ""),
+          value,
+        });
       });
       if (!["select", "multiselect"].includes(String(field?.input_type || "").toLowerCase())) {
         bind(input, "input", () => {
           const value = getInputValue(input, field);
           setFieldValue(field, value);
           currentOptions.onFieldChange?.(currentData.incident_type_id, field?.field_key, value);
+          emitItemChange("field", {
+            fieldKey: String(field?.field_key || ""),
+            value,
+          });
         });
       }
 
@@ -316,6 +336,10 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
         const next = Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
         setResourceQuantity(resourceTypeId, next);
         currentOptions.onResourceChange?.(currentData.incident_type_id, resourceTypeId, next);
+        emitItemChange("resource", {
+          resourceTypeId,
+          quantityNeeded: next,
+        });
       });
 
       row.append(label, input);
@@ -426,6 +450,7 @@ function normalizeIncidentTypeData(data) {
   const source = data && typeof data === "object" ? data : {};
   return {
     id: source.id ?? null,
+    _client_key: source._client_key ?? source.client_key ?? null,
     incident_id: source.incident_id ?? null,
     incident_type_id: source.incident_type_id ?? source.id ?? null,
     incident_type_category_id: source.incident_type_category_id ?? null,

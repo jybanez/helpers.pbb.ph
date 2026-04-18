@@ -20,6 +20,8 @@ const DEFAULT_LIST_OPTIONS = {
   editable: true,
 };
 
+let assignmentClientKeySeed = 0;
+
 export function incidentTeamsAssignments(container, data, options = {}) {
   let currentData = data;
   let currentOptions = normalizeListOptions(options);
@@ -38,6 +40,34 @@ export function incidentTeamsAssignments(container, data, options = {}) {
   let bodyEl = null;
   let listEl = null;
   let lastShellSignature = "";
+
+  function replaceListItemByKey(key, nextItem) {
+    const normalizedItem = normalizeAssignmentItem(nextItem);
+    listItems = listItems.map((item, index) => (getItemKey(item, index) === key ? normalizedItem : item));
+    return normalizedItem;
+  }
+
+  function buildListProposalByKey(key, nextItem, meta = {}) {
+    if (meta.reason === "remove") {
+      return cloneData(listItems).filter((item, index) => getItemKey(item, index) !== key);
+    }
+    return cloneData(listItems).map((item, index) => (
+      getItemKey(item, index) === key ? cloneData(nextItem) : cloneData(item)
+    ));
+  }
+
+  function emitNormalizedChange(nextItem, meta = {}) {
+    const nextList = Array.isArray(meta.nextList) ? meta.nextList : cloneData(listItems);
+    const nextMeta = {
+      ...meta,
+      item: nextItem ? cloneData(nextItem) : null,
+      key: meta.key || null,
+    };
+    if (nextItem) {
+      currentOptions.onItemChange?.(cloneData(nextItem), nextMeta);
+    }
+    currentOptions.onChange?.(cloneData(nextList), nextMeta);
+  }
 
   function shellSignature(optionsValue) {
     return JSON.stringify({
@@ -199,15 +229,21 @@ export function incidentTeamsAssignments(container, data, options = {}) {
           currentOptions.noticeAlreadyExist(team);
           return;
         }
-        const assignment = {
+        const assignment = normalizeAssignmentItem({
           incident_id: currentOptions.incident_id,
           team_id: team?.id,
           assigned_by_operator_id: currentOptions.operator_id,
           status: "assigned",
           team,
-        };
+        });
         listItems = [...listItems, assignment];
         currentOptions.onAssignTeam?.(assignment);
+        emitNormalizedChange(assignment, {
+          reason: "add",
+          localStateChanged: true,
+          key: getItemKey(assignment, listItems.length - 1),
+          nextList: cloneData(listItems),
+        });
         closeDrawer();
         reconcileList();
       });
@@ -266,6 +302,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       incident_id: item?.incident_id ?? currentOptions.incident_id,
       team_id: item?.team_id ?? currentOptions.team_id,
       assigned_by_operator_id: item?.assigned_by_operator_id ?? currentOptions.operator_id,
+      onItemChange: undefined,
     };
   }
 
@@ -282,10 +319,25 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     li.appendChild(mount);
 
     const mode = itemMode();
+    const itemOptions = buildItemOptions(item);
+    itemOptions.onItemChange = (nextItem, meta = {}) => {
+      const nextMeta = { ...meta, key };
+      if (meta.localStateChanged !== false) {
+        replaceListItemByKey(key, nextItem);
+      }
+      const nextList = meta.localStateChanged === false
+        ? buildListProposalByKey(key, nextItem, meta)
+        : cloneData(listItems);
+      emitNormalizedChange(nextItem, {
+        ...nextMeta,
+        nextList,
+      });
+    };
+
     const instance =
       mode === "editor"
-        ? incidentTeamsAssignmentsEditor(mount, item, buildItemOptions(item))
-        : incidentTeamsAssignmentsViewer(mount, item, buildItemOptions(item));
+        ? incidentTeamsAssignmentsEditor(mount, item, itemOptions)
+        : incidentTeamsAssignmentsViewer(mount, item, itemOptions);
 
     childMap.set(key, { instance, li, mode });
     return li;
@@ -411,7 +463,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
   }
 
   function setList(items = []) {
-    listItems = safeArray(items);
+    listItems = safeArray(items).map((item) => normalizeAssignmentItem(item));
     renderFull();
   }
 
@@ -462,9 +514,9 @@ export function incidentTeamsAssignments(container, data, options = {}) {
 
 function getAssignments(source) {
   if (Array.isArray(source)) {
-    return source;
+    return source.map((item) => normalizeAssignmentItem(item));
   }
-  return safeArray(source?.team_assignments);
+  return safeArray(source?.team_assignments).map((item) => normalizeAssignmentItem(item));
 }
 
 function normalizeStatus(status) {
@@ -491,6 +543,17 @@ function getItemKey(item, index) {
     return `client:${item._client_key}`;
   }
   return `fallback:${item?.incident_id ?? "i"}:${item?.team_id ?? "t"}:${item?.assigned_by_operator_id ?? "o"}:${index}`;
+}
+
+function normalizeAssignmentItem(item) {
+  const source = item && typeof item === "object" ? item : {};
+  return {
+    ...source,
+    _client_key:
+      source._client_key ??
+      source.client_key ??
+      (source.id == null ? createAssignmentClientKey() : null),
+  };
 }
 
 function getAssignmentAnchor(item, index) {
@@ -531,4 +594,9 @@ function cloneData(value) {
   } catch (_) {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+function createAssignmentClientKey() {
+  assignmentClientKeySeed += 1;
+  return `assignment-${assignmentClientKeySeed}`;
 }

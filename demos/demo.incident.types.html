@@ -81,10 +81,10 @@
       ],
       description: "This helper owns the incident-type list shell, add-from-drawer flow, and item editor/viewer switching. The app still owns the incident catalog, reference lookups, and persistence callbacks.",
       sectionSamples: {
-        "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onFieldChange(incidentTypeId, fieldKey, value) {\n    persistFieldChange(incidentTypeId, fieldKey, value);\n  },\n  onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded) {\n    persistResourceChange(incidentTypeId, resourceTypeId, quantityNeeded);\n  },\n});`,
+        "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
         "incident.types (viewer)": `incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: false,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n});`
       },
-      defaultSampleCode: `const listApi = incidentTypes(host, incidentTypesData, {\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n});`,
+      defaultSampleCode: `const listApi = incidentTypes(host, incidentTypesData, {\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
       constructor: [
         { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
@@ -101,6 +101,8 @@
         { option: "<code>onOpenDrawer</code>", default: "<code>undefined</code>", description: "Called when the add-incident-type drawer opens." },
         { option: "<code>onCloseDrawer</code>", default: "<code>undefined</code>", description: "Called when the add-incident-type drawer closes." },
         { option: "<code>onAddIncidentType</code>", default: "<code>undefined</code>", description: "Receives the normalized incident-type payload selected from the drawer." },
+        { option: "<code>onItemChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next incident-type row plus a small <code>meta</code> reason payload." },
+        { option: "<code>onChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next incident-type list plus the same <code>meta</code> payload." },
         { option: "<code>removeIncidentType</code>", default: "<code>undefined</code>", description: "Editable-only removal hook for an incident-type row." },
         { option: "<code>onFieldChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for field changes within an incident-type row." },
         { option: "<code>onResourceChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for required-resource quantity changes." }
@@ -109,11 +111,13 @@
         { event: "<code>onOpenDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
         { event: "<code>onCloseDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
         { event: "<code>onAddIncidentType(payload)</code>", arguments: "normalized incident-type payload selected from the drawer", returns: "<code>void</code>" },
+        { event: "<code>onItemChange(nextItem, meta)</code>", arguments: "candidate next row plus a normalized mutation meta payload such as <code>{ reason: \"field\" }</code>", returns: "<code>void</code>" },
+        { event: "<code>onChange(nextList, meta)</code>", arguments: "candidate next list plus the same normalized mutation meta payload", returns: "<code>void</code>" },
         { event: "<code>removeIncidentType(payload)</code>", arguments: "incident-type payload being removed", returns: "<code>void</code>" },
         { event: "<code>onFieldChange(incidentTypeId, fieldKey, value)</code>", arguments: "row id, domain field key, and next value", returns: "<code>void</code>" },
         { event: "<code>onResourceChange(incidentTypeId, resourceTypeId, quantityNeeded)</code>", arguments: "row id, resource type id, and next quantity", returns: "<code>void</code>" }
       ],
-      propertiesText: "The instance manages a normalized incident-type <code>list</code>, merged <code>options</code>, and current <code>drawerState</code>. Each incident-type row keeps its own domain fields and resource assignments, while the parent instance exposes aggregate list state through <code>getData()</code> and <code>getState()</code>.",
+      propertiesText: "The instance manages a normalized incident-type <code>list</code>, merged <code>options</code>, and current <code>drawerState</code>. Each incident-type row keeps its own domain fields and resource assignments, while the parent instance exposes aggregate list state through <code>getData()</code> and <code>getState()</code>. Unsaved rows retain a stable <code>_client_key</code> for host-side reconciliation.",
       methods: [
         { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement incident-type data and optional option patch", returns: "<code>void</code>" },
         { method: "<code>setList(items)</code>", arguments: "replacement incident-type array", returns: "<code>void</code>" },
@@ -360,6 +364,18 @@
         },
         onAddIncidentType(payload) {
           addEvent("incidentTypes.onAddIncidentType", payload);
+        },
+        onItemChange(nextItem, meta) {
+          addEvent("incidentTypes.onItemChange", { nextItem, meta });
+        },
+        onChange(nextList, meta) {
+          editableListItems = nextList;
+          viewerListApi.setList(editableListItems);
+          addEvent("incidentTypes.onChange", {
+            meta,
+            count: nextList.length,
+            keys: nextList.map((item) => item.id ?? item._client_key ?? item.incident_type_id ?? null)
+          });
         },
         removeIncidentType(incidentTypeData) {
           editableListItems = editableListItems.filter(

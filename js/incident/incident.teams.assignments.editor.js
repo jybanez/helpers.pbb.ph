@@ -29,7 +29,7 @@ const CANCELLATION_REASONS = [
 ];
 
 export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
-  let currentData = data || {};
+  let currentData = normalizeAssignmentData(data);
   let currentOptions = normalizeIncidentOptions(options);
   let allocationMap = buildAllocationMap(currentData);
   let isContactOverrideEditing = false;
@@ -43,6 +43,14 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
   function bind(el, event, handler) {
     el.addEventListener(event, handler);
     listeners.push(() => el.removeEventListener(event, handler));
+  }
+
+  function emitItemChange(reason, meta = {}) {
+    const nextItem = meta.nextItem ? cloneData(meta.nextItem) : cloneData(currentData);
+    currentOptions.onItemChange?.(nextItem, {
+      reason,
+      ...meta,
+    });
   }
 
   function showGuardMessage(message) {
@@ -250,7 +258,15 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       if (!note) {
         return;
       }
+      currentData = {
+        ...currentData,
+        notes: [...resolveNotes(currentData), { note }],
+      };
       currentOptions.onNoteAdd?.(currentData?.id, note);
+      emitItemChange("note", {
+        note,
+        localStateChanged: false,
+      });
       noteInput.value = "";
       addButton.disabled = true;
     });
@@ -304,7 +320,16 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         const next = clampInt(input.value, 0, available);
         input.value = String(next);
         allocationMap[String(resourceTypeId)] = next;
+        currentData = {
+          ...currentData,
+          allocated_resources: buildAllocatedResources(currentData, allocationMap),
+        };
         currentOptions.onAllocateChange?.(currentData?.id, resourceTypeId, next);
+        emitItemChange("allocation", {
+          resourceTypeId,
+          allocated: next,
+          localStateChanged: true,
+        });
       });
 
       allocatedCell.appendChild(input);
@@ -343,6 +368,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
           const ok = await runConfirm(currentOptions.confirmDelete, [], "options.confirmDelete");
           if (ok) {
             currentOptions.onDelete?.(currentData?.id);
+            emitItemChange("remove", {
+              localStateChanged: false,
+            });
           }
           return;
         }
@@ -366,6 +394,19 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         );
         if (ok) {
           currentOptions.onCancel?.(currentData?.id, status, reasonCode, reasonNote);
+          emitItemChange("cancel", {
+            fromStatus: status,
+            reasonCode,
+            reasonNote,
+            localStateChanged: false,
+            nextItem: {
+              ...currentData,
+              status: "cancelled",
+              cancelled_from_status: status,
+              cancel_reason_code: reasonCode,
+              cancel_reason_note: reasonNote,
+            },
+          });
         }
       });
       header.appendChild(cancelButton);
@@ -403,6 +444,15 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       const ok = await runConfirm(currentOptions.confirmStatus, [nextStatus], "options.confirmStatus");
       if (ok) {
         currentOptions.onStatusNext?.(currentData?.id, nextStatus);
+        emitItemChange("status", {
+          fromStatus: status,
+          toStatus: nextStatus,
+          localStateChanged: false,
+          nextItem: {
+            ...currentData,
+            status: nextStatus,
+          },
+        });
       }
     });
 
@@ -458,7 +508,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     },
     update(nextData, nextOptions = {}) {
       const prevStatus = String(currentData?.status || "");
-      currentData = nextData || {};
+      currentData = normalizeAssignmentData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
       contactDraft = String(currentData?.contact_person || "");
       const nextStatus = String(currentData?.status || "");
@@ -539,6 +589,10 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         if (canInlineEdit) {
           currentData = { ...currentData, contact_person: input.value };
           currentOptions.onContactChange?.(currentData?.id, input.value);
+          emitItemChange("contact", {
+            value: input.value,
+            localStateChanged: true,
+          });
         }
       });
 
@@ -555,6 +609,10 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         bind(save, "click", () => {
           currentData = { ...currentData, contact_person: String(contactDraft || "").trim() };
           currentOptions.onContactChange?.(currentData?.id, currentData.contact_person);
+          emitItemChange("contact", {
+            value: currentData.contact_person,
+            localStateChanged: true,
+          });
           isContactOverrideEditing = false;
           render();
         });
@@ -609,6 +667,29 @@ function buildAllocationMap(data) {
     map[key] = Number(item?.quantity_allocated || 0);
   });
   return map;
+}
+
+function buildAllocatedResources(data, map) {
+  const sourceByType = new Map(
+    safeArray(data?.allocated_resources).map((item) => [String(item?.resource_type_id ?? ""), item])
+  );
+  return Object.entries(map)
+    .filter(([, quantityAllocated]) => Number(quantityAllocated) > 0)
+    .map(([resourceTypeId, quantityAllocated]) => ({
+      ...(sourceByType.get(String(resourceTypeId)) || {}),
+      resource_type_id: Number.isNaN(Number(resourceTypeId)) ? resourceTypeId : Number(resourceTypeId),
+      quantity_allocated: Number(quantityAllocated) || 0,
+    }));
+}
+
+function normalizeAssignmentData(data) {
+  const source = data && typeof data === "object" ? data : {};
+  return {
+    ...source,
+    _client_key: source._client_key ?? source.client_key ?? null,
+    notes: safeArray(resolveNotes(source)).map((item) => ({ ...item })),
+    allocated_resources: safeArray(source.allocated_resources).map((item) => ({ ...item })),
+  };
 }
 
 function clampInt(value, min, max) {
