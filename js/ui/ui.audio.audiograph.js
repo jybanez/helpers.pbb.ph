@@ -1062,6 +1062,9 @@ export function createAudioGraph(container, data = {}, options = {}) {
       const sampleIndex = Math.min(analyserTimeData.length - 1, Math.floor((index / Math.max(1, pointCount - 1)) * analyserTimeData.length));
       return (analyserTimeData[sampleIndex] - 128) / 128;
     }
+    if (sourceType === "none") {
+      return 0;
+    }
     const t = index / Math.max(1, pointCount - 1);
     const baseWave = Math.sin((t * Math.PI * 18) + (ms / 180));
     const detailWave = Math.sin((t * Math.PI * 54) + (ms / 80)) * 0.28;
