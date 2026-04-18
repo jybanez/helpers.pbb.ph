@@ -45,6 +45,8 @@
           title: "Resolved image",
         },
       ], {
+        showViewerToolbar: false,
+        showViewerFooter: false,
         onOpen(item, index) {
           opened.push({ id: item?.id, index });
         },
@@ -68,6 +70,7 @@
       strip.openById("resolved-1");
       await wait(80);
       assert(opened[0]?.id === "resolved-1", "resolved media should still open normally");
+      assert(Boolean(document.querySelector(".ui-media-viewer-shell.is-open")), "viewer should open even when toolbar and footer are disabled");
       document.querySelector(".ui-media-viewer-close")?.click();
       await wait(80);
 

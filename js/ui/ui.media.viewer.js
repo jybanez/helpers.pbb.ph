@@ -282,6 +282,9 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function renderFooter(item) {
+    if (!footer) {
+      return;
+    }
     const hasMetadata = item && item.metadata && typeof item.metadata === "object" && Object.keys(item.metadata).length;
     footer.hidden = !currentOptions.showFooter || !hasMetadata;
     if (footer.hidden || !hasMetadata) {
@@ -438,7 +441,7 @@ export function createMediaViewer(container, options = {}) {
     nextBtn.disabled = !canNavigate(1);
     bodyEl.classList.toggle("is-nav-hidden", prevBtn.hidden && nextBtn.hidden);
 
-    toolbar.hidden = !currentOptions.showToolbar;
+    toolbar && (toolbar.hidden = !currentOptions.showToolbar);
     counterEl && (counterEl.hidden = !currentOptions.showCounter);
     closeBtn && (closeBtn.hidden = !currentOptions.showClose);
 
