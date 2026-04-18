@@ -767,6 +767,7 @@ export function createReasonFormModal(options = {}) {
   const reasonOptions = normalizeOptionsList(options.reasonOptions);
   const confirmPhrase = String(options.confirmPhrase || "").trim();
   const showNotify = Boolean(options.showNotify);
+  const detailsRequiredFor = normalizeReasonDetailsRequiredFor(options.detailsRequiredFor);
 
   return createFormModal({
     ...options,
@@ -775,6 +776,20 @@ export function createReasonFormModal(options = {}) {
     busyMessage: options.busyMessage || "Submitting reason...",
     submitLabel: options.submitLabel || "Confirm",
     submitVariant: options.submitVariant || "danger",
+    onSubmit(values, ctx) {
+      const reasonCode = String(values?.[fields.reasonCode] || "").trim();
+      const reasonDetails = String(values?.[fields.reasonDetails] || "").trim();
+      if (isReasonDetailsRequired(reasonCode, detailsRequiredFor) && !reasonDetails) {
+        ctx?.setErrors?.({
+          [fields.reasonDetails]: String(options.detailsRequiredMessage || "Details are required for the selected reason."),
+        });
+        return false;
+      }
+      if (typeof options.onSubmit === "function") {
+        return options.onSubmit(values, ctx);
+      }
+      return true;
+    },
     rows: [
       [{
         type: "alert",
@@ -795,7 +810,7 @@ export function createReasonFormModal(options = {}) {
         label: String(options.detailsLabel || "Details"),
         value: resolveInitialValue(options, fields.reasonDetails),
         placeholder: String(options.detailsPlaceholder || "Explain why this action is necessary."),
-        required: true,
+        required: detailsRequiredFor === true,
       }],
       ...(confirmPhrase ? [[{
         type: "input",
@@ -1010,6 +1025,37 @@ function resolveCheckboxValue(options, name, fallback) {
     return Boolean(options.initialValues[name]);
   }
   return Boolean(fallback);
+}
+
+function normalizeReasonDetailsRequiredFor(value) {
+  if (value === undefined) {
+    return true;
+  }
+  if (value === true || value === false) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const next = String(value || "").trim();
+    return next ? [next] : false;
+  }
+  if (Array.isArray(value)) {
+    const values = value
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+    return values.length ? values : false;
+  }
+  return true;
+}
+
+function isReasonDetailsRequired(reasonCode, detailsRequiredFor) {
+  if (detailsRequiredFor === true) {
+    return true;
+  }
+  if (!detailsRequiredFor) {
+    return false;
+  }
+  const normalizedReasonCode = String(reasonCode || "").trim();
+  return detailsRequiredFor.includes(normalizedReasonCode);
 }
 
 function escapePattern(value) {

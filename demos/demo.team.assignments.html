@@ -81,10 +81,10 @@
       ],
       description: "This helper owns the list shell, team-selection drawer, per-assignment timeline/status controls, and editable assignment sub-rows. The app still owns team catalogs, confirmation rules, persistence, and post-action workflow decisions.",
       sectionSamples: {
-        "editable team assignments": `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onAssignTeam(assignment) {\n    persistAssignment(assignment);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
+        "editable team assignments": `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  requestCancelReason(fromStatus, meta) {\n    return openCancelReasonModal(fromStatus, meta);\n  },\n  onAssignTeam(assignment) {\n    persistAssignment(assignment);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
         "read-only team assignments": `incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: false,\n});`
       },
-      defaultSampleCode: `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
+      defaultSampleCode: `const assignmentsApi = incidentTeamsAssignments(host, incidentState, {\n  incident_id: incidentState.id,\n  operator_id: currentOperatorId,\n  categories: incidentCategories,\n  teams,\n  editable: true,\n  requestCancelReason(fromStatus, meta) {\n    return openCancelReasonModal(fromStatus, meta);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
       constructor: [
         { factory: "<code>incidentTeamsAssignments(container, data, options)</code>", arguments: "assignment host, incident/assignment data, and domain options", returns: "Team-assignment list instance with drawer, list, and lifecycle methods" }
       ],
@@ -103,6 +103,7 @@
         { option: "<code>onAssignTeam</code>", default: "<code>undefined</code>", description: "Receives a normalized assignment payload when a team is dispatched from the drawer." },
         { option: "<code>onItemChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next assignment item plus a small <code>meta</code> reason payload." },
         { option: "<code>onChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next assignment list plus the same <code>meta</code> payload." },
+        { option: "<code>requestCancelReason</code>", default: "<code>undefined</code>", description: "Optional sync/async seam for replacing the native cancel-reason prompts with Helper modal UI or another host-owned collector. Return <code>{ reasonCode, reasonNote }</code> or <code>null</code> to abort." },
         { option: "<code>confirmStatus</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before progressing an assignment status." },
         { option: "<code>confirmCancel</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before cancelling an assignment." },
         { option: "<code>confirmDelete</code>", default: "<code>undefined</code>", description: "Async or sync confirmation gate before deleting an assignment." },
@@ -288,6 +289,16 @@
           },
           onCloseDrawer() {
             addEvent("incidentTeamsAssignments.onCloseDrawer", {});
+          },
+          requestCancelReason(fromStatus, meta) {
+            addEvent("incidentTeamsAssignments.requestCancelReason", {
+              fromStatus,
+              assignmentId: meta?.assignmentId ?? null,
+            });
+            return Promise.resolve({
+              reasonCode: "other",
+              reasonNote: `Demo cancel from ${fromStatus}.`,
+            });
           },
           onAssignTeam(assignment) {
             const withMeta = {

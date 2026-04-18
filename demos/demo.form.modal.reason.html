@@ -32,7 +32,7 @@
         "Do not use it when the flow needs a large custom form with many additional domain fields."
       ],
       description: "The helper owns the alert, reason select, details textarea, and optional confirm-text row while the project supplies the reason vocabulary and payload field names.",
-      defaultSampleCode: `const modal = createReasonFormModal({\n  fields: {\n    reasonCode: \"cancel_reason\",\n    reasonDetails: \"remarks\",\n    confirmText: \"confirm_cancel\",\n  },\n  reasonOptions: [\n    { label: \"Operational Override\", value: \"operational_override\" },\n    { label: \"Duplicate Request\", value: \"duplicate_request\" },\n  ],\n  confirmPhrase: \"CANCEL\",\n});`,
+      defaultSampleCode: `const modal = createReasonFormModal({\n  fields: {\n    reasonCode: \"cancel_reason\",\n    reasonDetails: \"remarks\",\n    confirmText: \"confirm_cancel\",\n  },\n  reasonOptions: [\n    { label: \"Operational Override\", value: \"operational_override\" },\n    { label: \"Other\", value: \"other\" },\n  ],\n  detailsRequiredFor: [\"other\"],\n  confirmPhrase: \"CANCEL\",\n});`,
       constructor: [
         { factory: "<code>createReasonFormModal(options)</code>", arguments: "preset options object", returns: "Form-modal instance" }
       ],
@@ -42,6 +42,7 @@
         { option: "<code>reasonLabel</code>", default: "<code>\"Reason Category\"</code>", description: "Reason select label override." },
         { option: "<code>detailsLabel</code>", default: "<code>\"Details\"</code>", description: "Details textarea label override." },
         { option: "<code>detailsPlaceholder</code>", default: "component default", description: "Details textarea placeholder override." },
+        { option: "<code>detailsRequiredFor</code>", default: "<code>true</code>", description: "Controls when details remain required. Use <code>true</code> for all reasons, <code>false</code> for none, or an array such as <code>[\"other\"]</code> for conditional requirement." },
         { option: "<code>confirmPhrase</code>", default: "<code>\"\"</code>", description: "When set, requires the user to type the exact phrase before submit." },
         { option: "<code>confirmLabel</code>", default: "component default", description: "Confirmation input label override." },
         { option: "<code>showNotify</code>", default: "<code>false</code>", description: "Controls whether the notify checkbox row is shown.", values: ["true", "false"] }
@@ -69,7 +70,7 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Reason Form Modal Demo</h1>
-      <p class="muted">Dedicated preset page for the categorized reason-required wrapper.</p>
+      <p class="muted">Dedicated preset page for the categorized reason wrapper, including conditional details requirements such as only requiring extra notes for <code>other</code>.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Categorized Reason Capture</h2>
@@ -84,8 +85,9 @@
   },
   reasonOptions: [
     { label: "Operational Override", value: "operational_override" },
-    { label: "Duplicate Request", value: "duplicate_request" },
+    { label: "Other", value: "other" },
   ],
+  detailsRequiredFor: ["other"],
   confirmPhrase: "CANCEL",
 });</pre>
       <pre id="log" class="log">No events yet.</pre>
@@ -118,11 +120,12 @@
         reasonOptions: [
           { label: "Operational Override", value: "operational_override" },
           { label: "Bad Data", value: "bad_data" },
-          { label: "Duplicate Request", value: "duplicate_request" },
+          { label: "Other", value: "other" },
         ],
+        detailsRequiredFor: ["other"],
         confirmPhrase: "CANCEL",
         initialValues: {
-          cancel_reason: "operational_override",
+          cancel_reason: "other",
           remarks: "Fiber path is unstable and needs to be rerouted before closure.",
         },
         async onSubmit(values) {

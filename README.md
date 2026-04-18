@@ -740,6 +740,7 @@ Optional list options:
 - `onAssignTeam(newAssignment)`
 - `onItemChange(nextItem, meta)`
 - `onChange(nextList, meta)`
+- `requestCancelReason(fromStatus, meta)`
 - `onOpenDrawer()`
 - `onCloseDrawer()`
 
@@ -787,6 +788,7 @@ Editor callbacks:
 - `onNoteAdd(assignmentId, note)`
 - `onAllocateChange(assignmentId, resourceTypeId, allocated)`
 - `onItemChange(nextItem, meta)`
+- `requestCancelReason(fromStatus, meta)` -> `{ reasonCode, reasonNote } | null` (sync or async)
 
 Confirm handlers (required in editor):
 
@@ -810,6 +812,7 @@ Normalized change contract:
 - `onItemChange(nextItem, meta)` emits normalized candidate item payloads for add/contact/allocation/status/cancel/note/remove interactions
 - `onChange(nextList, meta)` emits the corresponding normalized candidate list
 - persistence, debounce/autosave timing, optimistic behavior, rollback/conflict handling, and canonical state ownership remain app-owned
+- `requestCancelReason(fromStatus, meta)` lets the host replace the native prompt-based cancel-reason collector with Helper modal UI or another app-owned adapter while preserving the existing `confirmCancel(...)` and `onCancel(...)` boundaries
 
 ## Incident Types Helpers
 
@@ -1508,6 +1511,7 @@ Optional options:
 - `onAssignTeam(newAssignmentPayload)`
 - `onItemChange(nextItem, meta)`
 - `onChange(nextList, meta)`
+- `requestCancelReason(fromStatus, meta)` -> `{ reasonCode, reasonNote } | null` (sync or async)
 
 Methods:
 
@@ -1557,10 +1561,12 @@ Callbacks:
 - `onNoteAdd(assignmentId, note)`
 - `onAllocateChange(assignmentId, resourceTypeId, allocated)`
 - `onItemChange(nextItem, meta)`
+- `requestCancelReason(fromStatus, meta)` -> `{ reasonCode, reasonNote } | null` (sync or async)
 
 Notes:
 
 - Confirm callbacks may return `boolean | Promise<boolean>`.
+- `requestCancelReason(...)` may return sync or async results; `null` aborts the cancel flow and native prompts remain the fallback when the option is omitted.
 - Missing required options: logs error, renders nothing, returns stable API.
 
 ### `incidentTeamsAssignmentsViewer(container, data, options)`
@@ -2845,6 +2851,7 @@ Common preset rules:
 |---|---|
 | Structure ownership | Helper owns row structure, ordering, and validation defaults. |
 | Field-name mapping | Engineers can remap payload field names to match project backends. |
+| Conditional details requirement | `createReasonFormModal(...)` supports `detailsRequiredFor` so details can stay required for all reasons, no reasons, or a specific subset such as `["other"]`. |
 | Busy behavior | Presets reuse `createFormModal(...)` busy submit handling. |
 | Submit behavior | App code still owns the actual `onSubmit(values, ctx)` implementation. |
 | Session expiry detection | Re-auth auto-launch is app-owned. `createReauthFormModal(...)` does not monitor timeout state or open itself. |
@@ -2857,7 +2864,7 @@ Preset options:
 | `createLoginFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierPlaceholder`, `identifierAutocomplete`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createReauthFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierValue`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createStatusUpdateFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `statusOptions`, `statusLabel`, `remarksLabel`, `remarksPlaceholder`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
-| `createReasonFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `reasonOptions`, `reasonLabel`, `detailsLabel`, `detailsPlaceholder`, `confirmPhrase`, `confirmLabel`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
+| `createReasonFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `reasonOptions`, `reasonLabel`, `detailsLabel`, `detailsPlaceholder`, `detailsRequiredFor`, `detailsRequiredMessage`, `confirmPhrase`, `confirmLabel`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
 | `createAccountFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `avatar`, `nameLabel`, `namePlaceholder`, `emailLabel`, `emailPlaceholder`, `fields`, `initialValues`, `extraRows`, `extraActions`, `extraActionsPlacement`, `onSubmit` |
 | `createChangePasswordFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `currentPasswordLabel`, `currentPasswordPlaceholder`, `newPasswordLabel`, `newPasswordPlaceholder`, `confirmPasswordLabel`, `confirmPasswordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 

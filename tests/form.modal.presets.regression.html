@@ -271,6 +271,63 @@
     await wait(500);
     assert(document.querySelector(".ui-modal-root") === null, "reason preset should close on successful native form submit");
 
+    const reasonConditionalModal = createReasonFormModal({
+      fields: {
+        reasonCode: "cancel_reason",
+        reasonDetails: "remarks",
+      },
+      reasonOptions: [
+        { label: "Operational Override", value: "operational_override" },
+        { label: "Other", value: "other" },
+      ],
+      detailsRequiredFor: ["other"],
+      initialValues: {
+        cancel_reason: "operational_override",
+        remarks: "",
+      },
+      async onSubmit() {
+        await wait(50);
+        return true;
+      },
+    });
+
+    reasonConditionalModal.open();
+    await wait(80);
+    reasonConditionalModal.refs.form.requestSubmit();
+    await wait(500);
+    assert(document.querySelector(".ui-modal-root") === null, "reason preset should allow empty details when the selected reason is not in detailsRequiredFor");
+
+    const reasonConditionalRequiredModal = createReasonFormModal({
+      fields: {
+        reasonCode: "cancel_reason",
+        reasonDetails: "remarks",
+      },
+      reasonOptions: [
+        { label: "Operational Override", value: "operational_override" },
+        { label: "Other", value: "other" },
+      ],
+      detailsRequiredFor: ["other"],
+      initialValues: {
+        cancel_reason: "other",
+        remarks: "",
+      },
+      async onSubmit() {
+        await wait(50);
+        return true;
+      },
+    });
+
+    reasonConditionalRequiredModal.open();
+    await wait(80);
+    reasonConditionalRequiredModal.refs.form.requestSubmit();
+    await wait(180);
+    const conditionalDetailsError = document.querySelector('textarea[name="remarks"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
+    assert(reasonConditionalRequiredModal.getState().open === true, "reason preset should stay open when conditional details are required and missing");
+    assert(Boolean(String(conditionalDetailsError?.textContent || "").trim()), "reason preset should surface a details error when detailsRequiredFor matches the selected reason");
+
+    reasonConditionalRequiredModal.destroy();
+    await wait(80);
+
     const accountExtraActionCalls = [];
     let accountSubmitValues = null;
     const accountModal = createAccountFormModal({

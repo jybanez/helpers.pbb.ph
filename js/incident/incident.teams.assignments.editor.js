@@ -45,6 +45,38 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     listeners.push(() => el.removeEventListener(event, handler));
   }
 
+  async function collectCancelReason(fromStatus) {
+    const requestCancelReason = currentOptions.requestCancelReason;
+    if (typeof requestCancelReason === "function") {
+      let result;
+      try {
+        result = await requestCancelReason(fromStatus, {
+          assignmentId: currentData?.id ?? null,
+          item: cloneData(currentData),
+          reasonOptions: CANCELLATION_REASONS.map((item) => ({ ...item })),
+        });
+      } catch (error) {
+        console.error("[incident.teams.assignments.editor] requestCancelReason failed.", error);
+        return null;
+      }
+      return normalizeCancelReasonResult(result);
+    }
+
+    const reasonCode = promptReasonCode();
+    if (!reasonCode) {
+      return null;
+    }
+    let reasonNote = "";
+    if (reasonCode === "other") {
+      reasonNote = String(window.prompt("Provide cancellation details:", "") || "").trim();
+      if (!reasonNote) {
+        showGuardMessage("Cancellation details are required for Other.");
+        return null;
+      }
+    }
+    return { reasonCode, reasonNote };
+  }
+
   function emitItemChange(reason, meta = {}) {
     const nextItem = meta.nextItem ? cloneData(meta.nextItem) : cloneData(currentData);
     currentOptions.onItemChange?.(nextItem, {
@@ -375,18 +407,11 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
           return;
         }
 
-        const reasonCode = promptReasonCode();
-        if (!reasonCode) {
+        const cancelReason = await collectCancelReason(status);
+        if (!cancelReason) {
           return;
         }
-        let reasonNote = "";
-        if (reasonCode === "other") {
-          reasonNote = String(window.prompt("Provide cancellation details:", "") || "").trim();
-          if (!reasonNote) {
-            showGuardMessage("Cancellation details are required for Other.");
-            return;
-          }
-        }
+        const { reasonCode, reasonNote } = cancelReason;
         const ok = await runConfirm(
           currentOptions.confirmCancel,
           [status, reasonCode, reasonNote],
@@ -727,4 +752,30 @@ function promptReasonCode() {
     return "";
   }
   return code;
+}
+
+function normalizeCancelReasonResult(result) {
+  if (result == null) {
+    return null;
+  }
+  if (typeof result !== "object") {
+    window.alert("Invalid cancellation reason result.");
+    return null;
+  }
+
+  const reasonCode = String(result.reasonCode || "").trim();
+  if (!reasonCode) {
+    return null;
+  }
+  const exists = CANCELLATION_REASONS.some((item) => item.value === reasonCode);
+  if (!exists) {
+    window.alert("Invalid cancellation reason.");
+    return null;
+  }
+  const reasonNote = String(result.reasonNote || "").trim();
+  if (reasonCode === "other" && !reasonNote) {
+    window.alert("Cancellation details are required for Other.");
+    return null;
+  }
+  return { reasonCode, reasonNote };
 }

@@ -15,6 +15,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Added `ui.busy.overlay` as a shared fullscreen-or-scoped busy-state helper with the same spinner styling used by modal busy overlays, plus optional text and explicit cancel handling.
 - Added normalized `onItemChange(nextItem, meta)` and `onChange(nextList, meta)` contracts to `incidentTypes(...)` and `incidentTeamsAssignments(...)`, while retaining the existing granular incident-editor callbacks.
 - Unsaved incident-type and team-assignment rows now keep stable `_client_key` values so host apps can reconcile local edits and autosave flows without helper-owned persistence semantics.
+- Added additive `requestCancelReason(fromStatus, meta)` support to the team-assignment editor so host apps can replace native cancel-reason prompts with Helper modal UI while preserving the existing `confirmCancel(...)` and `onCancel(...)` boundaries.
+- Extended `createReasonFormModal(...)` with additive `detailsRequiredFor` support so details can remain required for all reasons, no reasons, or only a selected subset such as `["other"]`.
 
 ## Release Line Index
 

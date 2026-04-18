@@ -49,6 +49,8 @@
 
     const typeEvents = [];
     const assignmentEvents = [];
+    const confirmCancelCalls = [];
+    const cancelCalls = [];
 
     const typeApi = incidentTypes(document.getElementById("incidentTypesHost"), [], {
       editable: true,
@@ -104,8 +106,20 @@
       teams: [{ id: 91, name: "Responder One", team_category_id: 2 }],
       noticeAlreadyExist() {},
       confirmStatus() { return true; },
-      confirmCancel() { return true; },
+      confirmCancel(fromStatus, reasonCode, reasonNote) {
+        confirmCancelCalls.push({ fromStatus, reasonCode, reasonNote });
+        return true;
+      },
       confirmDelete() { return true; },
+      requestCancelReason() {
+        return Promise.resolve({
+          reasonCode: "other",
+          reasonNote: "Unit reassigned by command.",
+        });
+      },
+      onCancel(assignmentId, fromStatus, reasonCode, reasonNote) {
+        cancelCalls.push({ assignmentId, fromStatus, reasonCode, reasonNote });
+      },
       onItemChange(nextItem, meta) {
         assignmentEvents.push({ kind: "item", nextItem, meta });
       },
@@ -143,6 +157,18 @@
     const statusListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "status");
     assert(statusItemEvent?.nextItem?.status === "accepted", "team assignments status change should emit the candidate next item");
     assert(statusListEvent?.nextList?.[0]?.status === "accepted", "team assignments status change should emit the candidate next list");
+
+    const cancelButton = document.querySelector("#assignmentsHost .hh-icon-button");
+    cancelButton.click();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    const cancelItemEvent = assignmentEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "cancel");
+    const cancelListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "cancel");
+    assert(confirmCancelCalls[0]?.reasonCode === "other", "team assignments cancel should pass requestCancelReason output into confirmCancel");
+    assert(confirmCancelCalls[0]?.reasonNote === "Unit reassigned by command.", "team assignments cancel should preserve requestCancelReason details");
+    assert(cancelCalls[0]?.reasonCode === "other", "team assignments cancel should call onCancel with requestCancelReason output");
+    assert(cancelItemEvent?.nextItem?.status === "cancelled", "team assignments cancel should emit the candidate cancelled item");
+    assert(cancelItemEvent?.nextItem?.cancel_reason_note === "Unit reassigned by command.", "team assignments cancel should emit the candidate cancel note");
+    assert(cancelListEvent?.nextList?.[0]?.status === "cancelled", "team assignments cancel should emit the candidate cancelled list");
 
     typeApi.destroy();
     assignmentsApi.destroy();
