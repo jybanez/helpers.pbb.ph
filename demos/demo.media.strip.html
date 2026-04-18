@@ -105,7 +105,7 @@
         "Do not use it for generic file upload workflows with queue management."
       ],
       description: "This demo keeps two layouts side by side: scroll and wrap. Viewer options stay shared between both strips, relative sample-media paths resolve through <code>baseUrl</code>, and pending media can now render as processing placeholders before final URLs exist.",
-      defaultSampleCode: `const items = [{\n  id: "pending-video-1",\n  type: "video",\n  processing: true,\n  processingLabel: "Processing…",\n}, ...resolvedItems];\n\nconst strip = createMediaStrip(host, items, {\n  layout: "scroll",\n  autoplay: true,\n  baseUrl: mediaBaseUrl,\n  viewerFit: "contain",\n  showViewerFooter: true,\n  showViewerToolbar: true,\n  onOpen(item, index) {\n    writeLog("media.open", { index, id: item?.id });\n  },\n});`,
+      defaultSampleCode: `const items = [{\n  id: "pending-video-1",\n  type: "video",\n  processing: true,\n  processingLabel: "Processing…",\n}, ...resolvedItems];\n\nconst strip = createMediaStrip(host, items, {\n  layout: "scroll",\n  autoplay: true,\n  baseUrl: mediaBaseUrl,\n  viewerFit: "contain",\n  showViewerFooter: true,\n  showViewerToolbar: true,\n  showViewerAudiograph: true,\n  viewerAudiographStyle: "neon",\n  onOpen(item, index) {\n    writeLog("media.open", { index, id: item?.id });\n  },\n});`,
       constructor: [
         { factory: "<code>createMediaStrip(container, items, options)</code>", arguments: "<code>container</code>, media item array, strip <code>options</code>", returns: "Media-strip instance with update/open/state methods" }
       ],
@@ -117,7 +117,8 @@
         { option: "<code>viewerFit</code>", default: "<code>\"contain\"</code>", description: "Viewer fit mode passed to the shared media viewer.", values: ["contain", "cover", "original"] },
         { option: "<code>showViewerFooter</code>", default: "<code>true</code>", description: "Shows the viewer footer area.", values: ["true", "false"] },
         { option: "<code>showViewerToolbar</code>", default: "<code>true</code>", description: "Shows the viewer toolbar.", values: ["true", "false"] },
-        { option: "<code>showViewerAudiograph</code>", default: "<code>false</code>", description: "Shows video audiograph in the delegated viewer.", values: ["true", "false"] }
+        { option: "<code>showViewerAudiograph</code>", default: "<code>false</code>", description: "Shows video audiograph in the delegated viewer.", values: ["true", "false"] },
+        { option: "<code>viewerAudiographStyle</code>", default: "<code>\"neon\"</code>", description: "Audiograph render style forwarded to the delegated media viewer." }
       ],
       propertiesText: "No stable public instance properties are documented. Use <code>getState()</code> and update methods instead of reading internals.",
       events: [
@@ -159,6 +160,17 @@
         <label><input id="mediaStripFooterToggle" type="checkbox" checked> Footer</label>
         <label><input id="mediaStripToolbarToggle" type="checkbox" checked> Toolbar</label>
         <label><input id="mediaStripAudiographToggle" type="checkbox"> Video audiograph</label>
+        <label for="mediaStripAudiographStyleSelect">Audiograph style</label>
+        <select id="mediaStripAudiographStyleSelect" class="ui-input">
+          <option value="neon" selected>Neon</option>
+          <option value="classic-waveform">Classic waveform</option>
+          <option value="mirrored">Mirrored</option>
+          <option value="spectrum">Spectrum</option>
+          <option value="dots">Dots</option>
+          <option value="tsunami">Tsunami</option>
+          <option value="plasma">Plasma</option>
+          <option value="heartbeat">Heartbeat</option>
+        </select>
       </div>
       <p class="muted">Scroll layout</p>
       <div id="mediaStripHostScroll"></div>
@@ -172,6 +184,7 @@
   showViewerFooter: mediaStripFooterToggle.checked,
   showViewerToolbar: mediaStripToolbarToggle.checked,
   showViewerAudiograph: mediaStripAudiographToggle.checked,
+  viewerAudiographStyle: mediaStripAudiographStyleSelect.value,
   onOpen(item, index) {
     writeLog("media.open", { index, id: item?.id, type: item?.type });
   },
@@ -191,6 +204,7 @@
     const mediaStripFooterToggle = document.getElementById("mediaStripFooterToggle");
     const mediaStripToolbarToggle = document.getElementById("mediaStripToolbarToggle");
     const mediaStripAudiographToggle = document.getElementById("mediaStripAudiographToggle");
+    const mediaStripAudiographStyleSelect = document.getElementById("mediaStripAudiographStyleSelect");
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -282,6 +296,7 @@
       showViewerFooter: mediaStripFooterToggle.checked,
       showViewerToolbar: mediaStripToolbarToggle.checked,
       showViewerAudiograph: mediaStripAudiographToggle.checked,
+      viewerAudiographStyle: mediaStripAudiographStyleSelect.value,
       onOpen(item, index) {
         writeLog("media.open", { index, id: item?.id, type: item?.type });
       },
@@ -315,6 +330,7 @@
         showViewerFooter: nextOptions.showViewerFooter,
         showViewerToolbar: nextOptions.showViewerToolbar,
         showViewerAudiograph: nextOptions.showViewerAudiograph,
+        viewerAudiographStyle: nextOptions.viewerAudiographStyle,
       });
     }
 
@@ -322,6 +338,7 @@
     mediaStripFooterToggle.addEventListener("change", syncMediaStripViewerOptions);
     mediaStripToolbarToggle.addEventListener("change", syncMediaStripViewerOptions);
     mediaStripAudiographToggle.addEventListener("change", syncMediaStripViewerOptions);
+    mediaStripAudiographStyleSelect.addEventListener("change", syncMediaStripViewerOptions);
   </script>
 </body>
 </html>

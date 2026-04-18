@@ -47,6 +47,8 @@
       ], {
         showViewerToolbar: false,
         showViewerFooter: false,
+        showViewerAudiograph: true,
+        viewerAudiographStyle: "classic-waveform",
         onOpen(item, index) {
           opened.push({ id: item?.id, index });
         },
@@ -55,6 +57,7 @@
       const initialState = strip.getState();
       assert(initialState.items.length === 2, "media strip should retain processing items without srcUrl");
       assert(initialState.items[0]?.processing === true, "processing item should stay marked as processing in state");
+      assert(initialState.options?.viewerAudiographStyle === "classic-waveform", "media strip should retain the delegated viewer audiograph style option");
 
       const pendingThumb = document.querySelector('[data-media-id="pending-1"]');
       assert(Boolean(pendingThumb), "processing item should render a placeholder thumb");

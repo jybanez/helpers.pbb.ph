@@ -18,6 +18,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Added additive `requestCancelReason(fromStatus, meta)` support to the team-assignment editor so host apps can replace native cancel-reason prompts with Helper modal UI while preserving the existing `confirmCancel(...)` and `onCancel(...)` boundaries.
 - Extended `createReasonFormModal(...)` with additive `detailsRequiredFor` support so details can remain required for all reasons, no reasons, or only a selected subset such as `["other"]`.
 - Extended `createMediaStrip(...)` so additive `processing: true` image/video items can render non-clickable placeholder cards without `srcUrl`, with optional `processingLabel` text and normal resolution later when the same `id` receives real media URLs.
+- Added additive `viewerAudiographStyle` support to `createMediaStrip(...)` so media-strip viewer sessions can choose the delegated video audiograph render style when `showViewerAudiograph` is enabled.
 
 ## Release Line Index
 

@@ -20,6 +20,7 @@ const DEFAULT_OPTIONS = {
   showViewerPrevNext: true,
   showViewerToolbar: true,
   showViewerAudiograph: false,
+  viewerAudiographStyle: "neon",
   viewerFit: "contain",
   onOpen: null,
   onClose: null,
@@ -83,6 +84,7 @@ export function createMediaStrip(container, items = [], options = {}) {
       showPrevNext: currentOptions.showViewerPrevNext,
       showToolbar: currentOptions.showViewerToolbar,
       showAudiograph: currentOptions.showViewerAudiograph,
+      audiographStyle: currentOptions.viewerAudiographStyle,
       className: currentOptions.viewerClassName,
       onOpen: (viewerItem, index) => {
         const stripIndex = findStripIndexById(viewerItem?.id);

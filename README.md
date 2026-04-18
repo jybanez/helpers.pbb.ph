@@ -4420,6 +4420,7 @@ Options:
 | `showViewerPrevNext` | `boolean` | `true` | no | Shows viewer prev/next controls. |
 | `showViewerToolbar` | `boolean` | `true` | no | Shows viewer toolbar. |
 | `showViewerAudiograph` | `boolean` | `false` | no | Shows audiograph for video items. |
+| `viewerAudiographStyle` | `string` | `"neon"` | no | Audiograph render style forwarded to the delegated media viewer when `showViewerAudiograph` is enabled. |
 | `baseUrl` | `string` | `""` | no | Base URL for relative media paths. |
 
 Events / callbacks:
