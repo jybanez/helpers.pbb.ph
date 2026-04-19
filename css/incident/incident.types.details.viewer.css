@@ -25,5 +25,29 @@
 
 .hh-incident-types-details-viewer .hh-content {
   display: grid;
-  gap: 4px;
+  gap: 8px;
+}
+
+.hh-incident-types-details-viewer .hh-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 164px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.hh-incident-types-details-viewer .hh-row-label {
+  color: var(--hh-text-soft);
+}
+
+.hh-incident-types-details-viewer .hh-row-value {
+  color: var(--hh-text);
+  font-weight: 500;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .hh-incident-types-details-viewer .hh-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }

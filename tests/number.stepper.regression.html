@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Number Stepper Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.number.stepper.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createNumberStepper } from "../js/ui/ui.number.stepper.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const changes = [];
+
+    try {
+      const stepper = createNumberStepper(host, {
+        value: 1,
+        min: 0,
+        max: 2,
+        step: 0.25,
+        decimals: 2,
+        prefixText: "$",
+        suffixText: "PHP",
+        onChange(value) {
+          changes.push(value);
+        },
+      });
+
+      assert(stepper.getValue() === 1, "initial value should be readable");
+      assert(stepper.input.value === "1.00", "decimals should format the visible value");
+      assert(stepper.root.classList.contains("has-prefix"), "prefix class should apply");
+      assert(stepper.root.classList.contains("has-suffix"), "suffix class should apply");
+
+      stepper.stepUp();
+      assert(stepper.getValue() === 1.25, "stepUp should increment by step");
+      stepper.stepDown();
+      assert(stepper.getValue() === 1, "stepDown should decrement by step");
+
+      stepper.setValue(5);
+      assert(stepper.getValue() === 2, "setValue should clamp to max");
+      stepper.setValue(-3);
+      assert(stepper.getValue() === 0, "setValue should clamp to min");
+
+      stepper.input.value = "1.75";
+      stepper.input.dispatchEvent(new Event("input", { bubbles: true }));
+      stepper.input.dispatchEvent(new Event("blur", { bubbles: true }));
+      assert(stepper.getValue() === 1.75, "blur should commit typed numeric values");
+
+      stepper.input.value = "abc";
+      stepper.input.dispatchEvent(new Event("input", { bubbles: true }));
+      stepper.input.dispatchEvent(new Event("blur", { bubbles: true }));
+      assert(stepper.getValue() === 1.75, "invalid typed values should revert to the last committed value");
+
+      stepper.update({ readonly: true });
+      assert(stepper.incrementButton.disabled === true, "readonly should disable increment");
+      stepper.update({ readonly: false, disabled: true });
+      assert(stepper.input.disabled === true, "disabled should disable the input");
+
+      stepper.destroy();
+      assert(host.innerHTML === "", "destroy should clear the host");
+      assert(changes.includes(1.25) && changes.includes(1.75), "committed value changes should notify onChange");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Number stepper regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

@@ -19,6 +19,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Extended `createReasonFormModal(...)` with additive `detailsRequiredFor` support so details can remain required for all reasons, no reasons, or only a selected subset such as `["other"]`.
 - Extended `createMediaStrip(...)` so additive `processing: true` image/video items can render non-clickable placeholder cards without `srcUrl`, with optional `processingLabel` text and normal resolution later when the same `id` receives real media URLs.
 - Added additive `viewerAudiographStyle` support to `createMediaStrip(...)` so media-strip viewer sessions can choose the delegated video audiograph render style when `showViewerAudiograph` is enabled.
+- Added `createNumberStepper(...)` as a shared numeric stepper primitive with decrement/increment buttons, typed input, min/max/step bounds, and optional prefix/suffix text.
+- Incident-type editable `Resources Needed` rows now use the shared numeric stepper and render label plus value control on one row where space allows.
 
 ## Release Line Index
 

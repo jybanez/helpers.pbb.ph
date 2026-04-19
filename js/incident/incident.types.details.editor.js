@@ -1,4 +1,5 @@
 import { createRoot, normalizeIncidentOptions, safeArray } from "./incident.base.js";
+import { createNumberStepper } from "../ui/ui.number.stepper.js";
 
 export function incidentTypesDetailsEditor(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
@@ -325,24 +326,28 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       label.className = "hh-field-label";
       label.textContent = resource?.name || resource?.resource_type?.name || `Resource #${resourceTypeId ?? "-"}`;
 
-      const input = document.createElement("input");
-      input.className = "hh-input ui-input";
-      input.type = "number";
-      input.min = "0";
-      input.step = "1";
-      input.value = String(getResourceQuantity(resourceTypeId));
-      bind(input, "input", () => {
-        const numeric = Number(input.value);
-        const next = Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
-        setResourceQuantity(resourceTypeId, next);
-        currentOptions.onResourceChange?.(currentData.incident_type_id, resourceTypeId, next);
-        emitItemChange("resource", {
-          resourceTypeId,
-          quantityNeeded: next,
-        });
+      const stepperHost = document.createElement("div");
+      stepperHost.className = "hh-resource-stepper";
+      createNumberStepper(stepperHost, {
+        value: getResourceQuantity(resourceTypeId),
+        min: 0,
+        step: 1,
+        decimals: 0,
+        ariaLabel: `${label.textContent} quantity needed`,
+        decrementLabel: `Decrease ${label.textContent}`,
+        incrementLabel: `Increase ${label.textContent}`,
+        onChange(value) {
+          const next = Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
+          setResourceQuantity(resourceTypeId, next);
+          currentOptions.onResourceChange?.(currentData.incident_type_id, resourceTypeId, next);
+          emitItemChange("resource", {
+            resourceTypeId,
+            quantityNeeded: next,
+          });
+        },
       });
 
-      row.append(label, input);
+      row.append(label, stepperHost);
       grid.appendChild(row);
     });
 

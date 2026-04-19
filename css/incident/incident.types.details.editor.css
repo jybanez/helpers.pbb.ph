@@ -46,6 +46,37 @@
   gap: 6px;
 }
 
+.hh-incident-types-details-editor .hh-resource-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.hh-incident-types-details-editor .hh-resource-stepper {
+  width: 136px;
+}
+
+.hh-incident-types-details-editor .hh-resource-stepper .ui-number-stepper {
+  width: 100%;
+  grid-template-columns: 34px minmax(44px, 1fr) 34px;
+  border-radius: 8px;
+}
+
+.hh-incident-types-details-editor .hh-resource-stepper .ui-number-stepper-value-wrap {
+  padding: 0 6px;
+}
+
+.hh-incident-types-details-editor .hh-resource-stepper .ui-number-stepper-input {
+  padding: 7px 0;
+  font-size: 0.9rem;
+}
+
+.hh-incident-types-details-editor .hh-resource-stepper .ui-number-stepper-button {
+  min-width: 34px;
+  padding: 0 8px;
+  font-size: 20px;
+}
+
 .hh-incident-types-details-editor .hh-field-label-wrap {
   display: flex;
   align-items: center;
@@ -88,4 +119,15 @@
 
 .hh-incident-types-details-editor .hh-multiselect-checkbox {
   margin: 0;
+}
+
+@media (max-width: 640px) {
+  .hh-incident-types-details-editor .hh-resource-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .hh-incident-types-details-editor .hh-resource-stepper {
+    width: 100%;
+  }
 }

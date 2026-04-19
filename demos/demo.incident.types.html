@@ -95,7 +95,7 @@
         { option: "<code>lookups</code>", default: "<code>{}</code>", description: "Shared incident lookup bag. The helper reads <code>lookups.incidentTypes</code>, <code>lookups.incidentCategories</code>, and <code>lookups.resourceTypes</code> as fallback catalogs when direct option arrays are omitted." },
         { option: "<code>incidentTypes</code>", default: "<code>[]</code>", description: "Direct incident-type catalog for the add-from-drawer picker. When omitted, the helper falls back to <code>lookups.incidentTypes</code>." },
         { option: "<code>incidentCategories</code>", default: "<code>[]</code>", description: "Incident-category list used to group and filter drawer items." },
-        { option: "<code>resources</code>", default: "<code>[]</code>", description: "Resource-type catalog used by editable incident-type resource rows." },
+        { option: "<code>resources</code>", default: "<code>[]</code>", description: "Resource-type catalog used by editable incident-type resource rows. Required-resource quantities now render through the shared numeric stepper." },
         { option: "<code>theme</code>", default: "<code>\"dark\"</code>", description: "Applies the helper theme variant to the list shell and child rows." },
         { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class added to the helper root element." },
         { option: "<code>onOpenDrawer</code>", default: "<code>undefined</code>", description: "Called when the add-incident-type drawer opens." },

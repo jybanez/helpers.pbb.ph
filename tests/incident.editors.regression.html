@@ -6,6 +6,7 @@
   <title>Incident Editors Regression Test</title>
   <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.number.stepper.css">
   <link rel="stylesheet" href="../css/incident/incident.css">
   <link rel="stylesheet" href="../css/incident/incident.base.css">
   <link rel="stylesheet" href="../css/incident/incident.types.css">
@@ -76,7 +77,7 @@
       name: "Building Fire",
       fields: [{ field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 }],
       detail_entries: [],
-      resources: [],
+      resources: [{ id: 501, name: "Fire Truck" }],
       resources_needed: [],
     }]);
 
@@ -91,6 +92,14 @@
     const typeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "field");
     assert(typeItemEvent?.nextItem?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onItemChange should emit the updated item after field edits");
     assert(typeListEvent?.nextList?.[0]?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onChange should emit the updated list after field edits");
+
+    const resourceIncrementButton = document.querySelector("#incidentTypesHost .hh-resource-row .ui-number-stepper-button-increment");
+    assert(Boolean(resourceIncrementButton), "incident type resource rows should render the shared numeric stepper");
+    resourceIncrementButton.click();
+    const resourceItemEvent = [...typeEvents].reverse().find((entry) => entry.kind === "item" && entry.meta?.reason === "resource");
+    const resourceListEvent = [...typeEvents].reverse().find((entry) => entry.kind === "list" && entry.meta?.reason === "resource");
+    assert(resourceItemEvent?.nextItem?.resources_needed?.[0]?.quantity_needed === 1, "incident type resource stepping should emit the updated item quantity");
+    assert(resourceListEvent?.nextList?.[0]?.resources_needed?.[0]?.quantity_needed === 1, "incident type resource stepping should emit the updated list quantity");
 
     const removeButton = document.querySelector("#incidentTypesHost .hh-remove");
     removeButton.click();

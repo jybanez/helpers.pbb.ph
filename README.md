@@ -221,6 +221,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
 - `ui.password.js`
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
+- `ui.number.stepper.js`
+  - `createNumberStepper(container, options)` numeric stepper with decrement/increment buttons, typed input, min/max bounds, and optional prefix/suffix text
 - `ui.fieldset.js`
   - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields with notes, alerts, images, and custom content
 - `ui.device.primer.js`
@@ -458,7 +460,7 @@ Public component families:
 - Modal and feedback:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
-  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
 - Data, timeline, and inspection:
   - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
@@ -1764,6 +1766,83 @@ Related demos:
 - `demos/demo.password.html`
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
+
+### `createNumberStepper(container, options)` (`js/ui/ui.number.stepper.js`)
+
+Purpose:
+
+- Shared numeric stepper with decrement/increment buttons around a typed input.
+- Intended for bounded counters, quantities, prices, or other narrow numeric entry flows where stepping matters as much as typing.
+
+Factory:
+
+```js
+import { createNumberStepper } from "./js/ui/ui.number.stepper.js";
+
+const stepper = createNumberStepper(container, options);
+```
+
+Options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `value` | `number \| null` | `0` | Initial numeric value. |
+| `min` | `number \| null` | `null` | Optional minimum value. |
+| `max` | `number \| null` | `null` | Optional maximum value. |
+| `step` | `number` | `1` | Increment/decrement amount used by the step buttons and arrow keys. |
+| `decimals` | `number \| null` | `null` | Optional fixed decimal precision for display/commit formatting. |
+| `placeholder` | `string` | `""` | Input placeholder when empty values are allowed. |
+| `name` | `string` | `""` | Submitted field name. |
+| `id` | `string` | `""` | Input id for external labels. |
+| `required` | `boolean` | `false` | Marks the input as required. |
+| `disabled` | `boolean` | `false` | Disables both buttons and the input. |
+| `readonly` | `boolean` | `false` | Prevents stepping and typed edits while keeping the control readable. |
+| `ariaLabel` | `string` | `"Number input"` | Direct aria-label for standalone usage. |
+| `decrementLabel` | `string` | `"Decrease value"` | Accessible label for the decrement button. |
+| `incrementLabel` | `string` | `"Increase value"` | Accessible label for the increment button. |
+| `prefixText` | `string` | `""` | Optional text shown before the input value, such as `$`. |
+| `suffixText` | `string` | `""` | Optional text shown after the input value, such as `kg`. |
+| `allowEmpty` | `boolean` | `false` | Allows a committed empty value instead of forcing a numeric fallback. |
+| `onChange` | `function` | `null` | Called as `onChange(value, api)` when a committed value changes. |
+| `onInput` | `function` | `null` | Called as `onInput(rawValue, api)` while the user types before commit. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `getValue()` | none | `number \| null` | Returns the current committed numeric value. |
+| `setValue(value)` | `number \| null` | `void` | Sets the current value and reapplies bounds/formatting. |
+| `stepUp()` | none | `void` | Increments the value by the configured `step`. |
+| `stepDown()` | none | `void` | Decrements the value by the configured `step`. |
+| `focus()` | none | `void` | Focuses the underlying input. |
+| `update(options)` | partial options | `void` | Updates bounds, formatting, disabled state, or text chrome. |
+| `destroy()` | none | `void` | Removes the helper content from the host container. |
+
+Example:
+
+```js
+const priceStepper = createNumberStepper(document.getElementById("priceHost"), {
+  value: 1,
+  min: 0,
+  max: 10,
+  step: 0.25,
+  decimals: 2,
+  prefixText: "$",
+  onChange(value) {
+    console.log("price:", value);
+  },
+});
+```
+
+Behavior notes:
+
+- Typed edits commit on blur or `Enter`; invalid text reverts to the last committed value.
+- `ArrowUp` / `ArrowDown` trigger the same step behavior as the buttons.
+- Prefix/suffix text is presentational only; numeric parsing still comes from the typed value itself.
+
+Related demos:
+
+- `demos/demo.number.stepper.html`
 
 ### `createTreeSelect(container, items, options)` (`js/ui/ui.tree.select.js`)
 

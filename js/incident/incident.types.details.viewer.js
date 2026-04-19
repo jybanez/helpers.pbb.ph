@@ -86,10 +86,16 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     content.className = "hh-content";
 
     fields.forEach((field) => {
-      const row = document.createElement("p");
+      const row = document.createElement("div");
       row.className = "hh-row";
       const label = field?.field_label || field?.field_key || "Field";
-      row.textContent = `${label}: ${getFieldValue(field)}`;
+      const labelEl = document.createElement("span");
+      labelEl.className = "hh-row-label";
+      labelEl.textContent = label;
+      const valueEl = document.createElement("span");
+      valueEl.className = "hh-row-value";
+      valueEl.textContent = getFieldValue(field) || "-";
+      row.append(labelEl, valueEl);
       content.appendChild(row);
     });
 
@@ -116,9 +122,15 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
 
     resources.forEach((resource) => {
       const resourceTypeId = resource?.id ?? resource?.resource_type_id;
-      const row = document.createElement("p");
+      const row = document.createElement("div");
       row.className = "hh-row";
-      row.textContent = `${resource?.name || resource?.resource_type?.name || `Resource #${resourceTypeId ?? "-"}`}: ${getResourceQuantity(resourceTypeId)}`;
+      const labelEl = document.createElement("span");
+      labelEl.className = "hh-row-label";
+      labelEl.textContent = resource?.name || resource?.resource_type?.name || `Resource #${resourceTypeId ?? "-"}`;
+      const valueEl = document.createElement("span");
+      valueEl.className = "hh-row-value";
+      valueEl.textContent = String(getResourceQuantity(resourceTypeId));
+      row.append(labelEl, valueEl);
       content.appendChild(row);
     });
 
