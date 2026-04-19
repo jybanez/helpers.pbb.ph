@@ -50,4 +50,15 @@
     grid-template-columns: 1fr;
     gap: 2px;
   }
+
+  .hh-incident-types-details-viewer .hh-row.hh-row-resource {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .hh-incident-types-details-viewer .hh-row.hh-row-resource .hh-row-value {
+    text-align: right;
+    white-space: nowrap;
+  }
 }
