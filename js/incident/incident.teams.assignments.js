@@ -280,6 +280,13 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     }
     headerEvents.clear();
     headerEl.innerHTML = "";
+    const hasHeaderText = String(currentOptions.headerText || "").trim().length > 0;
+    if (!hasHeaderText) {
+      headerEl.hidden = true;
+      return;
+    }
+
+    headerEl.hidden = false;
     const title = document.createElement("h4");
     title.className = "hh-title ui-title";
     title.textContent = currentOptions.headerText;
