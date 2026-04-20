@@ -42,17 +42,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
   border-radius: 999px;
   color: var(--ui-dialog-accent, #9fb2d8);
   background: rgba(255, 255, 255, 0.04);
 }
 
 .ui-dialog-variant-icon svg {
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   fill: currentColor;
 }
 
@@ -174,4 +174,50 @@
   justify-content: flex-end;
   gap: var(--ui-space-2, 8px);
   width: 100%;
+}
+
+@media (max-width: 640px) {
+  .ui-dialog-body,
+  .ui-dialog-prompt-body {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: start;
+    gap: var(--ui-space-3, 12px);
+    padding-block: var(--ui-space-2, 8px);
+  }
+
+  .ui-dialog-body--compact {
+    align-items: start;
+  }
+
+  .ui-dialog-variant-icon {
+    width: 112px;
+    height: 112px;
+    min-width: 112px;
+  }
+
+  .ui-dialog-variant-icon svg {
+    width: 68px;
+    height: 68px;
+  }
+
+  .ui-dialog-text {
+    width: 100%;
+    max-width: 28rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .ui-dialog-prompt-body .ui-dialog-text {
+    justify-items: stretch;
+    text-align: left;
+  }
+
+  .ui-dialog-prompt-body .ui-input,
+  .ui-dialog-prompt-body textarea,
+  .ui-dialog-prompt-body select {
+    width: 100%;
+    max-width: 28rem;
+    grid-column: auto;
+  }
 }
