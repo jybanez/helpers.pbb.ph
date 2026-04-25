@@ -93,6 +93,24 @@
   fill: currentColor;
 }
 
+.ui-toast-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: ui-toast-spin 820ms linear infinite;
+  opacity: 0.9;
+}
+
+.ui-toast.is-busy .ui-toast-icon {
+  background: rgba(84, 200, 245, 0.12);
+}
+
+.ui-toast.is-not-dismissible {
+  grid-template-columns: auto 1fr;
+}
+
 .ui-toast--neutral .ui-toast-icon {
   background: rgba(79, 137, 255, 0.14);
 }
@@ -139,6 +157,10 @@
   cursor: pointer;
 }
 
+.ui-toast-close[hidden] {
+  display: none;
+}
+
 .ui-toast-close:hover {
   color: var(--ui-text, #d7e0f4);
 }
@@ -151,4 +173,10 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+@keyframes ui-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

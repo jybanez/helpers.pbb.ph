@@ -22,6 +22,8 @@ const DEFAULT_OPTIONS = {
   workspaceBridgeTargetOrigin: "*",
 };
 
+const TOAST_TYPES = ["neutral", "success", "info", "warn", "error"];
+
 export function createToastStack(options = {}) {
   const currentOptions = normalizeOptions(options);
   const root = createElement("section", {
@@ -46,118 +48,100 @@ export function createToastStack(options = {}) {
     }
     const delegatedId = workspaceToastDelegate?.show(message, toastOptions);
     if (delegatedId) {
-      states.push({
+      const remoteState = {
         id: delegatedId,
-        type: normalizeType(toastOptions.type),
+        type: normalizeType(toastOptions.type || toastOptions.variant),
         message: String(message ?? ""),
         title: toastOptions.title == null ? "" : String(toastOptions.title),
         createdAt: Date.now(),
         remote: true,
-      });
+      };
+      remoteState.handle = createToastHandle(remoteState);
+      states.push(remoteState);
       trimToMax();
-      return delegatedId;
+      return remoteState.handle;
     }
-    const type = normalizeType(toastOptions.type);
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const duration = resolveDuration(toastOptions.duration, currentOptions.defaultDuration);
-    const titleText = toastOptions.title == null ? "" : String(toastOptions.title);
+    const initialOptions = normalizeToastOptions(message, toastOptions);
+    const id = initialOptions.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const row = createElement("article", {
-      className: `ui-toast ui-toast--${type}`,
+      className: `ui-toast ui-toast--${initialOptions.type}`,
       attrs: { role: "status", "data-toast-id": id },
     });
 
-    const iconMarkup = resolveVariantIcon(currentOptions, toastOptions, type);
-    if (iconMarkup) {
-      row.appendChild(createElement("div", {
-        className: "ui-toast-icon",
-        attrs: { "aria-hidden": "true" },
-        html: iconMarkup,
-      }));
-    }
+    const iconSlot = createElement("div", {
+      className: "ui-toast-icon",
+      attrs: { "aria-hidden": "true" },
+    });
     const content = createElement("div", { className: "ui-toast-content" });
-    if (titleText) {
-      content.appendChild(createElement("h4", { className: "ui-toast-title", text: titleText }));
-    }
-    content.appendChild(createElement("p", {
+    const titleEl = createElement("h4", { className: "ui-toast-title" });
+    const messageEl = createElement("p", {
       className: "ui-toast-message",
-      text: String(message == null ? "" : message),
-    }));
+    });
+    content.append(titleEl, messageEl);
     const close = createElement("button", {
       className: "ui-toast-close",
       attrs: { type: "button", "aria-label": "Close notification", title: "Close" },
       html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>',
     });
     close.addEventListener("click", () => dismiss(id));
-    row.append(content, close);
+    row.append(iconSlot, content, close);
 
     root.appendChild(row);
-    const toast = { id, type, message: String(message ?? ""), title: titleText, createdAt: Date.now() };
+    const toast = {
+      id,
+      type: initialOptions.type,
+      message: initialOptions.message,
+      title: initialOptions.title,
+      createdAt: Date.now(),
+      persistent: initialOptions.persistent,
+      busy: initialOptions.busy,
+      dismissible: initialOptions.dismissible,
+      duration: initialOptions.duration,
+      row,
+      iconSlot,
+      titleEl,
+      messageEl,
+      close,
+      toastOptions: initialOptions.rawOptions,
+      isHovering: false,
+      autoDismissReady: !shouldWaitForSpeech(initialOptions.rawOptions, initialOptions.persistent),
+      remaining: initialOptions.duration,
+      start: 0,
+    };
+    toast.handle = createToastHandle(toast);
     states.push(toast);
     trimToMax();
-    const shouldWaitForSpeech =
-      resolveSpeakEnabled(currentOptions, toastOptions) &&
-      Boolean(currentOptions.waitForSpeechBeforeDismiss);
-    let isHovering = false;
-    let autoDismissReady = !shouldWaitForSpeech;
-    let remaining = duration;
-    let start = 0;
 
-    const startAutoDismiss = () => {
-      if (destroyed || !autoDismissReady || isHovering || remaining <= 0) {
-        return;
-      }
-      const existingTimer = timers.get(id);
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-      }
-      start = Date.now();
-      const timer = setTimeout(() => dismiss(id), remaining);
-      timers.set(id, timer);
-    };
+    renderToast(toast, initialOptions.rawOptions);
 
-    if (currentOptions.pauseOnHover && duration > 0) {
+    if (currentOptions.pauseOnHover) {
       const onEnter = () => {
-        isHovering = true;
+        toast.isHovering = true;
         const timer = timers.get(id);
         if (timer) {
           clearTimeout(timer);
           timers.delete(id);
-          remaining = Math.max(0, remaining - (Date.now() - start));
+          toast.remaining = Math.max(0, toast.remaining - (Date.now() - toast.start));
         }
       };
       const onLeave = () => {
-        isHovering = false;
-        startAutoDismiss();
+        toast.isHovering = false;
+        startAutoDismiss(toast);
       };
       row.addEventListener("mouseenter", onEnter);
       row.addEventListener("mouseleave", onLeave);
+      toast.cleanupHover = () => {
+        row.removeEventListener("mouseenter", onEnter);
+        row.removeEventListener("mouseleave", onLeave);
+      };
     }
 
-    if (duration > 0) {
-      if (shouldWaitForSpeech) {
-        speakToast(toast, toastOptions).finally(() => {
-          if (destroyed) {
-            return;
-          }
-          const exists = states.some((item) => String(item.id) === String(id));
-          if (!exists) {
-            return;
-          }
-          autoDismissReady = true;
-          startAutoDismiss();
-        });
-      } else {
-        speakToast(toast, toastOptions);
-        startAutoDismiss();
-      }
-    } else {
-      speakToast(toast, toastOptions);
-    }
-    return id;
+    speakAndSchedule(toast, initialOptions.rawOptions);
+    return toast.handle;
   }
 
   function dismiss(id) {
-    const key = String(id);
+    const key = getToastId(id);
     const remoteStateIndex = states.findIndex((item) => String(item.id) === key && item.remote);
     if (remoteStateIndex >= 0) {
       states.splice(remoteStateIndex, 1);
@@ -183,16 +167,57 @@ export function createToastStack(options = {}) {
     }
     const index = states.findIndex((item) => String(item.id) === key);
     if (index >= 0) {
+      states[index].cleanupHover?.();
       states.splice(index, 1);
     }
+  }
+
+  function update(id, nextMessageOrOptions = {}, maybeOptions = {}) {
+    const key = getToastId(id);
+    const toast = states.find((item) => String(item.id) === key);
+    if (!toast) {
+      return null;
+    }
+    const nextOptions = normalizeUpdateOptions(toast, nextMessageOrOptions, maybeOptions);
+    if (toast.remote) {
+      const remoteUpdate = workspaceToastDelegate?.update?.(key, nextOptions.message, nextOptions.rawOptions);
+      toast.message = nextOptions.message;
+      toast.title = nextOptions.title;
+      toast.type = nextOptions.type;
+      toast.persistent = nextOptions.persistent;
+      toast.busy = nextOptions.busy;
+      toast.dismissible = nextOptions.dismissible;
+      toast.duration = nextOptions.duration;
+      return remoteUpdate || toast.handle;
+    }
+    const existingTimer = timers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      timers.delete(key);
+    }
+    toast.type = nextOptions.type;
+    toast.message = nextOptions.message;
+    toast.title = nextOptions.title;
+    toast.persistent = nextOptions.persistent;
+    toast.busy = nextOptions.busy;
+    toast.dismissible = nextOptions.dismissible;
+    toast.duration = nextOptions.duration;
+    toast.toastOptions = nextOptions.rawOptions;
+    toast.remaining = nextOptions.duration;
+    toast.autoDismissReady = !shouldWaitForSpeech(nextOptions.rawOptions, nextOptions.persistent);
+    renderToast(toast, nextOptions.rawOptions);
+    speakAndSchedule(toast, nextOptions.rawOptions);
+    return toast.handle;
   }
 
   function trimToMax() {
     const max = Math.max(1, Number(currentOptions.max) || 5);
     while (states.length > max) {
-      const oldest = states.shift();
+      const oldest = states[0];
       if (oldest) {
         dismiss(oldest.id);
+      } else {
+        break;
       }
     }
   }
@@ -223,8 +248,137 @@ export function createToastStack(options = {}) {
   function getState() {
     return {
       options: { ...currentOptions },
-      items: states.map((item) => ({ ...item })),
+      items: states.map((item) => cloneToastState(item)),
     };
+  }
+
+  function createToastHandle(toast) {
+    const handle = {
+      id: toast.id,
+      update(nextMessageOrOptions = {}, maybeOptions = {}) {
+        return update(toast.id, nextMessageOrOptions, maybeOptions);
+      },
+      close() {
+        dismiss(toast.id);
+      },
+      dismiss() {
+        dismiss(toast.id);
+      },
+      resolve(message = toast.message, options = {}) {
+        return update(toast.id, message, {
+          type: "success",
+          busy: false,
+          persistent: false,
+          dismissible: true,
+          duration: currentOptions.defaultDuration,
+          ...options,
+        });
+      },
+      toString() {
+        return String(toast.id);
+      },
+      valueOf() {
+        return String(toast.id);
+      },
+      [Symbol.toPrimitive]() {
+        return String(toast.id);
+      },
+    };
+    return handle;
+  }
+
+  function renderToast(toast, toastOptions = {}) {
+    TOAST_TYPES.forEach((type) => toast.row.classList.remove(`ui-toast--${type}`));
+    toast.row.classList.add(`ui-toast--${toast.type}`);
+    toast.row.classList.toggle("is-busy", Boolean(toast.busy));
+    toast.row.classList.toggle("is-persistent", Boolean(toast.persistent));
+    toast.row.classList.toggle("is-not-dismissible", !toast.dismissible);
+    toast.titleEl.hidden = !toast.title;
+    toast.titleEl.textContent = toast.title;
+    toast.messageEl.textContent = toast.message;
+    toast.close.hidden = !toast.dismissible;
+    const iconMarkup = toast.busy
+      ? '<span class="ui-toast-spinner"></span>'
+      : resolveVariantIcon(currentOptions, toastOptions, toast.type);
+    toast.iconSlot.innerHTML = iconMarkup || "";
+    toast.iconSlot.hidden = !iconMarkup;
+  }
+
+  function startAutoDismiss(toast) {
+    if (destroyed || !toast || toast.persistent || !toast.autoDismissReady || toast.isHovering || toast.remaining <= 0) {
+      return;
+    }
+    const existingTimer = timers.get(toast.id);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    toast.start = Date.now();
+    const timer = setTimeout(() => dismiss(toast.id), toast.remaining);
+    timers.set(toast.id, timer);
+  }
+
+  function speakAndSchedule(toast, toastOptions = {}) {
+    if (toast.persistent || toast.duration <= 0) {
+      speakToast(toast, toastOptions);
+      return;
+    }
+    if (shouldWaitForSpeech(toastOptions, toast.persistent)) {
+      speakToast(toast, toastOptions).finally(() => {
+        if (destroyed) {
+          return;
+        }
+        const current = states.find((item) => String(item.id) === String(toast.id));
+        if (!current || current !== toast) {
+          return;
+        }
+        toast.autoDismissReady = true;
+        startAutoDismiss(toast);
+      });
+      return;
+    }
+    speakToast(toast, toastOptions);
+    startAutoDismiss(toast);
+  }
+
+  function shouldWaitForSpeech(toastOptions = {}, persistent = false) {
+    return !persistent &&
+      resolveSpeakEnabled(currentOptions, toastOptions) &&
+      Boolean(currentOptions.waitForSpeechBeforeDismiss);
+  }
+
+  function normalizeToastOptions(message, toastOptions = {}) {
+    const rawOptions = { ...(toastOptions || {}) };
+    const persistent = Boolean(rawOptions.persistent);
+    return {
+      id: typeof rawOptions.id === "string" && rawOptions.id.trim() ? rawOptions.id.trim() : "",
+      type: normalizeType(rawOptions.type || rawOptions.variant),
+      message: String(message == null ? "" : message),
+      title: rawOptions.title == null ? "" : String(rawOptions.title),
+      persistent,
+      busy: Boolean(rawOptions.busy),
+      dismissible: rawOptions.dismissible === false ? false : true,
+      duration: persistent ? 0 : resolveDuration(rawOptions.duration, currentOptions.defaultDuration),
+      rawOptions,
+    };
+  }
+
+  function normalizeUpdateOptions(toast, nextMessageOrOptions = {}, maybeOptions = {}) {
+    const hasMessageObject = isPlainObject(nextMessageOrOptions);
+    const source = hasMessageObject
+      ? { ...nextMessageOrOptions }
+      : { ...(maybeOptions || {}), message: nextMessageOrOptions };
+    const message = Object.prototype.hasOwnProperty.call(source, "message")
+      ? source.message
+      : toast.message;
+    return normalizeToastOptions(message, {
+      type: toast.type,
+      title: toast.title,
+      persistent: toast.persistent,
+      busy: toast.busy,
+      dismissible: toast.dismissible,
+      duration: toast.duration,
+      ...(source || {}),
+    });
   }
 
   function speakToast(toast, toastOptions = {}) {
@@ -294,6 +448,7 @@ export function createToastStack(options = {}) {
       return show(message, { ...options, type: "error" });
     },
     dismiss,
+    update,
     clear,
     destroy,
     getState,
@@ -390,6 +545,32 @@ function resolveDuration(duration, fallback) {
   }
   const nextFallback = Number(fallback);
   return Number.isFinite(nextFallback) && nextFallback >= 0 ? nextFallback : 3200;
+}
+
+function getToastId(value) {
+  if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "id")) {
+    return String(value.id || "");
+  }
+  return String(value || "");
+}
+
+function cloneToastState(item) {
+  return {
+    id: item.id,
+    type: item.type,
+    message: item.message,
+    title: item.title,
+    createdAt: item.createdAt,
+    persistent: Boolean(item.persistent),
+    busy: Boolean(item.busy),
+    dismissible: item.dismissible !== false,
+    duration: Number(item.duration) || 0,
+    remote: Boolean(item.remote),
+  };
+}
+
+function isPlainObject(value) {
+  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function cssEscape(value) {

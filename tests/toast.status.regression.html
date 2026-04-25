@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Toast Status Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.toast.css">
+</head>
+<body data-status="pending">
+  <pre id="results">pending</pre>
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    import { createToastStack } from "../js/ui/ui.toast.js";
+
+    const results = document.getElementById("results");
+    const spoken = [];
+    const failures = [];
+
+    class FakeSpeechSynthesisUtterance {
+      constructor(text) {
+        this.text = text;
+        this.onend = null;
+        this.onerror = null;
+      }
+    }
+
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      configurable: true,
+      value: FakeSpeechSynthesisUtterance,
+    });
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+      getVoices() {
+        return [];
+      },
+      speak(utterance) {
+        spoken.push(utterance.text);
+        setTimeout(() => utterance.onend?.(), 0);
+      },
+      },
+    });
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    const toasts = createToastStack({
+      defaultDuration: 80,
+      max: 3,
+      speak: false,
+      speakTypes: ["info", "success"],
+    });
+
+    const mediaToast = toasts.info("Saving call media in the background.", {
+      title: "Call media",
+      persistent: true,
+      busy: true,
+      dismissible: false,
+      speak: true,
+    });
+
+    assert(mediaToast && typeof mediaToast.update === "function", "show should return an update-capable handle");
+    assert(String(mediaToast) === mediaToast.id, "toast handle should stringify to its id");
+    assert(document.querySelector(".ui-toast.is-busy"), "persistent busy toast should render spinner state");
+    assert(!document.querySelector(".ui-toast-close:not([hidden])"), "non-dismissible toast should hide close button");
+
+    await wait(140);
+    assert(toasts.getState().items.length === 1, "persistent toast should not auto-dismiss");
+    assert(spoken.includes("Call media. Saving call media in the background."), "persistent toast should still speak when requested");
+
+    mediaToast.update({
+      message: "Finalizing call media.",
+      busy: true,
+      persistent: true,
+      speak: true,
+    });
+    await wait(20);
+    assert(document.querySelector(".ui-toast-message").textContent === "Finalizing call media.", "update should change toast message");
+    assert(spoken.includes("Call media. Finalizing call media."), "update should speak when requested");
+
+    mediaToast.resolve("Call media is available.", { duration: 80, speak: true });
+    await wait(20);
+    assert(document.querySelector(".ui-toast--success"), "resolve should switch toast to success");
+    assert(!document.querySelector(".ui-toast.is-busy"), "resolve should clear busy state");
+    assert(spoken.includes("Call media. Call media is available."), "resolve should speak success message");
+    await wait(140);
+    assert(toasts.getState().items.length === 0, "resolved non-persistent toast should auto-dismiss");
+
+    const manualToast = toasts.warn("Manual close target.", { persistent: true });
+    toasts.dismiss(manualToast);
+    await wait(20);
+    assert(toasts.getState().items.length === 0, "dismiss should accept a toast handle");
+
+    toasts.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "passed";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

@@ -247,6 +247,24 @@ export function createWorkspaceToastDelegate(options = {}) {
       remoteIds.set(localId, pending);
       return localId;
     },
+    update(id, message, toastOptions = {}) {
+      const key = String(id || "");
+      const remote = remoteIds.get(key);
+      if (!remote) {
+        return null;
+      }
+      const pending = remote
+        .then(async (remoteId) => {
+          await bridge.dismissToast(remoteId);
+          return bridge.showToast({
+            message,
+            options: sanitizeToastOptions(toastOptions),
+          });
+        })
+        .catch(() => null);
+      remoteIds.set(key, pending);
+      return key;
+    },
     async dismiss(id) {
       const remote = remoteIds.get(String(id || ""));
       if (!remote) {
@@ -356,7 +374,10 @@ async function handleRequest(method, payload, modalParent, context) {
       return { methods: [...HOST_METHODS] };
     case "toast.show": {
       const toastStack = await context.getToastStack();
-      return toastStack.show(String(payload.message ?? ""), payload.options || {});
+      const result = toastStack.show(String(payload.message ?? ""), payload.options || {});
+      return result && typeof result === "object" && Object.prototype.hasOwnProperty.call(result, "id")
+        ? String(result.id)
+        : result;
     }
     case "toast.dismiss":
       (await context.getToastStack()).dismiss(String(payload.id || ""));

@@ -289,6 +289,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 .demo-workbench__center {
   display: grid;
   gap: 14px;
+  align-content: start;
   background:
     radial-gradient(circle at top left, rgba(58, 92, 158, 0.12), transparent 32%),
     #0c1017;
@@ -297,6 +298,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 .demo-workbench__content {
   display: grid;
   gap: 14px;
+  align-content: start;
   border-left: 1px solid #263146;
   background: #0f1521;
 }
@@ -411,6 +413,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 .demo-auto-page {
   display: grid !important;
   gap: 14px !important;
+  align-content: start !important;
   min-width: 0;
 }
 

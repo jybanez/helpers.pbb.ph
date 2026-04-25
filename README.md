@@ -252,6 +252,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `uiPrompt(message, options)` promise-based prompt modal
 - `ui.toast.js`
   - `createToastStack(options)` global toast notifications (info/success/warn/error), optional speech synthesis (`speak`, `speakTypes`, `speakRate`, `speakPitch`, `speakVolume`, `voiceName`, `speakFormatter`, `speakCooldownMs`)
+  - persistent status toasts can use `persistent`, `busy`, `dismissible`, and the returned handle's `update(...)` / `resolve(...)` / `close()` methods for app-owned async lifecycles
   - default semantic status icons are shown per toast variant; callers can suppress or override them with `showVariantIcon` / `variantIcon`
   - speech is opt-in (`speak: false` by default); can be overridden per-toast via `show(message, { speak: true | false })`
   - when speech is enabled, auto-dismiss countdown can start after speech ends via `waitForSpeechBeforeDismiss` (default `true`)
@@ -3088,7 +3089,7 @@ Related demos:
 
 Purpose:
 
-- Global toast-notification stack for transient feedback, semantic status messaging, and optional speech synthesis.
+- Global toast-notification stack for transient feedback, persistent async status messaging, semantic variants, and optional speech synthesis.
 
 Factory:
 
@@ -3122,8 +3123,12 @@ Per-toast `show(...)` options:
 | Option | Type | Default | Description |
 |---|---|---:|---|
 | `type` | `"info" \| "success" \| "warning" \| "error"` | `"info"` | Semantic toast variant. |
+| `id` | `string` | generated | Optional stable toast id. |
 | `title` | `string` | `""` | Optional toast heading. |
 | `duration` | `number` | stack default | Per-toast auto-dismiss duration. |
+| `persistent` | `boolean` | `false` | Keeps the toast visible until app code closes or updates it. |
+| `busy` | `boolean` | `false` | Shows the helper-owned spinner/status visual. |
+| `dismissible` | `boolean` | `true` | Shows or hides the manual close button. |
 | `showVariantIcon` | `boolean` | stack/default behavior | Suppresses semantic icon per toast. |
 | `variantIcon` | `string` | `null` | Custom icon per toast. |
 | `speak` | `boolean` | stack/default behavior | Enables or suppresses speech per toast. |
@@ -3133,8 +3138,10 @@ Returned API:
 
 | Method | Arguments | Returns | Description |
 |---|---|---|---|
-| `show` | `message, options?` | `string \| object` | Adds a toast and returns a handle/id. |
-| `dismiss` | `id` | `void` | Removes a single toast. |
+| `show` | `message, options?` | `object` | Adds a toast and returns a handle that stringifies to its id. |
+| `info` / `success` / `warn` / `error` | `message, options?` | `object` | Adds a semantic toast and returns a handle. |
+| `update` | `idOrHandle, messageOrOptions, options?` | `object \| null` | Updates an existing toast by id or handle. |
+| `dismiss` | `idOrHandle` | `void` | Removes a single toast. |
 | `clear` | none | `void` | Clears all toasts. |
 | `getVoices` | none | `SpeechSynthesisVoice[]` | Returns available voices for UI selection. |
 | `getState` | none | `object` | Returns current queue/visible state. |
@@ -3145,6 +3152,8 @@ Behavior notes:
 - Dialog and toast semantic icons share the same helper-owned icon language.
 - Speech is opt-in and should remain explicit in app integrations.
 - When `waitForSpeechBeforeDismiss` is enabled, spoken toasts remain visible until narration completes.
+- Persistent toasts ignore auto-dismiss while `persistent: true`; speech still works for the initial toast and any update that sets `speak: true`.
+- Toast handles expose `update(...)`, `resolve(message, options?)`, `close()`, `dismiss()`, and `id`.
 
 Example:
 
@@ -3158,11 +3167,29 @@ const toasts = createToastStack({
 
 toasts.show("Settings saved.", { type: "success", title: "Saved" });
 toasts.show("Unable to reach gateway.", { type: "error", speak: true });
+
+const mediaToast = toasts.info("Saving call media in the background.", {
+  title: "Call media",
+  persistent: true,
+  busy: true,
+  dismissible: false,
+  speak: true,
+});
+
+mediaToast.update({
+  message: "Finalizing call media.",
+  speak: true,
+});
+
+mediaToast.resolve("Call media is available.", {
+  duration: 4000,
+  speak: true,
+});
 ```
 
 Related demos:
 
-- `demos/demo.tree.html`
+- `demos/demo.toast.html`
 
 ### `createBusyOverlay(options)` / `createBusyOverlay(container, options)` (`js/ui/ui.busy.overlay.js`)
 

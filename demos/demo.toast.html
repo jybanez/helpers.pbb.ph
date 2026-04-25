@@ -22,17 +22,18 @@
   <script>
     window.demoMeta = {
       title: "Toast",
-      overview: "Shared toast stack for transient feedback, semantic variants, optional speech, and icon override/suppression.",
+      overview: "Shared toast stack for transient feedback, persistent async status, semantic variants, optional speech, and icon override/suppression.",
       useWhen: [
         "Use <code>createToastStack(...)</code> for non-blocking status feedback.",
+        "Use persistent busy toasts for background work that should stay visible until the app resolves it.",
         "Use it when success, warning, or failure messages should not interrupt the current workflow."
       ],
       avoidWhen: [
         "Do not use toasts for required acknowledgement or confirmation; use dialogs instead.",
         "Do not treat toasts as a replacement for persistent inline validation or system logs."
       ],
-      description: "This page focuses only on toast behavior: semantic status variants, shared icon language, speech toggles, and direct stack control.",
-      defaultSampleCode: "const toast = createToastStack({\n  position: \"top-right\",\n  defaultDuration: 2600,\n  max: 4,\n});\n\ntoast.success(\"Incident saved successfully.\", { title: \"Success\" });",
+      description: "This page focuses only on toast behavior: semantic status variants, shared icon language, persistent async status, speech toggles, and direct stack control.",
+      defaultSampleCode: "const mediaToast = toast.show(\"Saving call media...\", {\n  title: \"Call media\",\n  type: \"info\",\n  persistent: true,\n  busy: true,\n  dismissible: false,\n  speak: true,\n});\n\nmediaToast.update({ message: \"Finalizing call media.\", speak: true });\nmediaToast.resolve(\"Call media is available.\", { speak: true });",
       constructor: [
         { factory: "<code>createToastStack(options)</code>", arguments: "toast-stack <code>options</code>", returns: "Toast-stack instance" }
       ],
@@ -46,11 +47,14 @@
       ],
       propertiesText: "Use the returned toast-stack methods instead of relying on internal state.",
       methods: [
-        { method: "<code>show(message, options?)</code>", arguments: "message and per-toast options", returns: "toast record" },
-        { method: "<code>info(...)</code>", arguments: "message, options?", returns: "toast record" },
-        { method: "<code>success(...)</code>", arguments: "message, options?", returns: "toast record" },
-        { method: "<code>warn(...)</code>", arguments: "message, options?", returns: "toast record" },
-        { method: "<code>error(...)</code>", arguments: "message, options?", returns: "toast record" },
+        { method: "<code>show(message, options?)</code>", arguments: "message and per-toast options", returns: "toast handle" },
+        { method: "<code>info(...)</code>", arguments: "message, options?", returns: "toast handle" },
+        { method: "<code>success(...)</code>", arguments: "message, options?", returns: "toast handle" },
+        { method: "<code>warn(...)</code>", arguments: "message, options?", returns: "toast handle" },
+        { method: "<code>error(...)</code>", arguments: "message, options?", returns: "toast handle" },
+        { method: "<code>handle.update(messageOrOptions, options?)</code>", arguments: "message/options", returns: "toast handle" },
+        { method: "<code>handle.resolve(message, options?)</code>", arguments: "success message/options", returns: "toast handle" },
+        { method: "<code>handle.close()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>clear()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
@@ -66,7 +70,7 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Toast Demo</h1>
-      <p class="muted">Dedicated page for shared toast behavior, semantic status icons, and optional speech.</p>
+      <p class="muted">Dedicated page for shared toast behavior, semantic status icons, persistent background status, and optional speech.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Toast Variants</h2>
@@ -77,6 +81,7 @@
         <button id="toastErrorBtn" class="ui-button" type="button">Error Toast</button>
         <button id="toastNoIconBtn" class="ui-button ui-button-ghost" type="button">No Icon Toast</button>
         <button id="toastCustomIconBtn" class="ui-button ui-button-borderless" type="button">Custom Icon Toast</button>
+        <button id="toastStatusBtn" class="ui-button ui-button-primary" type="button">Persistent Status Toast</button>
         <label><input id="toastSpeakToggle" type="checkbox"> Speak Toasts</label>
         <label>Voice <select id="toastVoiceSelect" class="ui-input" style="min-width: 220px;"><option value="">Default Voice</option></select></label>
       </div>
@@ -86,7 +91,16 @@
   max: 4,
 });
 
-toast.success("Incident saved successfully.", { title: "Success" });</pre>
+const mediaToast = toast.info("Saving call media...", {
+  title: "Call media",
+  persistent: true,
+  busy: true,
+  dismissible: false,
+  speak: true,
+});
+
+mediaToast.update({ message: "Finalizing call media.", speak: true });
+mediaToast.resolve("Call media is available.", { speak: true });</pre>
       <pre id="log" class="log">No events yet.</pre>
     </section>
   </main>
@@ -142,6 +156,32 @@ toast.success("Incident saved successfully.", { title: "Success" });</pre>
     document.getElementById("toastErrorBtn").addEventListener("click", () => { toaster.error("Failed to load dispatch resources.", { title: "Error" }); writeLog("toast.error", { ok: true }); });
     document.getElementById("toastNoIconBtn").addEventListener("click", () => { toaster.warn("This warning intentionally suppresses the shared semantic icon.", { title: "Warning", showVariantIcon: false }); writeLog("toast.warn.noIcon", { ok: true }); });
     document.getElementById("toastCustomIconBtn").addEventListener("click", () => { toaster.error("This toast overrides the default status icon with a custom maintenance glyph.", { title: "Custom Error", variantIcon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5V5.5h16v13H4Zm2-2h12v-9H6v9Zm5-1.5h2v-2h-2v2Zm0-3.5h2V9h-2v2.5Z" fill="currentColor"></path></svg>' }); writeLog("toast.error.customIcon", { ok: true }); });
+    document.getElementById("toastStatusBtn").addEventListener("click", () => {
+      const mediaToast = toaster.info("Saving call media in the background.", {
+        title: "Call media",
+        persistent: true,
+        busy: true,
+        dismissible: false,
+        speak: Boolean(toastSpeakToggle?.checked),
+      });
+      writeLog("toast.status.start", { id: String(mediaToast) });
+      setTimeout(() => {
+        mediaToast.update({
+          message: "Finalizing call media.",
+          persistent: true,
+          busy: true,
+          speak: Boolean(toastSpeakToggle?.checked),
+        });
+        writeLog("toast.status.update", { id: String(mediaToast) });
+      }, 1400);
+      setTimeout(() => {
+        mediaToast.resolve("Call media is available.", {
+          duration: 3600,
+          speak: Boolean(toastSpeakToggle?.checked),
+        });
+        writeLog("toast.status.resolve", { id: String(mediaToast) });
+      }, 3000);
+    });
   </script>
 </body>
 </html>
