@@ -40,7 +40,7 @@
     }
     #timelineHostVertical,
     #timelineHostHorizontal,
-    #timelineScrubberHost {
+    #timelineHostCustom {
       border: 1px solid #2b3750;
       border-radius: 8px;
       padding: 10px;
@@ -71,35 +71,81 @@
       border-color: #7bb5ff;
       box-shadow: 0 0 0 1px rgba(123, 181, 255, 0.35), 0 0 14px rgba(89, 144, 224, 0.18);
     }
+    .timeline-call-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid #2b4770;
+      border-radius: 8px;
+      background: #0b1424;
+      padding: 10px;
+    }
+    .timeline-call-card strong,
+    .timeline-call-card p {
+      margin: 0;
+    }
+    .timeline-call-card p {
+      color: #9fb2d8;
+      font-size: 13px;
+    }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline", "ui.timeline.scrubber"]);
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
     window.demoMeta = {
       title: "Timeline",
-      overview: "Timeline and scrubber helpers for event chronology and time-range playback/navigation.",
+      overview: "Timeline helper for event chronology, horizontal milestones, grouped logs, and lifecycle-managed custom item content.",
       useWhen: [
         "Use <code>createTimeline(...)</code> for ordered event history.",
-        "Use <code>createTimelineScrubber(...)</code> when the user needs a playhead or selectable time range."
+        "Use custom content slots when a timeline row needs to host a nested Helper or app component."
       ],
       avoidWhen: [
         "Do not use it for full calendar scheduling; use <code>createScheduler(...)</code>.",
-        "Do not use it when a simple list is enough."
+        "Do not use it for playback-range controls; use the dedicated Timeline Scrubber demo."
       ],
-      description: "The timeline family is meant for chronology, not generic record listing. This page keeps the event-list and scrubber primitives together because they are often used in the same media-review and audit surfaces.",
+      description: "The timeline helper is meant for chronology, not generic record listing. This page focuses on event rendering, item actions, horizontal/vertical presentation, and custom row content lifecycle.",
       sectionSamples: {
-        "scrubber": `const scrubber = createTimelineScrubber(host, {\n  min: 0,\n  max: 120,\n  value: 32,\n});`,
         "vertical (grouped)": `createTimeline(host, items, {\n  orientation: "vertical",\n  groupByDate: true,\n});`,
-        "horizontal": `createTimeline(host, items, {\n  orientation: "horizontal",\n});`
+        "horizontal": `createTimeline(host, items, {\n  orientation: "horizontal",\n});`,
+        "custom content": `const timeline = createTimeline(host, items, {\n  mountItemContent(slot, item, context) {\n    if (item.type !== "call_session") return null;\n    const card = document.createElement("div");\n    slot.appendChild(card);\n    renderCallCard(card, item);\n    return {\n      update(nextItem) { renderCallCard(card, nextItem); },\n      destroy() { stopNestedPlayback(item.id); },\n    };\n  },\n});`
       },
       constructor: [
-        { factory: "<code>createTimeline(container, items, options)</code>", arguments: "container, timeline items, options", returns: "Timeline instance" },
-        { factory: "<code>createTimelineScrubber(container, options)</code>", arguments: "container, scrubber options", returns: "Timeline-scrubber instance" }
+        { factory: "<code>createTimeline(container, items, options)</code>", arguments: "container, timeline items, options", returns: "Timeline instance" }
+      ],
+      options: [
+        { option: "<code>orientation</code>", default: "<code>\"vertical\"</code>", description: "Timeline layout direction.", values: ["vertical", "horizontal"] },
+        { option: "<code>density</code>", default: "<code>\"comfortable\"</code>", description: "Item spacing preset.", values: ["comfortable", "compact"] },
+        { option: "<code>groupByDate</code>", default: "<code>true</code>", description: "Groups vertical timeline items under date labels." },
+        { option: "<code>showConnector</code>", default: "<code>true</code>", description: "Shows connector lines between adjacent timeline items." },
+        { option: "<code>linkedRange</code>", default: "<code>null</code>", description: "Filters visible items by relative timestamp range using <code>{ startMs, endMs, anchorMs? }</code>." },
+        { option: "<code>includeUndatedInRange</code>", default: "<code>false</code>", description: "Keeps undated items visible while a linked range is active." },
+        { option: "<code>mountItemContent</code>", default: "<code>null</code>", description: "Optional lifecycle hook for mounting app/helper content inside an item slot." },
+        { option: "<code>onItemClick</code>", default: "<code>null</code>", description: "Called when a timeline item is activated outside nested custom content." },
+        { option: "<code>onActionClick</code>", default: "<code>null</code>", description: "Called when an item action button is clicked." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"Timeline\"</code>", description: "Accessible label for the timeline region." }
+      ],
+      propertiesText: "Timeline items use stable <code>id</code> values for updates and lifecycle tracking. Common item fields are <code>timestamp</code>, <code>title</code>, <code>subtitle</code>, <code>description</code>, <code>status</code>, <code>meta</code>, <code>actions</code>, and <code>iconHtml</code>. Custom content can use app-owned fields such as <code>type</code>, media payloads, or structured metadata because unknown fields are preserved through normalization. Use optional <code>contentKey</code> to force a custom slot remount when the nested content identity changes, and <code>hasCustomContent: false</code> to skip slot mounting for a known plain item.",
+      properties: [
+        { property: "<code>item.id</code>", type: "<code>string | number</code>", description: "Stable item identity; required for reliable custom-content lifecycle preservation." },
+        { property: "<code>item.contentKey</code>", type: "<code>string</code>", description: "Optional custom-content identity paired with <code>id</code>; changing it destroys and remounts the slot." },
+        { property: "<code>item.actions</code>", type: "<code>Array&lt;{ id, label, className? }&gt;</code>", description: "Helper-rendered item action buttons that call <code>onActionClick</code>." },
+        { property: "<code>custom lifecycle handle</code>", type: "<code>Function | { update?, destroy? }</code>", description: "Return value from <code>mountItemContent</code>. Functions are treated as destroy callbacks; objects can update preserved content and clean up on removal." }
+      ],
+      events: [
+        { event: "<code>onItemClick</code>", arguments: "<code>item</code>", returns: "App-owned selection/navigation behavior." },
+        { event: "<code>onActionClick</code>", arguments: "<code>action, item</code>", returns: "App-owned action handling for helper-rendered item buttons." },
+        { event: "<code>mountItemContent</code>", arguments: "<code>host, item, context</code>", returns: "Mounts nested content; may return a disposer or lifecycle handle." },
+        { event: "<code>customHandle.update</code>", arguments: "<code>nextItem, context</code>", returns: "Called when the same <code>id/contentKey</code> remains present across timeline updates." },
+        { event: "<code>customHandle.destroy</code>", arguments: "none", returns: "Called when an item is removed, filtered out, remounted by <code>contentKey</code>, or the timeline is destroyed." }
       ],
       methods: [
-        { method: "<code>Helper-specific methods</code>", arguments: "varies by timeline helper", returns: "varies" }
+        { method: "<code>update(nextItems, nextOptions?)</code>", arguments: "timeline items and optional options", returns: "<code>void</code>" },
+        { method: "<code>append(items)</code>", arguments: "items to add after the current list", returns: "<code>void</code>" },
+        { method: "<code>prepend(items)</code>", arguments: "items to add before the current list", returns: "<code>void</code>" },
+        { method: "<code>setLinkedRange(range)</code>", arguments: "<code>{ startMs, endMs, anchorMs? } | null</code>", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options, all items, and currently visible items" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
   </script>
@@ -113,14 +159,7 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Timeline Demo</h1>
-      <p>Dedicated demo for timeline + scrubber integration.</p>
-    </section>
-
-    <section class="panel">
-      <h2 class="ui-title">Scrubber</h2>
-      <div id="timelineScrubberHost"></div>
-      <p class="muted">Seek updates active timeline event. Horizontal view auto-scrolls to active card.</p>
-      <p class="muted">Keyboard: timeline cards use <code>Enter</code>/<code>Space</code>; scrubber uses arrow keys, <code>Home</code>/<code>End</code>, and range handles can be adjusted directly.</p>
+      <p>Dedicated demo for timeline rendering and custom item content.</p>
     </section>
 
     <section class="panel">
@@ -134,6 +173,16 @@
     </section>
 
     <section class="panel">
+      <h2 class="ui-title">Custom Content</h2>
+      <div class="row">
+        <button id="timelineCustomUpdateBtn" class="ui-button" type="button">Update Content</button>
+        <button id="timelineCustomRemountBtn" class="ui-button ui-button-ghost" type="button">Remount Content</button>
+        <button id="timelineCustomRemoveBtn" class="ui-button ui-button-borderless" type="button">Remove Call Item</button>
+      </div>
+      <div id="timelineHostCustom"></div>
+    </section>
+
+    <section class="panel">
       <h2 class="ui-title">Event Log</h2>
       <pre id="log" class="log" tabindex="0" aria-label="Timeline event log">No events yet.</pre>
     </section>
@@ -143,12 +192,12 @@
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
-    const createTimelineScrubber = await uiLoader.get("ui.timeline.scrubber");
 
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     const verticalHost = document.getElementById("timelineHostVertical");
     const horizontalHost = document.getElementById("timelineHostHorizontal");
+    const customHost = document.getElementById("timelineHostCustom");
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -200,6 +249,9 @@
         meta: ["Linked"],
       },
     ];
+    let customRevision = 1;
+    let customContentKey = "media-a";
+    let customItems = buildCustomItems();
 
     const vertical = createTimeline(verticalHost, timelineItems, {
       ariaLabel: "Vertical incident timeline",
@@ -223,106 +275,97 @@
       },
     });
 
-    const times = timelineItems
-      .map((item) => new Date(item.timestamp).getTime())
-      .filter((value) => Number.isFinite(value))
-      .sort((a, b) => a - b);
-    const minTime = times[0];
-    const maxTime = times[times.length - 1];
-    const durationMs = Math.max(1, maxTime - minTime);
-    function applyLinkedRange(range) {
-      const startMs = Math.max(0, Number(range?.startMs) || 0);
-      const endMs = Math.min(durationMs, Number(range?.endMs) || durationMs);
-      const linkedRange = { startMs, endMs, anchorMs: minTime };
-      vertical.setLinkedRange(linkedRange);
-      horizontal.setLinkedRange(linkedRange);
-      const visible = horizontal.getState().visibleItems;
-      writeLog("timeline.range.filtered", {
-        startMs,
-        endMs,
-        totalItems: timelineItems.length,
-        visibleItems: visible.length,
-      });
-    }
-
-    function nearestItemAt(ms) {
-      const visible = horizontal.getState().visibleItems;
-      const list = visible.length ? visible : timelineItems;
-      const absolute = minTime + Math.max(0, Math.min(durationMs, ms));
-      let winner = list[0];
-      let bestDistance = Infinity;
-      list.forEach((item) => {
-        const t = new Date(item.timestamp).getTime();
-        const d = Math.abs(t - absolute);
-        if (d < bestDistance) {
-          bestDistance = d;
-          winner = item;
-        }
-      });
-      return winner;
-    }
-
-    function setActiveItem(itemId) {
-      document.querySelectorAll(".ui-timeline-item.is-active").forEach((node) => {
-        node.classList.remove("is-active");
-      });
-      const targets = document.querySelectorAll(`.ui-timeline-item[data-item-id="${String(itemId)}"]`);
-      if (!targets.length) {
-        return;
+    function buildCustomItems(includeCall = true) {
+      const items = [];
+      if (includeCall) {
+        items.push({
+          id: "call-session-42",
+          contentKey: customContentKey,
+          type: "call_session",
+          timestamp: "2026-03-09T08:18:00+08:00",
+          title: "Call Session Recording",
+          subtitle: "Caller and operator media",
+          description: "Custom content is mounted below this fixed timeline body.",
+          status: "accepted",
+          customRevision,
+          callerLabel: `Caller audio rev ${customRevision}`,
+          operatorLabel: `Operator audio rev ${customRevision}`,
+        });
       }
-      targets.forEach((node) => node.classList.add("is-active"));
-
-      const horizontalNode = horizontalHost.querySelector(`.ui-timeline-item[data-item-id="${String(itemId)}"]`);
-      horizontalNode?.scrollIntoView?.({ behavior: "smooth", inline: "center", block: "nearest" });
+      items.push({
+        id: "note-custom",
+        timestamp: "2026-03-09T08:16:00+08:00",
+        title: "Plain timeline item",
+        subtitle: "No custom content",
+        status: "completed",
+      });
+      return items;
     }
 
-    const scrubber = createTimelineScrubber(document.getElementById("timelineScrubberHost"), {
-      ariaLabel: "Timeline range and seek controls",
-      valueLabel: "Timeline position",
-      rangeStartLabel: "Visible range start",
-      rangeEndLabel: "Visible range end",
-      durationMs,
-      valueMs: durationMs,
-      enableRange: true,
-      range: { startMs: 0, endMs: durationMs },
-      zoomLevels: [1, 2, 5],
-      zoom: 1,
-      onSeek(valueMs) {
-        const visible = horizontal.getState().visibleItems;
-        if (!visible.length) {
-          writeLog("timeline.scrubber.seek", { valueMs, activeItemId: null });
-          return;
-        }
-        const active = nearestItemAt(valueMs);
-        setActiveItem(active.id);
-        writeLog("timeline.scrubber.seek", { valueMs, activeItemId: active.id, activeTitle: active.title });
+    function renderCallCard(card, item) {
+      card.className = "timeline-call-card";
+      card.innerHTML = "";
+      const title = document.createElement("strong");
+      title.textContent = `Mounted AudioCallSession placeholder (${item.contentKey})`;
+      const caller = document.createElement("p");
+      caller.textContent = item.callerLabel;
+      const operator = document.createElement("p");
+      operator.textContent = item.operatorLabel;
+      const control = document.createElement("button");
+      control.type = "button";
+      control.className = "ui-button ui-button-quiet";
+      control.textContent = "Nested Control";
+      control.addEventListener("click", () => {
+        writeLog("timeline.custom.nested.click", { itemId: item.id, contentKey: item.contentKey });
+      });
+      card.append(title, caller, operator, control);
+    }
+
+    const customTimeline = createTimeline(customHost, customItems, {
+      ariaLabel: "Timeline custom content demo",
+      orientation: "vertical",
+      groupByDate: false,
+      onItemClick(item) {
+        writeLog("timeline.custom.item.click", { id: item.id, title: item.title });
       },
-      onRangeChange(range) {
-        applyLinkedRange(range);
-        const visible = horizontal.getState().visibleItems;
-        if (visible.length) {
-          const active = nearestItemAt(scrubber.getValue());
-          setActiveItem(active.id);
-        } else {
-          setActiveItem(null);
+      mountItemContent(slot, item, context) {
+        if (item.type !== "call_session") {
+          return null;
         }
-        writeLog("timeline.scrubber.range", range);
-      },
-      onZoomChange(nextZoom) {
-        writeLog("timeline.scrubber.zoom", { zoom: nextZoom });
+        const card = document.createElement("div");
+        slot.appendChild(card);
+        renderCallCard(card, item);
+        writeLog("timeline.custom.mount", { id: item.id, contentKey: item.contentKey, index: context.index });
+        return {
+          update(nextItem) {
+            renderCallCard(card, nextItem);
+            writeLog("timeline.custom.update", { id: nextItem.id, contentKey: nextItem.contentKey, revision: nextItem.customRevision });
+          },
+          destroy() {
+            writeLog("timeline.custom.destroy", { id: item.id, contentKey: item.contentKey });
+          },
+        };
       },
     });
 
-    // initialize filtered timelines from initial range and highlight active item
-    const initialRange = scrubber.getState().range || { startMs: 0, endMs: durationMs };
-    applyLinkedRange(initialRange);
-    const initialVisible = horizontal.getState().visibleItems;
-    if (initialVisible.length) {
-      setActiveItem(nearestItemAt(scrubber.getValue()).id);
-    }
+    document.getElementById("timelineCustomUpdateBtn").addEventListener("click", () => {
+      customRevision += 1;
+      customItems = buildCustomItems();
+      customTimeline.update(customItems);
+    });
+    document.getElementById("timelineCustomRemountBtn").addEventListener("click", () => {
+      customRevision += 1;
+      customContentKey = customContentKey === "media-a" ? "media-b" : "media-a";
+      customItems = buildCustomItems();
+      customTimeline.update(customItems);
+    });
+    document.getElementById("timelineCustomRemoveBtn").addEventListener("click", () => {
+      customItems = buildCustomItems(false);
+      customTimeline.update(customItems);
+    });
 
     // keep refs alive for debugging in console
-    window.timelineDemo = { vertical, horizontal, scrubber };
+    window.timelineDemo = { vertical, horizontal, customTimeline };
   </script>
 </body>
 </html>

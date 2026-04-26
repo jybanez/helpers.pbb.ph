@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline Scrubber Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    #timelineScrubberHost,
+    #timelineLinkedHost {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      padding: 10px;
+      background: #0b1220;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 220px;
+      overflow: auto;
+    }
+    .ui-timeline-item.is-active .ui-timeline-body {
+      border-color: #7bb5ff;
+      box-shadow: 0 0 0 1px rgba(123, 181, 255, 0.35), 0 0 14px rgba(89, 144, 224, 0.18);
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline.scrubber", "ui.timeline"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Timeline Scrubber",
+      overview: "Timeline scrubber helper for seek position, range filtering, and zoom-level controls.",
+      useWhen: [
+        "Use <code>createTimelineScrubber(...)</code> when the user needs a playhead or selectable time range.",
+        "Use it beside timelines, audiographs, media playback, or audit review surfaces."
+      ],
+      avoidWhen: [
+        "Do not use it as a replacement for the event list itself; use <code>createTimeline(...)</code> for chronology.",
+        "Do not use it for calendar scheduling; use <code>createScheduler(...)</code>."
+      ],
+      description: "The scrubber is the control surface for time navigation. It can expose a single playhead, optional range handles, and zoom levels while app code owns how linked content responds.",
+      defaultSampleCode: `const scrubber = createTimelineScrubber(host, {\n  durationMs: 120000,\n  valueMs: 32000,\n  enableRange: true,\n  range: { startMs: 0, endMs: 120000 },\n  onSeek(valueMs) {\n    player.seek(valueMs);\n  },\n  onRangeChange(range) {\n    timeline.setLinkedRange(range);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createTimelineScrubber(container, options)</code>", arguments: "container, scrubber options", returns: "Timeline-scrubber instance" }
+      ],
+      options: [
+        { option: "<code>durationMs</code>", default: "<code>60000</code>", description: "Total scrubber duration in milliseconds." },
+        { option: "<code>valueMs</code>", default: "<code>0</code>", description: "Current playhead position in milliseconds." },
+        { option: "<code>enableRange</code>", default: "<code>false</code>", description: "Enables draggable range-start and range-end handles." },
+        { option: "<code>range</code>", default: "<code>null</code>", description: "Initial selected range as <code>{ startMs, endMs }</code>." },
+        { option: "<code>zoom</code>", default: "<code>1</code>", description: "Current zoom level." },
+        { option: "<code>zoomLevels</code>", default: "<code>[1]</code>", description: "Allowed zoom levels for the helper-owned zoom control." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"Timeline scrubber\"</code>", description: "Accessible label for the scrubber control." },
+        { option: "<code>onSeek</code>", default: "<code>null</code>", description: "Called when the playhead changes." },
+        { option: "<code>onRangeChange</code>", default: "<code>null</code>", description: "Called when range handles change." },
+        { option: "<code>onZoomChange</code>", default: "<code>null</code>", description: "Called when zoom changes." }
+      ],
+      propertiesText: "The scrubber owns interaction and normalized time state. Linked content remains app-owned; this demo uses a compact timeline only to show range filtering and active-item highlighting.",
+      events: [
+        { event: "<code>onSeek</code>", arguments: "<code>valueMs</code>", returns: "App-owned seek/highlight behavior." },
+        { event: "<code>onRangeChange</code>", arguments: "<code>{ startMs, endMs }</code>", returns: "App-owned filtering behavior for linked surfaces." },
+        { event: "<code>onZoomChange</code>", arguments: "<code>zoom</code>", returns: "App-owned zoom response." }
+      ],
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial scrubber options", returns: "<code>void</code>" },
+        { method: "<code>setValue(valueMs)</code>", arguments: "next playhead position", returns: "<code>void</code>" },
+        { method: "<code>getValue()</code>", arguments: "none", returns: "Current playhead position in milliseconds" },
+        { method: "<code>setRange(startMs, endMs)</code>", arguments: "range start and end in milliseconds", returns: "<code>void</code>" },
+        { method: "<code>setDuration(durationMs)</code>", arguments: "next duration in milliseconds", returns: "<code>void</code>" },
+        { method: "<code>setZoom(zoom)</code>", arguments: "next allowed zoom value", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Current scrubber state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Timeline Scrubber Demo</h1>
+      <p class="muted">Dedicated demo for playhead, range selection, zoom, and linked timeline filtering.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Scrubber</h2>
+      <div id="timelineScrubberHost"></div>
+      <p class="muted">Keyboard: playhead and range handles use arrow keys, <code>Home</code>, and <code>End</code>.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Linked Timeline</h2>
+      <div id="timelineLinkedHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="log" class="log" tabindex="0" aria-label="Timeline scrubber event log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createTimeline = await uiLoader.get("ui.timeline");
+    const createTimelineScrubber = await uiLoader.get("ui.timeline.scrubber");
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const linkedHost = document.getElementById("timelineLinkedHost");
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+
+    const timelineItems = [
+      { id: "call", timestamp: "2026-03-09T08:04:00+08:00", title: "Call Received", subtitle: "Caller connected", status: "accepted" },
+      { id: "dispatch", timestamp: "2026-03-09T08:07:00+08:00", title: "Dispatch Requested", subtitle: "Team Alpha requested", status: "requested" },
+      { id: "scene", timestamp: "2026-03-09T08:13:00+08:00", title: "Team On Scene", subtitle: "Responder arrived", status: "on_scene" },
+      { id: "complete", timestamp: "2026-03-09T08:22:00+08:00", title: "Call Closed", subtitle: "Session archived", status: "completed" },
+    ];
+    const times = timelineItems.map((item) => new Date(item.timestamp).getTime()).sort((a, b) => a - b);
+    const minTime = times[0];
+    const durationMs = Math.max(1, times[times.length - 1] - minTime);
+
+    const timeline = createTimeline(linkedHost, timelineItems, {
+      ariaLabel: "Linked timeline for scrubber demo",
+      orientation: "horizontal",
+      groupByDate: false,
+      density: "compact",
+      linkedRange: { startMs: 0, endMs: durationMs, anchorMs: minTime },
+    });
+
+    function setActiveItem(itemId) {
+      linkedHost.querySelectorAll(".ui-timeline-item.is-active").forEach((node) => node.classList.remove("is-active"));
+      const target = linkedHost.querySelector(`.ui-timeline-item[data-item-id="${String(itemId)}"]`);
+      target?.classList.add("is-active");
+      target?.scrollIntoView?.({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+
+    function nearestItemAt(valueMs) {
+      const visible = timeline.getState().visibleItems;
+      const list = visible.length ? visible : timelineItems;
+      const absolute = minTime + Math.max(0, Math.min(durationMs, valueMs));
+      return list.reduce((best, item) => {
+        const distance = Math.abs(new Date(item.timestamp).getTime() - absolute);
+        return distance < best.distance ? { item, distance } : best;
+      }, { item: list[0], distance: Infinity }).item;
+    }
+
+    const scrubber = createTimelineScrubber(document.getElementById("timelineScrubberHost"), {
+      ariaLabel: "Timeline range and seek controls",
+      valueLabel: "Timeline position",
+      rangeStartLabel: "Visible range start",
+      rangeEndLabel: "Visible range end",
+      durationMs,
+      valueMs: durationMs,
+      enableRange: true,
+      range: { startMs: 0, endMs: durationMs },
+      zoomLevels: [1, 2, 5],
+      zoom: 1,
+      onSeek(valueMs) {
+        const active = nearestItemAt(valueMs);
+        setActiveItem(active.id);
+        writeLog("scrubber.seek", { valueMs, activeItemId: active.id, activeTitle: active.title });
+      },
+      onRangeChange(range) {
+        timeline.setLinkedRange({ ...range, anchorMs: minTime });
+        const active = nearestItemAt(scrubber.getValue());
+        setActiveItem(active.id);
+        writeLog("scrubber.range", range);
+      },
+      onZoomChange(zoom) {
+        writeLog("scrubber.zoom", { zoom });
+      },
+    });
+
+    setActiveItem(nearestItemAt(scrubber.getValue()).id);
+    window.timelineScrubberDemo = { timeline, scrubber };
+  </script>
+</body>
+</html>

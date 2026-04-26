@@ -146,6 +146,7 @@ demos/
   demo.virtual.list.html
   demo.scheduler.html
   demo.timeline.html
+  demo.timeline.scrubber.html
   demo.window.html
   demo.window.manager.html
   demo.iframe.host.html
@@ -281,7 +282,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.datepicker.js`
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
 - `ui.timeline.js`
-  - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, and item/action click hooks
+  - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
   - `createTimelineScrubber(container, options)` timeline scrubber/playhead with optional range handles and zoom levels
 - `ui.command.palette.js`
@@ -1383,8 +1384,11 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.timeline.html` -> dedicated timeline playground
   - vertical grouped timeline
   - horizontal timeline
-  - timeline scrubber with seek/range/zoom
-  - scrubber updates active timeline item (highlight + horizontal auto-scroll)
+  - lifecycle-managed custom item content
+- `demos/demo.timeline.scrubber.html` -> dedicated timeline scrubber playground
+  - playhead seek behavior
+  - range handles and zoom controls
+  - linked timeline filtering/highlighting example
 - `demos/demo.audio.html` -> audio player + stacked role audiographs
   - sample selector for available `sampledata_*.json`
   - graph style selector
@@ -3848,6 +3852,8 @@ Recommended item shape:
 | `status` | `string` | Suggested values: `assigned`, `requested`, `accepted`, `en_route`, `on_scene`, `completed`, `cancelled`. |
 | `meta` | `string[]` | Optional tag list. |
 | `actions` | `Array<{ id, label, className? }>` | Optional per-item actions. |
+| `contentKey` | `string` | Optional custom-content identity; changing it forces a custom slot remount. |
+| `hasCustomContent` | `boolean` | Optional `false` value to skip custom slot mounting for this item. |
 
 Options:
 
@@ -3866,6 +3872,7 @@ Options:
 | `timeZone` | `string` | browser default | no | Time zone used for date formatting. |
 | `onItemClick` | `(item) => void` | `null` | no | Fires when an item is clicked. |
 | `onActionClick` | `(action, item) => void` | `null` | no | Fires when an item action is clicked. |
+| `mountItemContent` | `(host, item, context) => Function \| { update?, destroy? } \| null` | `null` | no | Mounts lifecycle-managed app/helper content inside a timeline item. |
 
 Returned API:
 
@@ -3882,6 +3889,14 @@ Returned API:
 - `items` (full normalized timeline list)
 - `visibleItems` (range-filtered list after `linkedRange`)
 
+Custom content notes:
+
+- `mountItemContent(...)` receives an empty helper-owned `.ui-timeline-custom-content` host after fixed timeline fields are rendered.
+- Timeline preserves and reparents mounted content across `update(...)` when the same `id` and `contentKey` remain visible.
+- Return a cleanup function or an object with `update(nextItem, context)` and/or `destroy()`.
+- Changing `contentKey`, removing an item, filtering it out of view, or destroying the timeline calls cleanup.
+- Interactive controls inside custom content are guarded so they do not trigger timeline item activation.
+
 Example:
 
 ```js
@@ -3890,6 +3905,20 @@ import { createTimeline } from "./js/ui/ui.timeline.js";
 const timeline = createTimeline(container, events, {
   orientation: "vertical",
   groupByDate: true,
+  mountItemContent(host, item) {
+    if (item.type !== "call_session") {
+      return null;
+    }
+    const nested = createAudioCallSession(host, item.callSession, item.audioOptions);
+    return {
+      update(nextItem) {
+        nested.update?.(nextItem.callSession, nextItem.audioOptions);
+      },
+      destroy() {
+        nested.destroy?.();
+      },
+    };
+  },
   onItemClick(item) {
     console.log("timeline item", item.id);
   },
@@ -3898,7 +3927,7 @@ const timeline = createTimeline(container, events, {
 
 Related demos:
 
-- `demos/demo.timeline.html`
+- `demos/demo.timeline.scrubber.html`
 
 ### `createTimelineScrubber(container, options)` (`js/ui/ui.timeline.scrubber.js`)
 

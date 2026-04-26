@@ -15,19 +15,24 @@ const DEFAULT_OPTIONS = {
   includeUndatedInRange: false,
   onItemClick: null,
   onActionClick: null,
+  mountItemContent: null,
 };
 
 export function createTimeline(container, items = [], options = {}) {
   const events = createEventBag();
+  const customMounts = new Map();
   let currentItems = normalizeItems(items);
   let currentOptions = normalizeOptions(options);
   let visibleItems = [];
   let root = null;
+  let api = null;
 
   function render() {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    visibleItems = applyLinkedRange(currentItems, currentOptions);
+    reconcileCustomMounts(visibleItems);
     events.clear();
     clearNode(container);
 
@@ -43,8 +48,6 @@ export function createTimeline(container, items = [], options = {}) {
         "aria-label": currentOptions.ariaLabel,
       },
     });
-
-    visibleItems = applyLinkedRange(currentItems, currentOptions);
 
     if (!visibleItems.length) {
       root.appendChild(createElement("p", {
@@ -158,8 +161,12 @@ export function createTimeline(container, items = [], options = {}) {
       });
       body.appendChild(actions);
     }
+    renderCustomContent(body, item, index, total);
 
-    events.on(row, "click", () => {
+    events.on(row, "click", (event) => {
+      if (shouldIgnoreItemActivation(event)) {
+        return;
+      }
       currentOptions.onItemClick?.(item);
     });
     if (typeof currentOptions.onItemClick === "function") {
@@ -170,6 +177,9 @@ export function createTimeline(container, items = [], options = {}) {
         if (event.key !== "Enter" && event.key !== " ") {
           return;
         }
+        if (shouldIgnoreItemActivation(event)) {
+          return;
+        }
         event.preventDefault();
         currentOptions.onItemClick?.(item);
       });
@@ -177,6 +187,130 @@ export function createTimeline(container, items = [], options = {}) {
 
     row.append(rail, body);
     return row;
+  }
+
+  function renderCustomContent(body, item, index, total) {
+    if (typeof currentOptions.mountItemContent !== "function" || item.hasCustomContent === false) {
+      return;
+    }
+    const key = getCustomMountKey(item);
+    const context = createItemContext(index, total);
+    let record = customMounts.get(key);
+    if (record) {
+      body.appendChild(record.host);
+      record.item = item;
+      record.context = context;
+      record.host.dataset.itemId = String(item.id);
+      record.host.dataset.contentKey = String(item.contentKey ?? "");
+      callMountUpdate(record, item, context);
+      return;
+    }
+
+    const host = createElement("div", {
+      className: "ui-timeline-custom-content",
+      attrs: {
+        "data-item-id": String(item.id),
+        "data-content-key": String(item.contentKey ?? ""),
+      },
+    });
+    body.appendChild(host);
+
+    let result = null;
+    try {
+      result = currentOptions.mountItemContent(host, item, context);
+    } catch (error) {
+      host.textContent = "";
+      host.hidden = true;
+      throw error;
+    }
+    if (!result && !host.childNodes.length) {
+      host.remove();
+      return;
+    }
+    record = normalizeMountRecord({
+      key,
+      id: String(item.id),
+      contentKey: String(item.contentKey ?? ""),
+      host,
+      item,
+      context,
+      result,
+    });
+    customMounts.set(key, record);
+  }
+
+  function createItemContext(index, total) {
+    return {
+      index,
+      total,
+      timeline: api,
+      options: { ...currentOptions },
+      visibleItems: visibleItems.map((item) => ({ ...item })),
+    };
+  }
+
+  function reconcileCustomMounts(nextVisibleItems) {
+    if (!customMounts.size) {
+      return;
+    }
+    if (typeof currentOptions.mountItemContent !== "function") {
+      destroyAllCustomMounts();
+      return;
+    }
+    const nextKeys = new Set(
+      nextVisibleItems
+        .filter((item) => item.hasCustomContent !== false)
+        .map((item) => getCustomMountKey(item)),
+    );
+    Array.from(customMounts.entries()).forEach(([key, record]) => {
+      if (!nextKeys.has(key)) {
+        destroyCustomMount(record);
+        customMounts.delete(key);
+      }
+    });
+  }
+
+  function callMountUpdate(record, item, context) {
+    if (!record || typeof record.update !== "function") {
+      return;
+    }
+    record.update(item, context);
+  }
+
+  function normalizeMountRecord(record) {
+    if (typeof record.result === "function") {
+      record.destroy = record.result;
+      record.update = null;
+      return record;
+    }
+    if (record.result && typeof record.result === "object") {
+      record.update = typeof record.result.update === "function"
+        ? record.result.update.bind(record.result)
+        : null;
+      record.destroy = typeof record.result.destroy === "function"
+        ? record.result.destroy.bind(record.result)
+        : null;
+      return record;
+    }
+    record.update = null;
+    record.destroy = null;
+    return record;
+  }
+
+  function destroyCustomMount(record) {
+    if (!record) {
+      return;
+    }
+    try {
+      record.destroy?.();
+    } finally {
+      record.host?.remove?.();
+    }
+  }
+
+  function destroyAllCustomMounts() {
+    Array.from(customMounts.values()).forEach((record) => destroyCustomMount(record));
+    customMounts.clear();
   }
 
   function update(nextItems = currentItems, nextOptions = {}) {
@@ -207,6 +341,7 @@ export function createTimeline(container, items = [], options = {}) {
 
   function destroy() {
     events.clear();
+    destroyAllCustomMounts();
     clearNode(container);
     root = null;
   }
@@ -219,9 +354,7 @@ export function createTimeline(container, items = [], options = {}) {
     };
   }
 
-  render();
-
-  return {
+  api = {
     update,
     append,
     prepend,
@@ -229,6 +362,10 @@ export function createTimeline(container, items = [], options = {}) {
     destroy,
     getState,
   };
+
+  render();
+
+  return api;
 }
 
 function normalizeOptions(options) {
@@ -246,6 +383,7 @@ function normalizeOptions(options) {
     next.linkedRange = null;
   }
   next.includeUndatedInRange = Boolean(next.includeUndatedInRange);
+  next.mountItemContent = typeof next.mountItemContent === "function" ? next.mountItemContent : null;
   return next;
 }
 
@@ -260,6 +398,7 @@ function normalizeItems(items) {
       }
       const ts = item.timestamp ? new Date(item.timestamp) : null;
       return {
+        ...item,
         id: item.id ?? index + 1,
         title: String(item.title ?? "Untitled Event"),
         subtitle: item.subtitle == null ? "" : String(item.subtitle),
@@ -269,6 +408,8 @@ function normalizeItems(items) {
         meta: Array.isArray(item.meta) ? item.meta : [],
         actions: normalizeActions(item.actions),
         iconHtml: item.iconHtml ? String(item.iconHtml) : "",
+        contentKey: item.contentKey == null ? "" : String(item.contentKey),
+        hasCustomContent: item.hasCustomContent === false ? false : item.hasCustomContent,
       };
     })
     .filter(Boolean)
@@ -295,6 +436,23 @@ function normalizeActions(actions) {
       };
     })
     .filter(Boolean);
+}
+
+function getCustomMountKey(item) {
+  return `${String(item.id)}::${String(item.contentKey ?? "")}`;
+}
+
+function shouldIgnoreItemActivation(event) {
+  const target = event?.target;
+  if (!target || !(target instanceof Element)) {
+    return false;
+  }
+  const customHost = target.closest(".ui-timeline-custom-content");
+  if (customHost) {
+    return true;
+  }
+  const interactive = target.closest("button, a, input, select, textarea, summary, [contenteditable='true'], [role='button'], [role='link'], [role='checkbox'], [role='switch'], [role='textbox'], [role='menuitem'], [tabindex]");
+  return Boolean(interactive && !interactive.classList?.contains("ui-timeline-item"));
 }
 
 function buildItemAriaLabel(item) {

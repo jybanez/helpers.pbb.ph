@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Timeline Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.timeline.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">pending</pre>
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    import { createTimeline } from "../js/ui/ui.timeline.js";
+
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const failures = [];
+    const calls = [];
+    let itemClicks = 0;
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    const baseItems = [
+      {
+        id: "call-1",
+        contentKey: "media-a",
+        type: "call_session",
+        customValue: "initial",
+        title: "Call Session",
+        timestamp: "2026-04-26T09:00:00+08:00",
+      },
+      {
+        id: "note-1",
+        title: "Plain Note",
+        timestamp: "2026-04-26T08:00:00+08:00",
+      },
+    ];
+
+    const timeline = createTimeline(host, baseItems, {
+      groupByDate: false,
+      onItemClick() {
+        itemClicks += 1;
+      },
+      mountItemContent(slot, item, context) {
+        if (item.type !== "call_session") {
+          return null;
+        }
+        calls.push(`mount:${item.id}:${item.contentKey}:${item.customValue}:${context.index}/${context.total}`);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "nested-control";
+        button.textContent = `Nested ${item.customValue}`;
+        slot.appendChild(button);
+        return {
+          update(nextItem, nextContext) {
+            calls.push(`update:${nextItem.id}:${nextItem.contentKey}:${nextItem.customValue}:${nextContext.index}/${nextContext.total}`);
+            button.textContent = `Nested ${nextItem.customValue}`;
+          },
+          destroy() {
+            calls.push(`destroy:${item.id}:${item.contentKey}`);
+          },
+        };
+      },
+    });
+
+    const firstSlot = host.querySelector(".ui-timeline-custom-content");
+    assert(firstSlot, "custom content slot should render for matching item");
+    assert(host.querySelectorAll(".ui-timeline-custom-content").length === 1, "non-matching items should not keep empty custom slots");
+    assert(calls.includes("mount:call-1:media-a:initial:0/2"), "mount should receive preserved custom item fields and context");
+
+    host.querySelector(".nested-control").click();
+    assert(itemClicks === 0, "clicks inside custom content should not trigger item click");
+
+    host.querySelector(".nested-control").dispatchEvent(new KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+    }));
+    assert(itemClicks === 0, "keyboard events inside custom content should not trigger item click");
+
+    timeline.update([
+      {
+        id: "call-1",
+        contentKey: "media-a",
+        type: "call_session",
+        customValue: "updated",
+        title: "Call Session Updated",
+        timestamp: "2026-04-26T09:05:00+08:00",
+      },
+      baseItems[1],
+    ]);
+    const updatedSlot = host.querySelector(".ui-timeline-custom-content");
+    assert(updatedSlot === firstSlot, "same id/contentKey should preserve and reparent existing custom host");
+    assert(host.querySelector(".nested-control").textContent === "Nested updated", "same-key update should call custom update");
+    assert(calls.includes("update:call-1:media-a:updated:0/2"), "update should receive next item and context");
+
+    timeline.update([
+      {
+        id: "call-1",
+        contentKey: "media-b",
+        type: "call_session",
+        customValue: "remounted",
+        title: "Call Session Remounted",
+        timestamp: "2026-04-26T09:10:00+08:00",
+      },
+      baseItems[1],
+    ]);
+    const remountedSlot = host.querySelector(".ui-timeline-custom-content");
+    assert(remountedSlot && remountedSlot !== firstSlot, "contentKey change should remount custom content");
+    assert(calls.includes("destroy:call-1:media-a"), "contentKey change should destroy previous custom content");
+    assert(calls.includes("mount:call-1:media-b:remounted:0/2"), "contentKey change should mount replacement content");
+
+    timeline.update([baseItems[1]]);
+    assert(!host.querySelector(".ui-timeline-custom-content"), "removing custom item should remove custom host");
+    assert(calls.includes("destroy:call-1:media-b"), "removing item should destroy custom content");
+
+    timeline.update([
+      {
+        id: "call-2",
+        contentKey: "media-c",
+        type: "call_session",
+        customValue: "destroy-check",
+        title: "Second Call",
+        timestamp: "2026-04-26T09:20:00+08:00",
+      },
+    ]);
+    timeline.destroy();
+    assert(calls.includes("destroy:call-2:media-c"), "timeline destroy should destroy active custom content");
+    assert(host.childNodes.length === 0, "destroy should clear timeline container");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>
