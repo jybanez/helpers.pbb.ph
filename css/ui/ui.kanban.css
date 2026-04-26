@@ -19,6 +19,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 10px;
+  min-height: 0;
 }
 
 .ui-kanban-lane-header {
@@ -40,6 +41,9 @@
   display: grid;
   gap: 8px;
   min-height: 120px;
+  overflow-y: auto;
+  align-content: start;
+  align-items: start;
 }
 
 .ui-kanban-cards.is-drop-target {

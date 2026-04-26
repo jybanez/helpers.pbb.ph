@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kanban Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.kanban.css">
+  <style>
+    #host {
+      width: 980px;
+      height: 360px;
+      overflow: auto;
+      border: 1px solid #2b3750;
+    }
+    #host .ui-kanban {
+      height: 100%;
+      min-height: 100%;
+    }
+    #host .ui-kanban-lane {
+      height: 320px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">pending</pre>
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    import { createKanban } from "../js/ui/ui.kanban.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    createKanban(document.getElementById("host"), [
+      {
+        id: "one",
+        title: "One Card",
+        cards: [{ id: "a", title: "Short card", meta: "Natural height" }],
+      },
+      {
+        id: "two",
+        title: "Two Cards",
+        cards: [
+          { id: "b", title: "First card", meta: "Natural height" },
+          { id: "c", title: "Second card", meta: "Natural height" },
+        ],
+      },
+      {
+        id: "empty",
+        title: "Empty",
+        cards: [],
+      },
+      {
+        id: "overflow",
+        title: "Overflow",
+        cards: Array.from({ length: 12 }, (_, index) => ({
+          id: `overflow-${index + 1}`,
+          title: `Overflow card ${index + 1}`,
+          meta: "Fixed-height lane scrolling",
+        })),
+      },
+    ], {
+      draggable: true,
+    });
+
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const lanes = Array.from(document.querySelectorAll(".ui-kanban-lane"));
+    const oneLane = lanes[0];
+    const twoLane = lanes[1];
+    const emptyLane = lanes[2];
+    const overflowLane = lanes[3];
+    const oneCards = oneLane.querySelector(".ui-kanban-cards");
+    const twoCards = twoLane.querySelector(".ui-kanban-cards");
+    const emptyCards = emptyLane.querySelector(".ui-kanban-cards");
+    const overflowCards = overflowLane.querySelector(".ui-kanban-cards");
+    const oneCard = oneLane.querySelector(".ui-kanban-card");
+    const twoCardNodes = Array.from(twoLane.querySelectorAll(".ui-kanban-card"));
+    const empty = emptyLane.querySelector(".ui-kanban-empty");
+
+    assert(getComputedStyle(oneCards).alignContent === "start", "cards stack should align content to the top");
+    assert(getComputedStyle(oneCards).alignItems === "start", "cards should keep intrinsic cross-axis size");
+    assert(oneCards.getBoundingClientRect().height > oneCard.getBoundingClientRect().height * 2, "lane body should remain larger than a single card");
+    assert(oneCard.getBoundingClientRect().height < oneCards.getBoundingClientRect().height * 0.6, "single card should not stretch to fill lane body");
+
+    const totalTwoCardHeight = twoCardNodes.reduce((sum, node) => sum + node.getBoundingClientRect().height, 0);
+    assert(totalTwoCardHeight < twoCards.getBoundingClientRect().height * 0.75, "two cards should not stretch to fill lane body");
+
+    assert(empty.getBoundingClientRect().height < emptyCards.getBoundingClientRect().height * 0.6, "empty placeholder should remain compact");
+    assert(getComputedStyle(overflowCards).overflowY === "auto", "fixed-height lane body should provide vertical card scrolling");
+    assert(overflowCards.scrollHeight > overflowCards.clientHeight, "overflowing card stack should scroll within the lane body");
+
+    const dragEvent = new DragEvent("dragover", {
+      bubbles: true,
+      cancelable: true,
+      clientY: emptyCards.getBoundingClientRect().bottom - 10,
+    });
+    Object.defineProperty(dragEvent, "dataTransfer", {
+      value: { dropEffect: "", setData() {} },
+    });
+    const dragStartEvent = new DragEvent("dragstart", {
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(dragStartEvent, "dataTransfer", {
+      value: { setData() {} },
+    });
+    oneCard.dispatchEvent(dragStartEvent);
+    emptyCards.dispatchEvent(dragEvent);
+    assert(emptyCards.classList.contains("is-drop-target"), "full lane body should still accept dragover as drop target");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

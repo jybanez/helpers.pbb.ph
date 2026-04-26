@@ -290,7 +290,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.tree.js`
   - `createTree(container, data, options)` expandable/selectable tree view with optional checkboxes, lazy child loading, and optional chrome-less rendering
 - `ui.kanban.js`
-  - `createKanban(container, lanes, options)` lane-based board with draggable cards and move callbacks
+  - `createKanban(container, lanes, options)` lane-based board with intrinsic-height draggable cards, fixed-lane card-stack scrolling, and move callbacks
 - `ui.stepper.js`
   - `createStepper(container, steps, options)` step indicator/navigation component for multi-step workflows
 - `ui.splitter.js`

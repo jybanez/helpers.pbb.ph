@@ -54,6 +54,25 @@
       overflow-y: hidden;
       box-sizing: border-box;
     }
+    #kanbanRailHost {
+      height: 360px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      padding: 10px;
+      background: #0b1220;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      box-sizing: border-box;
+    }
+    #kanbanRailHost .ui-kanban {
+      height: 100%;
+      min-height: 100%;
+    }
+    #kanbanRailHost .ui-kanban-lane {
+      height: 320px;
+      box-sizing: border-box;
+    }
     .log {
       margin: 0;
       white-space: pre-wrap;
@@ -97,7 +116,7 @@
         "Do not use it for date/time scheduling; use <code>createScheduler(...)</code> instead.",
         "Do not use it for flat reporting tables or hierarchy exploration where movement is not the point."
       ],
-      description: "This demo focuses on workflow movement rules: drag between lanes, validate moves, enforce a WIP limit, and emit stable callbacks for click, move, and rejection events.",
+      description: "This demo focuses on workflow movement rules: drag between lanes, validate moves, enforce a WIP limit, emit stable callbacks, and keep cards intrinsic-height with card-stack scrolling inside fixed-height lanes.",
       defaultSampleCode: `const board = createKanban(host, lanes, {\n  ariaLabel: "Incident workflow board",\n  wipLimits: { active: 3 },\n  validateMove(payload) {\n    if (payload.toLaneId === "resolved" && payload.card.requiresReview) {\n      return { ok: false, reason: "Review required first." };\n    }\n    return true;\n  },\n  onCardMove(payload) {\n    writeLog("kanban.card.move", payload);\n  },\n});`,
       constructor: [
         { factory: "<code>createKanban(container, lanes, options)</code>", arguments: "<code>container</code>, lane array, kanban <code>options</code>", returns: "Kanban instance with update, move, state, and destroy methods" }
@@ -107,7 +126,8 @@
         { option: "<code>draggable</code>", default: "<code>true</code>", description: "Enables drag-and-drop between lanes." },
         { option: "<code>keyboardMoves</code>", default: "<code>true</code>", description: "Enables keyboard move interactions." },
         { option: "<code>wipLimits</code>", default: "<code>null</code>", description: "Per-lane WIP limits such as <code>{ active: 3 }</code>." },
-        { option: "<code>validateMove</code>", default: "<code>null</code>", description: "Business-rule hook for move approval or rejection." }
+        { option: "<code>validateMove</code>", default: "<code>null</code>", description: "Business-rule hook for move approval or rejection." },
+        { option: "<code>card stack sizing</code>", default: "<code>intrinsic</code>", description: "Cards keep natural height, align to the top of the lane body, and scroll inside fixed-height lanes when the stack overflows." }
       ],
       propertiesText: "No stable public instance properties are documented. Use <code>getState()</code> instead of reading internal fields directly.",
       events: [
@@ -155,6 +175,12 @@
 });</pre>
       <pre id="log" class="log">No events yet.</pre>
     </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Fixed-Height Assignment Rail</h2>
+      <p class="muted">Cards stay compact, stack from the top, and scroll inside the lane body when fixed-height lanes receive more cards than fit.</p>
+      <div id="kanbanRailHost"></div>
+    </section>
   </main>
 
   <script type="module">
@@ -176,7 +202,7 @@
       writeLog("theme.toggle", { theme: next });
     });
 
-    createKanban(document.getElementById("kanbanHost"), [
+    const workflowLanes = [
       {
         id: "queued",
         title: "Queued",
@@ -200,7 +226,9 @@
           { id: "i-100", title: "Incident #100", meta: "Closed 5m ago", requiresReview: false },
         ],
       },
-    ], {
+    ];
+
+    createKanban(document.getElementById("kanbanHost"), workflowLanes, {
       ariaLabel: "Incident workflow board",
       wipLimits: {
         active: 3,
@@ -225,6 +253,48 @@
       },
       onMoveRejected(payload) {
         writeLog("kanban.card.move.rejected", payload);
+      },
+    });
+
+    createKanban(document.getElementById("kanbanRailHost"), [
+      {
+        id: "pending",
+        title: "Pending",
+        cards: [
+          { id: "rail-1", title: "Medical team request", meta: "Caller audio pending" },
+          { id: "rail-4", title: "Ambulance dispatch", meta: "ETA confirmation" },
+          { id: "rail-5", title: "Barangay desk", meta: "Awaiting operator note" },
+          { id: "rail-6", title: "Police standby", meta: "Unit selection pending" },
+          { id: "rail-7", title: "Road clearing", meta: "Needs traffic route" },
+          { id: "rail-8", title: "Rescue contact", meta: "Caller callback queued" },
+          { id: "rail-9", title: "Hospital intake", meta: "Capacity check" },
+          { id: "rail-10", title: "Scene verifier", meta: "Media merge pending" },
+        ],
+      },
+      {
+        id: "assigned",
+        title: "Assigned",
+        cards: [
+          { id: "rail-2", title: "Fire Team Alpha", meta: "En route" },
+          { id: "rail-3", title: "Traffic Support", meta: "Staging" },
+        ],
+      },
+      {
+        id: "empty",
+        title: "Empty Lane",
+        cards: [],
+      },
+    ], {
+      ariaLabel: "Fixed-height assignment rail",
+      onCardClick(card, laneId) {
+        writeLog("kanban.rail.card.click", { cardId: card.id, laneId });
+      },
+      onCardMove(payload) {
+        writeLog("kanban.rail.card.move", {
+          cardId: payload.card.id,
+          fromLaneId: payload.fromLaneId,
+          toLaneId: payload.toLaneId,
+        });
       },
     });
   </script>
