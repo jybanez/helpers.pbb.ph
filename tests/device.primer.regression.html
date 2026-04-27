@@ -236,6 +236,7 @@
     }, {
       blockUntilReady: true,
       autoRun: false,
+      autoCloseOnReady: false,
     });
     modal.open();
 
@@ -273,6 +274,24 @@
       .find((button) => (button.textContent || "").trim() === "Retry Failed");
     assert(retryButtonAfterFailure && !retryButtonAfterFailure.disabled, "Retry Failed should appear when at least one check is retryable.");
     failureModal.destroy();
+
+    const autoCloseModal = createDevicePrimerModal({
+      title: "Auto Close Modal Primer",
+      checks: [
+        { id: "mic-auto-close", kind: "microphone", required: true },
+      ],
+    }, {
+      autoRun: false,
+    });
+    autoCloseModal.open();
+    micMode = "ready";
+    await autoCloseModal.runAll();
+    await Promise.resolve();
+    assert(autoCloseModal.refs?.root?.getAttribute("aria-hidden") === "true", "Device primer modal should auto-close by default when all required checks pass.");
+    autoCloseModal.open();
+    await Promise.resolve();
+    assert(autoCloseModal.refs?.root?.getAttribute("aria-hidden") === "true", "Device primer modal should auto-close after reopening when checks are already ready.");
+    autoCloseModal.destroy();
 
     primer.destroy();
 

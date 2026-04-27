@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Changed `createDevicePrimerModal(...)` to auto-close by default after all checks complete successfully, with `autoCloseOnReady: false` available for flows that need a final Continue or inspection step.
 - Added `ui.map.controls` as a MapLibre-oriented control dock for zoom, compass/bearing reset, pitch presets, locate, fit, and layer toggles, with vertical/horizontal orientation options, a dedicated demo, and browser regression coverage.
 - Added `ui.elapsed.time` as a compact live elapsed-duration readout for active incident and team-assignment status cards, with fixed `dd:hh:mm:ss` and leading-zero-trimmed `format: "compact"` display modes, a shared module-level ticker for dense dashboards, threshold variants, `chrome: false`, pause/resume/stop methods, docs, demo, and regression coverage.
 - Fixed `ui.kanban` fixed-height lane behavior so sparse card stacks keep intrinsic card height, align from the top, and overflowing card stacks scroll inside the lane body while remaining available as drop space.

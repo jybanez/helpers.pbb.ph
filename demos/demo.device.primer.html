@@ -29,7 +29,7 @@
         "Do not use this as a full media-call setup wizard.",
         "Do not move app-specific fallback behavior into the helper."
       ],
-      description: "The device primer is a reusable preflight surface. Projects choose which checks they need. The helper owns status presentation and retry UI, while app code still owns routing and business fallback behavior.",
+      description: "The device primer is a reusable preflight surface. Projects choose which checks they need. The helper owns status presentation and retry UI, while app code still owns routing and business fallback behavior. The modal preset auto-closes by default once all checks complete successfully.",
       defaultSampleCode: `const primer = createDevicePrimer(host, {\n  title: "Startup Device Check",\n  message: "This page needs microphone, camera, and audio playback readiness before you continue.",\n  checks: [\n    { id: "mic", kind: "microphone", required: true },\n    { id: "cam", kind: "camera", required: true },\n    { id: "audio", kind: "audioPlayback", required: true },\n    { id: "speech", kind: "speechRecognition", required: false },\n  ],\n});`,
       constructor: [
         { factory: "<code>createDevicePrimer(container, data, options)</code>", arguments: "primer host, configured checks, and callbacks", returns: "Device primer instance" },
@@ -44,6 +44,7 @@
         { option: "<code>continueLabel</code>", default: "<code>\"Continue\"</code>", description: "Modal preset label for the continue action." },
         { option: "<code>retryLabel</code>", default: "<code>\"Retry Failed\"</code>", description: "Modal preset label for retrying failed or blocked checks. The button is rendered only while at least one check is retryable." },
         { option: "<code>blockUntilReady</code>", default: "<code>false</code>", description: "Modal preset option that disables Continue until all required checks are ready." },
+        { option: "<code>autoCloseOnReady</code>", default: "<code>true</code>", description: "Modal preset closes itself after all checks complete successfully. Set false when the app wants the user to press Continue or inspect the final state." },
         { option: "<code>showCloseButton</code>", default: "<code>true</code>", description: "Controls whether the modal preset shows the close button in the header." },
         { option: "<code>closeOnBackdrop</code>", default: "<code>true</code>", description: "Allows the modal preset to close when the backdrop is clicked." },
         { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Allows the modal preset to close when Escape is pressed." }
@@ -179,6 +180,7 @@
         ],
       }, {
         blockUntilReady: true,
+        autoCloseOnReady: false,
       });
       modal.open();
       writeLog("devicePrimer.modalOpen", modal.getState());

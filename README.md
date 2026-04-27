@@ -232,7 +232,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields with notes, alerts, images, and custom content
 - `ui.device.primer.js`
   - `createDevicePrimer(container, data, options)` project-configurable startup readiness checks for permissions, devices, and browser capabilities
-  - `createDevicePrimerModal(data, options)` modal preset wrapper for startup primer flows
+  - `createDevicePrimerModal(data, options)` modal preset wrapper for startup primer flows, with default auto-close after successful checks
 - `ui.icons.js`
   - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
@@ -4849,6 +4849,7 @@ Modal preset notes:
 - wraps the core helper inside a helper-owned action modal
 - intended for page-load or pre-join readiness flows
 - auto-runs by default unless the app explicitly disables it
+- auto-closes by default once all checks complete, every required check is ready, and no checks failed; set `autoCloseOnReady: false` when the flow needs a final Continue/inspection step
 - project code still owns blocking policy and what happens after success/failure
 - `showSummary` is supported for both the inline helper and the modal wrapper
 - the modal wrapper only renders `Retry Failed` when at least one check is currently retryable

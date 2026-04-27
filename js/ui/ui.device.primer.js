@@ -41,6 +41,7 @@ const DEFAULT_MODAL_OPTIONS = {
   showCloseButton: true,
   closeOnBackdrop: true,
   closeOnEscape: true,
+  autoCloseOnReady: true,
   autoRun: true,
   onOpen: null,
   onClose: null,
@@ -317,6 +318,7 @@ export function createDevicePrimerModal(data = {}, options = {}) {
   const contentHost = createElement("div", { className: "ui-device-primer-modal-host" });
   let primerApi = null;
   let modalApi = null;
+  let autoClosed = false;
 
   function refreshActions() {
     if (!modalApi || !primerApi) {
@@ -354,6 +356,7 @@ export function createDevicePrimerModal(data = {}, options = {}) {
     onComplete(state) {
       refreshActions();
       modalOptions.onComplete?.(state);
+      maybeAutoClose(state);
     },
   });
 
@@ -378,6 +381,20 @@ export function createDevicePrimerModal(data = {}, options = {}) {
     return primerApi.getState();
   }
 
+  function maybeAutoClose(state = primerApi?.getState?.()) {
+    if (!modalOptions.autoCloseOnReady || autoClosed || !modalApi) {
+      return;
+    }
+    if (!modalApi.getState?.().open) {
+      return;
+    }
+    if (!state?.allComplete || !state?.allRequiredReady || state?.hasFailures) {
+      return;
+    }
+    autoClosed = true;
+    modalApi.close?.({ reason: "device-primer-ready" });
+  }
+
   refreshActions();
   if (modalOptions.autoOpen) {
     modalApi.open();
@@ -385,8 +402,15 @@ export function createDevicePrimerModal(data = {}, options = {}) {
 
   return {
     ...modalApi,
+    open(content = undefined, nextOptions = undefined) {
+      autoClosed = false;
+      const opened = modalApi.open(content, nextOptions);
+      Promise.resolve().then(() => maybeAutoClose());
+      return opened;
+    },
     update(nextData = {}, nextOptions = {}) {
       Object.assign(modalOptions, normalizeModalOptions({ ...modalOptions, ...(nextOptions || {}) }));
+      autoClosed = false;
       primerApi.update(nextData, nextOptions);
       if (nextData && Object.prototype.hasOwnProperty.call(nextData, "title")) {
         modalApi.update({ title: nextData.title });
@@ -398,6 +422,7 @@ export function createDevicePrimerModal(data = {}, options = {}) {
     runAll() {
       return primerApi.runAll().then((state) => {
         refreshActions();
+        maybeAutoClose(state);
         return state;
       });
     },
@@ -718,6 +743,7 @@ function normalizeModalOptions(options = {}) {
     ...DEFAULT_MODAL_OPTIONS,
     ...(options || {}),
     showSummary: options?.showSummary !== false,
+    autoCloseOnReady: options?.autoCloseOnReady !== false,
   };
 }
 
