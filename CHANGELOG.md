@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.elapsed.time` as a compact live elapsed-duration readout for active incident and team-assignment status cards, with fixed `dd:hh:mm:ss` and leading-zero-trimmed `format: "compact"` display modes, a shared module-level ticker for dense dashboards, threshold variants, `chrome: false`, pause/resume/stop methods, docs, demo, and regression coverage.
 - Fixed `ui.kanban` fixed-height lane behavior so sparse card stacks keep intrinsic card height, align from the top, and overflowing card stacks scroll inside the lane body while remaining available as drop space.
 - Split the combined timeline demo into focused Timeline and Timeline Scrubber pages so each helper's reference panel documents its own contract.
 - Added lifecycle-managed custom item content slots to `createTimeline(...)` via `mountItemContent(host, item, context)`, with stable `id`/`contentKey` tracking, preserved hosts across updates, cleanup on removal/destroy, and nested-interactive event guarding.

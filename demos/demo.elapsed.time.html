@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elapsed Time Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .incident-grid,
+    .assignment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .incident-card,
+    .assignment-card {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .incident-card h3,
+    .assignment-card h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+    .meta {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .assignment-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .bulk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.elapsed.time"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Elapsed Time",
+      overview: "Live duration readout for operational records that have a known start datetime and remain active until resolved or moved.",
+      useWhen: [
+        "Use <code>createElapsedTime(...)</code> on incident cards to show how long a report has been active.",
+        "Use it on assignment/status cards to show how long a team has been in the current status."
+      ],
+      avoidWhen: [
+        "Do not use it for scheduled calendar placement; use <code>createScheduler(...)</code>.",
+        "Do not use it for playback navigation; use <code>createTimelineScrubber(...)</code>."
+      ],
+      description: "Elapsed Time is a compact live duration readout. All active instances share one module-level one-second ticker, so dashboards can render many timers without creating one interval per card. The default display is fixed dd:hh:mm:ss; use format: \"compact\" to hide leading zero segments.",
+      defaultSampleCode: `const timer = createElapsedTime(host, {\n  startTime: incident.reported_at,\n  format: "compact",\n  chrome: false,\n  ariaLabel: "Incident active duration",\n  thresholds: [\n    { atMs: 30 * 60 * 1000, variant: "warn" },\n    { atMs: 2 * 60 * 60 * 1000, variant: "danger" },\n  ],\n});`,
+      constructor: [
+        { factory: "<code>createElapsedTime(container, options)</code>", arguments: "<code>container</code>, elapsed-time <code>options</code>", returns: "Elapsed time instance with update, pause, resume, stop, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>startTime</code>", default: "<code>null</code>", description: "Start datetime as Date, timestamp milliseconds, or parseable datetime string." },
+        { option: "<code>endTime</code>", default: "<code>null</code>", description: "Optional fixed end datetime. When provided, the elapsed value stops at this time." },
+        { option: "<code>running</code>", default: "<code>true</code>", description: "Whether the component should subscribe to the shared one-second ticker." },
+        { option: "<code>format</code>", default: "<code>\"fixed\"</code>", description: "Display format. <code>fixed</code> renders <code>dd:hh:mm:ss</code>; <code>compact</code> hides leading zero segments while keeping seconds visible." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set to <code>false</code> to remove the pill border, background, radius, padding, and min-height when the host card owns the visual shell." },
+        { option: "<code>variant</code>", default: "<code>\"neutral\"</code>", description: "Base tone. Allowed values: <code>neutral</code>, <code>info</code>, <code>success</code>, <code>warn</code>, <code>danger</code>." },
+        { option: "<code>thresholds</code>", default: "<code>[]</code>", description: "Elapsed-time variant thresholds such as <code>{ atMs, variant: \"warn\" }</code>." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "Allowed values: <code>sm</code>, <code>md</code>, <code>lg</code>." },
+        { option: "<code>label</code>", default: "<code>\"\"</code>", description: "Optional label text shown before the timer when <code>showLabel</code> is true." },
+        { option: "<code>showLabel</code>", default: "<code>false</code>", description: "Shows the configured label before the elapsed value." },
+        { option: "<code>prefix</code> / <code>suffix</code>", default: "<code>\"\"</code>", description: "Optional surrounding text, shown when <code>showPrefix</code> or <code>showSuffix</code> is true." },
+        { option: "<code>ariaLive</code>", default: "<code>\"off\"</code>", description: "Defaults off to avoid noisy screen-reader updates on dense dashboards." }
+      ],
+      propertiesText: "The root exposes <code>data-elapsed-ms</code> and <code>data-running</code> for inspection. It also receives display classes such as <code>ui-elapsed-time--fixed</code>, <code>ui-elapsed-time--compact</code>, and <code>is-chrome-less</code>. Use <code>getState()</code> for supported runtime reads.",
+      eventsText: "No events are emitted. The host owns incident/status lifecycle changes and calls update, pause, stop, or destroy.",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>pause(atTime?)</code>", arguments: "optional end datetime", returns: "<code>void</code>" },
+        { method: "<code>resume()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>stop(atTime?)</code>", arguments: "optional end datetime", returns: "<code>void</code>" },
+        { method: "<code>getState(nowMs?)</code>", arguments: "optional current timestamp", returns: "State snapshot with elapsedMs, parts, running, valid, and text" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="pauseFirst" class="ui-button" type="button">Pause First Incident</button>
+        <button id="resumeFirst" class="ui-button" type="button">Resume First Incident</button>
+      </div>
+      <h1 class="ui-title">Elapsed Time Demo</h1>
+      <p class="muted">Dedicated demo for running elapsed duration badges on incident and assignment cards.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Active Incident Cards</h2>
+      <p class="muted">Thresholds can shift the visual variant as incidents age.</p>
+      <div class="incident-grid" id="incidentGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Team Assignment Status Duration</h2>
+      <p class="muted">Each card starts from the time it entered its current status.</p>
+      <div class="assignment-grid" id="assignmentGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Chrome-less Inline Use</h2>
+      <p class="muted">Use <code>chrome: false</code> when a host card already owns the border, background, and spacing.</p>
+      <div class="row">
+        <span class="muted">Inline active duration</span>
+        <span id="inlineTimer"></span>
+      </div>
+      <div class="row">
+        <span class="muted">Compact duration</span>
+        <span id="compactTimer"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Dense Dashboard Sample</h2>
+      <p class="muted">These instances all share the same module-level ticker.</p>
+      <div class="bulk-grid" id="bulkGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const timer = createElapsedTime(host, {
+  startTime: incident.reported_at,
+  ariaLabel: "Incident active duration",
+  thresholds: [
+    { atMs: 30 * 60 * 1000, variant: "warn" },
+    { atMs: 2 * 60 * 60 * 1000, variant: "danger" },
+  ],
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createElapsedTime = await uiLoader.get("ui.elapsed.time");
+
+    const now = Date.now();
+    const incidentGrid = document.getElementById("incidentGrid");
+    const assignmentGrid = document.getElementById("assignmentGrid");
+    const bulkGrid = document.getElementById("bulkGrid");
+    const timers = [];
+
+    const incidents = [
+      { id: "INC-142", title: "Medical assistance", area: "Purok 3", offsetMs: 7 * 60 * 1000 },
+      { id: "INC-143", title: "Road obstruction", area: "Main Avenue", offsetMs: 44 * 60 * 1000 },
+      { id: "INC-144", title: "Fire response", area: "Riverside", offsetMs: (2 * 60 + 18) * 60 * 1000 },
+    ];
+
+    incidents.forEach((incident) => {
+      const card = document.createElement("article");
+      card.className = "incident-card";
+      card.innerHTML = `<h3>${incident.id} - ${incident.title}</h3><p class="meta">${incident.area}</p><div data-role="timer"></div>`;
+      incidentGrid.appendChild(card);
+      timers.push(createElapsedTime(card.querySelector("[data-role='timer']"), {
+        startTime: now - incident.offsetMs,
+        ariaLabel: `${incident.id} active duration`,
+        thresholds: [
+          { atMs: 30 * 60 * 1000, variant: "warn" },
+          { atMs: 2 * 60 * 60 * 1000, variant: "danger" },
+        ],
+      }));
+    });
+
+    const assignments = [
+      { team: "Medical Team A", status: "Requested", offsetMs: 13 * 60 * 1000 },
+      { team: "Rescue Unit 2", status: "Accepted", offsetMs: 58 * 60 * 1000 },
+      { team: "Traffic Support", status: "En route", offsetMs: 83 * 60 * 1000 },
+      { team: "Fire Team Alpha", status: "On scene", offsetMs: 126 * 60 * 1000 },
+    ];
+
+    assignments.forEach((assignment) => {
+      const card = document.createElement("article");
+      card.className = "assignment-card";
+      card.innerHTML = `<h3>${assignment.team}</h3><div class="assignment-card__footer"><p class="meta">${assignment.status}</p><div data-role="timer"></div></div>`;
+      assignmentGrid.appendChild(card);
+      createElapsedTime(card.querySelector("[data-role='timer']"), {
+        startTime: now - assignment.offsetMs,
+        label: assignment.status,
+        ariaLabel: `${assignment.team} status duration`,
+        size: "sm",
+        thresholds: [
+          { atMs: 60 * 60 * 1000, variant: "warn" },
+          { atMs: 2 * 60 * 60 * 1000, variant: "danger" },
+        ],
+      });
+    });
+
+    createElapsedTime(document.getElementById("inlineTimer"), {
+      startTime: now - (37 * 60 * 1000),
+      chrome: false,
+      ariaLabel: "Inline active duration",
+      thresholds: [
+        { atMs: 30 * 60 * 1000, variant: "warn" },
+      ],
+    });
+    createElapsedTime(document.getElementById("compactTimer"), {
+      startTime: now - ((9 * 60 + 12) * 1000),
+      format: "compact",
+      chrome: false,
+      ariaLabel: "Compact active duration",
+    });
+
+    Array.from({ length: 24 }, (_, index) => index + 1).forEach((index) => {
+      const host = document.createElement("div");
+      bulkGrid.appendChild(host);
+      createElapsedTime(host, {
+        startTime: now - (index * 97 * 1000),
+        size: "sm",
+        ariaLabel: `Dashboard timer ${index}`,
+      });
+    });
+
+    document.getElementById("pauseFirst").addEventListener("click", () => {
+      timers[0]?.pause();
+    });
+    document.getElementById("resumeFirst").addEventListener("click", () => {
+      timers[0]?.resume();
+    });
+  </script>
+</body>
+</html>

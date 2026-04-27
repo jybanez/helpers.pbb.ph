@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Elapsed Time Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.elapsed.time.css">
+</head>
+<body data-status="pending">
+  <div id="one"></div>
+  <div id="two"></div>
+  <div id="three"></div>
+  <div id="chromeLess"></div>
+  <div id="compact"></div>
+  <div id="compactZero"></div>
+  <pre id="results">pending</pre>
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    const nativeSetInterval = window.setInterval.bind(window);
+    const nativeClearInterval = window.clearInterval.bind(window);
+    let intervalStarts = 0;
+    let intervalClears = 0;
+    window.setInterval = function patchedSetInterval(...args) {
+      intervalStarts += 1;
+      return nativeSetInterval(...args);
+    };
+    window.clearInterval = function patchedClearInterval(...args) {
+      intervalClears += 1;
+      return nativeClearInterval(...args);
+    };
+
+    const { createElapsedTime } = await import("../js/ui/ui.elapsed.time.js");
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    const now = Date.now();
+    const one = createElapsedTime(document.getElementById("one"), {
+      startTime: now - ((1 * 86400 + 2 * 3600 + 3 * 60 + 4) * 1000),
+      ariaLabel: "Incident active duration",
+      thresholds: [
+        { atMs: 30 * 60 * 1000, variant: "warn" },
+        { atMs: 2 * 60 * 60 * 1000, variant: "danger" },
+      ],
+    });
+    const two = createElapsedTime(document.getElementById("two"), {
+      startTime: now - (65 * 1000),
+      label: "Requested",
+      showLabel: true,
+    });
+    const three = createElapsedTime(document.getElementById("three"), {
+      startTime: now - (10 * 1000),
+    });
+    const chromeLess = createElapsedTime(document.getElementById("chromeLess"), {
+      startTime: now - (5 * 1000),
+      chrome: false,
+    });
+    const compact = createElapsedTime(document.getElementById("compact"), {
+      startTime: now - ((2 * 60 + 3) * 1000),
+      format: "compact",
+    });
+    const compactZero = createElapsedTime(document.getElementById("compactZero"), {
+      startTime: now,
+      format: "compact",
+    });
+
+    const oneNode = document.querySelector("#one .ui-elapsed-time");
+    const oneValue = oneNode.querySelector(".ui-elapsed-time-value");
+    const twoNode = document.querySelector("#two .ui-elapsed-time");
+    const chromeLessNode = document.querySelector("#chromeLess .ui-elapsed-time");
+
+    assert(one.getState(now).text === "01:02:03:04", `expected fixed dd:hh:mm:ss state, got ${one.getState(now).text}`);
+    assert(/^\d{2}:\d{2}:\d{2}:\d{2}$/.test(oneValue.textContent), `expected fixed dd:hh:mm:ss text, got ${oneValue.textContent}`);
+    assert(oneNode.classList.contains("ui-elapsed-time--danger"), "threshold should apply danger variant");
+    assert(twoNode.querySelector(".ui-elapsed-time-label")?.textContent === "Requested", "label should render when enabled");
+    assert(chromeLessNode.classList.contains("is-chrome-less"), "chrome:false should add chrome-less class");
+    assert(getComputedStyle(chromeLessNode).backgroundColor === "rgba(0, 0, 0, 0)", "chrome:false should remove pill background");
+    assert(getComputedStyle(chromeLessNode).borderTopWidth === "0px", "chrome:false should remove pill border");
+    assert(compact.getState(now).text === "02:03", `compact format should hide leading zero segments, got ${compact.getState(now).text}`);
+    assert(compactZero.getState(now).text === "00", `compact all-zero format should keep seconds, got ${compactZero.getState(now).text}`);
+    assert(intervalStarts === 1, `expected one shared interval for active instances, got ${intervalStarts}`);
+
+    two.pause(now);
+    const paused = two.getState(now + 60000);
+    assert(paused.running === false, "pause should stop an instance");
+    assert(paused.text === "00:00:01:05", `pause should freeze elapsed text, got ${paused.text}`);
+
+    three.update({ startTime: now - (2 * 1000), endTime: now, running: false });
+    assert(three.getState(now + 5000).text === "00:00:00:02", "endTime should freeze elapsed time");
+
+    one.destroy();
+    two.destroy();
+    three.destroy();
+    chromeLess.destroy();
+    compact.destroy();
+    compactZero.destroy();
+    assert(intervalClears === 1, `expected shared interval cleanup after destroy, got ${intervalClears}`);
+
+    window.setInterval = nativeSetInterval;
+    window.clearInterval = nativeClearInterval;
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

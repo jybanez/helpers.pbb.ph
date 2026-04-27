@@ -37,6 +37,7 @@ css/
     ui.tree.select.css
     ui.toggle.css
     ui.datepicker.css
+    ui.elapsed.time.css
     ui.timeline.css
     ui.timeline.scrubber.css
     ui.command.palette.css
@@ -92,6 +93,7 @@ js/
     ui.toggle.button.js
     ui.toggle.group.js
     ui.datepicker.js
+    ui.elapsed.time.js
     ui.timeline.js
     ui.timeline.scrubber.js
     ui.command.palette.js
@@ -281,6 +283,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createToggleGroup(container, options)` grouped toggle composition with `multi` or single-select behavior, `getValue()`, `setItems()`, and `updateItem()`
 - `ui.datepicker.js`
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
+- `ui.elapsed.time.js`
+  - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -380,6 +384,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.tree.select.css` hierarchical tree-select styles
 - `ui.toggle.css` toggle button + toggle group styles
 - `ui.datepicker.css` datepicker styles
+- `ui.elapsed.time.css` elapsed-duration readout styles
 - `ui.timeline.css` timeline styles
 - `ui.timeline.scrubber.css` timeline scrubber styles
 - `ui.command.palette.css` command palette styles
@@ -464,7 +469,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
 - Data, timeline, and inspection:
-  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -543,6 +548,7 @@ node tests/form.modal.presets.regression.mjs
 | `ui.data.inspector` | `createDataInspector` | Yes | Removes outer inspector shell; nested node rendering remains intact. |
 | `ui.empty.state` | `createEmptyState` | Yes | Removes dashed empty-state frame so the host layout owns the presentation shell. |
 | `ui.scheduler` | `createScheduler` | Yes | Removes outer scheduler shell; month/week layout and interactions remain intact. |
+| `ui.elapsed.time` | `createElapsedTime` | Yes | Removes the elapsed-time pill border/background/padding so host cards can own the visual shell. |
 | `ui.timeline` | `createTimeline` | No | No distinct outer shell today; no-op `chrome` flags are intentionally avoided. |
 | `ui.stepper` | `createStepper` | No | Styling is item-level, not wrapper-shell-level. |
 | `ui.skeleton` | `createSkeleton` | No | Visuals are internal placeholder blocks; there is no meaningful outer shell to disable. |
@@ -1375,6 +1381,10 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.scheduler.html` -> dedicated scheduler/calendar playground
   - month/week views
   - slot and event callback interactions
+- `demos/demo.elapsed.time.html` -> dedicated elapsed-time playground
+  - active incident duration readouts
+  - team assignment status-duration readouts
+  - dense dashboard sample using one shared ticker
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
@@ -4131,6 +4141,67 @@ Returned API:
 Related demos:
 
 - `demos/demo.datepicker.html`
+
+### `createElapsedTime(container, options)` (`js/ui/ui.elapsed.time.js`)
+
+Purpose:
+
+- Compact live duration readout for records that have a start datetime and remain active until an app-owned lifecycle ends.
+- Suitable for incident active age, team assignment status age, queue dwell time, and dense dashboard cards.
+
+Factory:
+
+```js
+import { createElapsedTime } from "./js/ui/ui.elapsed.time.js";
+
+const timer = createElapsedTime(container, {
+  startTime: incident.reported_at,
+  thresholds: [
+    { atMs: 30 * 60 * 1000, variant: "warn" },
+    { atMs: 2 * 60 * 60 * 1000, variant: "danger" },
+  ],
+});
+```
+
+Display:
+
+- Fixed `dd:hh:mm:ss` text.
+- Uses tabular numerals so dashboard cards do not resize every second.
+- Active instances share one module-level one-second ticker; the component does not create one interval per card.
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `startTime` | `Date \| number \| string` | `null` | yes | Start datetime. Accepts Date, timestamp milliseconds, or parseable datetime string. |
+| `endTime` | `Date \| number \| string` | `null` | no | Optional fixed end datetime; freezes the elapsed value. |
+| `running` | `boolean` | `true` | no | Subscribes the instance to the shared ticker when valid and no `endTime` is set. |
+| `label` | `string` | `""` | no | Optional visible label when `showLabel` is true. |
+| `showLabel` | `boolean` | `false` | no | Renders the label before the duration. |
+| `prefix` / `suffix` | `string` | `""` | no | Optional visible text around the duration. |
+| `showPrefix` / `showSuffix` | `boolean` | `false` | no | Controls prefix/suffix visibility. |
+| `format` | `"fixed" \| "compact"` | `"fixed"` | no | `fixed` renders `dd:hh:mm:ss`; `compact` hides leading zero segments while keeping seconds visible. |
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` | no | Visual size. |
+| `variant` | `"neutral" \| "info" \| "success" \| "warn" \| "danger"` | `"neutral"` | no | Base visual tone. |
+| `thresholds` | `Array<{ atMs, variant }>` | `[]` | no | Variant changes as elapsed milliseconds pass configured thresholds. |
+| `ariaLabel` | `string` | `"Elapsed time"` | no | Accessible label prefix. |
+| `ariaLive` | `"off" \| "polite" \| "assertive"` | `"off"` | no | Defaults off to avoid noisy updates on dense dashboards. |
+| `chrome` | `boolean` | `true` | no | Removes the pill shell border/background/padding when `false`. |
+
+Methods:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `update(options)` | partial options | `void` | Updates start/end/label/threshold options and rerenders. |
+| `pause(atTime?)` | optional datetime | `void` | Freezes elapsed time at `atTime` or now. |
+| `resume()` | none | `void` | Clears `endTime` and resumes ticking from the original `startTime`. |
+| `stop(atTime?)` | optional datetime | `void` | Alias for freezing at `atTime` or now. |
+| `getState(nowMs?)` | optional timestamp | `object` | Returns `{ elapsedMs, parts, running, valid, text }`. |
+| `destroy()` | none | `void` | Removes DOM and unsubscribes from the shared ticker. |
+
+Related demos:
+
+- `demos/demo.elapsed.time.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 

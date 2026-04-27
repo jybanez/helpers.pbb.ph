@@ -244,6 +244,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createDatepicker",
   },
+  "ui.elapsed.time": {
+    js: "./ui.elapsed.time.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.elapsed.time.css"],
+    deps: [],
+    export: "createElapsedTime",
+  },
   "ui.timeline": {
     js: "./ui.timeline.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.timeline.css"],
@@ -578,6 +584,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.progress",
     "ui.virtual.list",
     "ui.scheduler",
+    "ui.elapsed.time",
     "ui.timeline",
     "ui.timeline.scrubber",
     "ui.data.inspector",
