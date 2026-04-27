@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Controls Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .map-stage {
+      min-height: 420px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(110, 166, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(110, 166, 255, 0.08) 1px, transparent 1px),
+        #0b1220;
+      background-size: 42px 42px;
+      position: relative;
+      overflow: hidden;
+    }
+    .map-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(73, 194, 127, 0.28), transparent 18%),
+        radial-gradient(circle at 66% 58%, rgba(244, 179, 80, 0.24), transparent 16%),
+        linear-gradient(140deg, transparent 0 46%, rgba(110, 166, 255, 0.24) 47% 50%, transparent 51% 100%);
+    }
+    #mapControlsHost {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 2;
+    }
+    .map-readout {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      z-index: 2;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: rgba(13, 21, 35, 0.88);
+      padding: 10px;
+      min-width: 220px;
+      color: #b2c2e5;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.controls"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Map Controls",
+      overview: "MapLibre-oriented control dock for zoom, bearing, pitch, locate, fit, and layer toggles.",
+      useWhen: [
+        "Use <code>createMapControls(...)</code> when a MapLibre map needs shared Helper-owned navigation controls.",
+        "Use it when Hotline owns map data and layers, but wants consistent controls across map surfaces."
+      ],
+      avoidWhen: [
+        "Do not use it as a map renderer; the host app still owns MapLibre setup, sources, layers, and markers.",
+        "Do not use yaw terminology for MapLibre integrations; use bearing and pitch."
+      ],
+      description: "The helper is a thin UI layer over a supplied MapLibre map instance or callbacks. It calls common MapLibre methods when available and keeps app-owned geolocation, fitting policy, and layer meaning outside the helper.",
+      defaultSampleCode: `const controls = createMapControls(host, {\n  map,\n  layers: [\n    { id: "incidents", label: "Incidents", checked: true },\n    { id: "teams", label: "Teams", checked: true },\n    { id: "routes", label: "Routes", checked: false },\n  ],\n  onLocate({ map }) {\n    // app-owned geolocation flow\n  },\n  onFit({ map }) {\n    // app-owned fit bounds policy\n  },\n});`,
+      constructor: [
+        { factory: "<code>createMapControls(container, options)</code>", arguments: "<code>container</code>, map-control <code>options</code>", returns: "Map controls instance with update, syncFromMap, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>map</code>", default: "<code>null</code>", description: "Optional MapLibre map instance. When supplied, zoom, bearing, pitch, and layer visibility can call MapLibre directly." },
+        { option: "<code>controls</code>", default: "<code>[\"zoom\", \"compass\", \"pitch\", \"locate\", \"fit\", \"layers\"]</code>", description: "Controls to render. Allowed values: zoom, compass, pitch, locate, fit, layers." },
+        { option: "<code>layers</code>", default: "<code>[]</code>", description: "Layer toggle definitions: <code>{ id, label, checked }</code>. The id should match a MapLibre layer id when direct visibility updates are desired." },
+        { option: "<code>pitchPresets</code>", default: "<code>0 / 45 / 60</code>", description: "Pitch buttons as <code>{ value, label }</code>, clamped to MapLibre-friendly 0-85 degrees." },
+        { option: "<code>orientation</code>", default: "<code>\"vertical\"</code>", description: "Control layout direction. Allowed values: <code>vertical</code> and <code>horizontal</code>." },
+        { option: "<code>placement</code>", default: "<code>\"top-right\"</code>", description: "Placement class hint for host layouts: top-left, top-right, bottom-left, bottom-right." },
+        { option: "<code>compact</code>", default: "<code>false</code>", description: "Uses smaller square controls for dense map surfaces." }
+      ],
+      propertiesText: "No public instance properties are documented. Use getState() for bearing, pitch, layer state, and panel state.",
+      events: [
+        { event: "<code>onLocate</code>", arguments: "<code>({ map })</code>", returns: "Called when locate is pressed. The app owns geolocation and permission UX." },
+        { event: "<code>onFit</code>", arguments: "<code>({ map })</code>", returns: "Called when fit is pressed. The app owns bounds selection." },
+        { event: "<code>onLayerToggle</code>", arguments: "<code>({ layerId, checked, map })</code>", returns: "Called after layer checked state changes." },
+        { event: "<code>onPitchChange</code>", arguments: "<code>({ pitch, map })</code>", returns: "Optional override for pitch changes." }
+      ],
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>syncFromMap()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Control state snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <a class="back" href="./index.html">&larr; Back to Home</a>
+      <h1 class="ui-title">Map Controls Demo</h1>
+      <p class="muted">Dedicated MapLibre-style controls demo using a mock map instance.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">MapLibre Control Dock</h2>
+      <div class="map-stage">
+        <div id="mapControlsHost"></div>
+        <div id="mapReadout" class="map-readout">Waiting for controls...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const controls = createMapControls(host, {
+  map,
+  layers: [
+    { id: "incidents", label: "Incidents", checked: true },
+    { id: "teams", label: "Teams", checked: true },
+    { id: "routes", label: "Routes", checked: false },
+  ],
+  onLocate({ map }) {},
+  onFit({ map }) {},
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createMapControls = await uiLoader.get("ui.map.controls");
+
+    function createMockMap() {
+      const handlers = new Map();
+      return {
+        zoom: 12,
+        bearing: 28,
+        pitch: 0,
+        layerVisibility: { incidents: "visible", teams: "visible", routes: "none" },
+        zoomIn() { this.zoom += 1; emit("move"); },
+        zoomOut() { this.zoom -= 1; emit("move"); },
+        easeTo(next) {
+          if (Number.isFinite(next.bearing)) this.bearing = next.bearing;
+          if (Number.isFinite(next.pitch)) this.pitch = next.pitch;
+          emit("move");
+        },
+        getBearing() { return this.bearing; },
+        getPitch() { return this.pitch; },
+        getLayer(id) { return Object.prototype.hasOwnProperty.call(this.layerVisibility, id); },
+        setLayoutProperty(id, key, value) {
+          this.layerVisibility[id] = value;
+          emit("move");
+        },
+        on(name, handler) {
+          if (!handlers.has(name)) handlers.set(name, new Set());
+          handlers.get(name).add(handler);
+        },
+        off(name, handler) {
+          handlers.get(name)?.delete(handler);
+        },
+      };
+
+      function emit(name) {
+        handlers.get(name)?.forEach((handler) => handler());
+      }
+    }
+
+    const map = createMockMap();
+    const readout = document.getElementById("mapReadout");
+
+    function writeReadout(label) {
+      readout.textContent = `${label}
+zoom: ${map.zoom}
+bearing: ${map.bearing}
+pitch: ${map.pitch}
+layers: ${JSON.stringify(map.layerVisibility, null, 2)}`;
+    }
+
+    const controls = createMapControls(document.getElementById("mapControlsHost"), {
+      map,
+      orientation: "vertical",
+      layers: [
+        { id: "incidents", label: "Incidents", checked: true },
+        { id: "teams", label: "Teams", checked: true },
+        { id: "routes", label: "Routes", checked: false },
+      ],
+      onLocate() {
+        writeReadout("locate requested");
+      },
+      onFit() {
+        writeReadout("fit requested");
+      },
+      onLayerToggle() {
+        writeReadout("layer changed");
+      },
+    });
+    controls.syncFromMap();
+    writeReadout("ready");
+  </script>
+</body>
+</html>

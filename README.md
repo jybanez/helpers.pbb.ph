@@ -63,6 +63,7 @@ css/
     ui.progress.css
     ui.virtual.list.css
     ui.scheduler.css
+    ui.map.controls.css
     ui.nav.css
   incident/
     incident.css
@@ -118,6 +119,7 @@ js/
     ui.progress.js
     ui.virtual.list.js
     ui.scheduler.js
+    ui.map.controls.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -285,6 +287,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
 - `ui.elapsed.time.js`
   - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
+- `ui.map.controls.js`
+  - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -407,6 +411,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.progress.css` progress styles
 - `ui.virtual.list.css` virtual-list styles
 - `ui.scheduler.css` scheduler styles
+- `ui.map.controls.css` MapLibre-oriented control styles
 - `ui.nav.css` navigation/menu styles
 
 Current usage:
@@ -468,8 +473,8 @@ Public component families:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
-- Data, timeline, and inspection:
-  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- Data, timeline, map, and inspection:
+  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -1385,6 +1390,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - active incident duration readouts
   - team assignment status-duration readouts
   - dense dashboard sample using one shared ticker
+- `demos/demo.map.controls.html` -> dedicated MapLibre-style map-controls playground
+  - zoom and compass/bearing controls
+  - pitch presets
+  - locate, fit, and layer toggles
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
@@ -4202,6 +4211,72 @@ Methods:
 Related demos:
 
 - `demos/demo.elapsed.time.html`
+
+### `createMapControls(container, options)` (`js/ui/ui.map.controls.js`)
+
+Purpose:
+
+- MapLibre-oriented control dock for shared map navigation UI.
+- Suitable for Hotline map surfaces where the app owns MapLibre setup, sources, markers, layer meaning, geolocation, and fit-bounds policy.
+
+Factory:
+
+```js
+import { createMapControls } from "./js/ui/ui.map.controls.js";
+
+const controls = createMapControls(container, {
+  map,
+  layers: [
+    { id: "incidents", label: "Incidents", checked: true },
+    { id: "teams", label: "Teams", checked: true },
+    { id: "routes", label: "Routes", checked: false },
+  ],
+  onLocate({ map }) {},
+  onFit({ map }) {},
+});
+```
+
+MapLibre integration:
+
+- `zoom` calls `map.zoomIn()` / `map.zoomOut()` unless callbacks override the behavior.
+- `compass` shows current bearing and resets north with `map.easeTo({ bearing: 0 })`.
+- `pitch` presets call `map.easeTo({ pitch })`.
+- layer toggles call `map.setLayoutProperty(layerId, "visibility", "visible" | "none")` when the layer exists.
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `map` | `MapLibre map` | `null` | no | Optional MapLibre map instance. |
+| `controls` | `Array<string>` | all controls | no | Allowed values: `zoom`, `compass`, `pitch`, `locate`, `fit`, `layers`. |
+| `layers` | `Array<{ id, label, checked }>` | `[]` | no | Layer toggle definitions. |
+| `pitchPresets` | `Array<{ value, label }>` | `0`, `45`, `60` | no | Pitch preset buttons, clamped to 0-85 degrees. |
+| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | no | Lays controls out as a stacked dock or a horizontal toolbar. |
+| `placement` | `"top-left" \| "top-right" \| "bottom-left" \| "bottom-right"` | `"top-right"` | no | Placement class hint for host layouts. |
+| `compact` | `boolean` | `false` | no | Uses smaller square buttons. |
+
+Callbacks:
+
+| Callback | Payload | Description |
+|---|---|---|
+| `onLocate` | `{ map }` | App-owned locate/geolocation flow. |
+| `onFit` | `{ map }` | App-owned fit-bounds flow. |
+| `onLayerToggle` | `{ layerId, checked, map }` | Called after a layer toggle changes. |
+| `onPitchChange` | `{ pitch, map }` | Optional override for pitch changes. |
+| `onResetNorth` | `{ map }` | Optional override for compass reset. |
+
+Methods:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `update(options)` | partial options | `void` | Rebuilds controls with merged options. |
+| `syncFromMap()` | none | `void` | Re-reads map bearing/pitch and updates visual state. |
+| `getState()` | none | `object` | Returns controls, layers, bearing, pitch, and layer panel state. |
+| `destroy()` | none | `void` | Removes DOM and unbinds map listeners. |
+
+Related demos:
+
+- `demos/demo.map.controls.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 

@@ -250,6 +250,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createElapsedTime",
   },
+  "ui.map.controls": {
+    js: "./ui.map.controls.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.map.controls.css"],
+    deps: [],
+    export: "createMapControls",
+  },
   "ui.timeline": {
     js: "./ui.timeline.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.timeline.css"],
@@ -585,6 +591,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.virtual.list",
     "ui.scheduler",
     "ui.elapsed.time",
+    "ui.map.controls",
     "ui.timeline",
     "ui.timeline.scrubber",
     "ui.data.inspector",

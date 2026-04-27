@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Map Controls Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.map.controls.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">pending</pre>
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    import { createMapControls } from "../js/ui/ui.map.controls.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    function assert(condition, message) {
+      if (!condition) failures.push(message);
+    }
+
+    function createMockMap() {
+      const handlers = new Map();
+      return {
+        zoom: 10,
+        bearing: 25,
+        pitch: 0,
+        layerVisibility: {},
+        events: [],
+        zoomIn() { this.zoom += 1; this.events.push("zoomIn"); },
+        zoomOut() { this.zoom -= 1; this.events.push("zoomOut"); },
+        easeTo(next) {
+          if (Number.isFinite(next.bearing)) this.bearing = next.bearing;
+          if (Number.isFinite(next.pitch)) this.pitch = next.pitch;
+          this.events.push(["easeTo", { ...next }]);
+        },
+        getBearing() { return this.bearing; },
+        getPitch() { return this.pitch; },
+        getLayer(id) { return Boolean(id); },
+        setLayoutProperty(id, key, value) {
+          this.layerVisibility[id] = { key, value };
+        },
+        on(name, handler) {
+          if (!handlers.has(name)) handlers.set(name, new Set());
+          handlers.get(name).add(handler);
+        },
+        off(name, handler) {
+          handlers.get(name)?.delete(handler);
+        },
+        emit(name) {
+          handlers.get(name)?.forEach((handler) => handler());
+        },
+        handlerCount(name) {
+          return handlers.get(name)?.size || 0;
+        },
+      };
+    }
+
+    const layerEvents = [];
+    const locateEvents = [];
+    const fitEvents = [];
+    const map = createMockMap();
+    const controls = createMapControls(document.getElementById("host"), {
+      map,
+      orientation: "horizontal",
+      layers: [
+        { id: "incidents", label: "Incidents", checked: true },
+        { id: "teams", label: "Teams", checked: false },
+      ],
+      onLocate(payload) { locateEvents.push(payload); },
+      onFit(payload) { fitEvents.push(payload); },
+      onLayerToggle(payload) { layerEvents.push(payload); },
+    });
+
+    document.querySelector('[data-control="zoom-in"]').click();
+    document.querySelector('[data-control="zoom-out"]').click();
+    document.querySelector('[data-control="compass"]').click();
+    document.querySelector('[data-control="pitch-45"]').click();
+    document.querySelector('[data-control="locate"]').click();
+    document.querySelector('[data-control="fit"]').click();
+    document.querySelector('[data-control="layers"]').click();
+    const teams = document.querySelector('input[data-layer-id="teams"]');
+    teams.checked = true;
+    teams.dispatchEvent(new Event("change", { bubbles: true }));
+
+    assert(map.zoom === 10, "zoom controls should call map zoomIn and zoomOut");
+    assert(map.bearing === 0, "compass should reset bearing to north");
+    assert(map.pitch === 45, "pitch preset should call easeTo with pitch");
+    assert(locateEvents.length === 1, "locate callback should fire");
+    assert(fitEvents.length === 1, "fit callback should fire");
+    assert(layerEvents.length === 1 && layerEvents[0].layerId === "teams" && layerEvents[0].checked === true, "layer toggle callback should fire with layer state");
+    assert(map.layerVisibility.teams?.value === "visible", "layer toggle should update MapLibre visibility when layer exists");
+    assert(document.querySelector(".ui-map-controls__layers").classList.contains("is-open"), "layer panel should open");
+    assert(document.querySelector(".ui-map-controls").classList.contains("ui-map-controls--horizontal"), "orientation should apply horizontal root class");
+    assert(document.querySelector('[data-control="pitch-45"]').classList.contains("is-active"), "active pitch button should sync from map");
+    assert(map.handlerCount("move") === 1, "map move listener should be bound");
+
+    controls.destroy();
+    assert(map.handlerCount("move") === 0, "map listeners should be removed on destroy");
+    assert(!document.querySelector(".ui-map-controls"), "destroy should clear the host");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>
