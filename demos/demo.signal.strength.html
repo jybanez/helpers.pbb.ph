@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal Strength Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .signal-demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .signal-demo-card,
+    .signal-demo-navbar {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .signal-demo-card h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+    .signal-demo-navbar {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+    }
+    .signal-demo-brand {
+      min-width: 0;
+      font-weight: 700;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.signal.strength"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Signal Strength",
+      overview: "Transport-agnostic 0-4 bar connectivity status primitive for compact app chrome.",
+      useWhen: [
+        "Use <code>createSignalStrength(...)</code> when an app adapter already has connectivity level, tone, and text.",
+        "Use it in navbars, headers, or compact status areas where stable sizing matters."
+      ],
+      avoidWhen: [
+        "Do not use it to call Realtime, run latency probes, or own reconnect logic.",
+        "Do not use it for detailed logs or diagnostics; keep those in app-owned panels."
+      ],
+      description: "Signal Strength is a visual-only status primitive. Host apps map transport facts such as latency, browser online state, room readiness, and reconnect state into level/tone/text props, then call update(...).",
+      defaultSampleCode: `const signal = createSignalStrength(host, {\n  label: "Realtime",\n  level: 4,\n  tone: "ok",\n  text: "84 ms",\n  title: "Realtime connected (84 ms)",\n  ariaLabel: "Realtime connected, 84 milliseconds",\n});\n\nsignal.update({\n  level: 1,\n  tone: "warn",\n  text: "Reconnecting",\n});`,
+      constructor: [
+        { factory: "<code>createSignalStrength(container, options)</code>", arguments: "<code>container</code>, signal-strength <code>options</code>", returns: "Signal strength instance with update, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>level</code>", default: "<code>0</code>", description: "Signal level clamped to an integer from 0 through 4." },
+        { option: "<code>tone</code>", default: "<code>\"neutral\"</code>", description: "Visual tone. Allowed values: <code>ok</code>, <code>warn</code>, <code>danger</code>, <code>offline</code>, <code>neutral</code>." },
+        { option: "<code>text</code>", default: "<code>\"\"</code>", description: "Short visible status text. The text slot has stable width to reduce navbar jitter." },
+        { option: "<code>label</code>", default: "<code>\"Signal\"</code>", description: "Status domain used for default accessible text." },
+        { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Tooltip text. Falls back to the accessible label when omitted." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"\"</code>", description: "Explicit accessible status label." },
+        { option: "<code>ariaLive</code>", default: "<code>\"off\"</code>", description: "Live region behavior. Allowed values: <code>off</code>, <code>polite</code>, <code>assertive</code>." },
+        { option: "<code>showText</code>", default: "<code>true</code>", description: "Set to false for bars-only rendering in tight spaces." },
+        { option: "<code>size</code>", default: "<code>\"compact\"</code>", description: "Allowed values: <code>compact</code>, <code>regular</code>." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name on the root." }
+      ],
+      propertiesText: "The root exposes <code>data-level</code>, <code>data-tone</code>, and <code>data-show-text</code> for inspection. Use <code>getState()</code> for supported runtime reads.",
+      eventsText: "No events are emitted. Host apps own transport measurement and call update(...).",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="cycleSignal" class="ui-button" type="button">Cycle Navbar Signal</button>
+        <button id="barsOnly" class="ui-button" type="button">Toggle Bars Only</button>
+      </div>
+      <h1 class="ui-title">Signal Strength Demo</h1>
+      <p class="muted">Dedicated visual-only status primitive for connectivity quality. Transport measurement stays app-owned.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Navbar Placement</h2>
+      <div class="signal-demo-navbar">
+        <span class="signal-demo-brand">Operator Dashboard</span>
+        <span id="navbarSignal"></span>
+        <button class="ui-button" type="button">Actions</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">States</h2>
+      <div class="signal-demo-grid" id="stateGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const signal = createSignalStrength(host, {
+  label: "Realtime",
+  level: 4,
+  tone: "ok",
+  text: "84 ms",
+  title: "Realtime connected (84 ms)",
+  ariaLabel: "Realtime connected, 84 milliseconds",
+});
+
+signal.update({
+  level: 1,
+  tone: "warn",
+  text: "Reconnecting",
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createSignalStrength = await uiLoader.get("ui.signal.strength");
+
+    const states = [
+      { label: "Realtime", level: 0, tone: "offline", text: "Offline", title: "Realtime offline", ariaLabel: "Realtime offline" },
+      { label: "Realtime", level: 1, tone: "warn", text: "Reconnect", title: "Realtime reconnecting", ariaLabel: "Realtime reconnecting" },
+      { label: "Realtime", level: 2, tone: "danger", text: "Weak", title: "Realtime weak signal", ariaLabel: "Realtime weak signal, 2 of 4 bars" },
+      { label: "Realtime", level: 3, tone: "warn", text: "152 ms", title: "Realtime degraded, 152 ms", ariaLabel: "Realtime degraded, 152 milliseconds" },
+      { label: "Realtime", level: 4, tone: "ok", text: "84 ms", title: "Realtime connected, 84 ms", ariaLabel: "Realtime connected, 84 milliseconds" },
+      { label: "Realtime", level: 0, tone: "neutral", text: "Unknown", title: "Realtime state unknown", ariaLabel: "Realtime state unknown" },
+    ];
+    let index = 4;
+    let showText = true;
+    const navbarSignal = createSignalStrength(document.getElementById("navbarSignal"), states[index]);
+
+    states.forEach((state) => {
+      const card = document.createElement("article");
+      card.className = "signal-demo-card";
+      card.innerHTML = `<h3>${state.text}</h3><div data-role="signal"></div><p class="muted">${state.tone}, level ${state.level}</p>`;
+      document.getElementById("stateGrid").appendChild(card);
+      createSignalStrength(card.querySelector("[data-role='signal']"), state);
+    });
+
+    document.getElementById("cycleSignal").addEventListener("click", () => {
+      index = (index + 1) % states.length;
+      navbarSignal.update({ ...states[index], showText });
+    });
+
+    document.getElementById("barsOnly").addEventListener("click", () => {
+      showText = !showText;
+      navbarSignal.update({ showText });
+    });
+  </script>
+</body>
+</html>

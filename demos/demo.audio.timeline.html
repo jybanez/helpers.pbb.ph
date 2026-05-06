@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Timeline Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .audio-demo-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      height: 220px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+    .sample-code {
+      margin: 0;
+      white-space: pre;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d7e8ff;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      max-height: 260px;
+      overflow: auto;
+    }
+    h1, h2, p {
+      margin: 0;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.audio.timeline"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Audio Timeline",
+      overview: "Generic synchronized multi-track audio playback for arbitrary sources.",
+      useWhen: [
+        "Use createAudioTimeline(...) when the app already has generic audio tracks and aligned segments.",
+        "Use it for conference playback, mixed radio/call sources, or media review where tracks are not limited to caller/operator roles."
+      ],
+      avoidWhen: [
+        "Do not use this incident.media[] adapter behavior; use the Audio Session demo and createAudioCallSession(...) for incident payloads.",
+        "Do not use it when a single browser audio element is sufficient."
+      ],
+      description: "The generic timeline accepts tracks[] with arbitrary ids and labels. Each track contains segments with srcUrl/path/src, startOffsetMs, durationMs, and optional processing state. Pending processing segments render a preparing notice and are excluded from playback until update(...) supplies a source URL.",
+      defaultSampleCode: `const timeline = createAudioTimeline(host, {\n  durationMs: 24000,\n  tracks: [\n    {\n      id: "caller",\n      label: "Caller",\n      segments: [{ id: "caller-1", srcUrl: callerUrl, startOffsetMs: 0, durationMs: 12000 }],\n    },\n    {\n      id: "operator",\n      label: "Operator",\n      segments: [{ id: "operator-1", srcUrl: operatorUrl, startOffsetMs: 1600, durationMs: 10000 }],\n    },\n    {\n      id: "radio-net",\n      label: "Radio Net",\n      segments: [{ id: "radio-pending", processing: true, processingLabel: "Preparing radio channel..." }],\n    },\n  ],\n}, {\n  trackStyles: { "radio-net": "dots" },\n});`,
+      constructor: [
+        { factory: "<code>createAudioTimeline(container, data, options)</code>", arguments: "<code>container</code>, timeline <code>data</code>, <code>options</code>", returns: "Audio-timeline instance" }
+      ],
+      options: [
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root audio timeline." },
+        { option: "<code>ariaLabel</code>", default: '<code>"Audio timeline"</code>', description: "Accessible label for the timeline region." },
+        { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative audio segment paths." },
+        { option: "<code>audiographStyle</code>", default: '<code>"vu"</code>', description: "Default graph style used for tracks." },
+        { option: "<code>trackStyles</code>", default: '<code>{}</code>', description: "Per-track graph style override keyed by track id." },
+        { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Audiograph sensitivity multiplier." },
+        { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows per-track mute controls on playable graph tracks." },
+        { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build when at least one playable segment exists." },
+        { option: "<code>onError(error)</code>", default: '<code>null</code>', description: "Receives recoverable build or metadata-load errors." },
+        { option: "<code>onStateChange(state)</code>", default: '<code>null</code>', description: "Receives playback, duration, track, pending, and playable state snapshots." }
+      ],
+      propertiesText: "Use <code>getState()</code> for playback/timeline state. State includes <code>isPlaying</code>, <code>currentMs</code>, <code>durationMs</code>, <code>hasPending</code>, <code>hasPlayable</code>, and <code>tracks[]</code>. Each track exposes <code>id</code>, <code>label</code>, <code>muted</code>, <code>processing</code>, <code>playable</code>, and <code>segments[]</code>. Each segment exposes <code>id</code>, <code>startOffsetMs</code>, <code>durationMs</code>, <code>endOffsetMs</code>, <code>srcUrl</code>, <code>processing</code>, <code>processingLabel</code>, <code>playable</code>, and <code>meta</code>.",
+      events: [
+        { event: "<code>onError(error)</code>", arguments: "error object", returns: "<code>void</code>", description: "Fires when the timeline build or metadata loading hits a recoverable error." },
+        { event: "<code>onStateChange(state)</code>", arguments: "playback/timeline state", returns: "<code>void</code>", description: "Fires as playback state changes during seeking and play/pause transitions." }
+      ],
+      methods: [
+        { method: "<code>update(data, options?)</code>", arguments: "timeline payload and optional options", returns: "<code>Promise&lt;void&gt;</code>" },
+        { method: "<code>play()</code>", arguments: "none", returns: "<code>Promise&lt;void&gt;</code>" },
+        { method: "<code>pause()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>seek(ms)</code>", arguments: "timeline milliseconds", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current playback/timeline state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="audio-demo-controls">
+        <a class="back" href="./index.html">← Back to Home</a>
+        <button id="pendingBtn" class="ui-button" type="button">Pending Track</button>
+        <button id="resolveBtn" class="ui-button" type="button">Resolve Pending</button>
+        <label for="styleSelect">Graph</label>
+        <select id="styleSelect">
+          <option value="vu" selected>VU Meter</option>
+          <option value="dots">Dot Matrix Pulse</option>
+          <option value="mirrored">Mirrored Waveform</option>
+          <option value="spectrum">Spectrum Bars</option>
+          <option value="neon">Neon Ribbon Wave</option>
+          <option value="particle">Particle Pulse</option>
+          <option value="shockwave">Shockwave</option>
+          <option value="tsunami">Tsunami Ribbon</option>
+          <option value="plasma">Plasma Arc</option>
+          <option value="burst">Burst Columns</option>
+          <option value="heartbeat">Heartbeat Oscilloscope</option>
+        </select>
+        <label for="themeSelect">Theme</label>
+        <select id="themeSelect">
+          <option value="dark" selected>dark</option>
+          <option value="light">light</option>
+        </select>
+        <label for="sensitivityRange">Sensitivity</label>
+        <input id="sensitivityRange" type="range" min="1" max="6" step="0.1" value="3.4">
+        <code id="sensitivityValue">3.4x</code>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h1>Audio Timeline Demo</h1>
+      <p>Uses generic <code>tracks[]</code> and aligned <code>segments[]</code> rather than incident media rows.</p>
+    </section>
+
+    <section class="panel">
+      <div id="audioHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Sample Code</h2>
+      <pre class="sample-code">const timeline = createAudioTimeline(host, {
+  durationMs: 24000,
+  tracks: [
+    {
+      id: "caller",
+      label: "Caller",
+      segments: [{ id: "caller-1", srcUrl: callerUrl, startOffsetMs: 0, durationMs: 12000 }],
+    },
+    {
+      id: "operator",
+      label: "Operator",
+      segments: [{ id: "operator-1", srcUrl: operatorUrl, startOffsetMs: 1600, durationMs: 10000 }],
+    },
+    {
+      id: "radio-net",
+      label: "Radio Net",
+      segments: [{ id: "radio-pending", processing: true, processingLabel: "Preparing radio channel..." }],
+    },
+  ],
+}, {
+  trackStyles: { "radio-net": "dots" },
+});
+
+timeline.update({
+  durationMs: 24000,
+  tracks: [{
+    id: "radio-net",
+    label: "Radio Net",
+    segments: [{ id: "radio-pending", srcUrl: radioUrl, startOffsetMs: 0, durationMs: 24000 }],
+  }],
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Event Log</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createAudioTimeline = await uiLoader.get("ui.audio.timeline");
+
+    const page = document.querySelector("main.page");
+    const pendingBtn = document.getElementById("pendingBtn");
+    const resolveBtn = document.getElementById("resolveBtn");
+    const styleSelect = document.getElementById("styleSelect");
+    const themeSelect = document.getElementById("themeSelect");
+    const sensitivityRange = document.getElementById("sensitivityRange");
+    const sensitivityValue = document.getElementById("sensitivityValue");
+    const host = document.getElementById("audioHost");
+    const eventLog = document.getElementById("eventLog");
+    const audioUrl = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+    let audioApi = null;
+    let lastLoggedSecond = -1;
+
+    function addEvent(message, payload) {
+      const line = `[${new Date().toISOString()}] ${message}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      eventLog.textContent = eventLog.textContent === "No events yet."
+        ? line
+        : `${line}\n${eventLog.textContent}`;
+    }
+
+    function getSensitivity() {
+      const value = Number(sensitivityRange.value);
+      return Number.isFinite(value) ? value : 3.4;
+    }
+
+    function updateSensitivityLabel() {
+      sensitivityValue.textContent = `${getSensitivity().toFixed(1)}x`;
+    }
+
+    function createTimelineData(includePending = true) {
+      return {
+        durationMs: 24000,
+        tracks: [
+          {
+            id: "caller",
+            label: "Caller",
+            segments: [{ id: "caller-1", srcUrl: audioUrl, startOffsetMs: 0, durationMs: 18000 }],
+          },
+          {
+            id: "operator",
+            label: "Operator",
+            segments: [{ id: "operator-1", srcUrl: audioUrl, startOffsetMs: 2200, durationMs: 15000 }],
+          },
+          {
+            id: "radio-net",
+            label: "Radio Net",
+            segments: [includePending
+              ? { id: "radio-pending", processing: true, processingLabel: "Preparing radio channel...", startOffsetMs: 0 }
+              : { id: "radio-pending", srcUrl: audioUrl, startOffsetMs: 0, durationMs: 24000 }],
+          },
+        ],
+      };
+    }
+
+    function createOptions() {
+      return {
+        ariaLabel: "Generic multi-source timeline playback",
+        audiographStyle: styleSelect.value,
+        trackStyles: { "radio-net": "dots" },
+        sensitivity: getSensitivity(),
+        showMute: true,
+        autoplay: false,
+        onError(error) {
+          addEvent("timeline.error", { message: error?.message || "Unknown error" });
+        },
+        onStateChange(state) {
+          const currentSecond = Math.floor((state?.currentMs || 0) / 1000);
+          if (currentSecond !== lastLoggedSecond || state?.hasPending) {
+            lastLoggedSecond = currentSecond;
+            addEvent("timeline.state", {
+              currentMs: state?.currentMs,
+              durationMs: state?.durationMs,
+              hasPending: state?.hasPending,
+              hasPlayable: state?.hasPlayable,
+              trackCount: state?.tracks?.length || 0,
+            });
+          }
+        },
+      };
+    }
+
+    function mountTimeline(includePending = true) {
+      if (audioApi) {
+        audioApi.destroy();
+      }
+      audioApi = createAudioTimeline(host, createTimelineData(includePending), createOptions());
+      lastLoggedSecond = -1;
+      addEvent("timeline.loaded", { includePending });
+    }
+
+    updateSensitivityLabel();
+    mountTimeline(true);
+
+    pendingBtn.addEventListener("click", () => {
+      mountTimeline(true);
+    });
+
+    resolveBtn.addEventListener("click", () => {
+      audioApi?.update(createTimelineData(false), createOptions());
+      addEvent("timeline.pending.resolved", { track: "radio-net" });
+    });
+
+    styleSelect.addEventListener("change", () => {
+      mountTimeline(audioApi?.getState()?.hasPending !== false);
+    });
+
+    themeSelect.addEventListener("change", () => {
+      page.dataset.theme = themeSelect.value;
+      addEvent("theme.toggle", { theme: themeSelect.value });
+    });
+
+    sensitivityRange.addEventListener("input", () => {
+      updateSensitivityLabel();
+      mountTimeline(audioApi?.getState()?.hasPending !== false);
+    });
+  </script>
+</body>
+</html>

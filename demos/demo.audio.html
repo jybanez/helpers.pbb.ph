@@ -44,6 +44,20 @@
       overflow-y: auto;
       overflow-x: auto;
     }
+    .sample-code {
+      margin: 0;
+      white-space: pre;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d7e8ff;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      max-height: 260px;
+      overflow: auto;
+    }
     h1, h2, p {
       margin: 0;
     }
@@ -55,28 +69,34 @@
   <script>
     window.demoMeta = {
       title: "Audio Session",
-      overview: "Operational audio-call session playback surface for stitched incident-call samples.",
+      overview: "Incident call-session playback adapter for media rows with role-aligned audio tracks.",
       useWhen: [
-        "Use the audio call-session helper when recorded call segments need a cohesive playback experience.",
-        "Use it for incident-review and call-audit surfaces where segment metadata matters."
+        "Use createAudioCallSession(...) when incident.media[] rows should be adapted into caller/operator style role tracks.",
+        "Use it for incident review, call audit, and media-finalization flows that need pending audio placeholders."
       ],
       avoidWhen: [
-        "Do not use it as a generic audio player for unrelated media galleries.",
+        "Do not use createAudioCallSession(...) for unrelated mixers; use the Audio Timeline demo and createAudioTimeline(...) directly.",
         "Do not use it when simple browser audio controls are enough."
       ],
-      description: "The audio demo loads incident sample JSON and resolves supported relative segment paths against the repo base. It is an operational playback surface, not a generic entertainment-style media player.",
-      defaultSampleCode: `const session = createAudioCallSession(host, data, {\n  baseUrl: "..",\n});`,
+      description: "The call-session helper reads incident.media[] audio rows, maps metadata.recording_role or peer_role into role tracks, and delegates rendering/playback to the generic audio timeline internally. Playable rows use metadata.recording_role; pending rows may use the same field or fall back to peer_role plus a timestamp field such as created_at.",
+      defaultSampleCode: `const session = createAudioCallSession(host, {\n  caller: { name: "PBB Caller" },\n  operator: { name: "Operator Reyes" },\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    processing: true,\n    processingLabel: "Preparing caller audio...",\n    peer_role: "caller",\n    peer_label: "PBB Caller",\n    created_at: "2026-04-29T00:00:00Z",\n    metadata: { processing: true, track_kind: "audio" },\n  }],\n}, {\n  baseUrl: "..",\n});\n\nsession.update({\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    path: "samples/caller-final.wav",\n    duration_seconds: 18,\n    metadata: {\n      recording_role: "caller-166-2026-04-29T00-00-00Z",\n      track_kind: "audio",\n    },\n  }],\n});`,
       constructor: [
-        { factory: "<code>createAudioCallSession(container, data, options)</code>", arguments: "<code>container</code>, call-session <code>data</code>, <code>options</code>", returns: "Audio-session instance" }
+        { factory: "<code>createAudioCallSession(container, incident, options)</code>", arguments: "<code>container</code>, incident payload, <code>options</code>", returns: "Audio-session adapter instance" }
       ],
       options: [
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root audio session." },
+        { option: "<code>ariaLabel</code>", default: '<code>"Audio call session"</code>', description: "Accessible label for the session region." },
+        { option: "<code>debug</code>", default: '<code>false</code>', description: "Reserved diagnostic flag retained in the normalized options contract." },
         { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative audio segment paths." },
         { option: "<code>audiographStyle</code>", default: '<code>"vu"</code>', description: "Graph style used for role tracks." },
+        { option: "<code>roleStyles</code>", default: '<code>{}</code>', description: "Per-role graph style override keyed by role, falling back to audiographStyle." },
         { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Audiograph sensitivity multiplier." },
         { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows per-role mute controls on the graph tracks." },
-        { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build." }
+        { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build when at least one playable segment exists." },
+        { option: "<code>onError(error)</code>", default: '<code>null</code>', description: "Receives recoverable build or metadata-load errors." },
+        { option: "<code>onStateChange(state)</code>", default: '<code>null</code>', description: "Receives playback, duration, role, pending, and playable state snapshots." }
       ],
-      propertiesText: "Use <code>getState()</code> for playback/session state instead of reading the internal audio elements directly.",
+      propertiesText: "Use <code>getState()</code> for playback/session state instead of reading internal audio elements. State includes <code>isPlaying</code>, <code>currentMs</code>, <code>durationMs</code>, <code>hasPending</code>, <code>hasPlayable</code>, and <code>roles[]</code>. Each role exposes <code>role</code>, <code>roleLabel</code>, <code>muted</code>, <code>processing</code>, <code>playable</code>, and <code>segments[]</code>. Each segment exposes <code>id</code>, <code>callId</code>, <code>startOffsetMs</code>, <code>durationMs</code>, <code>endOffsetMs</code>, <code>srcUrl</code>, <code>processing</code>, <code>processingLabel</code>, and <code>playable</code>. Pending media rows should provide stable <code>id</code>, <code>type: \"audio\"</code>, <code>processing: true</code>, optional <code>processingLabel</code>, and either <code>metadata.recording_role</code> or <code>peer_role</code> plus a timestamp such as <code>created_at</code>.",
       events: [
         { event: "<code>onError(error)</code>", arguments: "error object", returns: "<code>void</code>", description: "Fires when the session build or metadata loading hits a recoverable error." },
         { event: "<code>onStateChange(state)</code>", arguments: "playback/session state", returns: "<code>void</code>", description: "Fires as playback state changes during seeking and play/pause transitions." }
@@ -87,6 +107,7 @@
         { method: "<code>pause()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>seek(ms)</code>", arguments: "timeline milliseconds", returns: "<code>void</code>" },
         { method: "<code>getState()</code>", arguments: "none", returns: "current playback/session state" },
+        { method: "<code>getTimeline()</code>", arguments: "none", returns: "underlying timeline instance from createAudioCallSession(...)" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
@@ -94,12 +115,13 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page" data-theme="dark" data-demo-structured="true">
     <section class="panel">
       <div class="audio-demo-controls">
         <a class="back" href="./index.html">← Back to Home</a>
         <label for="sampleSelect">Sample</label>
         <select id="sampleSelect"></select>
+        <button id="processingBtn" class="ui-button" type="button">Processing State</button>
         <label for="styleSelect">Graph</label>
         <select id="styleSelect">
           <option value="vu" selected>VU Meter</option>
@@ -135,6 +157,39 @@
     </section>
 
     <section class="panel">
+      <h2>Sample Code</h2>
+      <pre class="sample-code">const session = createAudioCallSession(host, {
+  caller: { name: "PBB Caller" },
+  operator: { name: "Operator Reyes" },
+  media: [{
+    id: "caller-audio",
+    type: "audio",
+    processing: true,
+    processingLabel: "Preparing caller audio...",
+    peer_role: "caller",
+    peer_label: "PBB Caller",
+    created_at: "2026-04-29T00:00:00Z",
+    metadata: { processing: true, track_kind: "audio" },
+  }],
+}, {
+  baseUrl: "..",
+});
+
+session.update({
+  media: [{
+    id: "caller-audio",
+    type: "audio",
+    path: "samples/caller-final.wav",
+    duration_seconds: 18,
+    metadata: {
+      recording_role: "caller-166-2026-04-29T00-00-00Z",
+      track_kind: "audio",
+    },
+  }],
+});</pre>
+    </section>
+
+    <section class="panel">
       <h2>Event Log</h2>
       <pre id="eventLog" class="log">No events yet.</pre>
     </section>
@@ -147,6 +202,7 @@
 
     const page = document.querySelector("main.page");
     const sampleSelect = document.getElementById("sampleSelect");
+    const processingBtn = document.getElementById("processingBtn");
     const styleSelect = document.getElementById("styleSelect");
     const themeSelect = document.getElementById("themeSelect");
     const sensitivityRange = document.getElementById("sensitivityRange");
@@ -276,6 +332,59 @@
       });
     }
 
+    function mountProcessingSample() {
+      if (audioApi) {
+        audioApi.destroy();
+      }
+      audioApi = createAudioCallSession(host, {
+        id: 9001,
+        caller: { name: "PBB Caller" },
+        operator: { name: "Operator Reyes" },
+        media: [
+          {
+            id: "caller-processing",
+            type: "audio",
+            processing: true,
+            processingLabel: "Preparing caller audio...",
+            peer_role: "caller",
+            peer_label: "PBB Caller",
+            created_at: "2026-04-29T00:00:00Z",
+            metadata: { processing: true, track_kind: "audio" },
+          },
+          {
+            id: "operator-processing",
+            type: "audio",
+            processing: true,
+            processingLabel: "Preparing operator audio...",
+            metadata: {
+              processing: true,
+              recording_role: "operator-9001-2026-04-29T00-00-01Z",
+              track_kind: "audio",
+            },
+          },
+        ],
+      }, {
+        ariaLabel: "Incident call session processing state",
+        baseUrl: "..",
+        audiographStyle: styleSelect.value,
+        sensitivity: getSensitivity(),
+        showMute: true,
+        autoplay: false,
+        onError(error) {
+          addEvent("audio.error", { message: error?.message || "Unknown error" });
+        },
+        onStateChange(state) {
+          addEvent("audio.processing.state", {
+            hasPending: state?.hasPending,
+            hasPlayable: state?.hasPlayable,
+            roleCount: state?.roles?.length || 0,
+          });
+        }
+      });
+      lastLoggedSecond = -1;
+      addEvent("audio.processing.loaded", { mode: "pending-only" });
+    }
+
     try {
       await initSamplePicker();
       updateSensitivityLabel();
@@ -291,6 +400,10 @@
         console.error(error);
         addEvent("audio.sample.error", { sample: sampleSelect.value, message: error.message });
       });
+    });
+
+    processingBtn.addEventListener("click", () => {
+      mountProcessingSample();
     });
 
     styleSelect.addEventListener("change", () => {

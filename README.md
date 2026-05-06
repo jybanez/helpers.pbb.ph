@@ -38,6 +38,7 @@ css/
     ui.toggle.css
     ui.datepicker.css
     ui.elapsed.time.css
+    ui.signal.strength.css
     ui.timeline.css
     ui.timeline.scrubber.css
     ui.command.palette.css
@@ -95,6 +96,7 @@ js/
     ui.toggle.group.js
     ui.datepicker.js
     ui.elapsed.time.js
+    ui.signal.strength.js
     ui.timeline.js
     ui.timeline.scrubber.js
     ui.command.palette.js
@@ -128,6 +130,7 @@ js/
     ui.breadcrumbs.js
     ui.audio.player.js
     ui.audio.audiograph.js
+    ui.audio.timeline.js
     ui.audio.callSession.js
   incident/
     incident.base.js
@@ -163,6 +166,7 @@ demos/
   demo.toggle.group.html
   demo.buttons.html
   demo.audio.html
+  demo.audio.timeline.html
   demo.media.viewer.html
   demo.nav.html
   demo.navbar.html
@@ -287,6 +291,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
 - `ui.elapsed.time.js`
   - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
+- `ui.signal.strength.js`
+  - `createSignalStrength(container, options)` transport-agnostic 0-4 bar signal indicator with stable compact text, tone variants, bars-only mode, and update/destroy lifecycle
 - `ui.map.controls.js`
   - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
 - `ui.timeline.js`
@@ -362,8 +368,10 @@ Reusable shared UI utilities live under `js/ui`:
   - `createAudioPlayer(container, data, options)` reusable transport UI (play/pause, time, seek)
 - `ui.audio.audiograph.js`
   - `createAudioGraph(container, data, options)` standalone role audiograph renderer with playback and livestream source support
+- `ui.audio.timeline.js`
+  - `createAudioTimeline(container, data, options)` synchronized multi-track audio timeline for arbitrary sources, including pending processing segments
 - `ui.audio.callSession.js`
-  - `createAudioCallSession(container, incident, options)` parent orchestrator for timeline playback + stacked role audiographs
+  - `createAudioCallSession(container, incident, options)` incident-media adapter over `createAudioTimeline(...)`
 
 Reusable UI styles live under `css/ui`:
 
@@ -389,6 +397,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.toggle.css` toggle button + toggle group styles
 - `ui.datepicker.css` datepicker styles
 - `ui.elapsed.time.css` elapsed-duration readout styles
+- `ui.signal.strength.css` signal-strength status indicator styles
 - `ui.timeline.css` timeline styles
 - `ui.timeline.scrubber.css` timeline scrubber styles
 - `ui.command.palette.css` command palette styles
@@ -474,9 +483,9 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
 - Data, timeline, map, and inspection:
-  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
-  - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.callSession`
+  - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
   - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`, `ui.menu`, `ui.dropdown`, `ui.dropup`, `ui.command.palette`, `ui.tabs`, `ui.strips`
 - Workflow and layout:
@@ -1007,9 +1016,68 @@ Methods:
 - `setDuration(durationMs)`
 - `getState()`
 
+### `createAudioTimeline(container, data, options)`
+
+Generic synchronized playback surface for multiple audio sources on one shared timeline.
+
+Data:
+
+```js
+{
+  durationMs: 24000,
+  tracks: [
+    {
+      id: "radio-net",
+      label: "Radio Net",
+      muted: false,
+      segments: [
+        { id: "radio-1", srcUrl: "/audio/radio.wav", startOffsetMs: 0, durationMs: 24000 },
+        { id: "radio-processing", processing: true, processingLabel: "Preparing radio channel..." }
+      ]
+    }
+  ]
+}
+```
+
+Behavior:
+
+- Tracks are not role-limited; ids such as `caller`, `operator`, `radio-net`, `mixer-left`, or conference participant ids are valid.
+- Segments align by `startOffsetMs` on the shared transport timeline.
+- Segment source fields can use `srcUrl`, `src`, or `path`, resolved through `baseUrl` when relative.
+- Pending segments with `processing: true` render a preparing notice and are excluded from playback until `update(...)` supplies a source URL.
+- Mixed playable and pending timelines keep playback controls enabled; pending-only timelines disable playback controls.
+- `durationMs` is the explicit timeline duration when provided; otherwise playable segment end offsets determine the duration.
+
+Options:
+
+- `ariaLabel`
+- `autoplay`
+- `baseUrl`
+- `audiographStyle`
+- `trackStyles`
+- `sensitivity`
+- `showMute`
+- `onError(error)`
+- `onStateChange(state)`
+
+State:
+
+- `isPlaying`, `currentMs`, `durationMs`
+- `hasPending`, `hasPlayable`
+- `tracks[]` with `id`, `label`, `muted`, `processing`, `playable`, and `segments[]`
+
+Methods:
+
+- `destroy()`
+- `update(nextData, nextOptions?)`
+- `play()`
+- `pause()`
+- `seek(nextMs)`
+- `getState()`
+
 ### `createAudioCallSession(container, incident, options)`
 
-Parent helper for session playback from `incident.media[]`.
+Incident-media adapter for session playback from `incident.media[]`. It normalizes supported audio rows into `createAudioTimeline(...)` tracks and preserves the existing role-oriented state contract.
 
 Behavior:
 
@@ -1021,12 +1089,35 @@ Behavior:
 - Per-role mute keeps global timeline playing.
 - Timeline seek/rewind works across the full session.
 - Uses `incident.call_duration_seconds` (when present) as total timeline duration source of truth.
+- Pending audio rows with `processing: true` or `metadata.processing: true` survive without a playable path, render a disabled preparing role track, and are excluded from playback until a later `update(...)` supplies a source URL.
+- Pending-only sessions disable playback controls and expose `hasPending: true`, `hasPlayable: false`.
+- `getTimeline()` returns the underlying generic timeline instance for advanced integration.
 
 Role labels:
 
 - `caller` -> `incident.caller.name` fallback `caller`
 - `operator` -> `incident.operator.name` fallback `operator`
 - unknown role -> role token
+
+Pending audio rows:
+
+```js
+{
+  id: "caller-audio-1",
+  type: "audio",
+  processing: true,
+  processingLabel: "Preparing caller audio...",
+  peer_role: "caller",
+  peer_label: "PBB Caller",
+  created_at: "2026-04-29T00:00:00Z",
+  metadata: {
+    processing: true,
+    track_kind: "audio"
+  }
+}
+```
+
+When `metadata.recording_role` is unavailable on a pending row, `peer_role` plus a timestamp field such as `created_at` can provide the fallback role/timeline placement. Once a later update supplies the same media `id` with `path` / `srcUrl`, the row resolves into normal playback.
 
 Options:
 
@@ -1048,6 +1139,7 @@ Methods:
 - `pause()`
 - `seek(nextMs)`
 - `getState()`
+- `getTimeline()`
 
 ### Navigation/Menu Utilities
 
@@ -1390,6 +1482,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - active incident duration readouts
   - team assignment status-duration readouts
   - dense dashboard sample using one shared ticker
+- `demos/demo.signal.strength.html` -> dedicated signal-strength playground
+  - stable navbar/header placement
+  - all signal levels and tones
+  - bars-only compact mode
 - `demos/demo.map.controls.html` -> dedicated MapLibre-style map-controls playground
   - zoom and compass/bearing controls
   - pitch presets
@@ -1408,11 +1504,15 @@ Open from a local server (Apache/WAMP/Nginx):
   - playhead seek behavior
   - range handles and zoom controls
   - linked timeline filtering/highlighting example
-- `demos/demo.audio.html` -> audio player + stacked role audiographs
+- `demos/demo.audio.html` -> incident call-session adapter + stacked role audiographs
   - sample selector for available `sampledata_*.json`
   - graph style selector
   - sensitivity slider
   - theme toggle
+- `demos/demo.audio.timeline.html` -> generic synchronized audio timeline
+  - arbitrary `tracks[]` / `segments[]`
+  - pending processing segment resolution
+  - per-track graph style override
 - `demos/demo.nav.html` -> navigation overview and routing page
 - `demos/demo.navbar.html` -> dedicated navbar manual/demo
 - `demos/demo.sidebar.html` -> dedicated sidebar manual/demo
@@ -4212,6 +4312,65 @@ Related demos:
 
 - `demos/demo.elapsed.time.html`
 
+### `createSignalStrength(container, options)` (`js/ui/ui.signal.strength.js`)
+
+Purpose:
+
+- Transport-agnostic 0-4 bar connectivity indicator for compact app chrome.
+- Intended for navbars, headers, and dense status areas where stable sizing matters.
+- Host apps own the adapter that maps Realtime/browser/reconnect facts into `level`, `tone`, and `text`.
+
+Basic usage:
+
+```js
+import { createSignalStrength } from "./js/ui/ui.signal.strength.js";
+
+const signal = createSignalStrength(container, {
+  label: "Realtime",
+  level: 4,
+  tone: "ok",
+  text: "84 ms",
+  title: "Realtime connected (84 ms)",
+  ariaLabel: "Realtime connected, 84 milliseconds",
+});
+
+signal.update({
+  level: 1,
+  tone: "warn",
+  text: "Reconnecting",
+});
+```
+
+Options:
+
+- `level`: integer clamped from `0` through `4`
+- `tone`: `ok`, `warn`, `danger`, `offline`, or `neutral`
+- `text`: short visible status text
+- `label`: status domain used for generated accessible text
+- `title`: tooltip text
+- `ariaLabel`: explicit accessible status label
+- `ariaLive`: `off`, `polite`, or `assertive`; defaults to `off`
+- `showText`: set `false` for bars-only rendering
+- `size`: `compact` or `regular`
+- `className`: extra root class name
+
+Methods:
+
+- `update(options)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not call Realtime or any transport API.
+- Does not measure latency.
+- Does not own reconnect behavior.
+- Does not decide RTT or stale-state thresholds.
+
+Related demos:
+
+- `demos/demo.signal.strength.html`
+
 ### `createMapControls(container, options)` (`js/ui/ui.map.controls.js`)
 
 Purpose:
@@ -4810,15 +4969,17 @@ Use these together for call sessions, or individually for custom layouts.
   - transport only (play/pause + clock + seek)
 - `createAudioGraph`:
   - standalone graph with styles and mute control
+- `createAudioTimeline`:
+  - generic synchronized multi-track coordinator for arbitrary audio sources
 - `createAudioCallSession`:
-  - parent coordinator with timestamp alignment and role tracks
+  - incident-media adapter with timestamp alignment and backward-compatible role tracks
 
 Recommended integration flow:
 
-1. Normalize incident payload (`incident.media`, caller/operator names, call duration).
-2. Mount `createAudioCallSession` for the full experience.
+1. Use `createAudioTimeline` when the app already has generic tracks and segments.
+2. Use `createAudioCallSession` when the source data is an incident payload (`incident.media`, caller/operator names, call duration).
 3. Use `onStateChange(state)` to sync external UI if needed.
-4. Use `update(nextIncident, nextOptions?)` when refreshed incident data arrives.
+4. Use `update(nextData, nextOptions?)` when refreshed media data arrives.
 
 ### `createDevicePrimer(container, data, options)` / `createDevicePrimerModal(data, options)`
 

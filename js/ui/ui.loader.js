@@ -250,6 +250,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createElapsedTime",
   },
+  "ui.signal.strength": {
+    js: "./ui.signal.strength.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.signal.strength.css"],
+    deps: [],
+    export: "createSignalStrength",
+  },
   "ui.map.controls": {
     js: "./ui.map.controls.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.map.controls.css"],
@@ -448,10 +454,16 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createAudioGraph",
   },
+  "ui.audio.timeline": {
+    js: `./ui.audio.timeline.js?v=${UI_AUDIO_REV}`,
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.audio.css?v=${UI_AUDIO_REV}`],
+    deps: ["ui.audio.player", "ui.audio.audiograph"],
+    export: "createAudioTimeline",
+  },
   "ui.audio.callSession": {
     js: `./ui.audio.callSession.js?v=${UI_AUDIO_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.audio.css?v=${UI_AUDIO_REV}`],
-    deps: ["ui.audio.player", "ui.audio.audiograph"],
+    deps: ["ui.audio.timeline"],
     export: "createAudioCallSession",
   },
   "incident.base": {
@@ -591,6 +603,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.virtual.list",
     "ui.scheduler",
     "ui.elapsed.time",
+    "ui.signal.strength",
     "ui.map.controls",
     "ui.timeline",
     "ui.timeline.scrubber",
@@ -603,6 +616,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.media.viewer",
     "ui.audio.player",
     "ui.audio.audiograph",
+    "ui.audio.timeline",
     "ui.audio.callSession",
   ],
   workflow: [

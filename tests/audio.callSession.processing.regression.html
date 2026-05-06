@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio Call Session Processing Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.audio.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createAudioCallSession } from "../js/ui/ui.audio.callSession.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const audioUrl = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+    const nativeCreateElement = document.createElement.bind(document);
+    let createdAudioElements = 0;
+    document.createElement = function patchedCreateElement(tagName, options) {
+      if (String(tagName || "").toLowerCase() === "audio") {
+        createdAudioElements += 1;
+      }
+      return nativeCreateElement(tagName, options);
+    };
+
+    try {
+      const pendingOnly = createAudioCallSession(host, {
+        id: 301,
+        caller: { name: "Caller" },
+        operator: { name: "Operator" },
+        media: [
+          {
+            id: "pending-caller",
+            type: "audio",
+            processing: true,
+            processingLabel: "Preparing caller audio...",
+            peer_role: "caller",
+            peer_label: "PBB Caller",
+            created_at: "2026-04-29T00:00:00Z",
+            metadata: { processing: true, track_kind: "audio" },
+          },
+        ],
+      }, { autoplay: false });
+
+      await wait(120);
+      let state = pendingOnly.getState();
+      assert(state.hasPending === true, "pending-only session should expose hasPending");
+      assert(state.hasPlayable === false, "pending-only session should expose no playable tracks");
+      assert(state.durationMs === 0, "pending-only session should keep duration at zero");
+      assert(state.roles[0]?.role === "caller", "pending row should resolve role from peer_role fallback");
+      assert(state.roles[0]?.roleLabel === "PBB Caller", "pending row should resolve label from peer_label fallback");
+      assert(state.roles[0]?.processing === true, "pending role should expose processing state");
+      assert(state.roles[0]?.segments[0]?.processing === true, "pending segment should expose processing state");
+      assert(Boolean(host.querySelector(".ui-audio-session-processing-spinner")), "pending track should render spinner");
+      assert(Boolean(host.querySelector(".ui-audiograph > .ui-audio-session-processing")), "pending notice should render inside the audiograph card");
+      assert((host.querySelector(".ui-audio-session-processing-label")?.textContent || "").includes("Preparing caller"), "pending track should render optional label");
+      assert(host.querySelector(".ui-audio-player-toggle")?.disabled === true, "pending-only session should disable play");
+      assert(host.querySelector(".ui-audio-player-seek")?.disabled === true, "pending-only session should disable seek");
+      assert(createdAudioElements === 0, "pending-only session should not create audio elements");
+      await pendingOnly.play();
+      assert(pendingOnly.getState().isPlaying === false, "pending-only play should be guarded");
+
+      await pendingOnly.update({
+        id: 301,
+        caller: { name: "Caller" },
+        operator: { name: "Operator" },
+        media: [
+          {
+            id: "pending-caller",
+            type: "audio",
+            path: audioUrl,
+            duration_seconds: 2,
+            metadata: {
+              recording_role: "caller-301-2026-04-29T00-00-00Z",
+              track_kind: "audio",
+            },
+          },
+        ],
+      });
+      await wait(120);
+      state = pendingOnly.getState();
+      assert(state.hasPending === false, "resolved update should clear pending state for the same id");
+      assert(state.hasPlayable === true, "resolved update should expose playable state");
+      assert(state.roles[0]?.segments[0]?.id === "pending-caller", "resolved update should preserve stable media id");
+      assert(state.roles[0]?.segments[0]?.srcUrl === audioUrl, "resolved update should expose playable source");
+      assert(!host.querySelector(".ui-audio-session-processing"), "resolved update should remove pending placeholder");
+      assert(host.querySelector(".ui-audio-player-toggle")?.disabled === false, "resolved update should enable play");
+      assert(createdAudioElements >= 1, "resolved update should create an audio element for the playable role");
+      pendingOnly.destroy();
+
+      createdAudioElements = 0;
+      const mixed = createAudioCallSession(host, {
+        id: 302,
+        caller: { name: "Caller" },
+        operator: { name: "Operator" },
+        media: [
+          {
+            id: "operator-ready",
+            type: "audio",
+            path: audioUrl,
+            duration_seconds: 3,
+            metadata: {
+              recording_role: "operator-302-2026-04-29T00-00-00Z",
+              track_kind: "audio",
+            },
+          },
+          {
+            id: "caller-pending",
+            type: "audio",
+            processing: true,
+            path: "",
+            processingLabel: "Preparing caller audio...",
+            metadata: {
+              processing: true,
+              recording_role: "caller-302-2026-04-29T00-00-01Z",
+              track_kind: "audio",
+            },
+          },
+        ],
+      });
+
+      await wait(120);
+      state = mixed.getState();
+      assert(state.hasPending === true && state.hasPlayable === true, "mixed session should expose both pending and playable states");
+      assert(state.roles.length === 2, "mixed session should render both role tracks");
+      assert(host.querySelector(".ui-audio-player-toggle")?.disabled === false, "mixed session should keep playable controls enabled");
+      assert(host.querySelectorAll(".ui-audio-session-processing").length === 1, "mixed session should render one pending notice");
+      assert(createdAudioElements === 1, "mixed session should create audio only for playable role tracks");
+      mixed.destroy();
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Audio call session processing regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

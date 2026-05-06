@@ -1,6 +1,4 @@
-import { createElement, clearNode } from "./ui.dom.js";
-import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.60";
-import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.60";
+import { createAudioTimeline } from "./ui.audio.timeline.js?v=0.21.60";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -19,315 +17,81 @@ const DEFAULT_OPTIONS = {
 export function createAudioCallSession(container, incident = {}, options = {}) {
   let currentIncident = incident || {};
   let currentOptions = normalizeOptions(options);
-  let normalizedSession = null;
-
-  let root = null;
-  let playerHost = null;
-  let tracksHost = null;
-  let playerApi = null;
-  const roleApis = new Map();
-
-  let rafId = 0;
-  let isPlaying = false;
-  let currentMs = 0;
-  let durationMs = 0;
-  let clockBaseMs = 0;
-  let clockStartPerf = 0;
-
-  function render() {
-    if (!container || container.nodeType !== 1) {
-      return;
-    }
-    clearNode(container);
-    root = createElement("section", {
-      className: `ui-audio-session ${currentOptions.className}`.trim(),
-      attrs: {
-        role: "region",
-        "aria-label": currentOptions.ariaLabel,
-      },
-    });
-    playerHost = createElement("div", { className: "ui-audio-session-player" });
-    tracksHost = createElement("div", {
-      className: "ui-audio-session-tracks",
-      attrs: {
-        role: "list",
-        "aria-label": "Audio roles",
-      },
-    });
-    root.append(playerHost, tracksHost);
-    container.appendChild(root);
-  }
-
-  async function build() {
-    cleanupInstances();
-    normalizedSession = normalizeIncident(currentIncident, currentOptions.baseUrl);
-    durationMs = Math.max(0, normalizedSession.durationMs || 0);
-    currentMs = 0;
-    isPlaying = false;
-
-    playerApi = createAudioPlayer(
-      playerHost,
-      {
-        isPlaying: false,
-        currentMs: 0,
-        durationMs,
-      },
-      {
-        ariaLabel: "Call session playback controls",
-        onTogglePlay(nextPlaying) {
-          if (nextPlaying) {
-            play();
-          } else {
-            pause();
-          }
-        },
-        onSeek(nextMs) {
-          seek(nextMs);
-        },
-      }
-    );
-
-    normalizedSession.roles.forEach((roleTrack) => {
-      const trackWrap = createElement("div", {
-        className: "ui-audio-session-track",
-        dataset: { role: roleTrack.role },
-        attrs: { role: "listitem" },
-      });
-      tracksHost.appendChild(trackWrap);
-
-      const roleStyle = currentOptions.roleStyles[roleTrack.role] || currentOptions.audiographStyle;
-      const graphApi = createAudioGraph(
-        trackWrap,
-        {
-          role: roleTrack.role,
-          roleLabel: roleTrack.roleLabel,
-          muted: roleTrack.muted,
-          isPlaying: false,
-          currentMs: 0,
-          durationMs,
-        },
-        {
-          ariaLabel: `${roleTrack.roleLabel} audio graph`,
-          style: roleStyle,
-          sensitivity: currentOptions.sensitivity,
-          showMute: currentOptions.showMute,
-          onToggleMute(nextMuted) {
-            roleTrack.muted = nextMuted;
-            if (roleTrack.audioEl) {
-              roleTrack.audioEl.muted = nextMuted;
-            }
-          },
-        }
-      );
-
-      roleTrack.audioEl = createRoleAudioElement();
-      roleTrack.audioEl.muted = roleTrack.muted;
-      graphApi.attachAudio(roleTrack.audioEl);
-      roleApis.set(roleTrack.role, graphApi);
-    });
-
-    await preloadDurations(normalizedSession, (error) => {
-      currentOptions.onError?.(error);
-    });
-    durationMs = normalizedSession.durationMs;
-    playerApi.setDuration(durationMs);
-    roleApis.forEach((api) => {
-      api.setPlayback({ isPlaying: false, currentMs: 0, durationMs });
-    });
-
-    if (currentOptions.autoplay) {
-      play();
-    }
-    emitState();
-  }
-
-  function tick() {
-    if (!isPlaying) {
-      return;
-    }
-    currentMs = clampMs(clockBaseMs + (performance.now() - clockStartPerf), durationMs);
-    syncAllRoles();
-    playerApi.setCurrent(currentMs);
-    roleApis.forEach((api) => {
-      api.setPlayback({ isPlaying: true, currentMs, durationMs });
-    });
-    emitState();
-
-    if (currentMs >= durationMs) {
-      pause();
-      return;
-    }
-    rafId = requestAnimationFrame(tick);
-  }
-
-  async function play() {
-    if (isPlaying) {
-      return;
-    }
-    await Promise.all(
-      Array.from(roleApis.values()).map((api) => api.unlockAudioContext?.() || Promise.resolve(false))
-    );
-    isPlaying = true;
-    clockBaseMs = currentMs;
-    clockStartPerf = performance.now();
-    syncAllRoles();
-    roleApis.forEach((api) => {
-      api.setPlayback({ isPlaying: true, currentMs, durationMs });
-    });
-    playerApi.setPlaying(true);
-    rafId = requestAnimationFrame(tick);
-    emitState();
-  }
-
-  function pause() {
-    if (!isPlaying) {
-      return;
-    }
-    isPlaying = false;
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      rafId = 0;
-    }
-    normalizedSession.roles.forEach((roleTrack) => {
-      roleTrack.audioEl?.pause();
-    });
-    playerApi.setPlaying(false);
-    roleApis.forEach((api) => {
-      api.setPlayback({ isPlaying: false, currentMs, durationMs });
-    });
-    emitState();
-  }
-
-  function seek(nextMs) {
-    currentMs = clampMs(nextMs, durationMs);
-    if (isPlaying) {
-      clockBaseMs = currentMs;
-      clockStartPerf = performance.now();
-    }
-    syncAllRoles();
-    playerApi.setCurrent(currentMs);
-    roleApis.forEach((api) => {
-      api.setPlayback({ isPlaying, currentMs, durationMs });
-    });
-    emitState();
-  }
-
-  function syncAllRoles() {
-    if (!normalizedSession) {
-      return;
-    }
-    normalizedSession.roles.forEach((roleTrack) => syncRole(roleTrack, currentMs, isPlaying));
-  }
-
-  function syncRole(roleTrack, timelineMs, shouldPlay) {
-    const mediaEl = roleTrack.audioEl;
-    if (!mediaEl) {
-      return;
-    }
-    mediaEl.muted = Boolean(roleTrack.muted);
-    const index = findSegmentIndexByTime(roleTrack.segments, timelineMs);
-    if (index < 0) {
-      mediaEl.pause();
-      roleTrack.activeSegmentIndex = -1;
-      return;
-    }
-
-    const segment = roleTrack.segments[index];
-    const localMs = Math.max(0, timelineMs - segment.startOffsetMs);
-    const localSec = localMs / 1000;
-
-    if (roleTrack.activeSegmentIndex !== index || roleTrack.activeSrc !== segment.srcUrl) {
-      roleTrack.activeSegmentIndex = index;
-      roleTrack.activeSrc = segment.srcUrl;
-      mediaEl.src = segment.srcUrl;
-      syncMediaTime(mediaEl, localSec);
-    } else {
-      const drift = Math.abs((mediaEl.currentTime || 0) - localSec);
-      if (drift > 0.2) {
-        syncMediaTime(mediaEl, localSec);
-      }
-    }
-
-    if (shouldPlay) {
-      mediaEl.play?.().catch(() => {});
-    } else {
-      mediaEl.pause();
-    }
-  }
+  let timelineApi = createAudioTimeline(container, normalizeIncident(currentIncident, currentOptions.baseUrl), toTimelineOptions(currentOptions));
 
   function update(nextIncident = {}, nextOptions = {}) {
     currentIncident = nextIncident || {};
     currentOptions = normalizeOptions({ ...currentOptions, ...nextOptions });
-    pause();
-    return build();
-  }
-
-  function destroy() {
-    pause();
-    cleanupInstances();
-    clearNode(container);
-    root = null;
-    playerHost = null;
-    tracksHost = null;
-  }
-
-  function cleanupInstances() {
-    if (playerApi) {
-      playerApi.destroy();
-      playerApi = null;
-    }
-    roleApis.forEach((api) => api.destroy());
-    roleApis.clear();
-    if (normalizedSession?.roles) {
-      normalizedSession.roles.forEach((roleTrack) => {
-        if (roleTrack.audioEl) {
-          roleTrack.audioEl.pause();
-          roleTrack.audioEl.src = "";
-          roleTrack.audioEl.removeAttribute("src");
-          roleTrack.audioEl.load();
-          roleTrack.audioEl = null;
-        }
-      });
-    }
-  }
-
-  function emitState() {
-    currentOptions.onStateChange?.(getState());
+    return timelineApi.update(normalizeIncident(currentIncident, currentOptions.baseUrl), toTimelineOptions(currentOptions));
   }
 
   function getState() {
-    return {
-      isPlaying,
-      currentMs,
-      durationMs,
-      roles: (normalizedSession?.roles || []).map((roleTrack) => ({
-        role: roleTrack.role,
-        roleLabel: roleTrack.roleLabel,
-        muted: roleTrack.muted,
-        segments: roleTrack.segments.map((segment) => ({
-          id: segment.id,
-          callId: segment.callId,
-          startOffsetMs: segment.startOffsetMs,
-          durationMs: segment.durationMs,
-          endOffsetMs: segment.endOffsetMs,
-          srcUrl: segment.srcUrl,
-        })),
-      })),
-    };
+    return toCallSessionState(timelineApi.getState());
   }
 
-  render();
-  build().catch((error) => {
-    currentOptions.onError?.(error);
-  });
-
   return {
-    destroy,
+    destroy() {
+      timelineApi.destroy();
+    },
     update,
-    play,
-    pause,
-    seek,
+    play() {
+      return timelineApi.play();
+    },
+    pause() {
+      return timelineApi.pause();
+    },
+    seek(nextMs) {
+      return timelineApi.seek(nextMs);
+    },
     getState,
+    getTimeline() {
+      return timelineApi;
+    },
+  };
+}
+
+function toTimelineOptions(options) {
+  return {
+    className: options.className,
+    ariaLabel: options.ariaLabel,
+    autoplay: options.autoplay,
+    baseUrl: "",
+    audiographStyle: options.audiographStyle,
+    sensitivity: options.sensitivity,
+    trackStyles: options.roleStyles,
+    showMute: options.showMute,
+    onError: options.onError,
+    onStateChange(state) {
+      options.onStateChange?.(toCallSessionState(state));
+    },
+  };
+}
+
+function toCallSessionState(state = {}) {
+  return {
+    isPlaying: Boolean(state.isPlaying),
+    currentMs: Math.max(0, Number(state.currentMs) || 0),
+    durationMs: Math.max(0, Number(state.durationMs) || 0),
+    roles: (state.tracks || []).map((track) => ({
+      role: track.id,
+      roleLabel: track.label,
+      muted: Boolean(track.muted),
+      processing: Boolean(track.processing),
+      playable: Boolean(track.playable),
+      segments: (track.segments || []).map((segment) => ({
+        id: segment.id,
+        callId: segment.meta?.callId || "",
+        startOffsetMs: segment.startOffsetMs,
+        durationMs: segment.durationMs,
+        endOffsetMs: segment.endOffsetMs,
+        srcUrl: segment.srcUrl,
+        processing: Boolean(segment.processing),
+        processingLabel: segment.processingLabel || "",
+        playable: Boolean(segment.playable),
+      })),
+    })),
+    hasPending: Boolean(state.hasPending),
+    hasPlayable: Boolean(state.hasPlayable),
   };
 }
 
@@ -335,6 +99,7 @@ function normalizeOptions(options) {
   return {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
+    roleStyles: options?.roleStyles && typeof options.roleStyles === "object" ? { ...options.roleStyles } : {},
   };
 }
 
@@ -347,93 +112,83 @@ function normalizeIncident(incident, baseUrl) {
     .map((row) => parseMediaRow(row, baseUrl))
     .filter(Boolean)
     .sort((a, b) => a.startAt - b.startAt);
-
+  const allStart = parsed.length ? parsed[0].startAt : 0;
   const rolesMap = new Map();
+
   parsed.forEach((segment) => {
     const role = segment.role;
     if (!rolesMap.has(role)) {
       rolesMap.set(role, {
-        role,
-        roleLabel: resolveRoleLabel(safeIncident, role),
+        id: role,
+        label: segment.peerLabel || resolveRoleLabel(safeIncident, role),
         muted: false,
         segments: [],
-        activeSegmentIndex: -1,
-        activeSrc: "",
-        audioEl: null,
       });
     }
-    rolesMap.get(role).segments.push(segment);
+    const startOffsetMs = Math.max(0, segment.startAt - allStart);
+    const normalizedSegment = {
+      id: segment.id,
+      srcUrl: segment.srcUrl,
+      startOffsetMs,
+      durationMs: segment.durationMs || 0,
+      processing: segment.processing,
+      processingLabel: segment.processingLabel,
+      meta: { callId: segment.callId },
+    };
+    rolesMap.get(role).segments.push(normalizedSegment);
   });
 
-  const allStart = parsed.length ? parsed[0].startAt : 0;
-  let maxEnd = 0;
-  const roles = Array.from(rolesMap.values()).map((roleTrack) => {
-    roleTrack.segments = roleTrack.segments.map((segment, index, list) => {
-      const startOffsetMs = Math.max(0, segment.startAt - allStart);
+  Array.from(rolesMap.values()).forEach((track) => {
+    track.segments = track.segments.map((segment, index, list) => {
+      if (segment.durationMs > 0) {
+        return segment;
+      }
       const next = list[index + 1];
-      const nextStartOffsetMs = next ? Math.max(0, next.startAt - allStart) : null;
-      const inferredGapMs = nextStartOffsetMs !== null
-        ? Math.max(1000, nextStartOffsetMs - startOffsetMs)
-        : 15000;
-      const durationMs = Math.max(1, segment.durationMs || inferredGapMs);
-      const endOffsetMs = startOffsetMs + durationMs;
-      maxEnd = Math.max(maxEnd, endOffsetMs);
-      return { ...segment, startOffsetMs, durationMs, endOffsetMs };
+      const nextStartOffsetMs = next ? Math.max(0, next.startOffsetMs) : null;
+      return {
+        ...segment,
+        durationMs: nextStartOffsetMs !== null ? Math.max(1000, nextStartOffsetMs - segment.startOffsetMs) : 15000,
+      };
     });
-    return roleTrack;
   });
 
-  if (maxEnd <= 0 && roles.some((roleTrack) => roleTrack.segments.length > 0)) {
-    maxEnd = 15000;
-  }
-
-  const computedDurationMs = maxEnd;
   return {
-    roles,
-    durationMs: explicitDurationMs > 0 ? explicitDurationMs : computedDurationMs,
-    explicitDurationMs,
-    baselineStartAt: allStart,
+    durationMs: explicitDurationMs,
+    tracks: Array.from(rolesMap.values()),
   };
 }
 
-async function preloadDurations(session, onError) {
-  const tasks = [];
-  session.roles.forEach((roleTrack) => {
-    roleTrack.segments.forEach((segment) => {
-      if (segment.durationMs > 0) {
-        return;
-      }
-      tasks.push(
-        loadAudioDurationMs(segment.srcUrl)
-          .then((durationMs) => {
-            segment.durationMs = Math.max(0, durationMs);
-          })
-          .catch((error) => {
-            segment.durationMs = 0;
-            onError?.(new Error(`Failed to load audio duration for ${segment.srcUrl}: ${error.message}`));
-          })
-      );
-    });
-  });
-  if (!tasks.length) {
-    return;
+function parseMediaRow(row, baseUrl) {
+  const parsedToken = parseRecordingRoleToken(row?.metadata?.recording_role);
+  const role = parsedToken?.role || normalizeRole(row?.peer_role || row?.metadata?.peer_role || row?.metadata?.role);
+  if (!role) {
+    return null;
   }
-  await Promise.all(tasks);
-  let maxEnd = 0;
-  session.roles.forEach((roleTrack) => {
-    roleTrack.segments = roleTrack.segments.map((segment) => {
-      const endOffsetMs = segment.startOffsetMs + Math.max(0, segment.durationMs || 0);
-      maxEnd = Math.max(maxEnd, endOffsetMs);
-      return { ...segment, endOffsetMs };
-    });
-  });
-  session.durationMs = session.explicitDurationMs > 0
-    ? session.explicitDurationMs
-    : maxEnd;
+  const callId = parsedToken?.callId || String(row?.call_session_id || row?.metadata?.call_session_id || "");
+  const startAt = parsedToken?.startAt ?? resolveMediaStartAt(row);
+  if (!Number.isFinite(startAt)) {
+    return null;
+  }
+  const srcUrl = resolveMediaPath(row?.srcUrl || row?.src || row?.path || "", baseUrl);
+  const processing = Boolean(row?.processing || row?.metadata?.processing) && !srcUrl;
+  if (!processing && !srcUrl) {
+    return null;
+  }
+  const durationSeconds = Number(row?.duration_seconds);
+  return {
+    id: row?.id ?? null,
+    role,
+    callId,
+    startAt,
+    durationMs: Number.isFinite(durationSeconds) && durationSeconds > 0 ? Math.round(durationSeconds * 1000) : 0,
+    srcUrl,
+    processing,
+    processingLabel: String(row?.processingLabel || row?.processing_label || row?.metadata?.processingLabel || row?.metadata?.processing_label || "").trim(),
+    peerLabel: String(row?.peer_label || row?.metadata?.peer_label || "").trim(),
+  };
 }
 
-function parseMediaRow(row, baseUrl) {
-  const token = row?.metadata?.recording_role;
+function parseRecordingRoleToken(token) {
   if (typeof token !== "string") {
     return null;
   }
@@ -441,30 +196,42 @@ function parseMediaRow(row, baseUrl) {
   if (!match) {
     return null;
   }
-  const role = String(match[1] || "").toLowerCase();
-  const callId = String(match[2] || "");
-  const timestampToken = match[3];
-  const iso = timestampToken.replace(
+  const startAt = Date.parse(match[3].replace(
     /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})Z$/,
     "$1T$2:$3:$4Z"
-  );
-  const startAt = Date.parse(iso);
+  ));
   if (!Number.isFinite(startAt)) {
     return null;
   }
-  const durationSeconds = Number(row?.duration_seconds);
-  const durationMs = Number.isFinite(durationSeconds) && durationSeconds > 0
-    ? Math.round(durationSeconds * 1000)
-    : 0;
-
   return {
-    id: row?.id ?? null,
-    role,
-    callId,
+    role: normalizeRole(match[1]),
+    callId: String(match[2] || ""),
     startAt,
-    durationMs,
-    srcUrl: resolveMediaPath(row?.path || "", baseUrl),
   };
+}
+
+function normalizeRole(role) {
+  return String(role || "").trim().toLowerCase();
+}
+
+function resolveMediaStartAt(row) {
+  const candidates = [
+    row?.recorded_at,
+    row?.started_at,
+    row?.created_at,
+    row?.timestamp,
+    row?.metadata?.recorded_at,
+    row?.metadata?.started_at,
+    row?.metadata?.created_at,
+    row?.metadata?.timestamp,
+  ];
+  for (const candidate of candidates) {
+    const parsed = Date.parse(String(candidate || ""));
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return NaN;
 }
 
 function resolveRoleLabel(incident, role) {
@@ -482,94 +249,11 @@ function resolveMediaPath(path, baseUrl) {
   if (!value) {
     return "";
   }
-  if (/^(https?:)?\/\//i.test(value) || value.startsWith("/") || value.startsWith("./")) {
+  if (/^(https?:)?\/\//i.test(value) || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("/") || value.startsWith("./") || value.startsWith("../")) {
     return value;
   }
   if (!baseUrl) {
     return `./${value}`;
   }
   return `${String(baseUrl).replace(/\/+$/, "")}/${value.replace(/^\/+/, "")}`;
-}
-
-function createRoleAudioElement() {
-  const audio = document.createElement("audio");
-  audio.preload = "auto";
-  audio.playsInline = true;
-  audio.crossOrigin = "anonymous";
-  return audio;
-}
-
-function findSegmentIndexByTime(segments, timelineMs) {
-  for (let i = 0; i < segments.length; i += 1) {
-    const item = segments[i];
-    const next = segments[i + 1];
-    const hardEnd = Number.isFinite(item.endOffsetMs) ? item.endOffsetMs : item.startOffsetMs;
-    const inferredEnd = next ? next.startOffsetMs : Number.MAX_SAFE_INTEGER;
-    const end = Math.max(hardEnd, inferredEnd);
-    if (timelineMs >= item.startOffsetMs && timelineMs < end) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function syncMediaTime(mediaEl, seconds) {
-  if (!Number.isFinite(seconds)) {
-    return;
-  }
-  try {
-    mediaEl.currentTime = Math.max(0, seconds);
-  } catch (error) {
-    const once = () => {
-      try {
-        mediaEl.currentTime = Math.max(0, seconds);
-      } catch (innerError) {
-        // no-op
-      }
-      mediaEl.removeEventListener("loadedmetadata", once);
-    };
-    mediaEl.addEventListener("loadedmetadata", once);
-  }
-}
-
-function clampMs(value, max) {
-  const safeValue = Math.max(0, Number(value) || 0);
-  const safeMax = Math.max(0, Number(max) || 0);
-  return Math.min(safeValue, safeMax);
-}
-
-function loadAudioDurationMs(url) {
-  return new Promise((resolve, reject) => {
-    if (!url) {
-      reject(new Error("Missing audio URL"));
-      return;
-    }
-    const audio = document.createElement("audio");
-    let done = false;
-    const finalize = (fn) => {
-      if (done) {
-        return;
-      }
-      done = true;
-      audio.removeEventListener("loadedmetadata", onLoaded);
-      audio.removeEventListener("error", onError);
-      clearTimeout(timer);
-      fn();
-    };
-    const onLoaded = () => {
-      const duration = Number(audio.duration);
-      finalize(() => resolve(Number.isFinite(duration) && duration > 0 ? Math.round(duration * 1000) : 0));
-    };
-    const onError = () => {
-      finalize(() => reject(new Error("Unable to load metadata")));
-    };
-    const timer = setTimeout(() => {
-      finalize(() => reject(new Error("Timeout while loading metadata")));
-    }, 8000);
-
-    audio.preload = "metadata";
-    audio.src = url;
-    audio.addEventListener("loadedmetadata", onLoaded);
-    audio.addEventListener("error", onError);
-  });
 }

@@ -42,6 +42,7 @@ const DEMO_GROUPS = [
       { href: "./demo.virtual.list.html", label: "Virtual List" },
       { href: "./demo.scheduler.html", label: "Scheduler" },
       { href: "./demo.elapsed.time.html", label: "Elapsed Time" },
+      { href: "./demo.signal.strength.html", label: "Signal Strength" },
       { href: "./demo.map.controls.html", label: "Map Controls" },
       { href: "./demo.inspector.html", label: "Inspector" },
     ],
@@ -50,6 +51,7 @@ const DEMO_GROUPS = [
     label: "Media",
     items: [
       { href: "./demo.audio.html", label: "Audio" },
+      { href: "./demo.audio.timeline.html", label: "Audio Timeline" },
       { href: "./demo.audio.audiograph.stream.html", label: "Audio Graph Stream" },
       { href: "./demo.media.strip.html", label: "Media Strip" },
       { href: "./demo.media.viewer.html", label: "Media Viewer" },

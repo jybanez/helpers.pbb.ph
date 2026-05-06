@@ -10,6 +10,10 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.signal.strength` as a transport-agnostic 0-4 bar connectivity status primitive with stable compact text, tones, bars-only mode, accessible labels, demo coverage, and regression coverage.
+- Added `ui.audio.timeline` as a generic synchronized multi-track audio surface for arbitrary sources, including pending processing segments, and refactored `createAudioCallSession(...)` into an incident-media adapter over that timeline while preserving its role-oriented state contract.
+- Split the audio demos so `demos/demo.audio.html` documents only the incident call-session adapter and `demos/demo.audio.timeline.html` documents the generic multi-track timeline contract.
+- Added pending audio support to `createAudioCallSession(...)` so `processing: true` audio rows without playable paths render disabled preparing role tracks, avoid missing-URL loads, expose pending/playable state, and resolve normally on later `update(...)`.
 - Changed `createDevicePrimerModal(...)` to auto-close by default after all checks complete successfully, with `autoCloseOnReady: false` available for flows that need a final Continue or inspection step.
 - Added `ui.map.controls` as a MapLibre-oriented control dock for zoom, compass/bearing reset, pitch presets, locate, fit, and layer toggles, with vertical/horizontal orientation options, a dedicated demo, and browser regression coverage.
 - Added `ui.elapsed.time` as a compact live elapsed-duration readout for active incident and team-assignment status cards, with fixed `dd:hh:mm:ss` and leading-zero-trimmed `format: "compact"` display modes, a shared module-level ticker for dense dashboards, threshold variants, `chrome: false`, pause/resume/stop methods, docs, demo, and regression coverage.

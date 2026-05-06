@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio Timeline Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.audio.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createAudioTimeline } from "../js/ui/ui.audio.timeline.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+    const host = document.getElementById("host");
+    const audioUrl = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+    const nativeCreateElement = document.createElement.bind(document);
+    let createdAudioElements = 0;
+    document.createElement = function patchedCreateElement(tagName, options) {
+      if (String(tagName || "").toLowerCase() === "audio") {
+        createdAudioElements += 1;
+      }
+      return nativeCreateElement(tagName, options);
+    };
+
+    try {
+      const timeline = createAudioTimeline(host, {
+        durationMs: 6000,
+        tracks: [
+          {
+            id: "caller",
+            label: "Caller",
+            segments: [{ id: "caller-ready", srcUrl: audioUrl, startOffsetMs: 0, durationMs: 6000 }],
+          },
+          {
+            id: "operator",
+            label: "Operator",
+            segments: [{ id: "operator-ready", srcUrl: audioUrl, startOffsetMs: 800, durationMs: 4200 }],
+          },
+          {
+            id: "radio-net",
+            label: "Radio Net",
+            segments: [{ id: "radio-processing", processing: true, processingLabel: "Preparing radio channel...", startOffsetMs: 1000 }],
+          },
+        ],
+      }, {
+        trackStyles: { "radio-net": "dots" },
+        autoplay: false,
+      });
+
+      await wait(120);
+      let state = timeline.getState();
+      assert(state.tracks.length === 3, "generic timeline should keep arbitrary track ids");
+      assert(state.tracks.some((track) => track.id === "radio-net" && track.label === "Radio Net"), "generic timeline should keep arbitrary track labels");
+      assert(state.hasPending === true && state.hasPlayable === true, "generic timeline should expose mixed pending and playable state");
+      assert(state.durationMs === 6000, "generic timeline should preserve explicit duration");
+      assert(host.querySelector(".ui-audio-player-toggle")?.disabled === false, "mixed timeline should keep playback controls enabled");
+      assert(Boolean(host.querySelector(".ui-audiograph > .ui-audio-session-processing")), "pending notice should render inside the audiograph card");
+      assert((host.querySelector(".ui-audio-session-processing-label")?.textContent || "").includes("radio"), "pending track should render its processing label");
+      assert(createdAudioElements === 2, "timeline should create audio elements only for playable tracks");
+
+      await timeline.update({
+        durationMs: 7000,
+        tracks: [
+          {
+            id: "caller",
+            label: "Caller",
+            segments: [{ id: "caller-ready", srcUrl: audioUrl, startOffsetMs: 0, durationMs: 6000 }],
+          },
+          {
+            id: "operator",
+            label: "Operator",
+            segments: [{ id: "operator-ready", srcUrl: audioUrl, startOffsetMs: 800, durationMs: 4200 }],
+          },
+          {
+            id: "radio-net",
+            label: "Radio Net",
+            segments: [{ id: "radio-processing", srcUrl: audioUrl, startOffsetMs: 1000, durationMs: 5000 }],
+          },
+        ],
+      });
+
+      await wait(120);
+      state = timeline.getState();
+      assert(state.hasPending === false, "resolved update should clear pending state");
+      assert(state.hasPlayable === true, "resolved update should keep playable state");
+      assert(state.tracks.find((track) => track.id === "radio-net")?.segments[0]?.id === "radio-processing", "resolved update should preserve stable segment id");
+      assert(!host.querySelector(".ui-audio-session-processing"), "resolved update should remove pending notice");
+      assert(createdAudioElements >= 5, "resolved update should create playable audio elements for all tracks after rebuild");
+      timeline.destroy();
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Audio timeline regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

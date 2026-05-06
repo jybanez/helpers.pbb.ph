@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Strength Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.signal.strength.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createSignalStrength } from "../js/ui/ui.signal.strength.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+
+    try {
+      const signal = createSignalStrength(host, {
+        label: "Realtime",
+        level: 9,
+        tone: "ok",
+        text: "84 ms",
+        title: "Realtime connected (84 ms)",
+        ariaLabel: "Realtime connected, 84 milliseconds",
+      });
+
+      let root = host.querySelector(".ui-signal-strength");
+      assert(Boolean(root), "signal root should render");
+      assert(root.dataset.level === "4", "level should clamp high values to 4");
+      assert(root.dataset.tone === "ok", "tone should be reflected in dataset");
+      assert(root.classList.contains("ui-signal-strength--ok"), "tone class should render");
+      assert(root.getAttribute("role") === "status", "root should expose status role");
+      assert(root.getAttribute("aria-label") === "Realtime connected, 84 milliseconds", "explicit aria label should render");
+      assert(root.querySelectorAll(".ui-signal-strength-bar.is-active").length === 4, "four active bars should render");
+
+      const textNode = root.querySelector(".ui-signal-strength-text");
+      const initialTextWidth = Math.round(textNode.getBoundingClientRect().width);
+      signal.update({
+        level: 1,
+        tone: "warn",
+        text: "Reconnect",
+        ariaLabel: "Realtime reconnecting",
+        ariaLive: "polite",
+      });
+      root = host.querySelector(".ui-signal-strength");
+      assert(root.dataset.level === "1", "update should change level");
+      assert(root.dataset.tone === "warn", "update should change tone");
+      assert(root.getAttribute("aria-live") === "polite", "ariaLive should update");
+      assert(root.querySelector(".ui-signal-strength-text").textContent === "Reconnect", "text should update");
+      assert(root.querySelectorAll(".ui-signal-strength-bar.is-active").length === 1, "one active bar should render after update");
+      const updatedTextWidth = Math.round(root.querySelector(".ui-signal-strength-text").getBoundingClientRect().width);
+      assert(Math.abs(updatedTextWidth - initialTextWidth) <= 2, "text slot width should remain stable across text changes");
+
+      signal.update({ level: -5, tone: "nonsense", text: "Unknown", ariaLabel: "" });
+      root = host.querySelector(".ui-signal-strength");
+      assert(root.dataset.level === "0", "level should clamp low values to 0");
+      assert(root.dataset.tone === "neutral", "invalid tone should normalize to neutral");
+      assert(root.getAttribute("aria-label").includes("0 of 4 bars"), "default aria label should include level");
+
+      signal.update({ showText: false, level: 3, tone: "danger", text: "Weak" });
+      root = host.querySelector(".ui-signal-strength");
+      assert(root.dataset.showText === "false", "bars-only state should be reflected in dataset");
+      assert(root.classList.contains("is-bars-only"), "bars-only class should render");
+      assert(!root.querySelector(".ui-signal-strength-text"), "bars-only mode should remove visible text node");
+      assert(root.querySelectorAll(".ui-signal-strength-bar.is-active").length === 3, "bars-only mode should still render active bars");
+
+      const state = signal.getState();
+      assert(state.level === 3 && state.tone === "danger" && state.showText === false, "getState should return normalized options");
+
+      signal.destroy();
+      assert(host.children.length === 0, "destroy should clear host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Signal strength regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>
