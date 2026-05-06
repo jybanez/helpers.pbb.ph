@@ -116,8 +116,8 @@
         "Do not use it for date/time scheduling; use <code>createScheduler(...)</code> instead.",
         "Do not use it for flat reporting tables or hierarchy exploration where movement is not the point."
       ],
-      description: "This demo focuses on workflow movement rules: drag between lanes, validate moves, enforce a WIP limit, emit stable callbacks, and keep cards intrinsic-height with card-stack scrolling inside fixed-height lanes.",
-      defaultSampleCode: `const board = createKanban(host, lanes, {\n  ariaLabel: "Incident workflow board",\n  wipLimits: { active: 3 },\n  validateMove(payload) {\n    if (payload.toLaneId === "resolved" && payload.card.requiresReview) {\n      return { ok: false, reason: "Review required first." };\n    }\n    return true;\n  },\n  onCardMove(payload) {\n    writeLog("kanban.card.move", payload);\n  },\n});`,
+      description: "This demo focuses on workflow movement rules: drag between lanes, validate moves, enforce a WIP limit, emit stable callbacks, keep cards intrinsic-height with card-stack scrolling inside fixed-height lanes, and configure empty-lane placeholder behavior.",
+      defaultSampleCode: `const board = createKanban(host, lanes, {\n  ariaLabel: "Incident workflow board",\n  emptyText: "No assignments.",\n  showEmptyPlaceholder: true,\n  wipLimits: { active: 3 },\n  validateMove(payload) {\n    if (payload.toLaneId === "resolved" && payload.card.requiresReview) {\n      return { ok: false, reason: "Review required first." };\n    }\n    return true;\n  },\n  onCardMove(payload) {\n    writeLog("kanban.card.move", payload);\n  },\n});`,
       constructor: [
         { factory: "<code>createKanban(container, lanes, options)</code>", arguments: "<code>container</code>, lane array, kanban <code>options</code>", returns: "Kanban instance with update, move, state, and destroy methods" }
       ],
@@ -125,6 +125,8 @@
         { option: "<code>ariaLabel</code>", default: "<code>\"Incident workflow board\"</code>", description: "Accessibility label for the board region." },
         { option: "<code>draggable</code>", default: "<code>true</code>", description: "Enables drag-and-drop between lanes." },
         { option: "<code>keyboardMoves</code>", default: "<code>true</code>", description: "Enables keyboard move interactions." },
+        { option: "<code>emptyText</code>", default: "<code>\"No cards.\"</code>", description: "Placeholder copy rendered inside lanes with no cards." },
+        { option: "<code>showEmptyPlaceholder</code>", default: "<code>true</code>", description: "Set to <code>false</code> to leave empty lanes blank while preserving drop behavior." },
         { option: "<code>wipLimits</code>", default: "<code>null</code>", description: "Per-lane WIP limits such as <code>{ active: 3 }</code>." },
         { option: "<code>validateMove</code>", default: "<code>null</code>", description: "Business-rule hook for move approval or rejection." },
         { option: "<code>card stack sizing</code>", default: "<code>intrinsic</code>", description: "Cards keep natural height, align to the top of the lane body, and scroll inside fixed-height lanes when the stack overflows." }
@@ -160,8 +162,10 @@
       <h2 class="ui-title">Incident Workflow Board</h2>
       <p class="muted">Active lane has a WIP limit of three cards. Cards marked with review requirements cannot move directly into Resolved.</p>
       <div id="kanbanHost"></div>
-      <pre>const board = createKanban(host, lanes, {
+<pre>const board = createKanban(host, lanes, {
   ariaLabel: "Incident workflow board",
+  emptyText: "No assignments.",
+  showEmptyPlaceholder: true,
   wipLimits: { active: 3 },
   validateMove(payload) {
     if (payload.toLaneId === "resolved" && payload.card.requiresReview) {
@@ -178,7 +182,7 @@
 
     <section class="panel">
       <h2 class="ui-title">Fixed-Height Assignment Rail</h2>
-      <p class="muted">Cards stay compact, stack from the top, and scroll inside the lane body when fixed-height lanes receive more cards than fit.</p>
+      <p class="muted">Cards stay compact, stack from the top, and scroll inside the lane body when fixed-height lanes receive more cards than fit. Empty lanes in this rail intentionally render blank with <code>showEmptyPlaceholder: false</code>.</p>
       <div id="kanbanRailHost"></div>
     </section>
   </main>
@@ -286,6 +290,7 @@
       },
     ], {
       ariaLabel: "Fixed-height assignment rail",
+      showEmptyPlaceholder: false,
       onCardClick(card, laneId) {
         writeLog("kanban.rail.card.click", { cardId: card.id, laneId });
       },

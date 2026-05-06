@@ -304,7 +304,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.tree.js`
   - `createTree(container, data, options)` expandable/selectable tree view with optional checkboxes, lazy child loading, and optional chrome-less rendering
 - `ui.kanban.js`
-  - `createKanban(container, lanes, options)` lane-based board with intrinsic-height draggable cards, fixed-lane card-stack scrolling, and move callbacks
+  - `createKanban(container, lanes, options)` lane-based board with intrinsic-height draggable cards, configurable empty-lane placeholders, fixed-lane card-stack scrolling, and move callbacks
 - `ui.stepper.js`
   - `createStepper(container, steps, options)` step indicator/navigation component for multi-step workflows
 - `ui.splitter.js`
@@ -4474,6 +4474,8 @@ Options:
 | `cardIdKey` | `string` | `"id"` | no | Card id key override. |
 | `cardTitleKey` | `string` | `"title"` | no | Card title key override. |
 | `cardMetaKey` | `string` | `"meta"` | no | Card metadata key override. |
+| `emptyText` | `string` | `"No cards."` | no | Placeholder copy for empty lanes. |
+| `showEmptyPlaceholder` | `boolean` | `true` | no | Set to `false` to leave empty lanes visually blank while keeping the lane body as a drop target. |
 | `wipLimits` | `object` | `{}` | no | Per-lane WIP limits. |
 | `validateMove` | `(payload) => boolean \| { ok: false, reason }` | `null` | no | Move validation hook. |
 
@@ -4499,10 +4501,11 @@ Behavior notes:
 - Key override options let projects reuse existing lane/card payloads without reshaping all field names.
 - `validateMove` should hold business rules such as lane restrictions or prerequisite states.
 - `wipLimits` are presentation-time constraints; keep authoritative workflow validation in app logic as well.
+- Use `showEmptyPlaceholder: false` for compact rails or dashboards where an empty lane should remain blank.
 
 Related demos:
 
-- `demos/demo.file.uploader.html`
+- `demos/demo.kanban.html`
 
 ### `createStepper(container, steps, options)` (`js/ui/ui.stepper.js`)
 

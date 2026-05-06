@@ -11,6 +11,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Unreleased
 
 - Added `ui.signal.strength` as a transport-agnostic 0-4 bar connectivity status primitive with stable compact text, tones, bars-only mode, accessible labels, demo coverage, and regression coverage.
+- Added `emptyText` and `showEmptyPlaceholder` options to `ui.kanban` so compact rails can leave empty lanes blank while the default `"No cards."` placeholder remains unchanged.
 - Added `ui.audio.timeline` as a generic synchronized multi-track audio surface for arbitrary sources, including pending processing segments, and refactored `createAudioCallSession(...)` into an incident-media adapter over that timeline while preserving its role-oriented state contract.
 - Split the audio demos so `demos/demo.audio.html` documents only the incident call-session adapter and `demos/demo.audio.timeline.html` documents the generic multi-track timeline contract.
 - Added pending audio support to `createAudioCallSession(...)` so `processing: true` audio rows without playable paths render disabled preparing role tracks, avoid missing-URL loads, expose pending/playable state, and resolve normally on later `update(...)`.

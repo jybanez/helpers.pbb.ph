@@ -11,6 +11,8 @@ const DEFAULT_OPTIONS = {
   cardMetaKey: "meta",
   draggable: true,
   keyboardMoves: true,
+  emptyText: "No cards.",
+  showEmptyPlaceholder: true,
   wipLimits: null, // { [laneId]: number }
   validateMove: null, // ({ card, fromLaneId, toLaneId, fromIndex, toIndex, lanes }) => boolean | { ok, reason }
   onCardMove: null,
@@ -114,8 +116,8 @@ export function createKanban(container, lanes = [], options = {}) {
       dragFromIndex = -1;
     });
 
-    if (!lane.cards.length) {
-      cards.appendChild(createElement("p", { className: "ui-kanban-empty", text: "No cards." }));
+    if (!lane.cards.length && currentOptions.showEmptyPlaceholder) {
+      cards.appendChild(createElement("p", { className: "ui-kanban-empty", text: currentOptions.emptyText }));
     } else {
       lane.cards.forEach((card) => {
         const cardIndex = lane.cards.findIndex((entry) => entry.id === card.id);
@@ -397,7 +399,10 @@ export function createKanban(container, lanes = [], options = {}) {
 }
 
 function normalizeOptions(options) {
-  return { ...DEFAULT_OPTIONS, ...(options || {}) };
+  const normalized = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  normalized.emptyText = String(normalized.emptyText ?? DEFAULT_OPTIONS.emptyText);
+  normalized.showEmptyPlaceholder = normalized.showEmptyPlaceholder !== false;
+  return normalized;
 }
 
 function normalizeLanes(lanes, options) {

@@ -25,6 +25,8 @@
 </head>
 <body data-status="pending">
   <div id="host"></div>
+  <div id="customHost"></div>
+  <div id="blankHost"></div>
   <pre id="results">pending</pre>
   <script>
     window.addEventListener("error", (event) => {
@@ -80,6 +82,31 @@
       draggable: true,
     });
 
+    const customBoard = createKanban(document.getElementById("customHost"), [
+      {
+        id: "custom-empty",
+        title: "Custom Empty",
+        cards: [],
+      },
+    ], {
+      emptyText: "No assignments.",
+    });
+
+    const blankBoard = createKanban(document.getElementById("blankHost"), [
+      {
+        id: "blank-source",
+        title: "Blank Source",
+        cards: [{ id: "blank-card", title: "Blank card", meta: "Drag source" }],
+      },
+      {
+        id: "blank-empty",
+        title: "Blank Empty",
+        cards: [],
+      },
+    ], {
+      showEmptyPlaceholder: false,
+    });
+
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const lanes = Array.from(document.querySelectorAll(".ui-kanban-lane"));
@@ -94,6 +121,10 @@
     const oneCard = oneLane.querySelector(".ui-kanban-card");
     const twoCardNodes = Array.from(twoLane.querySelectorAll(".ui-kanban-card"));
     const empty = emptyLane.querySelector(".ui-kanban-empty");
+    const customEmpty = document.querySelector("#customHost .ui-kanban-empty");
+    const blankHostCards = Array.from(document.querySelectorAll("#blankHost .ui-kanban-cards"));
+    const blankSourceCard = document.querySelector("#blankHost .ui-kanban-card");
+    const blankCards = blankHostCards[1];
 
     assert(getComputedStyle(oneCards).alignContent === "start", "cards stack should align content to the top");
     assert(getComputedStyle(oneCards).alignItems === "start", "cards should keep intrinsic cross-axis size");
@@ -104,6 +135,11 @@
     assert(totalTwoCardHeight < twoCards.getBoundingClientRect().height * 0.75, "two cards should not stretch to fill lane body");
 
     assert(empty.getBoundingClientRect().height < emptyCards.getBoundingClientRect().height * 0.6, "empty placeholder should remain compact");
+    assert(empty.textContent === "No cards.", "default empty placeholder text should remain unchanged");
+    assert(customEmpty?.textContent === "No assignments.", "custom empty placeholder text should render");
+    assert(customBoard.getState().options.emptyText === "No assignments.", "custom empty text should be normalized in state");
+    assert(!blankCards.querySelector(".ui-kanban-empty"), "empty placeholder should be omitted when showEmptyPlaceholder is false");
+    assert(blankBoard.getState().options.showEmptyPlaceholder === false, "hidden empty placeholder option should be reflected in state");
     assert(getComputedStyle(overflowCards).overflowY === "auto", "fixed-height lane body should provide vertical card scrolling");
     assert(overflowCards.scrollHeight > overflowCards.clientHeight, "overflowing card stack should scroll within the lane body");
 
@@ -125,6 +161,29 @@
     oneCard.dispatchEvent(dragStartEvent);
     emptyCards.dispatchEvent(dragEvent);
     assert(emptyCards.classList.contains("is-drop-target"), "full lane body should still accept dragover as drop target");
+
+    const blankDragStartEvent = new DragEvent("dragstart", {
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(blankDragStartEvent, "dataTransfer", {
+      value: { setData() {} },
+    });
+    const blankDragEvent = new DragEvent("dragover", {
+      bubbles: true,
+      cancelable: true,
+      clientY: blankCards.getBoundingClientRect().bottom - 10,
+    });
+    Object.defineProperty(blankDragEvent, "dataTransfer", {
+      value: { dropEffect: "", setData() {} },
+    });
+    blankSourceCard.dispatchEvent(blankDragStartEvent);
+    blankCards.dispatchEvent(blankDragEvent);
+    assert(blankCards.classList.contains("is-drop-target"), "blank empty lane body should still accept dragover as drop target");
+
+    blankBoard.update(undefined, { showEmptyPlaceholder: true, emptyText: "Nothing queued." });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    assert(document.querySelector("#blankHost .ui-kanban-empty")?.textContent === "Nothing queued.", "empty placeholder should appear after option update");
 
     if (failures.length) {
       document.body.dataset.status = "failed";
