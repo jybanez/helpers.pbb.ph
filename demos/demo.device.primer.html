@@ -20,7 +20,7 @@
   <script>
     window.demoMeta = {
       title: "Device Primer",
-      overview: "Project-configurable startup checks for permissions, capabilities, and browser/device readiness.",
+      overview: "Project-configurable startup checks for permissions, capabilities, and browser/device readiness, with full cards or compact icon-strip mode.",
       useWhen: [
         "Use this before workflows that depend on microphone, camera, location, notifications, or audio playback.",
         "Use the modal preset when the primer should run at page load before the main page flow continues."
@@ -29,8 +29,8 @@
         "Do not use this as a full media-call setup wizard.",
         "Do not move app-specific fallback behavior into the helper."
       ],
-      description: "The device primer is a reusable preflight surface. Projects choose which checks they need. The helper owns status presentation and retry UI, while app code still owns routing and business fallback behavior. The modal preset auto-closes by default once all checks complete successfully.",
-      defaultSampleCode: `const primer = createDevicePrimer(host, {\n  title: "Startup Device Check",\n  message: "This page needs microphone, camera, and audio playback readiness before you continue.",\n  checks: [\n    { id: "mic", kind: "microphone", required: true },\n    { id: "cam", kind: "camera", required: true },\n    { id: "audio", kind: "audioPlayback", required: true },\n    { id: "speech", kind: "speechRecognition", required: false },\n  ],\n});`,
+      description: "The device primer is a reusable preflight surface. Projects choose which checks they need. The helper owns status presentation and retry UI, while app code still owns routing and business fallback behavior. The modal preset auto-closes by default once all checks complete successfully. Use <code>mode: \"compact\"</code> for icon-only readiness strips with a selected-check detail panel and explicit retry action for failed or blocked checks.",
+      defaultSampleCode: `const primer = createDevicePrimer(host, {\n  title: "Startup Device Check",\n  message: "This page needs microphone, camera, and audio playback readiness before you continue.",\n  checks: [\n    { id: "mic", kind: "microphone", required: true },\n    { id: "cam", kind: "camera", required: true },\n    { id: "audio", kind: "audioPlayback", required: true },\n    { id: "speech", kind: "speechRecognition", required: false },\n  ],\n}, {\n  mode: "compact",\n});`,
       constructor: [
         { factory: "<code>createDevicePrimer(container, data, options)</code>", arguments: "primer host, configured checks, and callbacks", returns: "Device primer instance" },
         { factory: "<code>createDevicePrimerModal(data, options)</code>", arguments: "configured checks and modal options", returns: "Modal-backed device primer instance" }
@@ -39,7 +39,8 @@
         { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root primer element." },
         { option: "<code>autoRun</code>", default: "<code>true</code>", description: "Runs the configured checks immediately on init." },
         { option: "<code>allowRetry</code>", default: "<code>true</code>", description: "Shows retry actions on failed or blocked checks." },
-        { option: "<code>showSummary</code>", default: "<code>true</code>", description: "Shows aggregate readiness status above the rows in both inline and modal primer variants." },
+        { option: "<code>showSummary</code>", default: "<code>true</code>", description: "Shows aggregate readiness status above card rows in both inline and modal primer variants. Compact mode suppresses the summary to keep the icon strip short." },
+        { option: "<code>mode</code>", default: "<code>\"cards\"</code>", description: "Use <code>\"compact\"</code> for an icon-only readiness strip. Compact mode shows selected-check detail text in a panel, uses a shimmer icon while checking, and places retry/check on the detail panel for failed or blocked checks.", values: ["cards", "compact"] },
         { option: "<code>title</code>", default: "<code>\"Device Primer\"</code>", description: "Modal preset title shown in the modal shell." },
         { option: "<code>continueLabel</code>", default: "<code>\"Continue\"</code>", description: "Modal preset label for the continue action." },
         { option: "<code>retryLabel</code>", default: "<code>\"Retry Failed\"</code>", description: "Modal preset label for retrying failed or blocked checks. The button is rendered only while at least one check is retryable." },
@@ -80,6 +81,7 @@
         <button id="runAllBtn" class="ui-button ui-button-primary" type="button">Run All Again</button>
         <button id="failureBtn" class="ui-button" type="button">Show Failure Demo</button>
         <button id="modalBtn" class="ui-button ui-button-ghost" type="button">Open Modal Preset</button>
+        <button id="compactModalBtn" class="ui-button ui-button-ghost" type="button">Open Compact Modal</button>
       </div>
       <div id="primerHost"></div>
     </section>
@@ -184,6 +186,26 @@
       });
       modal.open();
       writeLog("devicePrimer.modalOpen", modal.getState());
+    });
+
+    document.getElementById("compactModalBtn").addEventListener("click", () => {
+      const modal = createDevicePrimerModal({
+        title: "Compact Device Check",
+        message: "Select an icon to inspect details. Failed or blocked checks can be retried from the detail panel.",
+        checks: [
+          { id: "mic", kind: "microphone", label: "Microphone", required: true },
+          { id: "camera", kind: "camera", label: "Camera Device", required: true },
+          { id: "audio", kind: "audioPlayback", label: "Audio Playback", required: true },
+          { id: "devices", kind: "mediaDevices", label: "Media Devices", required: true },
+          { id: "speech", kind: "speechSynthesis", label: "Speech Synthesis", required: false },
+        ],
+      }, {
+        mode: "compact",
+        blockUntilReady: true,
+        autoCloseOnReady: false,
+      });
+      modal.open();
+      writeLog("devicePrimer.compactModalOpen", modal.getState());
     });
 
     if (new URLSearchParams(window.location.search).get("autostart") === "1") {

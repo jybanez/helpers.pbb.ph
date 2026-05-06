@@ -5018,6 +5018,12 @@ Core methods:
 - `getState()`
 - `destroy()`
 
+Options:
+
+- `mode`
+  - default: `"cards"`
+  - `"compact"` renders an icon-only readiness strip, suppresses the summary panel, shows the selected check in a detail panel, applies a shimmer treatment while a check is running, and exposes retry/check from the detail panel for failed or blocked checks.
+
 Modal preset notes:
 
 - wraps the core helper inside a helper-owned action modal
@@ -5026,6 +5032,7 @@ Modal preset notes:
 - auto-closes by default once all checks complete, every required check is ready, and no checks failed; set `autoCloseOnReady: false` when the flow needs a final Continue/inspection step
 - project code still owns blocking policy and what happens after success/failure
 - `showSummary` is supported for both the inline helper and the modal wrapper
+- compact mode suppresses the summary even when `showSummary` is true so the modal stays low-height
 - the modal wrapper only renders `Retry Failed` when at least one check is currently retryable
 
 ## Notes

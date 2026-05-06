@@ -24,6 +24,7 @@ const DEFAULT_OPTIONS = {
   autoRun: true,
   allowRetry: true,
   showSummary: true,
+  mode: "cards",
   onCheckStart: null,
   onCheckComplete: null,
   onRetry: null,
@@ -43,6 +44,7 @@ const DEFAULT_MODAL_OPTIONS = {
   closeOnEscape: true,
   autoCloseOnReady: true,
   autoRun: true,
+  mode: "cards",
   onOpen: null,
   onClose: null,
   onComplete: null,
@@ -55,6 +57,7 @@ export function createDevicePrimer(container, data = {}, options = {}) {
   let autoRunToken = 0;
   let runSequence = Promise.resolve();
   let queuedRuns = 0;
+  let selectedCompactCheckId = "";
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -77,16 +80,30 @@ export function createDevicePrimer(container, data = {}, options = {}) {
         text: currentData.message,
       }));
     }
-    if (currentOptions.showSummary) {
+    if (currentOptions.showSummary && currentOptions.mode !== "compact") {
       root.appendChild(createSummaryNode());
     }
 
+    if (currentOptions.mode === "compact") {
+      ensureCompactSelection();
+    }
     const list = createElement("div", {
-      className: "ui-device-primer-list",
+      className: [
+        "ui-device-primer-list",
+        currentOptions.mode === "compact" ? "is-compact" : "",
+      ].filter(Boolean).join(" "),
       attrs: { role: "list" },
     });
-    currentData.checks.forEach((check) => list.appendChild(createCheckRow(check)));
+    currentData.checks.forEach((check) => {
+      list.appendChild(currentOptions.mode === "compact" ? createCompactCheckItem(check) : createCheckRow(check));
+    });
     root.appendChild(list);
+    if (currentOptions.mode === "compact") {
+      const detailPanel = createCompactDetailPanel();
+      if (detailPanel) {
+        root.appendChild(detailPanel);
+      }
+    }
     container.appendChild(root);
   }
 
@@ -172,6 +189,107 @@ export function createDevicePrimer(container, data = {}, options = {}) {
 
     row.append(main);
     return row;
+  }
+
+  function createCompactCheckItem(check) {
+    const label = formatCheckTooltip(check);
+    const selected = String(check.id) === String(selectedCompactCheckId);
+    const item = createElement("button", {
+      className: [
+        "ui-device-primer-compact-item",
+        `is-${check.kind}`,
+        `is-${check.status}`,
+        check.required ? "is-required" : "is-optional",
+        selected ? "is-selected" : "",
+      ].join(" "),
+      dataset: { checkId: check.id, checkKind: check.kind },
+      attrs: {
+        type: "button",
+        role: "listitem",
+        "aria-label": label,
+        "aria-pressed": selected ? "true" : "false",
+      },
+    });
+    const icon = createElement("span", {
+      className: "ui-device-primer-compact-icon",
+      attrs: { "aria-hidden": "true" },
+    });
+    icon.appendChild(createIcon(getCheckIconName(check.kind), {
+      size: 22,
+      className: "ui-device-primer-compact-glyph",
+    }));
+    item.append(
+      icon,
+      createElement("span", {
+        className: "ui-device-primer-compact-status",
+        attrs: { "aria-hidden": "true" },
+      }),
+    );
+    item.addEventListener("click", () => {
+      selectedCompactCheckId = check.id;
+      render();
+    });
+    return item;
+  }
+
+  function createCompactDetailPanel() {
+    const check = findCheck(selectedCompactCheckId) || currentData.checks[0] || null;
+    if (!check) {
+      return null;
+    }
+    const panel = createElement("div", {
+      className: `ui-device-primer-compact-detail is-${check.status}`,
+      attrs: {
+        role: "status",
+        "aria-live": check.status === "checking" ? "polite" : "off",
+      },
+    });
+    const body = createElement("div", { className: "ui-device-primer-compact-detail-body" });
+    body.appendChild(createElement("div", {
+      className: "ui-device-primer-compact-detail-title",
+      text: check.label,
+    }));
+    body.appendChild(createElement("div", {
+      className: "ui-device-primer-compact-detail-meta",
+      text: `${check.required ? "Required" : "Optional"} - ${formatStatusLabel(check.status)}`,
+    }));
+    if (check.description) {
+      body.appendChild(createElement("div", {
+        className: "ui-device-primer-compact-detail-description",
+        text: check.description,
+      }));
+    }
+    body.appendChild(createElement("div", {
+      className: "ui-device-primer-compact-detail-text",
+      text: check.detailText,
+    }));
+    panel.appendChild(body);
+    if (currentOptions.allowRetry && (check.canRetry || check.status === "failed" || check.status === "blocked")) {
+      const retryButton = createElement("button", {
+        className: "ui-button ui-button-quiet ui-device-primer-compact-retry",
+        attrs: { type: "button" },
+      });
+      retryButton.append(
+        createIcon("actions.refresh", { size: 14, className: "ui-device-primer-retry-icon" }),
+        createElement("span", { text: "Retry" }),
+      );
+      retryButton.addEventListener("click", () => {
+        const action = check.canRetry ? retryCheck(check.id) : runCheck(check.id);
+        action.catch(() => {});
+      });
+      panel.appendChild(retryButton);
+    }
+    return panel;
+  }
+
+  function ensureCompactSelection() {
+    if (findCheck(selectedCompactCheckId)) {
+      return;
+    }
+    const preferred = currentData.checks.find((check) => check.status === "failed" || check.status === "blocked")
+      || currentData.checks[0]
+      || null;
+    selectedCompactCheckId = preferred?.id || "";
   }
 
   function update(nextData = {}, nextOptions = {}) {
@@ -350,6 +468,7 @@ export function createDevicePrimerModal(data = {}, options = {}) {
     autoRun: modalOptions.autoRun,
     allowRetry: true,
     showSummary: modalOptions.showSummary,
+    mode: modalOptions.mode,
     onCheckStart: modalOptions.onCheckStart || null,
     onCheckComplete: modalOptions.onCheckComplete || null,
     onRetry: modalOptions.onRetry || null,
@@ -731,19 +850,23 @@ function normalizeData(data = {}) {
 }
 
 function normalizeOptions(options = {}) {
+  const mode = String(options?.mode || DEFAULT_OPTIONS.mode).trim().toLowerCase() === "compact" ? "compact" : "cards";
   return {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
     className: options?.className == null ? "" : String(options.className),
+    mode,
   };
 }
 
 function normalizeModalOptions(options = {}) {
+  const mode = String(options?.mode || DEFAULT_MODAL_OPTIONS.mode).trim().toLowerCase() === "compact" ? "compact" : "cards";
   return {
     ...DEFAULT_MODAL_OPTIONS,
     ...(options || {}),
     showSummary: options?.showSummary !== false,
     autoCloseOnReady: options?.autoCloseOnReady !== false,
+    mode,
   };
 }
 
@@ -793,6 +916,13 @@ function formatStatusLabel(status) {
     case "unsupported": return "Unsupported";
     default: return "Pending";
   }
+}
+
+function formatCheckTooltip(check) {
+  const requirement = check.required ? "Required" : "Optional";
+  const status = formatStatusLabel(check.status);
+  const detail = String(check.detailText || defaultDetailForStatus(check.status)).trim();
+  return `${check.label}. ${requirement}. ${status}.${detail ? ` ${detail}` : ""}`;
 }
 
 function formatCheckLabel(kind) {

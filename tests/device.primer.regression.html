@@ -228,6 +228,71 @@
       value: AudioContextStub,
     });
 
+    micMode = "ready";
+    let compactRetryCount = 0;
+    const compactPrimer = createDevicePrimer(host, {
+      title: "Compact Primer",
+      checks: [
+        {
+          id: "compact-mic",
+          kind: "microphone",
+          label: "Compact Microphone",
+          required: true,
+          status: "failed",
+          detailText: "Microphone permission denied.",
+          canRetry: true,
+        },
+        {
+          id: "compact-camera",
+          kind: "camera",
+          label: "Compact Camera",
+          required: true,
+          status: "ready",
+          detailText: "Camera ready.",
+        },
+      ],
+    }, {
+      autoRun: false,
+      mode: "compact",
+      onRetry() { compactRetryCount += 1; },
+    });
+    assert(host.querySelector(".ui-device-primer-list.is-compact"), "Compact mode should render an icon strip list.");
+    assert(!host.querySelector(".ui-device-primer-summary"), "Compact mode should suppress the summary panel.");
+    assert(!host.querySelector(".ui-device-primer-row"), "Compact mode should not render full card rows.");
+    const compactMicButton = host.querySelector('[data-check-id="compact-mic"].ui-device-primer-compact-item');
+    assert(compactMicButton && compactMicButton.getAttribute("aria-label").includes("Microphone permission denied."), "Compact icons should expose detail context through aria-label.");
+    assert(compactMicButton && !compactMicButton.hasAttribute("title"), "Compact icons should not depend on hover tooltips.");
+    assert(host.querySelector(".ui-device-primer-compact-detail")?.textContent.includes("Microphone permission denied."), "Compact mode should show selected check details in an inline panel.");
+    compactMicButton.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert(compactRetryCount === 0, "Clicking a compact icon should select details without immediately retrying.");
+    const compactRetryButton = host.querySelector(".ui-device-primer-compact-retry");
+    assert(Boolean(compactRetryButton), "Retryable compact details should render a retry button.");
+    compactRetryButton.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert(compactRetryCount === 1, "Clicking the compact detail retry button should trigger retry.");
+    assert(compactPrimer.getState().checks.find((check) => check.id === "compact-mic")?.status === "ready", "Compact detail retry should rerun the check.");
+    compactPrimer.update({
+      checks: [
+        {
+          id: "compact-checking",
+          kind: "audioPlayback",
+          label: "Compact Audio",
+          required: true,
+          status: "checking",
+          detailText: "Checking...",
+        },
+      ],
+    });
+    const checkingCompactIcon = host.querySelector('[data-check-id="compact-checking"].ui-device-primer-compact-item.is-checking .ui-device-primer-compact-icon');
+    assert(Boolean(checkingCompactIcon), "Compact checking state should render the shimmer-ready icon wrapper.");
+    assert(!host.querySelector('[data-check-id="compact-checking"]').disabled, "Compact checking icons should remain selectable for details while running.");
+    compactPrimer.destroy();
+
     const modal = createDevicePrimerModal({
       title: "Modal Primer",
       checks: [
