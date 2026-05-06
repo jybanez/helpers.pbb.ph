@@ -62,6 +62,13 @@
           badge.textContent = "Region 7";
           return badge;
         },
+        statusContentLabel: "System status",
+        statusContent: () => {
+          const status = document.createElement("span");
+          status.className = "status-badge";
+          status.textContent = "Syncing 3 calls";
+          return status;
+        },
         items: [
           { id: "dashboard", label: "Dashboard" },
           {
@@ -103,6 +110,7 @@
       const contentStart = host.querySelector(".ui-navbar-slot-start");
       const contentCenter = host.querySelector(".ui-navbar-slot-center .center-badge");
       const contentEnd = host.querySelector(".ui-navbar-slot-end .end-badge");
+      const statusContent = host.querySelector(".ui-navbar-status .status-badge");
       assert(Boolean(brandButton), "brand button should render");
       assert(Boolean(brandLabel) && brandLabel.textContent.trim() === "Workspace", "brand label should render");
       assert(Boolean(brandSubtitle) && brandSubtitle.textContent.trim() === "Build app-DWv_LvMM", "brand subtitle should render");
@@ -110,6 +118,8 @@
       assert(Boolean(contentStart) && contentStart.textContent.includes("Operations"), "start slot should render text content");
       assert(Boolean(contentCenter) && contentCenter.textContent.trim() === "Realtime Connected", "center slot should render callback content");
       assert(Boolean(contentEnd) && contentEnd.textContent.trim() === "Region 7", "end slot should render callback content");
+      assert(Boolean(statusContent) && statusContent.textContent.trim() === "Syncing 3 calls", "persistent status content should render inline");
+      assert(host.querySelector(".ui-navbar-status")?.getAttribute("aria-label") === "System status", "persistent status content should expose an accessible group label");
 
       const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
       assert(navButtons.length === 2, "navbar should render 2 primary items");
@@ -153,17 +163,23 @@
       const mobileToggle = host.querySelector(".ui-navbar-mobile-toggle");
       assert(Boolean(mobileToggle), "mobile-collapsible navbar should render a hamburger toggle");
       assert(!mobileToggle.disabled, "mobile hamburger toggle should enable inside the mobile viewport");
+      assert(
+        mobileToggle.previousElementSibling?.classList.contains("ui-navbar-status"),
+        "persistent status content should remain inline immediately before the mobile hamburger"
+      );
       const getMobileMenu = () => {
         const menuId = mobileToggle.getAttribute("aria-controls");
         return menuId ? document.getElementById(menuId) : null;
       };
+      const isMobileMenuOpen = () => mobileToggle.getAttribute("aria-expanded") === "true";
       mobileToggle.click();
       const mobileMenu = await waitFor(() => {
         const menu = getMobileMenu();
-        return menu?.classList.contains("is-open") ? menu : null;
+        return menu && isMobileMenuOpen() ? menu : null;
       });
       assert(Boolean(mobileMenu), "mobile hamburger toggle should open a menu");
       const mobileMenuLabels = Array.from(mobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
+      assert(!mobileMenuLabels.includes("Syncing 3 calls"), "persistent status content should not duplicate into the mobile hamburger menu");
       assert(
         mobileMenuLabels.slice(0, 9).join("|") === [
           "Operations",
@@ -182,20 +198,20 @@
       mobileDashboard.click();
       await waitFor(() => {
         const menu = getMobileMenu();
-        return !menu || !menu.classList.contains("is-open");
+        return !menu || !isMobileMenuOpen();
       });
       assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "mobile menu should navigate direct navbar items");
 
       mobileToggle.click();
       const mobileWorkspaceMenu = await waitFor(() => {
         const menu = getMobileMenu();
-        return menu?.classList.contains("is-open") ? menu : null;
+        return menu && isMobileMenuOpen() ? menu : null;
       });
       const mobileWorkspace = Array.from(mobileWorkspaceMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Workspace");
       mobileWorkspace.click();
       await waitFor(() => {
         const menu = getMobileMenu();
-        return !menu || !menu.classList.contains("is-open");
+        return !menu || !isMobileMenuOpen();
       });
       assert(
         events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:workspace" && event.source === "mobile-menu"),
@@ -205,13 +221,13 @@
       mobileToggle.click();
       const mobileLogoutMenu = await waitFor(() => {
         const menu = getMobileMenu();
-        return menu?.classList.contains("is-open") ? menu : null;
+        return menu && isMobileMenuOpen() ? menu : null;
       });
       const mobileLogout = Array.from(mobileLogoutMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Logout");
       mobileLogout.click();
       await waitFor(() => {
         const menu = getMobileMenu();
-        return !menu || !menu.classList.contains("is-open");
+        return !menu || !isMobileMenuOpen();
       });
       assert(
         events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout" && event.source === "mobile-menu"),
@@ -230,14 +246,16 @@
       assert(!host.querySelector(".ui-navbar-slot-center .center-badge"), "center slot should clear after update");
       assert(!host.querySelector(".ui-navbar-center"), "center region should collapse when it has no content");
 
-      navbar.update({}, { items: [], actions: [], contentEnd: null });
+      navbar.update({}, { items: [], actions: [], contentEnd: null, statusContent: null });
       await wait(10);
       assert(!host.querySelector(".ui-navbar-items"), "items wrapper should not render when there are no items");
       assert(!host.querySelector(".ui-navbar-actions"), "actions wrapper should not render when there are no actions");
       assert(!host.querySelector(".ui-navbar-end"), "end region should collapse when it has no end content or actions");
+      assert(!host.querySelector(".ui-navbar-status"), "persistent status content should clear after update");
       const root = host.querySelector(".ui-navbar");
       assert(root && !root.classList.contains("has-items"), "root should drop has-items class when items are cleared");
       assert(root && !root.classList.contains("has-actions"), "root should drop has-actions class when actions are cleared");
+      assert(root && !root.classList.contains("has-status"), "root should drop has-status class when status content is cleared");
 
       navbar.destroy();
       finish();

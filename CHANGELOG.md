@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `statusContent` and `statusContentLabel` to `createNavbar(...)` for a persistent inline status region that remains visible beside the mobile hamburger without duplicating into the hamburger menu.
 - Added `ui.signal.strength` as a transport-agnostic 0-4 bar connectivity status primitive with stable compact text, tones, bars-only mode, accessible labels, demo coverage, and regression coverage.
 - Added `emptyText` and `showEmptyPlaceholder` options to `ui.kanban` so compact rails can leave empty lanes blank while the default `"No cards."` placeholder remains unchanged.
 - Added `ui.audio.timeline` as a generic synchronized multi-track audio surface for arbitrary sources, including pending processing segments, and refactored `createAudioCallSession(...)` into an incident-media adapter over that timeline while preserving its role-oriented state contract.

@@ -18,6 +18,8 @@
     .demo-nav-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid #35507c; background: #13233d; color: #d7e0f4; font-size: 12px; line-height: 1; white-space: nowrap; }
     .demo-nav-dot { width: 8px; height: 8px; border-radius: 999px; background: #88f0b5; box-shadow: 0 0 0 3px rgba(136, 240, 181, 0.18); }
     .demo-nav-badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(159, 178, 216, 0.1); color: #bcd0f4; font-size: 12px; line-height: 1; white-space: nowrap; }
+    .demo-nav-status { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 6px 9px; border: 1px solid #3f5f94; border-radius: 999px; background: rgba(45, 84, 138, 0.18); color: #d7e0f4; font-size: 12px; line-height: 1; white-space: nowrap; }
+    .demo-nav-status-dot { width: 8px; height: 8px; border-radius: 999px; background: #ffd36a; box-shadow: 0 0 0 3px rgba(255, 211, 106, 0.16); }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -26,7 +28,7 @@
   <script>
     window.demoMeta = {
       title: "Navbar",
-      overview: "Shared top navigation helper for app shells, section switching, compact item/action menus, optional brand media, and additive custom-content slots.",
+      overview: "Shared top navigation helper for app shells, section switching, compact item/action menus, optional brand media, persistent status content, and additive custom-content slots.",
       useWhen: [
         "Use <code>createNavbar(...)</code> for top-level app or shell navigation that needs a shared PBB look-and-feel.",
         "Use <code>items[].menuItems</code> for primary-nav menus such as Workspace-style <code>Apps</code> without post-render menu wiring.",
@@ -36,8 +38,8 @@
         "Do not use it for side navigation or breadcrumbs; use the dedicated helpers for those surfaces.",
         "Do not push page-specific layout or content rendering into the navbar helper."
       ],
-      description: "The navbar helper owns brand, primary items, and right-side actions. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can keep the brand visible and collapse content, items, and actions into a viewport-aware hamburger menu whose mobile ordering is content first, then items, then actions, with menu-backed entries grouped under their parent label.",
-      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileCollapse: true,\n  contentStart: \"Operations\",\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  contentEnd: \"Region 7\",\n  contentCenterMobile: { id: \"status\", label: \"Realtime Connected\", disabled: true },\n  contentEndMobile: { id: \"region\", label: \"Region 7\", disabled: true },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
+      description: "The navbar helper owns brand, primary items, right-side actions, a single persistent status region, and additive slots. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, persistent non-menu content through <code>statusContent</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can keep the brand and status visible while collapsing content, items, and actions into a viewport-aware hamburger menu whose mobile ordering is content first, then items, then actions, with menu-backed entries grouped under their parent label.",
+      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileCollapse: true,\n  statusContentLabel: \"System status\",\n  statusContent: () => {\n    const status = document.createElement(\"span\");\n    status.className = \"demo-nav-status\";\n    status.innerHTML = '<span class=\"demo-nav-status-dot\"></span>Syncing 3 calls';\n    return status;\n  },\n  contentStart: \"Operations\",\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  contentEnd: \"Region 7\",\n  contentCenterMobile: { id: \"status\", label: \"Realtime Connected\", disabled: true },\n  contentEndMobile: { id: \"region\", label: \"Region 7\", disabled: true },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
       constructor: [
         { factory: "<code>createNavbar(container, data, options)</code>", arguments: "target container, unused data object, navbar options", returns: "Navbar instance" }
       ],
@@ -49,6 +51,8 @@
         { option: "<code>brandMedia</code>", default: "<code>null</code>", description: "Optional brand icon/logo content. Accepts an HTML string, DOM node, array, or render callback." },
         { option: "<code>items</code>", default: "<code>[]</code>", description: "Primary navigation items. Each item supports <code>id</code>, <code>label</code>, <code>icon</code>, <code>iconPosition</code>, <code>iconOnly</code>, <code>disabled</code>, plus optional <code>menuItems</code> and <code>menuOptions</code>." },
         { option: "<code>actions</code>", default: "<code>[]</code>", description: "Right-side actions. Items may also provide <code>menuItems</code> and optional <code>menuOptions</code>." },
+        { option: "<code>statusContent</code>", default: "<code>null</code>", description: "Persistent inline status content rendered once in the navbar. It remains visible next to the mobile hamburger and is not copied into the hamburger menu. Accepts text, DOM nodes, arrays, or a render callback." },
+        { option: "<code>statusContentLabel</code>", default: "<code>\"Status\"</code>", description: "Accessible group label for the persistent status content." },
         { option: "<code>contentStart</code>, <code>contentCenter</code>, <code>contentEnd</code>", default: "<code>null</code>", description: "Additive navbar slots for custom content. Each accepts text, DOM nodes, arrays, or a render callback." },
         { option: "<code>mobileCollapse</code>", default: "<code>true</code>", description: "On narrow screens, keep the brand visible and flatten content, items, and actions into a hamburger menu. The hamburger path activates only inside the mobile breakpoint and is suppressed again on desktop widths.", values: ["true", "false"] },
         { option: "<code>contentStartMobile</code>, <code>contentCenterMobile</code>, <code>contentEndMobile</code>", default: "<code>null</code>", description: "Optional structured hamburger-menu entries for the slot regions. When omitted, the helper falls back to the text content of the matching slot before listing items and actions. Mobile ordering is content entries first, then items, then actions, and menu-backed entries stay grouped under their parent label." },
@@ -107,6 +111,13 @@
   brandSubtitle: "Build app-DWv_LvMM",
   brandMedia: iconShield,
   mobileCollapse: true,
+  statusContentLabel: "System status",
+  statusContent: () => {
+    const status = document.createElement("span");
+    status.className = "demo-nav-status";
+    status.innerHTML = '<span class="demo-nav-status-dot"></span>Syncing 3 calls';
+    return status;
+  },
   contentStart: "Operations",
   contentCenter: () => {
     const pill = document.createElement("span");
@@ -213,10 +224,19 @@
       return badge;
     }
 
+    function renderStatusContent() {
+      const status = document.createElement("span");
+      status.className = "demo-nav-status";
+      status.innerHTML = '<span class="demo-nav-status-dot"></span>Syncing 3 calls';
+      return status;
+    }
+
     const navbar = createNavbar(host, {}, {
       brandText: "Hotline UI",
       brandSubtitle,
       brandMedia: iconShield,
+      statusContentLabel: "System status",
+      statusContent: renderStatusContent,
       contentStart: showCustomContent ? "Operations" : null,
       contentCenter: renderCenterContent,
       contentEnd: renderEndContent,
@@ -266,6 +286,8 @@
         brandText: "Hotline UI",
         brandSubtitle,
         brandMedia: iconShield,
+        statusContentLabel: "System status",
+        statusContent: renderStatusContent,
         contentStart: showCustomContent ? "Operations" : null,
         contentCenter: renderCenterContent,
         contentEnd: renderEndContent,

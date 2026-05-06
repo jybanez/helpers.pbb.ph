@@ -16,6 +16,8 @@ const DEFAULT_OPTIONS = {
   contentStartMobile: null,
   contentCenterMobile: null,
   contentEndMobile: null,
+  statusContent: null,
+  statusContentLabel: "Status",
   sticky: false,
   mobileCollapse: true,
   activeId: "",
@@ -266,6 +268,28 @@ export function createNavbar(container, data = {}, options = {}) {
     return slot;
   }
 
+  function renderStatusContent() {
+    if (currentOptions.statusContent == null || currentOptions.statusContent === false) {
+      return null;
+    }
+    const label = String(currentOptions.statusContentLabel || "Status").trim() || "Status";
+    const status = createElement("div", {
+      className: "ui-navbar-status",
+      attrs: {
+        role: "group",
+        "aria-label": label,
+      },
+    });
+    appendRenderable(status, currentOptions.statusContent, {
+      slot: "status",
+      className: "ui-navbar-status-text",
+    });
+    if (!status.childNodes.length) {
+      return null;
+    }
+    return status;
+  }
+
   function render() {
     if (!container || container.nodeType !== 1) {
       return;
@@ -389,10 +413,12 @@ export function createNavbar(container, data = {}, options = {}) {
     if (list) {
       start.appendChild(list);
     }
+    const statusContent = renderStatusContent();
 
+    let mobileToggle = null;
     const mobileMenuItems = Boolean(currentOptions.mobileCollapse) ? buildMobileMenuItems() : [];
     if (mobileMenuItems.length) {
-      const mobileToggle = createElement("button", {
+      mobileToggle = createElement("button", {
         className: "ui-button ui-navbar-mobile-toggle",
         attrs: {
           type: "button",
@@ -427,7 +453,6 @@ export function createNavbar(container, data = {}, options = {}) {
       });
       navMenus.push(mobileMenu);
       root.classList.add("is-mobile-collapsible", "has-mobile-menu");
-      start.appendChild(mobileToggle);
       const syncMobileCollapseState = () => {
         const isMobileViewport = typeof window !== "undefined"
           && typeof window.matchMedia === "function"
@@ -465,6 +490,9 @@ export function createNavbar(container, data = {}, options = {}) {
     if (list) {
       root.classList.add("has-items");
     }
+    if (statusContent) {
+      root.classList.add("has-status");
+    }
     if (contentCenter) {
       root.classList.add("has-center-slot");
     }
@@ -480,6 +508,12 @@ export function createNavbar(container, data = {}, options = {}) {
     }
     if (center.childNodes.length) {
       root.appendChild(center);
+    }
+    if (statusContent) {
+      root.appendChild(statusContent);
+    }
+    if (mobileToggle) {
+      root.appendChild(mobileToggle);
     }
     if (end.childNodes.length) {
       root.appendChild(end);

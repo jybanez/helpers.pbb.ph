@@ -1215,6 +1215,10 @@ Methods:
   - `contentStart`
   - `contentCenter`
   - `contentEnd`
+- Persistent status content supports:
+  - `statusContent`
+  - `statusContentLabel`
+  - The status region renders once, stays visible beside the mobile hamburger, and is not copied into the hamburger menu.
 - Mobile-collapse helpers:
   - `mobileCollapse` (default `true`) keeps the brand visible on narrow screens and moves the rest into a hamburger menu.
   - `contentStartMobile`
@@ -1376,6 +1380,12 @@ createNavbar(document.getElementById("navbarHost"), {}, {
   brandSubtitle: "Build app-DWv_LvMM",
   brandMedia: "<svg viewBox='0 0 24 24'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z'/></svg>",
   mobileCollapse: true,
+  statusContentLabel: "System status",
+  statusContent() {
+    const status = document.createElement("span");
+    status.textContent = "Syncing 3 calls";
+    return status;
+  },
   contentCenter() {
     const pill = document.createElement("span");
     pill.textContent = "Realtime Connected";
