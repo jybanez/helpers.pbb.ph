@@ -21,12 +21,17 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
   }
 
   function getFieldValue(field) {
-    const match = currentData.detail_entries.find((item) => item?.field_key === field?.field_key);
+    const match = currentData.detail_entries.find((item) => item?.field_key === getFieldKey(field));
     if (!match) {
       return "-";
     }
     const value = String(match?.field_value ?? "").trim();
     return value || "-";
+  }
+
+  function getRawFieldValue(field) {
+    const match = currentData.detail_entries.find((item) => item?.field_key === getFieldKey(field));
+    return match?.field_value ?? "";
   }
 
   function getResourceQuantity(resourceTypeId) {
@@ -86,9 +91,14 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     content.className = "hh-content";
 
     fields.forEach((field) => {
+      if (getFieldType(field) === "group") {
+        renderGroupField(content, field);
+        return;
+      }
+
       const row = document.createElement("div");
       row.className = "hh-row";
-      const label = field?.field_label || field?.field_key || "Field";
+      const label = getFieldLabel(field, getFieldKey(field) || "Field");
       const labelEl = document.createElement("span");
       labelEl.className = "hh-row-label";
       labelEl.textContent = label;
@@ -101,6 +111,65 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
 
     section.appendChild(content);
     root.appendChild(section);
+  }
+
+  function renderGroupField(content, field) {
+    const row = document.createElement("div");
+    row.className = "hh-row hh-row-group";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "hh-row-label";
+    labelEl.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
+
+    const valueEl = document.createElement("span");
+    valueEl.className = "hh-row-value hh-group-value";
+
+    const childFields = normalizeChildFields(field);
+    const parsed = parseGroupValue(field, getRawFieldValue(field));
+    const items = isRepeatableGroup(field) ? parsed : [parsed];
+    const nonEmptyItems = items.filter((item) => !isEmptyGroupItem(item, childFields));
+
+    if (!nonEmptyItems.length) {
+      valueEl.textContent = "-";
+    } else {
+      nonEmptyItems.forEach((item, index) => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "hh-group-value-item";
+
+        if (isRepeatableGroup(field)) {
+          const title = document.createElement("span");
+          title.className = "hh-group-value-title";
+          title.textContent = `${getFieldLabel(field, "Entry")} ${index + 1}`;
+          itemEl.appendChild(title);
+        }
+
+        childFields.forEach((child) => {
+          const childKey = getFieldKey(child);
+          const childValue = String(item?.[childKey] ?? "").trim();
+          if (!childValue) {
+            return;
+          }
+          const childRow = document.createElement("span");
+          childRow.className = "hh-group-value-row";
+
+          const childLabel = document.createElement("span");
+          childLabel.className = "hh-group-value-label";
+          childLabel.textContent = getFieldLabel(child, childKey);
+
+          const childText = document.createElement("span");
+          childText.className = "hh-group-value-text";
+          childText.textContent = childValue;
+
+          childRow.append(childLabel, childText);
+          itemEl.appendChild(childRow);
+        });
+
+        valueEl.appendChild(itemEl);
+      });
+    }
+
+    row.append(labelEl, valueEl);
+    content.appendChild(row);
   }
 
   function renderResourcesSection(root) {
@@ -204,4 +273,49 @@ function cloneData(value) {
   } catch (_) {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+function getFieldKey(field) {
+  return String(field?.field_key ?? field?.key ?? "");
+}
+
+function getFieldLabel(field, fallback = "Field") {
+  return String(field?.field_label ?? field?.label ?? fallback);
+}
+
+function getFieldType(field) {
+  return String(field?.input_type ?? field?.type ?? "text").toLowerCase();
+}
+
+function isRepeatableGroup(field) {
+  return Boolean(field?.repeatable ?? field?.multiple);
+}
+
+function normalizeChildFields(field) {
+  return safeArray(field?.fields).map((child, index) => ({
+    sort_order: index + 1,
+    ...child,
+  })).sort((a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0));
+}
+
+function parseGroupValue(field, rawValue) {
+  if (!rawValue) {
+    return isRepeatableGroup(field) ? [] : {};
+  }
+  try {
+    const parsed = typeof rawValue === "string" ? JSON.parse(rawValue) : rawValue;
+    if (isRepeatableGroup(field)) {
+      return Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : [];
+    }
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (_) {
+    return isRepeatableGroup(field) ? [] : {};
+  }
+}
+
+function isEmptyGroupItem(item, childFields) {
+  if (!item || typeof item !== "object") {
+    return true;
+  }
+  return childFields.every((child) => !String(item[getFieldKey(child)] ?? "").trim());
 }

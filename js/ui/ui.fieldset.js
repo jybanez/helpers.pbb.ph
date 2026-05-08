@@ -1,6 +1,9 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createSelect } from "./ui.select.js";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
+import { createFieldGroup } from "./ui.field.group.js";
+import { createCheckbox } from "./ui.checkbox.js";
+import { createCheckboxGroup } from "./ui.checkbox.group.js";
 
 const DEFAULT_OPTIONS = {
   legend: "",
@@ -189,7 +192,7 @@ export function createFieldset(container, options = {}) {
     if (type === "image") {
       return renderImageItem(item);
     }
-    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select") {
+    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "checkbox-group" || type === "ui.select" || type === "group") {
       return renderField(item, type, rowIndex, itemIndex);
     }
     return null;
@@ -281,18 +284,16 @@ export function createFieldset(container, options = {}) {
       fields.set(name, { name, type, config: { ...item }, wrapper: null, control });
       return control;
     }
-    if (type === "ui.select") {
+    if (type === "group") {
+      wrapper.appendChild(control);
+    } else if (type === "ui.select") {
       if (labelText) {
         label.textContent = labelText;
         wrapper.appendChild(label);
       }
       wrapper.appendChild(control);
-    } else if (type === "checkbox") {
-      label.append(control, createElement("span", {
-        className: "ui-fieldset-checkbox-label",
-        text: labelText,
-      }));
-      wrapper.appendChild(label);
+    } else if (type === "checkbox" || type === "checkbox-group") {
+      wrapper.appendChild(control);
     } else {
       if (labelText) {
         label.textContent = labelText;
@@ -360,6 +361,62 @@ export function createFieldset(container, options = {}) {
       return host;
     }
 
+    if (type === "group") {
+      const host = createElement("div", {
+        className: "ui-fieldset-group-host",
+        attrs: { id },
+      });
+      const groupInstance = createFieldGroup(host, {
+        ...item,
+        name,
+        value,
+      });
+      host.__uiFieldGroupInstance = groupInstance;
+      return host;
+    }
+
+    if (type === "checkbox") {
+      const host = createElement("div", {
+        className: "ui-fieldset-checkbox-host",
+        attrs: { id },
+      });
+      const checkboxInstance = createCheckbox(host, {
+        id: `${id}-control`,
+        name,
+        label: item.label || name,
+        checked: Boolean(value),
+        value,
+        ...(Object.prototype.hasOwnProperty.call(item, "checkedValue") ? { checkedValue: item.checkedValue } : {}),
+        ...(Object.prototype.hasOwnProperty.call(item, "uncheckedValue") ? { uncheckedValue: item.uncheckedValue } : {}),
+        required: Boolean(item.required),
+        disabled: Boolean(item.disabled),
+        readonly: Boolean(item.readonly),
+        help: item.help || "",
+      });
+      host.__uiCheckboxInstance = checkboxInstance;
+      return host;
+    }
+
+    if (type === "checkbox-group") {
+      const host = createElement("div", {
+        className: "ui-fieldset-checkbox-group-host",
+        attrs: { id },
+      });
+      const checkboxGroupInstance = createCheckboxGroup(host, {
+        name,
+        label: item.label || name,
+        values: value,
+        options: item.options,
+        min: item.min,
+        max: item.max,
+        disabled: Boolean(item.disabled),
+        readonly: Boolean(item.readonly),
+        help: item.help || "",
+      });
+      host.__uiCheckboxGroupInstance = checkboxGroupInstance;
+      return host;
+    }
+
     if (type === "input") {
       if (normalizeInputType(item.input) === "password") {
         const host = createElement("div", { className: "ui-fieldset-password-host" });
@@ -415,17 +472,6 @@ export function createFieldset(container, options = {}) {
         }
         control.appendChild(optionEl);
       });
-    } else if (type === "checkbox") {
-      control = createElement("input", {
-        className: "ui-fieldset-checkbox-input",
-        attrs: {
-          ...commonAttrs,
-          type: "checkbox",
-          ...(item.readonly ? { disabled: "disabled" } : {}),
-          ...(value ? { checked: "checked" } : {}),
-        },
-      });
-      control.checked = Boolean(value);
     }
     return control;
   }
@@ -455,6 +501,12 @@ export function createFieldset(container, options = {}) {
     fields.forEach((field) => {
       if (field?.type === "ui.select") {
         field.control?.__uiSelectInstance?.destroy?.();
+      } else if (field?.type === "group") {
+        field.control?.__uiFieldGroupInstance?.destroy?.();
+      } else if (field?.type === "checkbox") {
+        field.control?.__uiCheckboxInstance?.destroy?.();
+      } else if (field?.type === "checkbox-group") {
+        field.control?.__uiCheckboxGroupInstance?.destroy?.();
       } else if (field?.type === "input") {
         field.control?.__uiPasswordInstance?.destroy?.();
       }
@@ -650,11 +702,17 @@ function getFieldValue(field) {
   if (field.type === "ui.select") {
     return field.control?.__uiSelectInstance?.getValue?.() ?? (field.config.multiple ? [] : null);
   }
-  if (field.type === "input" && field.control?.__uiPasswordInstance) {
-    return field.control.__uiPasswordInstance.getValue();
+  if (field.type === "group") {
+    return field.control?.__uiFieldGroupInstance?.getValue?.() ?? (field.config.repeatable ? [] : {});
   }
   if (field.type === "checkbox") {
-    return Boolean(field.control.checked);
+    return field.control?.__uiCheckboxInstance?.getValue?.() ?? false;
+  }
+  if (field.type === "checkbox-group") {
+    return field.control?.__uiCheckboxGroupInstance?.getValue?.() ?? [];
+  }
+  if (field.type === "input" && field.control?.__uiPasswordInstance) {
+    return field.control.__uiPasswordInstance.getValue();
   }
   return field.control.value;
 }
@@ -664,12 +722,20 @@ function setFieldValue(field, value) {
     field.control?.__uiSelectInstance?.setValue?.(value);
     return;
   }
-  if (field.type === "input" && field.control?.__uiPasswordInstance) {
-    field.control.__uiPasswordInstance.setValue(value == null ? "" : String(value));
+  if (field.type === "group") {
+    field.control?.__uiFieldGroupInstance?.setValue?.(value, { emit: false });
     return;
   }
   if (field.type === "checkbox") {
-    field.control.checked = Boolean(value);
+    field.control?.__uiCheckboxInstance?.setValue?.(value, { emit: false });
+    return;
+  }
+  if (field.type === "checkbox-group") {
+    field.control?.__uiCheckboxGroupInstance?.setValue?.(value, { emit: false });
+    return;
+  }
+  if (field.type === "input" && field.control?.__uiPasswordInstance) {
+    field.control.__uiPasswordInstance.setValue(value == null ? "" : String(value));
     return;
   }
   field.control.value = value == null ? "" : String(value);
@@ -701,6 +767,12 @@ function getFieldAriaTarget(field) {
   }
   if (field.type === "ui.select") {
     return field.control.__uiSelectInstance?.refs?.trigger || field.control.querySelector("button,[role='combobox']") || field.control;
+  }
+  if (field.type === "checkbox") {
+    return field.control.__uiCheckboxInstance?.refs?.input || field.control.querySelector("input") || field.control;
+  }
+  if (field.type === "checkbox-group") {
+    return field.control.querySelector("input") || field.control;
   }
   if (field.type === "input" && field.control.__uiPasswordInstance) {
     return field.control.__uiPasswordInstance.refs?.input || field.control.querySelector("input");

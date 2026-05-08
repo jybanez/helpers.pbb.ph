@@ -1,10 +1,17 @@
 import { createRoot, normalizeIncidentOptions, safeArray } from "./incident.base.js";
 import { createNumberStepper } from "../ui/ui.number.stepper.js";
+import {
+  createFieldGroup,
+  parseFieldGroupValue,
+  serializeFieldGroupValue,
+  validateFieldGroup,
+} from "../ui/ui.field.group.js";
 
 export function incidentTypesDetailsEditor(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
   let currentOptions = normalizeIncidentOptions(options);
   const listeners = [];
+  const hostedInstances = [];
   let missingRequired = false;
 
   function bind(el, event, handler) {
@@ -14,6 +21,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
 
   function cleanupListeners() {
     listeners.splice(0).forEach((off) => off());
+    hostedInstances.splice(0).forEach((instance) => instance?.destroy?.());
   }
 
   function validateRequired() {
@@ -35,7 +43,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   }
 
   function getFieldValue(field) {
-    const match = currentData.detail_entries.find((item) => item?.field_key === field?.field_key);
+    const match = currentData.detail_entries.find((item) => item?.field_key === getFieldKey(field));
     if (!match) {
       if (field?.default_value !== null && field?.default_value !== undefined && field?.default_value !== "") {
         return String(field.default_value);
@@ -46,7 +54,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   }
 
   function setFieldValue(field, value) {
-    const fieldKey = String(field?.field_key || "");
+    const fieldKey = getFieldKey(field);
     if (!fieldKey) {
       return;
     }
@@ -55,7 +63,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       currentData.detail_entries[entryIndex] = {
         ...currentData.detail_entries[entryIndex],
         field_key: fieldKey,
-        field_label: field?.field_label || currentData.detail_entries[entryIndex]?.field_label || fieldKey,
+        field_label: getFieldLabel(field, currentData.detail_entries[entryIndex]?.field_label || fieldKey),
         field_value: value,
       };
       return;
@@ -64,7 +72,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       incident_id: currentData.incident_id,
       incident_type_id: currentData.incident_type_id,
       field_key: fieldKey,
-      field_label: field?.field_label || fieldKey,
+      field_label: getFieldLabel(field, fieldKey),
       field_value: value,
     });
   }
@@ -109,7 +117,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   }
 
   function createFieldInput(field, value) {
-    const inputType = String(field?.input_type || "text").toLowerCase();
+    const inputType = getFieldType(field);
     if (inputType === "textarea") {
       const textarea = document.createElement("textarea");
       textarea.className = "hh-input ui-input";
@@ -184,13 +192,34 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   }
 
   function getInputValue(input, field) {
-    const inputType = String(field?.input_type || "text").toLowerCase();
+    const inputType = getFieldType(field);
     if (inputType === "multiselect") {
       return safeArray(input?.querySelectorAll('input[type="checkbox"]:checked'))
         .map((checkbox) => checkbox.value)
         .join(",");
     }
     return input?.value ?? "";
+  }
+
+  function renderGroupField(row, field) {
+    const groupHost = document.createElement("div");
+    groupHost.className = "hh-field-group-host";
+    const instance = createFieldGroup(groupHost, {
+      ...field,
+      name: getFieldKey(field),
+      value: parseFieldGroupValue(field, getFieldValue(field)),
+      onChange(nextValue) {
+        const serialized = serializeFieldGroupValue(field, nextValue);
+        setFieldValue(field, serialized);
+        currentOptions.onFieldChange?.(currentData.incident_type_id, getFieldKey(field), serialized);
+        emitItemChange("field", {
+          fieldKey: getFieldKey(field),
+          value: serialized,
+        });
+      },
+    });
+    hostedInstances.push(instance);
+    row.appendChild(groupHost);
   }
 
   function renderHeader(root) {
@@ -249,17 +278,23 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     fields.forEach((field) => {
       const row = document.createElement("div");
       row.className = "hh-field-row";
-      row.dataset.fieldKey = String(field?.field_key || "");
+      row.dataset.fieldKey = getFieldKey(field);
+
+      if (getFieldType(field) === "group") {
+        renderGroupField(row, field);
+        grid.appendChild(row);
+        return;
+      }
 
       const labelWrap = document.createElement("div");
       labelWrap.className = "hh-field-label-wrap";
 
       const label = document.createElement("label");
       label.className = "hh-field-label";
-      label.textContent = field?.field_label || field?.field_key || "Field";
+      label.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
       labelWrap.appendChild(label);
 
-      if (field?.is_required) {
+      if (isRequiredField(field)) {
         const required = document.createElement("span");
         required.className = "hh-required";
         required.textContent = "Required";
@@ -267,26 +302,26 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       }
 
       const input = createFieldInput(field, getFieldValue(field));
-      if (field?.is_required && String(field?.input_type || "").toLowerCase() !== "multiselect") {
+      if (isRequiredField(field) && getFieldType(field) !== "multiselect") {
         input.required = true;
       }
 
       bind(input, "change", () => {
         const value = getInputValue(input, field);
         setFieldValue(field, value);
-        currentOptions.onFieldChange?.(currentData.incident_type_id, field?.field_key, value);
+        currentOptions.onFieldChange?.(currentData.incident_type_id, getFieldKey(field), value);
         emitItemChange("field", {
-          fieldKey: String(field?.field_key || ""),
+          fieldKey: getFieldKey(field),
           value,
         });
       });
-      if (!["select", "multiselect"].includes(String(field?.input_type || "").toLowerCase())) {
+      if (!["select", "multiselect"].includes(getFieldType(field))) {
         bind(input, "input", () => {
           const value = getInputValue(input, field);
           setFieldValue(field, value);
-          currentOptions.onFieldChange?.(currentData.incident_type_id, field?.field_key, value);
+          currentOptions.onFieldChange?.(currentData.incident_type_id, getFieldKey(field), value);
           emitItemChange("field", {
-            fieldKey: String(field?.field_key || ""),
+            fieldKey: getFieldKey(field),
             value,
           });
         });
@@ -388,14 +423,19 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     }, {});
 
     fields.forEach((field) => {
-      const fieldKey = String(field?.field_key || "");
+      const fieldKey = getFieldKey(field);
       const value = entryMap[fieldKey] ?? "";
       const trimmed = String(value).trim();
-      if (field?.is_required && !trimmed) {
+      const inputType = getFieldType(field);
+      if (inputType === "group") {
+        errors.push(...validateFieldGroup({ ...field, name: fieldKey }, parseFieldGroupValue(field, value)).errors);
+        return;
+      }
+
+      if (isRequiredField(field) && !trimmed) {
         errors.push({ field_key: fieldKey, error: "Required value is missing" });
       }
 
-      const inputType = String(field?.input_type || "").toLowerCase();
       if (inputType === "number" && trimmed) {
         const numeric = Number(trimmed);
         if (!Number.isFinite(numeric)) {
@@ -474,4 +514,38 @@ function cloneData(value) {
   } catch (_) {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+function getFieldKey(field) {
+  return String(field?.field_key ?? field?.key ?? "");
+}
+
+function getFieldLabel(field, fallback = "Field") {
+  return String(field?.field_label ?? field?.label ?? fallback);
+}
+
+function getFieldType(field) {
+  return String(field?.input_type ?? field?.type ?? "text").toLowerCase();
+}
+
+function isRequiredField(field) {
+  return Boolean(field?.is_required ?? field?.required);
+}
+
+function isRepeatableGroup(field) {
+  return Boolean(field?.repeatable ?? field?.multiple);
+}
+
+function normalizeChildFields(field) {
+  return safeArray(field?.fields).map((child, index) => ({
+    sort_order: index + 1,
+    ...child,
+  })).sort((a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0));
+}
+
+function isEmptyGroupItem(item, childFields) {
+  if (!item || typeof item !== "object") {
+    return true;
+  }
+  return childFields.every((child) => !String(item[getFieldKey(child)] ?? "").trim());
 }

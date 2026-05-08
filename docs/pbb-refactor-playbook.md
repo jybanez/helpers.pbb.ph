@@ -141,6 +141,9 @@ Normalize API data before passing to helpers.
 
 - Team assignments: ensure `team`, `team.category`, `team.resources` shape.
 - Incident types: ensure `fields`, `detail_entries`, `resources`, `resources_needed`.
+- Incident custom field groups: keep the field definition as `type: "group"` or `input_type: "group"` with child `fields[]`; store submitted non-repeatable group values as JSON object strings and repeatable group values as JSON array strings in `detail_entries[].field_value`.
+- Non-incident grouped forms: use `createFieldGroup(...)` directly or `createFieldset(...)` rows with `type: "group"`; keep values as objects for non-repeatable groups and arrays of objects for repeatable groups.
+- Common grouped schemas: prefer `fieldGroupPresets.person()`, `address()`, `missingPerson()`, or `evacuee()` before hand-authoring repeated field lists.
 
 Never add backend-specific quirks inside helper rendering logic.
 

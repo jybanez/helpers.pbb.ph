@@ -1,0 +1,112 @@
+.ui-field-group {
+  display: grid;
+  gap: 10px;
+}
+
+.ui-field-group-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ui-field-group-label {
+  margin: 0;
+}
+
+.ui-field-group-required {
+  border: 1px solid var(--ui-border, #2a3448);
+  border-radius: 999px;
+  color: var(--ui-text-muted, #9fb2d8);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  padding: 2px 7px;
+}
+
+.ui-field-group-body {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--ui-border, #2a3448);
+  border-radius: 8px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--ui-bg-soft, #151d2d) 60%, var(--ui-bg, #0d1523));
+}
+
+.ui-field-group-item {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--ui-border, #2a3448);
+  border-radius: 7px;
+  padding: 10px;
+  background: var(--ui-bg, #0d1523);
+}
+
+.ui-field-group-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ui-field-group-item-title {
+  color: var(--ui-text-muted, #9fb2d8);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ui-field-group-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ui-field-group-child {
+  display: grid;
+  gap: 6px;
+}
+
+.ui-field-group-add,
+.ui-field-group-remove {
+  justify-self: start;
+  border: 1px solid var(--ui-border, #2a3448);
+  border-radius: 7px;
+  background: var(--ui-bg-soft, #151d2d);
+  color: var(--ui-text, #edf2ff);
+  cursor: pointer;
+  font: inherit;
+  padding: 7px 10px;
+}
+
+.ui-field-group-remove {
+  background: color-mix(in srgb, var(--ui-danger, #ff5f67) 12%, var(--ui-bg, #0d1523));
+  color: color-mix(in srgb, var(--ui-danger, #ff5f67) 34%, var(--ui-text, #edf2ff));
+}
+
+.ui-field-group-add:disabled,
+.ui-field-group-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-field-group-checkbox,
+.ui-field-group-multiselect-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-text, #edf2ff);
+}
+
+.ui-field-group-multiselect {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--ui-border, #2a3448);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--ui-bg, #0d1523);
+}
+
+@media (max-width: 640px) {
+  .ui-field-group-grid {
+    grid-template-columns: 1fr;
+  }
+}

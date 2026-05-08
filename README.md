@@ -232,8 +232,16 @@ Reusable shared UI utilities live under `js/ui`:
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
 - `ui.number.stepper.js`
   - `createNumberStepper(container, options)` numeric stepper with decrement/increment buttons, typed input, min/max bounds, and optional prefix/suffix text
+- `ui.checkbox.js`
+  - `createCheckbox(container, options)` shared checkbox primitive with boolean mode and explicit `checkedValue` / `uncheckedValue` mode
+- `ui.checkbox.group.js`
+  - `createCheckboxGroup(container, options)` shared multi-checkbox primitive with array values and min/max validation
+- `ui.field.group.js`
+  - `createFieldGroup(container, options)` reusable grouped-field editor with optional repeatable entries for workflows such as evacuation registries, missing-person reports, addresses, vehicles, and contact lists
+- `ui.field.group.presets.js`
+  - `fieldGroupPresets` schema factories for common grouped fields: person, address, missing person, and evacuee
 - `ui.fieldset.js`
-  - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields with notes, alerts, images, and custom content
+  - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields, repeatable field groups, notes, alerts, images, and custom content
 - `ui.device.primer.js`
   - `createDevicePrimer(container, data, options)` project-configurable startup readiness checks for permissions, devices, and browser capabilities
   - `createDevicePrimerModal(data, options)` modal preset wrapper for startup primer flows, with default auto-close after successful checks
@@ -905,11 +913,47 @@ Behavior implemented:
   - duplicate block on existing `incident_type_id` in current list
 - Fields section:
   - sorted by `field.sort_order`
-  - supports `text|number|textarea|select|multiselect`
+  - supports `text|number|textarea|select|multiselect|group`
+  - supports existing backend field keys (`field_key`, `field_label`, `input_type`, `is_required`) and schema-style aliases (`key`, `label`, `type`, `required`)
   - required indicator + required attribute for required fields
   - number `min/max/step` support
   - multiselect stored as comma-separated values in `detail_entries[].field_value`
+  - grouped fields render nested child fields using the same text/number/textarea/select/multiselect input renderer
+  - non-repeatable `group` values are stored as a JSON object string in `detail_entries[].field_value`
+  - repeatable `group` values are stored as a JSON array string in `detail_entries[].field_value`
   - values resolved by `detail_entries[].field_key`
+
+Grouped field example:
+
+```js
+{
+  key: "missing_persons",
+  label: "Missing Persons",
+  type: "group",
+  repeatable: true,
+  required: true,
+  fields: [
+    { key: "name", label: "Complete name", type: "text", required: true },
+    { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+    { key: "age", label: "Age", type: "number", min: 1, max: 100 }
+  ]
+}
+```
+
+Repeatable group value shape:
+
+```js
+[
+  { name: "Juan Dela Cruz", gender: "Male", age: "17" },
+  { name: "Maria Santos", gender: "Female", age: "22" }
+]
+```
+
+Group validation:
+
+- required group with no non-empty item fails validation
+- required child fields fail with nested `field_key` paths such as `missing_persons.0.name`
+- child number fields honor `min` and `max`
 - Resources section:
   - rendered only when `resources_needed` is not empty
   - labels from `resources[].name`
@@ -1551,6 +1595,9 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.form.modal.status.html` -> dedicated status-update preset page
 - `demos/demo.form.modal.reason.html` -> dedicated reason-required preset page
 - `demos/demo.tree.select.html` -> dedicated grouped tree-select page
+- `demos/demo.field.group.html` -> repeatable grouped custom field page
+- `demos/demo.checkbox.html` -> shared checkbox primitive page
+- `demos/demo.checkbox.group.html` -> shared multi-checkbox primitive page
 - `demos/demo.fieldset.html` -> dedicated fieldset/grouped-form page
   - semantic `fieldset` / `legend` grouping
   - form-modal-style `rows[]` outside modal lifecycle
@@ -1776,8 +1823,11 @@ Methods:
 
 Field support:
 
-- `text`, `number`, `textarea`, `select`, `multiselect`
+- `text`, `number`, `textarea`, `select`, `multiselect`, `group`
+- field definitions can use `field_key`/`field_label`/`input_type`/`is_required` or `key`/`label`/`type`/`required`
 - `multiselect` stored as comma-separated string in `detail_entries[].field_value`
+- `group` can be repeatable; non-repeatable groups store a JSON object string and repeatable groups store a JSON array string in `detail_entries[].field_value`
+- group child fields reuse the same primitive input renderer and validation rules
 - unsaved rows retain stable `_client_key` values for host-side reconciliation
 
 ### `incidentTypesDetailsViewer(container, data, options)`
@@ -2079,6 +2129,108 @@ Related demos:
 
 - `demos/demo.tree.select.html`
 
+### `createCheckbox(container, options)` (`js/ui/ui.checkbox.js`)
+
+Purpose:
+
+- Shared checkbox primitive for boolean flags and explicit checked/unchecked values.
+- Used directly by apps and hosted by grouped field helpers.
+
+Factory:
+
+```js
+import { createCheckbox } from "./js/ui/ui.checkbox.js";
+
+const checkbox = createCheckbox(container, {
+  name: "needs_followup",
+  label: "Needs follow-up",
+  checkedValue: "followup_required",
+  uncheckedValue: "",
+  onChange({ checked, value }) {
+    console.log(checked, value);
+  }
+});
+```
+
+Value behavior:
+
+- Without `checkedValue` / `uncheckedValue`, `getValue()` returns `true` or `false`.
+- With `checkedValue` / `uncheckedValue`, `getValue()` returns the configured value for the current checked state.
+- Use explicit value mode for optional flags, not mandatory yes/no reporting fields.
+
+Methods:
+
+- `getChecked()`
+- `setChecked(checked, meta?)`
+- `getValue()`
+- `setValue(value, meta?)`
+- `setDisabled(disabled)`
+- `update(options)`
+- `destroy()`
+
+Related demos:
+
+- `demos/demo.checkbox.html`
+
+### `createCheckboxGroup(container, options)` (`js/ui/ui.checkbox.group.js`)
+
+Purpose:
+
+- Shared multi-checkbox primitive for short visible option lists.
+- Returns an array of selected option values.
+- Supports min/max selected-count validation.
+
+Factory:
+
+```js
+import { createCheckboxGroup } from "./js/ui/ui.checkbox.group.js";
+
+const needs = createCheckboxGroup(container, {
+  name: "needs",
+  label: "Immediate needs",
+  values: ["food", "medicine"],
+  options: [
+    { label: "Food", value: "food" },
+    { label: "Water", value: "water" },
+    { label: "Medicine", value: "medicine" }
+  ],
+  min: 1,
+  max: 3
+});
+```
+
+Methods:
+
+- `getValue()`
+- `setValue(values, meta?)`
+- `selectAll(meta?)`
+- `clear(meta?)`
+- `validate()`
+- `setDisabled(disabled)`
+- `update(options)`
+- `destroy()`
+
+`createFieldGroup(...)` and `createFieldset(...)` can host checkbox groups with:
+
+```js
+{
+  type: "checkbox-group",
+  name: "needs",
+  label: "Immediate needs",
+  options: ["Food", "Water", "Medicine"]
+}
+```
+
+Behavior notes:
+
+- Each option renders as a separate `ui.checkbox` instance with a unique generated input id.
+- Clicking an option label toggles that option only.
+- `getValue()` preserves selected values in option order.
+
+Related demos:
+
+- `demos/demo.checkbox.group.html`
+
 ### `createFieldset(container, options)` (`js/ui/ui.fieldset.js`)
 
 Purpose:
@@ -2116,6 +2268,10 @@ Shared row types with `createFormModal(...)`:
 - `divider`
 - `display`
 
+Additional fieldset row type:
+
+- `group`
+
 Fieldset-specific content emphasis:
 
 - `image`
@@ -2130,6 +2286,40 @@ Contract note:
 Password row note:
 
 - `input: "password"` rows compose over the shared `createPasswordField(...)` helper, so grouped page forms and modal forms use the same show/hide password behavior.
+
+Grouped field note:
+
+- `type: "group"` rows compose over `createFieldGroup(...)`, so page-sized forms can collect structured object values without depending on incident-specific helpers.
+- Set `repeatable: true` when the value should be an array of objects, such as evacuees, missing persons, household members, vehicles, or contact methods.
+- Leave `repeatable` false when the value should be a single object, such as one address.
+
+Example:
+
+```js
+const registry = createFieldset(container, {
+  legend: "Evacuation Registry",
+  rows: [
+    [{
+      type: "group",
+      name: "evacuees",
+      label: "Evacuees",
+      repeatable: true,
+      fields: [
+        { key: "name", label: "Complete name", type: "text", required: true },
+        { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+        { key: "age", label: "Age", type: "number", min: 1, max: 120 }
+      ]
+    }]
+  ]
+});
+
+registry.getValues();
+// {
+//   evacuees: [
+//     { name: "Ana Reyes", gender: "Female", age: "34" }
+//   ]
+// }
+```
 
 Returned API:
 
@@ -2185,8 +2375,58 @@ const fieldset = createFieldset(document.getElementById("appFieldset"), {
 });
 ```
 
+### Field Group Presets
+
+`ui.field.group.presets` exports `fieldGroupPresets` plus named factory functions for common grouped custom fields.
+
+Preset factories return plain configuration objects. They can be spread into:
+
+- standalone `createFieldGroup(...)` calls
+- `createFieldset(...)` rows with `type: "group"`
+- incident custom field definitions
+
+Available presets:
+
+| Preset | Fields |
+|---|---|
+| `person()` | `name`, `gender`, `age` |
+| `address()` | `neighborhood`, `barangay`, `town`, `city`, `state`, `country` |
+| `missingPerson()` | `name`, `gender`, `age`, `last_seen_days`, `last_seen_location` |
+| `evacuee()` | `name`, `gender`, `age`, `local_citizen`, `needs` |
+
+Example:
+
+```js
+import { fieldGroupPresets } from "./js/ui/ui.field.group.presets.js";
+
+const group = createFieldGroup(container, {
+  name: "missing_persons",
+  ...fieldGroupPresets.missingPerson({
+    label: "Missing Persons",
+    required: true
+  })
+});
+```
+
+Preset overrides:
+
+```js
+fieldGroupPresets.evacuee({
+  label: "Evacuees",
+  fields: {
+    age: { max: 100 }
+  },
+  extraFields: [
+    { key: "remarks", label: "Remarks", type: "textarea" }
+  ]
+});
+```
+
+Passing `fields` as an array replaces the preset fields entirely. Passing `fields` as an object merges overrides by field key.
+
 Related demos:
 
+- `demos/demo.field.group.html`
 - `demos/demo.fieldset.html`
 
 ### `createIcon(name, options)`, `getIconDefinition(name)`, `listIcons()`, `listIconCategories()` (`js/ui/ui.icons.js`)

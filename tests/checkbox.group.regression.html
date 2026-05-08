@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkbox Group Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.checkbox.css">
+  <link rel="stylesheet" href="../css/ui/ui.checkbox.group.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createCheckboxGroup } from "../js/ui/ui.checkbox.group.js";
+
+    const failures = [];
+    const events = [];
+
+    const group = createCheckboxGroup(document.getElementById("host"), {
+      name: "needs",
+      label: "Immediate needs",
+      values: ["food"],
+      options: [
+        { label: "Food", value: "food" },
+        { label: "Water", value: "water" },
+        { label: "Medicine", value: "medicine" },
+      ],
+      min: 1,
+      max: 2,
+      onChange(values, meta) {
+        events.push({ values, meta });
+      },
+    });
+
+    assert(group.getValue().join(",") === "food", "getValue should expose selected values");
+    assert(group.validate().status === true, "initial group should validate");
+
+    const water = Array.from(document.querySelectorAll(".ui-checkbox-input")).find((input) => input.closest(".ui-checkbox")?.textContent.includes("Water"));
+    water.click();
+    assert(group.getValue().join(",") === "food,water", "click should add selected option");
+    assert(events[0]?.values?.join(",") === "food,water", "onChange should receive selected values");
+
+    const medicineLabel = Array.from(document.querySelectorAll(".ui-checkbox")).find((label) => label.textContent.includes("Medicine"));
+    medicineLabel.click();
+    assert(group.getValue().join(",") === "food,water,medicine", "clicking an option label should toggle that option, not the first checkbox");
+
+    group.setValue(["food", "water", "medicine"]);
+    assert(group.validate().status === false, "max selection should validate as failure");
+
+    group.clear();
+    assert(group.getValue().length === 0, "clear should remove selections");
+    assert(group.validate().status === false, "min selection should validate as failure");
+
+    group.selectAll();
+    assert(group.getValue().length === 3, "selectAll should select all options");
+    group.setDisabled(true);
+    assert(document.querySelector(".ui-checkbox-input")?.disabled === true, "setDisabled should disable child checkboxes");
+
+    finish();
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function finish() {
+      if (failures.length) {
+        document.body.dataset.status = "fail";
+        document.getElementById("results").textContent = `FAIL\n${failures.map((failure) => `- ${failure}`).join("\n")}`;
+        return;
+      }
+      document.body.dataset.status = "pass";
+      document.getElementById("results").textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

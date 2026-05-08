@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkbox Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; display: grid; gap: 12px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.checkbox"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Checkbox",
+      overview: "Shared checkbox primitive with boolean mode and explicit checked/unchecked value mode.",
+      useWhen: [
+        "Use <code>createCheckbox(...)</code> for standalone binary flags.",
+        "Use explicit value mode when a checked box should submit a specific flag value."
+      ],
+      avoidWhen: [
+        "Do not use checkboxes for yes/no reporting fields where users must make an explicit choice.",
+        "Use a select for mandatory yes/no values such as local citizen status."
+      ],
+      description: "The helper provides consistent checkbox styling and value handling for standalone usage and hosted form helpers.",
+      defaultSampleCode: "createCheckbox(host, {\n  name: \"needs_followup\",\n  label: \"Needs follow-up\",\n  checkedValue: \"followup_required\",\n  uncheckedValue: \"\",\n  onChange(payload) {\n    console.log(payload.value);\n  }\n});",
+      constructor: [
+        { factory: "<code>createCheckbox(container, options)</code>", arguments: "host node, checkbox options", returns: "Checkbox instance" }
+      ],
+      options: [
+        { option: "<code>checked</code>", default: "<code>false</code>", description: "Initial checked state.", values: ["true", "false"] },
+        { option: "<code>checkedValue</code>", default: "<code>undefined</code>", description: "Value returned by <code>getValue()</code> when checked." },
+        { option: "<code>uncheckedValue</code>", default: "<code>undefined</code>", description: "Value returned by <code>getValue()</code> when unchecked." },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables the native checkbox input.", values: ["true", "false"] },
+        { option: "<code>readonly</code>", default: "<code>false</code>", description: "Prevents user toggling while preserving readable state.", values: ["true", "false"] },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Receives <code>{ checked, value, checkbox, event }</code>." }
+      ],
+      methods: [
+        { method: "<code>getChecked()</code>", arguments: "none", returns: "<code>boolean</code>" },
+        { method: "<code>setChecked(checked, meta?)</code>", arguments: "boolean and optional <code>{ emit }</code>", returns: "<code>void</code>" },
+        { method: "<code>getValue()</code>", arguments: "none", returns: "boolean or explicit checked/unchecked value" },
+        { method: "<code>setValue(value, meta?)</code>", arguments: "next value and optional <code>{ emit }</code>", returns: "<code>void</code>" },
+        { method: "<code>setDisabled(disabled)</code>", arguments: "boolean", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div>
+      <h1 class="ui-title">Checkbox Demo</h1>
+      <p class="muted">Shared checkbox helper for boolean flags and explicit checked/unchecked values.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Boolean And Explicit Value Modes</h2>
+      <div class="host">
+        <div id="booleanHost"></div>
+        <div id="explicitHost"></div>
+      </div>
+      <div class="row">
+        <button id="toggleBooleanBtn" class="ui-button" type="button">Toggle Boolean</button>
+        <button id="setExplicitBtn" class="ui-button ui-button-ghost" type="button">Set Follow-up Required</button>
+        <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+      </div>
+      <pre>const followup = createCheckbox(host, {
+  name: "needs_followup",
+  label: "Needs follow-up",
+  checkedValue: "followup_required",
+  uncheckedValue: "",
+  help: "Use explicit value mode for flags, not mandatory yes/no reporting fields."
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createCheckbox = await uiLoader.get("ui.checkbox");
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const confirmed = createCheckbox(document.getElementById("booleanHost"), {
+      name: "confirmed",
+      label: "Confirmed",
+      checked: true,
+      help: "Default mode returns true or false.",
+      onChange(payload) { writeLog("checkbox.boolean.change", payload); },
+    });
+    const followup = createCheckbox(document.getElementById("explicitHost"), {
+      name: "needs_followup",
+      label: "Needs follow-up",
+      checkedValue: "followup_required",
+      uncheckedValue: "",
+      help: "Explicit mode returns configured checked and unchecked values.",
+      onChange(payload) { writeLog("checkbox.explicit.change", payload); },
+    });
+
+    document.getElementById("toggleBooleanBtn").addEventListener("click", () => {
+      confirmed.setChecked(!confirmed.getChecked(), { emit: true });
+    });
+    document.getElementById("setExplicitBtn").addEventListener("click", () => {
+      followup.setValue("followup_required", { emit: true });
+    });
+    document.getElementById("snapshotBtn").addEventListener("click", () => {
+      writeLog("checkbox.snapshot", {
+        confirmed: confirmed.getValue(),
+        needs_followup: followup.getValue(),
+      });
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "light" ? "dark" : "light";
+      document.body.style.background = page.dataset.theme === "light" ? "#edf2f8" : "#0c1017";
+    });
+    writeLog("checkbox.initial", {
+      confirmed: confirmed.getValue(),
+      needs_followup: followup.getValue(),
+    });
+  </script>
+</body>
+</html>

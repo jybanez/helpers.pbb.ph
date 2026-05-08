@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.select.css">
   <link rel="stylesheet" href="../css/ui/ui.password.css">
+  <link rel="stylesheet" href="../css/ui/ui.checkbox.css">
+  <link rel="stylesheet" href="../css/ui/ui.field.group.css">
   <link rel="stylesheet" href="../css/ui/ui.fieldset.css">
   <style>
     body {
@@ -55,6 +57,20 @@
           { type: "display", name: "shape", label: "Shape", value: "workspace-ready" }
         ],
         [
+          {
+            type: "group",
+            name: "evacuees",
+            label: "Evacuees",
+            repeatable: true,
+            span: 2,
+            value: [{ name: "Ana Reyes", age: "34" }],
+            fields: [
+              { key: "name", label: "Complete name", type: "text", required: true },
+              { key: "age", label: "Age", type: "number", min: 1, max: 120 }
+            ]
+          }
+        ],
+        [
           { type: "alert", tone: "info", span: 2, content: "Access-check endpoints should be documented." }
         ],
         [
@@ -79,17 +95,20 @@
     assert(initialValues.category === "operations", "getValues should return native select value");
     assert(Array.isArray(initialValues.roles) && initialValues.roles[0] === "administrator", "getValues should return hosted ui.select values");
     assert(initialValues.embeddable === true, "getValues should return checkbox state");
+    assert(initialValues.evacuees?.[0]?.name === "Ana Reyes", "getValues should return repeatable group values");
     assert(initialValues.active === "1", "getValues should include hidden field values");
 
     fieldset.setValue("app_code", "relay");
     fieldset.setValue("service_token", "new-token");
     fieldset.setValue("roles", ["user"]);
     fieldset.setValue("embeddable", false);
+    fieldset.setValue("evacuees", [{ name: "Ben Cruz", age: "9" }]);
     const updatedValues = fieldset.getValues();
     assert(updatedValues.app_code === "relay", "setValue should update input values");
     assert(updatedValues.service_token === "new-token", "setValue should update password values");
     assert(Array.isArray(updatedValues.roles) && updatedValues.roles[0] === "user", "setValue should update ui.select values");
     assert(updatedValues.embeddable === false, "setValue should update checkbox state");
+    assert(updatedValues.evacuees?.[0]?.name === "Ben Cruz", "setValue should update repeatable group values");
 
     fieldset.setErrors({
       app_code: "App code is required.",

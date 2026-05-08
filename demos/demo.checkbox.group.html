@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkbox Group Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.checkbox.group"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Checkbox Group",
+      overview: "Shared multi-checkbox primitive for selecting zero or more option values.",
+      useWhen: [
+        "Use <code>createCheckboxGroup(...)</code> when users can select multiple values from a short checklist.",
+        "Use it for needs, available services, resource tags, and optional capabilities."
+      ],
+      avoidWhen: [
+        "Do not use it for a single binary flag; use <code>createCheckbox(...)</code>.",
+        "Do not use it for large searchable vocabularies; use a select-style picker instead."
+      ],
+      description: "Checkbox groups return an array of selected option values and support min/max validation.",
+      defaultSampleCode: "createCheckboxGroup(host, {\n  name: \"needs\",\n  label: \"Immediate needs\",\n  values: [\"food\"],\n  options: [\"food\", \"water\", \"medicine\"],\n  min: 1,\n  max: 3\n});",
+      constructor: [
+        { factory: "<code>createCheckboxGroup(container, options)</code>", arguments: "host node, group options", returns: "Checkbox-group instance" }
+      ],
+      options: [
+        { option: "<code>values</code>", default: "<code>[]</code>", description: "Initial selected values array." },
+        { option: "<code>options</code>", default: "<code>[]</code>", description: "String options or objects with <code>label</code>, <code>value</code>, <code>disabled</code>, and <code>help</code>." },
+        { option: "<code>min</code>", default: "<code>null</code>", description: "Minimum selected count for validation." },
+        { option: "<code>max</code>", default: "<code>null</code>", description: "Maximum selected count for validation." },
+        { option: "<code>onChange(values, meta)</code>", default: "<code>null</code>", description: "Fires when selected values change." }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "selected values array" },
+        { method: "<code>setValue(values, meta?)</code>", arguments: "array or comma-separated string", returns: "<code>void</code>" },
+        { method: "<code>selectAll(meta?)</code>", arguments: "optional <code>{ emit }</code>", returns: "<code>void</code>" },
+        { method: "<code>clear(meta?)</code>", arguments: "optional <code>{ emit }</code>", returns: "<code>void</code>" },
+        { method: "<code>validate()</code>", arguments: "none", returns: "<code>{ status, errors }</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div>
+      <h1 class="ui-title">Checkbox Group Demo</h1>
+      <p class="muted">Multi-checkbox helper for short, visible option lists.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Immediate Needs</h2>
+      <div id="groupHost" class="host"></div>
+      <div class="row">
+        <button id="selectAllBtn" class="ui-button" type="button">Select All</button>
+        <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button>
+        <button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button>
+      </div>
+      <pre>createCheckboxGroup(host, {
+  name: "needs",
+  label: "Immediate needs",
+  values: ["food", "medicine"],
+  options: [
+    { label: "Food", value: "food" },
+    { label: "Water", value: "water" },
+    { label: "Medicine", value: "medicine" },
+    { label: "Shelter", value: "shelter" }
+  ],
+  min: 1,
+  max: 3
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createCheckboxGroup = await uiLoader.get("ui.checkbox.group");
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+    const group = createCheckboxGroup(document.getElementById("groupHost"), {
+      name: "needs",
+      label: "Immediate needs",
+      values: ["food", "medicine"],
+      options: [
+        { label: "Food", value: "food" },
+        { label: "Water", value: "water" },
+        { label: "Medicine", value: "medicine" },
+        { label: "Shelter", value: "shelter" }
+      ],
+      min: 1,
+      max: 3,
+      help: "Choose one to three immediate needs.",
+      onChange(values, meta) {
+        writeLog("checkbox.group.change", { values, validation: meta.validation });
+      }
+    });
+    document.getElementById("selectAllBtn").addEventListener("click", () => group.selectAll({ emit: true }));
+    document.getElementById("clearBtn").addEventListener("click", () => group.clear({ emit: true }));
+    document.getElementById("validateBtn").addEventListener("click", () => writeLog("checkbox.group.validate", group.validate()));
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "light" ? "dark" : "light";
+      document.body.style.background = page.dataset.theme === "light" ? "#edf2f8" : "#0c1017";
+    });
+    writeLog("checkbox.group.initial", group.getValue());
+  </script>
+</body>
+</html>

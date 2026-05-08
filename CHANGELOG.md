@@ -29,6 +29,13 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Added `ui.busy.overlay` as a shared fullscreen-or-scoped busy-state helper with the same spinner styling used by modal busy overlays, plus optional text and explicit cancel handling.
 - Added normalized `onItemChange(nextItem, meta)` and `onChange(nextList, meta)` contracts to `incidentTypes(...)` and `incidentTeamsAssignments(...)`, while retaining the existing granular incident-editor callbacks.
 - Unsaved incident-type and team-assignment rows now keep stable `_client_key` values so host apps can reconcile local edits and autosave flows without helper-owned persistence semantics.
+- Added `group` custom field support to incident type details, including repeatable grouped entries, schema-style field aliases, JSON object/array storage in `detail_entries[].field_value`, viewer rendering, validation, docs, and regression coverage.
+- Added shared `ui.field.group` with `createFieldGroup(...)`, and wired `createFieldset(...)` to support `type: "group"` rows for non-incident workflows such as evacuation registries, missing-person reports, addresses, vehicles, and contact lists.
+- Added `ui.field.group.presets` with plain schema factories for `person`, `address`, `missingPerson`, and `evacuee`; missing-person and evacuee presets extend the base person fields.
+- Added `demos/demo.field.group.html` as the focused reference page for standalone and fieldset-hosted repeatable grouped custom fields.
+- Added shared `ui.checkbox` with boolean and explicit checked/unchecked value modes, plus a focused demo and regression coverage.
+- Added shared `ui.checkbox.group` with array values, min/max validation, select-all/clear methods, field group and fieldset hosting, demo coverage, and regression coverage.
+- Fixed `ui.checkbox.group` option labels so each label targets its own checkbox instead of the first option.
 - Added additive `requestCancelReason(fromStatus, meta)` support to the team-assignment editor so host apps can replace native cancel-reason prompts with Helper modal UI while preserving the existing `confirmCancel(...)` and `onCancel(...)` boundaries.
 - Extended `createReasonFormModal(...)` with additive `detailsRequiredFor` support so details can remain required for all reasons, no reasons, or only a selected subset such as `["other"]`.
 - Extended `createMediaStrip(...)` so additive `processing: true` image/video items can render non-clickable placeholder cards without `srcUrl`, with optional `processingLabel` text and normal resolution later when the same `id` receives real media URLs.

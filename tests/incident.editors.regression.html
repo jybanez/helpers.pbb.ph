@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.number.stepper.css">
+  <link rel="stylesheet" href="../css/ui/ui.field.group.css">
   <link rel="stylesheet" href="../css/incident/incident.css">
   <link rel="stylesheet" href="../css/incident/incident.base.css">
   <link rel="stylesheet" href="../css/incident/incident.types.css">
   <link rel="stylesheet" href="../css/incident/incident.types.details.editor.css">
+  <link rel="stylesheet" href="../css/incident/incident.types.details.viewer.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.editor.css">
   <style>
@@ -35,10 +37,11 @@
   </style>
 </head>
 <body data-status="pending">
-  <div id="host">
-    <div id="incidentTypesHost"></div>
-    <div id="assignmentsHost"></div>
-  </div>
+    <div id="host">
+      <div id="incidentTypesHost"></div>
+      <div id="incidentTypesViewerHost"></div>
+      <div id="assignmentsHost"></div>
+    </div>
   <pre id="results">Running...</pre>
 
   <script type="module">
@@ -75,7 +78,22 @@
       incident_type_category_id: 1,
       incident_type_category_name: "Fire",
       name: "Building Fire",
-      fields: [{ field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 }],
+      fields: [
+        { field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 },
+        {
+          key: "missing_persons",
+          label: "Missing Persons",
+          type: "group",
+          repeatable: true,
+          required: true,
+          sort_order: 2,
+          fields: [
+            { key: "name", label: "Complete name", type: "text", required: true },
+            { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+            { key: "age", label: "Age", type: "number", min: 1, max: 100 },
+          ],
+        },
+      ],
       detail_entries: [],
       resources: [{ id: 501, name: "Fire Truck" }],
       resources_needed: [],
@@ -92,6 +110,44 @@
     const typeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "field");
     assert(typeItemEvent?.nextItem?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onItemChange should emit the updated item after field edits");
     assert(typeListEvent?.nextList?.[0]?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onChange should emit the updated list after field edits");
+
+    const groupNameInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
+    const groupGenderSelect = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="gender"] .ui-input');
+    const groupAgeInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="age"] .ui-input');
+    assert(Boolean(groupNameInput), "repeatable group fields should render child text inputs from the shared input renderer");
+    assert(Boolean(groupGenderSelect), "repeatable group fields should render child selects from the shared input renderer");
+    assert(Boolean(groupAgeInput), "repeatable group fields should render child number inputs from the shared input renderer");
+    groupNameInput.value = "Juan Dela Cruz";
+    groupNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupGenderSelect.value = "Male";
+    groupGenderSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    groupAgeInput.value = "17";
+    groupAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const addMissingPersonButton = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-add');
+    addMissingPersonButton.click();
+    const groupNameInputs = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
+    assert(groupNameInputs.length === 2, "repeatable group fields should support adding multiple entries");
+    groupNameInputs[1].value = "Maria Santos";
+    groupNameInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+
+    const groupEntry = typeApi.getData()[0]?.detail_entries?.find((entry) => entry.field_key === "missing_persons");
+    const groupValue = JSON.parse(groupEntry?.field_value || "[]");
+    assert(groupValue[0]?.name === "Juan Dela Cruz", "repeatable group fields should serialize the first child object");
+    assert(groupValue[0]?.gender === "Male", "repeatable group fields should serialize child select values");
+    assert(groupValue[0]?.age === "17", "repeatable group fields should serialize child number values");
+    assert(groupValue[1]?.name === "Maria Santos", "repeatable group fields should serialize added entries");
+
+    const viewerApi = incidentTypes(document.getElementById("incidentTypesViewerHost"), [typeApi.getData()[0]], {
+      editable: false,
+      theme: "dark",
+      categories: [{ id: 1, name: "Fire" }],
+      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire" }],
+    });
+    assert(
+      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Juan Dela Cruz"),
+      "incident type viewer should render repeatable group values"
+    );
 
     const resourceIncrementButton = document.querySelector("#incidentTypesHost .hh-resource-row .ui-number-stepper-button-increment");
     assert(Boolean(resourceIncrementButton), "incident type resource rows should render the shared numeric stepper");
@@ -180,6 +236,7 @@
     assert(cancelListEvent?.nextList?.[0]?.status === "cancelled", "team assignments cancel should emit the candidate cancelled list");
 
     typeApi.destroy();
+    viewerApi.destroy();
     assignmentsApi.destroy();
 
     if (failures.length) {
