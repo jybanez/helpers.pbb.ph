@@ -35,7 +35,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Changed repeatable `ui.field.group` item headers to show compact `#1`, `#2` labels and icon-only remove buttons.
 - Added `chrome: false` to `ui.field.group` so hosts can flatten the outer group wrapper when they already own the surrounding field chrome.
 - Incident type detail editors now render grouped custom fields with `chrome: false` so the incident field row owns the outer field chrome.
+- Fixed incident editor grouped-field layout so editor-owned labels/required chips render outside chrome-less groups and two-column child inputs stay inside the repeatable item border.
+- Fixed incident type viewer grouped-field rendering so repeatable group cards use a stacked full-width layout instead of being squeezed into the scalar field value column.
+- Changed incident type viewer repeatable group item headings to the same compact `#1`, `#2` numbering used by the editor.
 - Added `ui.field.group.presets` with plain schema factories for `person`, `address`, `missingPerson`, and `evacuee`; missing-person and evacuee presets extend the base person fields.
+- Grouped fields now resolve built-in presets from `preset`, `field_preset`, `config.preset`, or JSON `config_json.preset` when `fields[]` is omitted, including incident type editor/viewer rendering.
+- Updated field-group demos and preset reference pages to show metadata-only preset declarations alongside factory-spread examples.
 - Added individual field-group preset demo pages for person, address, missing person, and evacuee schemas.
 - Added `demos/demo.field.group.html` as the focused reference page for standalone and fieldset-hosted repeatable grouped custom fields.
 - Added shared `ui.checkbox` with boolean and explicit checked/unchecked value modes, plus a focused demo and regression coverage.

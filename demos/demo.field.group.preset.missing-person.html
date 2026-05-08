@@ -26,7 +26,10 @@
     window.demoMeta = {
       title: "Missing Person Field Group Preset",
       overview: "Focused reference for repeatable missing-person intake fields.",
-      useWhen: ["Use <code>fieldGroupPresets.missingPerson()</code> for incident reporting, missing-person registries, and related intake workflows."],
+      useWhen: [
+        "Use <code>fieldGroupPresets.missingPerson()</code> for incident reporting, missing-person registries, and related intake workflows.",
+        "Use metadata-only <code>preset: \"missingPerson\"</code> or <code>config_json.preset</code> for incident type fields stored without duplicated <code>fields[]</code>."
+      ],
       avoidWhen: ["Use <code>person()</code> when last-seen metadata is not part of the workflow."],
       description: "The missing-person preset extends person with last-seen days and last-seen location. It defaults to repeatable values.",
       defaultSampleCode: `const group = createFieldGroup(host, {
@@ -46,6 +49,8 @@
         { option: "<code>repeatable</code>", default: "<code>true</code>", description: "Returns an array value by default." },
         { option: "<code>required</code>", default: "<code>false</code>", description: "Requires at least one non-empty missing-person entry when hosted by <code>createFieldGroup(...)</code>." },
         { option: "<code>fields</code>", default: "preset row layout", description: "Array replacement for the preset fields. Object overrides are merged by field key." },
+        { option: "<code>preset</code>", default: "<code>undefined</code>", description: "Set to <code>\"missingPerson\"</code> on a group field to resolve this preset without duplicating <code>fields[]</code>." },
+        { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "Backend-friendly metadata shape. JSON <code>{ \"preset\": \"missingPerson\", \"repeatable\": true }</code> resolves the same child fields." },
         { option: "<code>extraFields</code>", default: "<code>[]</code>", description: "Additional fields or field rows appended after the last-seen fields." }
       ],
       properties: [

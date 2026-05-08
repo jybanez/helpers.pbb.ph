@@ -26,7 +26,10 @@
     window.demoMeta = {
       title: "Address Field Group Preset",
       overview: "Focused reference for the reusable address grouped-field preset.",
-      useWhen: ["Use <code>fieldGroupPresets.address()</code> when a workflow needs one structured place/address object."],
+      useWhen: [
+        "Use <code>fieldGroupPresets.address()</code> when a workflow needs one structured place/address object.",
+        "Use metadata-only <code>preset: \"address\"</code> or <code>config_json.preset</code> when a backend should store only the preset reference."
+      ],
       avoidWhen: ["Do not use it for geocoding, map selection, or hierarchy lookup by itself; compose those workflows around the stored address value."],
       description: "The address preset renders three two-column rows: neighborhood/barangay, town/city, and state/country.",
       defaultSampleCode: `const group = createFieldGroup(host, {
@@ -46,6 +49,8 @@
         { option: "<code>repeatable</code>", default: "<code>false</code>", description: "Address is a single object by default; set true only for address lists." },
         { option: "<code>required</code>", default: "<code>false</code>", description: "Requires at least one non-empty address object when hosted by <code>createFieldGroup(...)</code>." },
         { option: "<code>fields</code>", default: "preset row layout", description: "Array replacement for the preset fields. Object overrides are merged by field key." },
+        { option: "<code>preset</code>", default: "<code>undefined</code>", description: "Set to <code>\"address\"</code> on a group field to resolve this preset without duplicating <code>fields[]</code>." },
+        { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "Backend-friendly metadata shape. JSON <code>{ \"preset\": \"address\" }</code> resolves the same child fields." },
         { option: "<code>extraFields</code>", default: "<code>[]</code>", description: "Additional fields or field rows appended after the address fields." }
       ],
       properties: [

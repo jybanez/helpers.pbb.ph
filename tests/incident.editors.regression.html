@@ -81,19 +81,16 @@
       fields: [
         { field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 },
         {
-          key: "missing_persons",
-          label: "Missing Persons",
-          type: "group",
-          repeatable: true,
-          required: true,
+          field_key: "missing_persons",
+          field_label: "Missing Persons",
+          input_type: "group",
+          is_required: true,
           sort_order: 2,
-          fields: [
-            { key: "name", label: "Complete name", type: "text", required: true },
-            [
-              { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
-              { key: "age", label: "Age", type: "number", min: 1, max: 100 },
-            ],
-          ],
+          config_json: JSON.stringify({
+            preset: "missingPerson",
+            preset_label: "Missing Persons",
+            repeatable: true
+          }),
         },
       ],
       detail_entries: [],
@@ -116,23 +113,36 @@
     const groupNameInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
     const groupGenderSelect = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="gender"] .ui-input');
     const groupAgeInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="age"] .ui-input');
+    const groupLastSeenDaysInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_seen_days"] .ui-input');
+    const groupLastSeenLocationInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_seen_location"] .ui-input');
     assert(Boolean(groupNameInput), "repeatable group fields should render child text inputs from the shared input renderer");
     assert(Boolean(groupGenderSelect), "repeatable group fields should render child selects from the shared input renderer");
     assert(Boolean(groupAgeInput), "repeatable group fields should render child number inputs from the shared input renderer");
+    assert(Boolean(groupLastSeenDaysInput), "preset-backed repeatable group fields should render preset child number inputs without fields[]");
+    assert(Boolean(groupLastSeenLocationInput), "preset-backed repeatable group fields should render preset child text inputs without fields[]");
     const groupRoot = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group');
+    const groupOuterLabel = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] > .hh-field-label-wrap .hh-field-label');
+    const groupOuterRequired = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] > .hh-field-label-wrap .hh-required');
+    assert(groupOuterLabel?.textContent === "Missing Persons", "incident type group fields should render the editor-owned field label");
+    assert(groupOuterRequired?.textContent === "Required", "incident type required group fields should render the editor-owned required chip");
     assert(groupRoot?.classList.contains("is-chrome-less"), "incident type group fields should render shared field groups with chrome disabled");
     assert(groupRoot?.dataset.chrome === "false", "incident type group fields should mark shared field groups as chrome-less");
     assert(groupRoot?.querySelector(".ui-field-group-label-row")?.hidden === true, "incident type group fields should hide shared field group outer labels");
     const groupRows = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-row');
-    assert(groupRows.length >= 2, "repeatable group fields should render declared field rows");
+    assert(groupRows.length >= 3, "repeatable group fields should render resolved preset field rows");
     assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", "single field declarations should occupy a full row");
     assert(groupRows[1]?.style.getPropertyValue("--ui-field-group-columns") === "2", "array field declarations should define the row column count");
+    assert(groupRows[2]?.style.getPropertyValue("--ui-field-group-columns") === "2", "preset row declarations should preserve their column count");
     groupNameInput.value = "Juan Dela Cruz";
     groupNameInput.dispatchEvent(new Event("input", { bubbles: true }));
     groupGenderSelect.value = "Male";
     groupGenderSelect.dispatchEvent(new Event("change", { bubbles: true }));
     groupAgeInput.value = "17";
     groupAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupLastSeenDaysInput.value = "2";
+    groupLastSeenDaysInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupLastSeenLocationInput.value = "Barangay Hall";
+    groupLastSeenLocationInput.dispatchEvent(new Event("input", { bubbles: true }));
 
     const addMissingPersonButton = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-add');
     addMissingPersonButton.click();
@@ -146,9 +156,13 @@
     assert(groupValue[0]?.name === "Juan Dela Cruz", "repeatable group fields should serialize the first child object");
     assert(groupValue[0]?.gender === "Male", "repeatable group fields should serialize child select values");
     assert(groupValue[0]?.age === "17", "repeatable group fields should serialize child number values");
+    assert(groupValue[0]?.last_seen_days === "2", "preset-backed repeatable group fields should serialize preset child number values");
+    assert(groupValue[0]?.last_seen_location === "Barangay Hall", "preset-backed repeatable group fields should serialize preset child text values");
     assert(groupValue[1]?.name === "Maria Santos", "repeatable group fields should serialize added entries");
 
-    const viewerApi = incidentTypes(document.getElementById("incidentTypesViewerHost"), [typeApi.getData()[0]], {
+    const incidentTypesViewerHost = document.getElementById("incidentTypesViewerHost");
+    incidentTypesViewerHost.style.width = "360px";
+    const viewerApi = incidentTypes(incidentTypesViewerHost, [typeApi.getData()[0]], {
       editable: false,
       theme: "dark",
       categories: [{ id: 1, name: "Fire" }],
@@ -158,6 +172,23 @@
       document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Juan Dela Cruz"),
       "incident type viewer should render repeatable group values"
     );
+    assert(
+      document.querySelector("#incidentTypesViewerHost .hh-group-value-title")?.textContent === "#1",
+      "incident type viewer repeatable group titles should match editor #number labels"
+    );
+    assert(
+      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Last seen location"),
+      "incident type viewer should resolve preset group labels without fields[]"
+    );
+    const viewerGroupRow = document.querySelector("#incidentTypesViewerHost .hh-row-group");
+    const viewerGroupValue = document.querySelector("#incidentTypesViewerHost .hh-group-value");
+    const viewerGroupItem = document.querySelector("#incidentTypesViewerHost .hh-group-value-item");
+    const viewerGroupRowStyle = getComputedStyle(viewerGroupRow);
+    const viewerGroupRowRect = viewerGroupRow?.getBoundingClientRect();
+    const viewerGroupItemRect = viewerGroupItem?.getBoundingClientRect();
+    assert(viewerGroupRowStyle.gridTemplateColumns.split(" ").length === 1, "incident type viewer group rows should use a stacked full-width layout");
+    assert(viewerGroupItemRect?.right <= viewerGroupRowRect?.right + 1, "incident type viewer group cards should stay inside the viewer row");
+    assert(getComputedStyle(viewerGroupValue).width !== "0px", "incident type viewer group values should receive usable width");
 
     const resourceIncrementButton = document.querySelector("#incidentTypesHost .hh-resource-row .ui-number-stepper-button-increment");
     assert(Boolean(resourceIncrementButton), "incident type resource rows should render the shared numeric stepper");

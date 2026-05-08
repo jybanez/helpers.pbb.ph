@@ -26,7 +26,10 @@
     window.demoMeta = {
       title: "Person Field Group Preset",
       overview: "Focused reference for the base person grouped-field preset.",
-      useWhen: ["Use <code>fieldGroupPresets.person()</code> when a workflow needs one structured person object with name, gender, and age."],
+      useWhen: [
+        "Use <code>fieldGroupPresets.person()</code> when a workflow needs one structured person object with name, gender, and age.",
+        "Use metadata-only <code>preset: \"person\"</code> or <code>config_json.preset</code> when a backend should store only the preset reference."
+      ],
       avoidWhen: ["Use <code>missingPerson()</code> or <code>evacuee()</code> when the workflow has domain-specific person fields."],
       description: "The person preset renders <code>name</code> as a full row and <code>gender</code>/<code>age</code> as one two-column row.",
       defaultSampleCode: `const group = createFieldGroup(host, {
@@ -40,6 +43,8 @@
         { option: "<code>repeatable</code>", default: "<code>false</code>", description: "Person is a single object by default; set true only when collecting a list of people." },
         { option: "<code>required</code>", default: "<code>false</code>", description: "Requires at least one non-empty person object when hosted by <code>createFieldGroup(...)</code>." },
         { option: "<code>fields</code>", default: "preset row layout", description: "Array replacement for the preset fields. Object overrides are merged by field key." },
+        { option: "<code>preset</code>", default: "<code>undefined</code>", description: "Set to <code>\"person\"</code> on a group field to resolve this preset without duplicating <code>fields[]</code>." },
+        { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "Backend-friendly metadata shape. JSON <code>{ \"preset\": \"person\" }</code> resolves the same child fields." },
         { option: "<code>extraFields</code>", default: "<code>[]</code>", description: "Additional fields or field rows appended after the person fields." }
       ],
       properties: [

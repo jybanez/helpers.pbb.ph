@@ -223,6 +223,25 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     row.appendChild(groupHost);
   }
 
+  function createFieldLabelWrap(field) {
+    const labelWrap = document.createElement("div");
+    labelWrap.className = "hh-field-label-wrap";
+
+    const label = document.createElement("label");
+    label.className = "hh-field-label";
+    label.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
+    labelWrap.appendChild(label);
+
+    if (isRequiredField(field)) {
+      const required = document.createElement("span");
+      required.className = "hh-required";
+      required.textContent = "Required";
+      labelWrap.appendChild(required);
+    }
+
+    return labelWrap;
+  }
+
   function renderHeader(root) {
     const header = document.createElement("header");
     header.className = "hh-type-header";
@@ -282,25 +301,13 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       row.dataset.fieldKey = getFieldKey(field);
 
       if (getFieldType(field) === "group") {
+        row.appendChild(createFieldLabelWrap(field));
         renderGroupField(row, field);
         grid.appendChild(row);
         return;
       }
 
-      const labelWrap = document.createElement("div");
-      labelWrap.className = "hh-field-label-wrap";
-
-      const label = document.createElement("label");
-      label.className = "hh-field-label";
-      label.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
-      labelWrap.appendChild(label);
-
-      if (isRequiredField(field)) {
-        const required = document.createElement("span");
-        required.className = "hh-required";
-        required.textContent = "Required";
-        labelWrap.appendChild(required);
-      }
+      const labelWrap = createFieldLabelWrap(field);
 
       const input = createFieldInput(field, getFieldValue(field));
       if (isRequiredField(field) && getFieldType(field) !== "multiselect") {

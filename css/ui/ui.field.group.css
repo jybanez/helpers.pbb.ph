@@ -74,11 +74,21 @@
   display: grid;
   grid-template-columns: repeat(var(--ui-field-group-columns, 1), minmax(0, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 
 .ui-field-group-child {
   display: grid;
   gap: 6px;
+  min-width: 0;
+}
+
+.ui-field-group-child > .ui-input,
+.ui-field-group-checkbox-group-host,
+.ui-field-group-multiselect {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
 }
 
 .ui-field-group-add,

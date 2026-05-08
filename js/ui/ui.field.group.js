@@ -1,5 +1,6 @@
 import { createCheckbox } from "./ui.checkbox.js";
 import { createCheckboxGroup } from "./ui.checkbox.group.js";
+import { fieldGroupPresets } from "./ui.field.group.presets.js";
 import { createIcon } from "./ui.icons.js";
 
 const DEFAULT_OPTIONS = {
@@ -59,8 +60,14 @@ export function createFieldGroup(container, options = {}) {
     },
     update(nextOptions = {}) {
       const mergedOptions = { ...currentOptions, ...(nextOptions || {}) };
-      if (Object.prototype.hasOwnProperty.call(nextOptions || {}, "fields")) {
+      const shouldRefreshFields = ["fields", "preset", "field_preset", "config", "field_config", "config_json", "configJson"].some((key) =>
+        Object.prototype.hasOwnProperty.call(nextOptions || {}, key)
+      );
+      if (shouldRefreshFields) {
         delete mergedOptions.rawFields;
+        if (!Object.prototype.hasOwnProperty.call(nextOptions || {}, "fields")) {
+          delete mergedOptions.fields;
+        }
       }
       currentOptions = normalizeOptions(mergedOptions);
       value = normalizeValue(
@@ -346,6 +353,18 @@ export function parseFieldGroupValue(field, rawValue) {
   }
 }
 
+export function resolveFieldGroupFields(field = {}) {
+  return cloneFieldDefinitions(normalizeOptions(field).fields);
+}
+
+export function resolveFieldGroupRows(field = {}) {
+  return cloneFieldDefinitions(normalizeOptions(field).rawFields);
+}
+
+export function isRepeatableFieldGroup(field = {}) {
+  return normalizeOptions(field).repeatable;
+}
+
 function validateGroup(options, rawValue) {
   const errors = [];
   const items = options.repeatable ? safeArray(rawValue) : [rawValue && typeof rawValue === "object" ? rawValue : {}];
@@ -389,20 +408,94 @@ function validateGroup(options, rawValue) {
 
 function normalizeOptions(options = {}) {
   const name = getFieldKey(options) || String(options.name || "");
-  const rawFields = Object.prototype.hasOwnProperty.call(options, "rawFields") ? options.rawFields : options.fields;
+  const config = getFieldConfig(options);
+  const preset = resolvePresetOptions(options, config);
+  const candidateFields = Object.prototype.hasOwnProperty.call(options, "rawFields") ? options.rawFields : options.fields;
+  const rawFields = hasUsableFields(candidateFields) ? candidateFields : preset?.fields ?? candidateFields;
   const fieldRows = normalizeChildFieldRows({ fields: rawFields });
   return {
     ...DEFAULT_OPTIONS,
+    ...(preset || {}),
     ...(options || {}),
     name,
-    label: getFieldLabel(options, name || "Group"),
-    repeatable: Boolean(options?.repeatable ?? options?.multiple),
+    label: getFieldLabel(options, config?.preset_label ?? preset?.label ?? (name || "Group")),
+    repeatable: Boolean(options?.repeatable ?? options?.multiple ?? config?.repeatable ?? preset?.repeatable),
     required: isRequiredField(options),
     chrome: options?.chrome !== false,
     rawFields: cloneFieldDefinitions(rawFields),
     fieldRows,
     fields: flattenFieldRows(fieldRows),
   };
+}
+
+function resolvePresetOptions(options = {}, config = {}) {
+  const presetName = String(options?.preset ?? options?.field_preset ?? config?.preset ?? "").trim();
+  const presetFactory = presetName ? fieldGroupPresets[presetName] : null;
+  if (typeof presetFactory !== "function") {
+    return null;
+  }
+
+  const overrides = {};
+  if (config?.preset_label && !Object.prototype.hasOwnProperty.call(options, "label") && !Object.prototype.hasOwnProperty.call(options, "field_label")) {
+    overrides.label = config.preset_label;
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(config, "repeatable")
+    && !Object.prototype.hasOwnProperty.call(options, "repeatable")
+    && !Object.prototype.hasOwnProperty.call(options, "multiple")
+  ) {
+    overrides.repeatable = parseBoolean(config.repeatable);
+  }
+
+  return presetFactory(overrides);
+}
+
+function getFieldConfig(field = {}) {
+  const directConfig = field?.config ?? field?.field_config;
+  if (directConfig && typeof directConfig === "object" && !Array.isArray(directConfig)) {
+    return directConfig;
+  }
+
+  const rawConfig = field?.config_json ?? field?.configJson;
+  if (rawConfig && typeof rawConfig === "object" && !Array.isArray(rawConfig)) {
+    return rawConfig;
+  }
+  if (typeof rawConfig === "string" && rawConfig.trim()) {
+    try {
+      const parsed = JSON.parse(rawConfig);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  return {};
+}
+
+function hasUsableFields(fields) {
+  return safeArray(fields).some((field) => {
+    if (Array.isArray(field)) {
+      return field.some((child) => child && typeof child === "object" && !Array.isArray(child));
+    }
+    return field && typeof field === "object";
+  });
+}
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["false", "0", "no", "off"].includes(normalized)) {
+    return false;
+  }
+  if (["true", "1", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  return Boolean(value);
 }
 
 function normalizeValue(rawValue, options) {

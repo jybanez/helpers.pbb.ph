@@ -919,6 +919,7 @@ Behavior implemented:
   - number `min/max/step` support
   - multiselect stored as comma-separated values in `detail_entries[].field_value`
   - grouped fields render nested child fields using the same text/number/textarea/select/multiselect input renderer
+  - grouped fields can resolve built-in child schemas from `preset`, `field_preset`, `config.preset`, or JSON `config_json.preset` when `fields[]` is omitted
   - non-repeatable `group` values are stored as a JSON object string in `detail_entries[].field_value`
   - repeatable `group` values are stored as a JSON array string in `detail_entries[].field_value`
   - values resolved by `detail_entries[].field_key`
@@ -937,6 +938,21 @@ Grouped field example:
     { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
     { key: "age", label: "Age", type: "number", min: 1, max: 100 }
   ]
+}
+```
+
+Preset-backed grouped fields can store only preset metadata:
+
+```js
+{
+  field_key: "missing_persons",
+  field_label: "Missing Persons",
+  input_type: "group",
+  config_json: JSON.stringify({
+    preset: "missingPerson",
+    preset_label: "Missing Persons",
+    repeatable: true
+  })
 }
 ```
 
@@ -2390,6 +2406,8 @@ Preset factories return plain configuration objects. They can be spread into:
 - `createFieldset(...)` rows with `type: "group"`
 - incident custom field definitions
 
+`createFieldGroup(...)`, grouped `createFieldset(...)` rows, and incident type detail editor/viewer rendering also resolve built-in presets directly from metadata. Use `preset`, `field_preset`, `config.preset`, or JSON `config_json.preset` when a backend should store only the preset reference instead of duplicating Helper-owned child schemas.
+
 Available presets:
 
 | Preset | Fields |
@@ -2449,6 +2467,13 @@ fieldGroupPresets.evacuee({
 ```
 
 Passing `fields` as an array replaces the preset fields entirely. Passing `fields` as an object merges overrides by field key.
+
+When preset metadata is used directly on a group field, an omitted or empty `fields[]` uses the preset's baseline rows. Supplying a non-empty `fields[]` is treated as an explicit schema override for that field.
+
+Reference/demo coverage now includes both forms:
+
+- factory spread with `...fieldGroupPresets.<name>(...)`
+- metadata-only group fields with `preset` / `config_json.preset` and no duplicated `fields[]`
 
 Related demos:
 

@@ -16,7 +16,11 @@
   <pre id="results">Running...</pre>
 
   <script type="module">
-    import { createFieldGroup } from "../js/ui/ui.field.group.js";
+    import {
+      createFieldGroup,
+      isRepeatableFieldGroup,
+      resolveFieldGroupFields
+    } from "../js/ui/ui.field.group.js";
 
     const failures = [];
     const host = document.getElementById("host");
@@ -73,7 +77,37 @@
     assert(chromeLessRoot?.dataset.chrome === "true", "update({ chrome:true }) should restore data chrome state");
     assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === false, "update({ chrome:true }) should restore label row");
 
+    const presetHost = document.createElement("div");
+    presetHost.style.width = "360px";
+    document.body.appendChild(presetHost);
+    const presetGroup = createFieldGroup(presetHost, {
+      key: "missing",
+      field_label: "Missing Details",
+      input_type: "group",
+      config_json: JSON.stringify({
+        preset: "missingPerson",
+        preset_label: "Missing Details",
+        repeatable: true
+      }),
+      value: [{ name: "Liza Santos", gender: "Female", age: "28", last_seen_days: "2" }]
+    });
+    assert(isRepeatableFieldGroup({ config: { preset: "missingPerson" } }) === true, "preset metadata should resolve repeatable group options");
+    assert(resolveFieldGroupFields({ config_json: JSON.stringify({ preset: "missingPerson" }) }).map((field) => field.key).join(",") === "name,gender,age,last_seen_days,last_seen_location", "preset metadata should resolve child fields without fields[]");
+    assert(Boolean(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input')), "preset-backed groups should render preset child controls without expanded fields[]");
+    assert(presetGroup.getValue()[0]?.last_seen_days === "2", "preset-backed groups should normalize preset child values");
+    presetGroup.update({ config: { preset: "evacuee" }, value: [{ name: "Liza Santos", local_citizen: "Yes" }] });
+    assert(Boolean(presetHost.querySelector('[data-field-key="local_citizen"] .ui-input')), "updating preset metadata should refresh resolved child controls");
+    assert(!presetHost.querySelector('[data-field-key="last_seen_location"]'), "updating preset metadata should remove stale preset child controls");
+    presetGroup.update({ config: { preset: "missingPerson" }, value: [{ name: "Liza Santos", last_seen_location: "Gym" }] });
+    const narrowItem = presetHost.querySelector(".ui-field-group-item")?.getBoundingClientRect();
+    const narrowInput = presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input')?.getBoundingClientRect();
+    const inputStyle = getComputedStyle(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input'));
+    assert(inputStyle.boxSizing === "border-box", "group child inputs should use border-box sizing");
+    assert(narrowInput?.right <= narrowItem?.right + 1, "two-column group child inputs should stay inside the repeatable item border");
+
     chromeLess.destroy();
+    presetGroup.destroy();
+    presetHost.remove();
     group.destroy();
     assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
     assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");

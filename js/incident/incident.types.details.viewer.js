@@ -1,4 +1,9 @@
 import { createRoot, normalizeIncidentOptions, safeArray } from "./incident.base.js";
+import {
+  isRepeatableFieldGroup,
+  parseFieldGroupValue,
+  resolveFieldGroupFields,
+} from "../ui/ui.field.group.js";
 
 export function incidentTypesDetailsViewer(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
@@ -124,9 +129,10 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     const valueEl = document.createElement("span");
     valueEl.className = "hh-row-value hh-group-value";
 
-    const childFields = normalizeChildFields(field);
-    const parsed = parseGroupValue(field, getRawFieldValue(field));
-    const items = isRepeatableGroup(field) ? parsed : [parsed];
+    const childFields = resolveFieldGroupFields(field);
+    const parsed = parseFieldGroupValue(field, getRawFieldValue(field));
+    const isRepeatable = isRepeatableFieldGroup(field);
+    const items = isRepeatable ? parsed : [parsed];
     const nonEmptyItems = items.filter((item) => !isEmptyGroupItem(item, childFields));
 
     if (!nonEmptyItems.length) {
@@ -136,10 +142,10 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
         const itemEl = document.createElement("div");
         itemEl.className = "hh-group-value-item";
 
-        if (isRepeatableGroup(field)) {
+        if (isRepeatable) {
           const title = document.createElement("span");
           title.className = "hh-group-value-title";
-          title.textContent = `${getFieldLabel(field, "Entry")} ${index + 1}`;
+          title.textContent = `#${index + 1}`;
           itemEl.appendChild(title);
         }
 
@@ -285,32 +291,6 @@ function getFieldLabel(field, fallback = "Field") {
 
 function getFieldType(field) {
   return String(field?.input_type ?? field?.type ?? "text").toLowerCase();
-}
-
-function isRepeatableGroup(field) {
-  return Boolean(field?.repeatable ?? field?.multiple);
-}
-
-function normalizeChildFields(field) {
-  return safeArray(field?.fields).map((child, index) => ({
-    sort_order: index + 1,
-    ...child,
-  })).sort((a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0));
-}
-
-function parseGroupValue(field, rawValue) {
-  if (!rawValue) {
-    return isRepeatableGroup(field) ? [] : {};
-  }
-  try {
-    const parsed = typeof rawValue === "string" ? JSON.parse(rawValue) : rawValue;
-    if (isRepeatableGroup(field)) {
-      return Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : [];
-    }
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch (_) {
-    return isRepeatableGroup(field) ? [] : {};
-  }
 }
 
 function isEmptyGroupItem(item, childFields) {

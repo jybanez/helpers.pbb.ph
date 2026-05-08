@@ -29,19 +29,19 @@ const demoDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../d
 const pages = [
   {
     file: "demo.field.group.preset.person.html",
-    required: ["Person Field Group Preset", "Complete name", "Gender", "Age", "Ana Reyes", "onChange(value, meta)", "getValue()"],
+    required: ["Person Field Group Preset", "Complete name", "Gender", "Age", "Ana Reyes", "Metadata-only preset", "config_json.preset", "getValue()"],
   },
   {
     file: "demo.field.group.preset.address.html",
-    required: ["Address Field Group Preset", "Neighborhood", "Barangay", "Country", "Philippines", "country.default_value", "setValue(value)"],
+    required: ["Address Field Group Preset", "Neighborhood", "Barangay", "Country", "Philippines", "Metadata-only preset", "config_json.preset", "setValue(value)"],
   },
   {
     file: "demo.field.group.preset.missing-person.html",
-    required: ["Missing Person Field Group Preset", "Missing Persons", "Last seen days", "Juan Dela Cruz", "repeatable", "Array of missing-person objects"],
+    required: ["Missing Person Field Group Preset", "Missing Persons", "Last seen days", "Juan Dela Cruz", "Metadata-only preset", "config_json.preset", "Array of missing-person objects"],
   },
   {
     file: "demo.field.group.preset.evacuee.html",
-    required: ["Evacuee Field Group Preset", "Evacuees", "Local citizen", "Medicine", "local_citizen.options", "Array of evacuee objects"],
+    required: ["Evacuee Field Group Preset", "Evacuees", "Local citizen", "Medicine", "Metadata-only preset", "config_json.preset", "Array of evacuee objects"],
   },
 ];
 

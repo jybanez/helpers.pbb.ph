@@ -47,20 +47,27 @@
 
 .hh-incident-types-details-viewer .hh-row-group {
   align-items: start;
+  grid-template-columns: 1fr;
+  gap: 6px;
 }
 
 .hh-incident-types-details-viewer .hh-group-value {
   display: grid;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
 }
 
 .hh-incident-types-details-viewer .hh-group-value-item {
+  box-sizing: border-box;
   display: grid;
   gap: 6px;
   border: 1px solid var(--hh-border);
   border-radius: 7px;
   padding: 8px 10px;
   background: var(--hh-bg);
+  min-width: 0;
+  width: 100%;
 }
 
 .hh-incident-types-details-viewer .hh-group-value-title {
@@ -71,8 +78,9 @@
 
 .hh-incident-types-details-viewer .hh-group-value-row {
   display: grid;
-  grid-template-columns: minmax(96px, 140px) minmax(0, 1fr);
+  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 1fr);
   gap: 10px;
+  min-width: 0;
 }
 
 .hh-incident-types-details-viewer .hh-group-value-label {
@@ -82,6 +90,7 @@
 
 .hh-incident-types-details-viewer .hh-group-value-text {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {

@@ -44,6 +44,7 @@
 .hh-incident-types-details-editor .hh-resource-row {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .hh-incident-types-details-editor .hh-resource-row {
@@ -119,6 +120,14 @@
 
 .hh-incident-types-details-editor .hh-multiselect-checkbox {
   margin: 0;
+}
+
+.hh-incident-types-details-editor .hh-field-group-host {
+  min-width: 0;
+}
+
+.hh-incident-types-details-editor .hh-field-group-host .ui-field-group {
+  width: 100%;
 }
 
 .hh-incident-types-details-editor .hh-field-group {

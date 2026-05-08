@@ -34,10 +34,21 @@ const group = createFieldGroup(host, {
 });
 
 if (schema) {
-  schema.textContent = `const group = createFieldGroup(host, ${JSON.stringify({
+  const factoryExample = `const group = createFieldGroup(host, ${JSON.stringify({
     name: config.name,
     ...preset,
   }, null, 2)});`;
+  const metadataExample = `const group = createFieldGroup(host, ${JSON.stringify({
+    name: config.name,
+    label: config.label || preset.label,
+    type: "group",
+    config_json: JSON.stringify({
+      preset: config.presetKey,
+      preset_label: config.label || preset.label,
+      ...(preset.repeatable ? { repeatable: true } : {}),
+    }),
+  }, null, 2)});`;
+  schema.textContent = `Factory spread\n${factoryExample}\n\nMetadata-only preset\n${metadataExample}`;
 }
 
 sampleBtn?.addEventListener("click", () => {
