@@ -2292,6 +2292,8 @@ Grouped field note:
 - `type: "group"` rows compose over `createFieldGroup(...)`, so page-sized forms can collect structured object values without depending on incident-specific helpers.
 - Set `repeatable: true` when the value should be an array of objects, such as evacuees, missing persons, household members, vehicles, or contact methods.
 - Leave `repeatable` false when the value should be a single object, such as one address.
+- Group `fields` can be declared as an array of field objects and field-row arrays. A field object renders as one full-width row; an array of field objects renders one row split into that many columns.
+- Set `chrome: false` when the host surface already owns the surrounding label, required badge, border, background, and padding. This flattens the field-group wrapper while keeping repeatable item cards, add/remove controls, validation, and values intact.
 
 Example:
 
@@ -2304,10 +2306,13 @@ const registry = createFieldset(container, {
       name: "evacuees",
       label: "Evacuees",
       repeatable: true,
+      chrome: false,
       fields: [
         { key: "name", label: "Complete name", type: "text", required: true },
-        { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
-        { key: "age", label: "Age", type: "number", min: 1, max: 120 }
+        [
+          { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+          { key: "age", label: "Age", type: "number", min: 1, max: 120 }
+        ]
       ]
     }]
   ]
@@ -2394,6 +2399,27 @@ Available presets:
 | `missingPerson()` | `name`, `gender`, `age`, `last_seen_days`, `last_seen_location` |
 | `evacuee()` | `name`, `gender`, `age`, `local_citizen`, `needs` |
 
+Preset layout:
+
+- `person()` renders `name` as a full row, then `gender` and `age` as a two-column row.
+- `address()` renders three two-column rows: `neighborhood`/`barangay`, `town`/`city`, and `state`/`country`.
+- `missingPerson()` extends person with a `last_seen_days`/`last_seen_location` row.
+- `evacuee()` extends person with full-width `local_citizen` and `needs` rows.
+
+Custom row layout example:
+
+```js
+fields: [
+  { key: "name", label: "Complete name", type: "text", required: true },
+  [
+    { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+    { key: "age", label: "Age", type: "number", min: 0, max: 120 }
+  ],
+  { key: "local_citizen", label: "Local citizen", type: "select", options: ["Yes", "No"] },
+  { key: "needs", label: "Needs", type: "textarea" }
+]
+```
+
 Example:
 
 ```js
@@ -2427,6 +2453,10 @@ Passing `fields` as an array replaces the preset fields entirely. Passing `field
 Related demos:
 
 - `demos/demo.field.group.html`
+- `demos/demo.field.group.preset.person.html`
+- `demos/demo.field.group.preset.address.html`
+- `demos/demo.field.group.preset.missing-person.html`
+- `demos/demo.field.group.preset.evacuee.html`
 - `demos/demo.fieldset.html`
 
 ### `createIcon(name, options)`, `getIconDefinition(name)`, `listIcons()`, `listIconCategories()` (`js/ui/ui.icons.js`)

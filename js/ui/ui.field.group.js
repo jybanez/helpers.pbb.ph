@@ -1,5 +1,6 @@
 import { createCheckbox } from "./ui.checkbox.js";
 import { createCheckboxGroup } from "./ui.checkbox.group.js";
+import { createIcon } from "./ui.icons.js";
 
 const DEFAULT_OPTIONS = {
   name: "",
@@ -7,6 +8,7 @@ const DEFAULT_OPTIONS = {
   value: null,
   repeatable: false,
   required: false,
+  chrome: true,
   fields: [],
   addLabel: "",
   removeLabel: "Remove",
@@ -56,7 +58,11 @@ export function createFieldGroup(container, options = {}) {
       }
     },
     update(nextOptions = {}) {
-      currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
+      const mergedOptions = { ...currentOptions, ...(nextOptions || {}) };
+      if (Object.prototype.hasOwnProperty.call(nextOptions || {}, "fields")) {
+        delete mergedOptions.rawFields;
+      }
+      currentOptions = normalizeOptions(mergedOptions);
       value = normalizeValue(
         Object.prototype.hasOwnProperty.call(nextOptions || {}, "value") ? nextOptions.value : value,
         currentOptions
@@ -74,9 +80,14 @@ export function createFieldGroup(container, options = {}) {
 
   function render() {
     clearListeners();
+    refs.root.className = [
+      "ui-field-group",
+      currentOptions.chrome ? "" : "is-chrome-less",
+    ].filter(Boolean).join(" ");
     refs.root.dataset.repeatable = currentOptions.repeatable ? "true" : "false";
+    refs.root.dataset.chrome = currentOptions.chrome ? "true" : "false";
     refs.label.textContent = currentOptions.label || currentOptions.name || "Group";
-    refs.labelRow.hidden = !refs.label.textContent && !currentOptions.required;
+    refs.labelRow.hidden = !currentOptions.chrome || (!refs.label.textContent && !currentOptions.required);
     refs.required.hidden = !currentOptions.required;
     clearNode(refs.body);
 
@@ -111,12 +122,14 @@ export function createFieldGroup(container, options = {}) {
 
       const title = document.createElement("span");
       title.className = "ui-field-group-item-title";
-      title.textContent = `${currentOptions.label || "Entry"} ${index + 1}`;
+      title.textContent = `#${index + 1}`;
 
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "ui-field-group-remove";
-      remove.textContent = currentOptions.removeLabel;
+      remove.setAttribute("aria-label", `${currentOptions.removeLabel} #${index + 1}`);
+      remove.title = `${currentOptions.removeLabel} #${index + 1}`;
+      remove.appendChild(createIcon("actions.delete", { size: 16 }));
       remove.disabled = itemCount <= 1 && currentOptions.required;
       on(remove, "click", () => {
         value = safeArray(value).filter((_, itemIndex) => itemIndex !== index);
@@ -128,16 +141,24 @@ export function createFieldGroup(container, options = {}) {
       itemEl.appendChild(header);
     }
 
-    const grid = document.createElement("div");
-    grid.className = "ui-field-group-grid";
-    currentOptions.fields.forEach((field) => {
-      const childKey = getFieldKey(field);
-      if (!childKey) {
-        return;
+    const rows = document.createElement("div");
+    rows.className = "ui-field-group-rows";
+    currentOptions.fieldRows.forEach((fieldRow) => {
+      const row = document.createElement("div");
+      row.className = "ui-field-group-row";
+      row.style.setProperty("--ui-field-group-columns", String(Math.max(fieldRow.length, 1)));
+      fieldRow.forEach((field) => {
+        const childKey = getFieldKey(field);
+        if (!childKey) {
+          return;
+        }
+        row.appendChild(renderChildField(field, item, index));
+      });
+      if (row.childElementCount) {
+        rows.appendChild(row);
       }
-      grid.appendChild(renderChildField(field, item, index));
     });
-    itemEl.appendChild(grid);
+    itemEl.appendChild(rows);
     return itemEl;
   }
 
@@ -368,6 +389,8 @@ function validateGroup(options, rawValue) {
 
 function normalizeOptions(options = {}) {
   const name = getFieldKey(options) || String(options.name || "");
+  const rawFields = Object.prototype.hasOwnProperty.call(options, "rawFields") ? options.rawFields : options.fields;
+  const fieldRows = normalizeChildFieldRows({ fields: rawFields });
   return {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
@@ -375,7 +398,10 @@ function normalizeOptions(options = {}) {
     label: getFieldLabel(options, name || "Group"),
     repeatable: Boolean(options?.repeatable ?? options?.multiple),
     required: isRequiredField(options),
-    fields: normalizeChildFields(options),
+    chrome: options?.chrome !== false,
+    rawFields: cloneFieldDefinitions(rawFields),
+    fieldRows,
+    fields: flattenFieldRows(fieldRows),
   };
 }
 
@@ -426,11 +452,43 @@ function isRequiredField(field) {
   return Boolean(field?.is_required ?? field?.required);
 }
 
-function normalizeChildFields(field) {
-  return safeArray(field?.fields).map((child, index) => ({
-    sort_order: index + 1,
-    ...child,
-  })).sort((a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0));
+function normalizeChildFieldRows(field) {
+  const rawFields = safeArray(field?.fields);
+  const allSingleRows = rawFields.every((child) => !Array.isArray(child));
+  const rows = rawFields.map((child, rowIndex) => {
+    const sourceFields = Array.isArray(child) ? child : [child];
+    return sourceFields
+      .filter((sourceField) => sourceField && typeof sourceField === "object" && !Array.isArray(sourceField))
+      .map((sourceField, columnIndex) => ({
+        ...sourceField,
+        sort_order: sourceField.sort_order ?? rowIndex + 1,
+        column_order: sourceField.column_order ?? columnIndex + 1,
+      }))
+      .sort((a, b) => Number(a?.column_order || 0) - Number(b?.column_order || 0));
+  }).filter((row) => row.length);
+
+  if (allSingleRows) {
+    return rows.sort((a, b) => Number(a?.[0]?.sort_order || 0) - Number(b?.[0]?.sort_order || 0));
+  }
+
+  return rows;
+}
+
+function flattenFieldRows(rows) {
+  return safeArray(rows).flatMap((row) => safeArray(row));
+}
+
+function cloneFieldDefinitions(fields) {
+  return safeArray(fields)
+    .map((field) => {
+      if (Array.isArray(field)) {
+        return field
+          .filter((child) => child && typeof child === "object" && !Array.isArray(child))
+          .map((child) => ({ ...child }));
+      }
+      return field && typeof field === "object" ? { ...field } : null;
+    })
+    .filter(Boolean);
 }
 
 function normalizeOptionsList(options) {

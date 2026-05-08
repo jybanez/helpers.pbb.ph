@@ -31,7 +31,12 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Unsaved incident-type and team-assignment rows now keep stable `_client_key` values so host apps can reconcile local edits and autosave flows without helper-owned persistence semantics.
 - Added `group` custom field support to incident type details, including repeatable grouped entries, schema-style field aliases, JSON object/array storage in `detail_entries[].field_value`, viewer rendering, validation, docs, and regression coverage.
 - Added shared `ui.field.group` with `createFieldGroup(...)`, and wired `createFieldset(...)` to support `type: "group"` rows for non-incident workflows such as evacuation registries, missing-person reports, addresses, vehicles, and contact lists.
+- Added row-aware `fields` declarations to `ui.field.group`: field objects render as full-width rows, while nested field arrays render one row split into matching columns.
+- Changed repeatable `ui.field.group` item headers to show compact `#1`, `#2` labels and icon-only remove buttons.
+- Added `chrome: false` to `ui.field.group` so hosts can flatten the outer group wrapper when they already own the surrounding field chrome.
+- Incident type detail editors now render grouped custom fields with `chrome: false` so the incident field row owns the outer field chrome.
 - Added `ui.field.group.presets` with plain schema factories for `person`, `address`, `missingPerson`, and `evacuee`; missing-person and evacuee presets extend the base person fields.
+- Added individual field-group preset demo pages for person, address, missing person, and evacuee schemas.
 - Added `demos/demo.field.group.html` as the focused reference page for standalone and fieldset-hosted repeatable grouped custom fields.
 - Added shared `ui.checkbox` with boolean and explicit checked/unchecked value modes, plus a focused demo and regression coverage.
 - Added shared `ui.checkbox.group` with array values, min/max validation, select-all/clear methods, field group and fieldset hosting, demo coverage, and regression coverage.

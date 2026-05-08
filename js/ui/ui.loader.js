@@ -162,8 +162,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.field.group": {
     js: "./ui.field.group.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css"],
-    deps: ["ui.checkbox", "ui.checkbox.group"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css"],
+    deps: ["ui.checkbox", "ui.checkbox.group", "ui.icons"],
     export: "createFieldGroup",
   },
   "ui.field.group.presets": {

@@ -21,11 +21,11 @@ const browserPath = browserCandidates.find((candidate) => {
 });
 
 if (!browserPath) {
-  console.error("Field group demo regression test failed: no supported browser executable found.");
+  console.error("Field group regression test failed: no supported browser executable found.");
   process.exit(1);
 }
 
-const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../demos/demo.field.group.html");
+const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./field.group.regression.html");
 const htmlUrl = pathToFileURL(htmlPath).href;
 
 const { stdout, stderr } = await execFileAsync(browserPath, [
@@ -38,26 +38,11 @@ const { stdout, stderr } = await execFileAsync(browserPath, [
 ], { maxBuffer: 1024 * 1024 * 4 });
 
 const output = `${stdout}\n${stderr}`;
-const required = [
-  "Field Group Demo",
-  "Missing Persons",
-  "Chrome-less Missing Persons",
-  "chrome: false",
-  "missing_persons_flat",
-  "is-chrome-less",
-  "Evacuation Registry",
-  "Juan Dela Cruz",
-  "North District Gym",
-  "ui.field.group.css",
-  "./demo.field.group.html",
-];
 
-const missing = required.filter((text) => !output.includes(text));
-if (missing.length) {
-  console.error("Field group demo regression test failed.");
-  console.error(`Missing expected content: ${missing.join(", ")}`);
+if (!output.includes('data-status="pass"') || !output.includes("PASS")) {
+  console.error("Field group regression test failed.");
   console.error(output);
   process.exitCode = 1;
 } else {
-  console.log("Field group demo regression test passed.");
+  console.log("Field group regression test passed.");
 }

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Person Field Group Preset Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 14px; align-items: start; }
+    .stack { display: grid; gap: 12px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 260px; color: #b2c2e5; }
+    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.field.group", "ui.field.group.presets"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Person Field Group Preset",
+      overview: "Focused reference for the base person grouped-field preset.",
+      useWhen: ["Use <code>fieldGroupPresets.person()</code> when a workflow needs one structured person object with name, gender, and age."],
+      avoidWhen: ["Use <code>missingPerson()</code> or <code>evacuee()</code> when the workflow has domain-specific person fields."],
+      description: "The person preset renders <code>name</code> as a full row and <code>gender</code>/<code>age</code> as one two-column row.",
+      defaultSampleCode: `const group = createFieldGroup(host, {
+  name: "person",
+  ...fieldGroupPresets.person({ label: "Person" }),
+  value: { name: "Ana Reyes", gender: "Female", age: "34" }
+});`,
+      constructor: [{ factory: "<code>fieldGroupPresets.person(options?)</code>", arguments: "optional preset overrides", returns: "Plain field-group config for <code>createFieldGroup(...)</code>" }],
+      options: [
+        { option: "<code>label</code>", default: "<code>\"Person\"</code>", description: "Visible group label." },
+        { option: "<code>repeatable</code>", default: "<code>false</code>", description: "Person is a single object by default; set true only when collecting a list of people." },
+        { option: "<code>required</code>", default: "<code>false</code>", description: "Requires at least one non-empty person object when hosted by <code>createFieldGroup(...)</code>." },
+        { option: "<code>fields</code>", default: "preset row layout", description: "Array replacement for the preset fields. Object overrides are merged by field key." },
+        { option: "<code>extraFields</code>", default: "<code>[]</code>", description: "Additional fields or field rows appended after the person fields." }
+      ],
+      properties: [
+        { property: "<code>fields</code>", type: "<code>Array</code>", description: "<code>name</code> full row, then <code>gender</code>/<code>age</code> in one two-column row." },
+        { property: "<code>label</code>", type: "<code>string</code>", description: "Preset label unless overridden." },
+        { property: "<code>repeatable</code>", type: "<code>boolean | undefined</code>", description: "Omitted by default so <code>createFieldGroup(...)</code> treats the value as one object." }
+      ],
+      events: [
+        { event: "<code>onChange(value, meta)</code>", arguments: "<code>value</code> object, validation metadata", returns: "Provided to <code>createFieldGroup(...)</code>, not the preset factory." }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "Current person object." },
+        { method: "<code>setValue(value)</code>", arguments: "person object", returns: "<code>void</code>" },
+        { method: "<code>validate()</code>", arguments: "none", returns: "<code>{ status, errors }</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial field-group options", returns: "<code>void</code>" }
+      ]
+    };
+    window.fieldGroupPresetDemo = {
+      presetKey: "person",
+      name: "person",
+      label: "Person",
+      initialValue: { name: "Ana Reyes", gender: "Female", age: "34" },
+      sampleValue: { name: "Marco Santos", gender: "Male", age: "41" }
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Person Preset</h1>
+      <p class="muted">Base person schema for reusable grouped custom fields.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Person</h2>
+      <div class="layout">
+        <div class="stack">
+          <div id="presetHost"></div>
+          <div class="row">
+            <button id="sampleBtn" class="ui-button" type="button">Set Sample</button>
+            <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button>
+            <button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button>
+          </div>
+          <pre id="presetSchema"></pre>
+        </div>
+        <div class="stack">
+          <pre id="presetLog" class="log">No changes yet.</pre>
+          <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.field.group.preset.js"></script>
+</body>
+</html>

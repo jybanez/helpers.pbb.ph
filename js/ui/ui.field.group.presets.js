@@ -1,22 +1,32 @@
 const PERSON_FIELDS = [
   { key: "name", label: "Complete name", type: "text", required: true },
-  { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
-  { key: "age", label: "Age", type: "number", min: 0, max: 120 },
+  [
+    { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+    { key: "age", label: "Age", type: "number", min: 0, max: 120 },
+  ],
 ];
 
 const ADDRESS_FIELDS = [
-  { key: "neighborhood", label: "Neighborhood", type: "text" },
-  { key: "barangay", label: "Barangay", type: "text" },
-  { key: "town", label: "Town", type: "text" },
-  { key: "city", label: "City", type: "text" },
-  { key: "state", label: "State", type: "text" },
-  { key: "country", label: "Country", type: "text", default_value: "Philippines" },
+  [
+    { key: "neighborhood", label: "Neighborhood", type: "text" },
+    { key: "barangay", label: "Barangay", type: "text" },
+  ],
+  [
+    { key: "town", label: "Town", type: "text" },
+    { key: "city", label: "City", type: "text" },
+  ],
+  [
+    { key: "state", label: "State", type: "text" },
+    { key: "country", label: "Country", type: "text", default_value: "Philippines" },
+  ],
 ];
 
 const MISSING_PERSON_FIELDS = [
   ...PERSON_FIELDS,
-  { key: "last_seen_days", label: "Last seen days", type: "number", min: 0 },
-  { key: "last_seen_location", label: "Last seen location", type: "text" },
+  [
+    { key: "last_seen_days", label: "Last seen days", type: "number", min: 0 },
+    { key: "last_seen_location", label: "Last seen location", type: "text" },
+  ],
 ];
 
 const EVACUEE_FIELDS = [
@@ -76,10 +86,7 @@ export function createEvacueeFieldGroupPreset(overrides = {}) {
 function buildPreset(base, overrides) {
   const normalizedOverrides = overrides && typeof overrides === "object" ? overrides : {};
   const fieldOverrides = normalizeFieldOverrides(normalizedOverrides.fields);
-  const baseFields = cloneFields(base.fields).map((field) => ({
-    ...field,
-    ...(fieldOverrides[getFieldKey(field)] || {}),
-  }));
+  const baseFields = applyFieldOverrides(cloneFields(base.fields), fieldOverrides);
   const extraFields = normalizeExtraFields(normalizedOverrides.extraFields);
   const fields = Array.isArray(normalizedOverrides.fields)
     ? cloneFields(normalizedOverrides.fields)
@@ -93,7 +100,28 @@ function buildPreset(base, overrides) {
 }
 
 function cloneFields(fields) {
-  return Array.isArray(fields) ? fields.map((field) => ({ ...field })) : [];
+  return Array.isArray(fields)
+    ? fields.map((field) => (Array.isArray(field) ? field.map(cloneField).filter(Boolean) : cloneField(field))).filter(Boolean)
+    : [];
+}
+
+function cloneField(field) {
+  return field && typeof field === "object" && !Array.isArray(field) ? { ...field } : null;
+}
+
+function applyFieldOverrides(fields, overrides) {
+  return cloneFields(fields).map((field) => {
+    if (Array.isArray(field)) {
+      return field.map((child) => ({
+        ...child,
+        ...(overrides[getFieldKey(child)] || {}),
+      }));
+    }
+    return {
+      ...field,
+      ...(overrides[getFieldKey(field)] || {}),
+    };
+  });
 }
 
 function normalizeFieldOverrides(fields) {
@@ -110,7 +138,7 @@ function normalizeFieldOverrides(fields) {
 }
 
 function normalizeExtraFields(fields) {
-  return Array.isArray(fields) ? fields.filter(Boolean).map((field) => ({ ...field })) : [];
+  return cloneFields(fields);
 }
 
 function getFieldKey(field) {

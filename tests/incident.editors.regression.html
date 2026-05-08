@@ -89,8 +89,10 @@
           sort_order: 2,
           fields: [
             { key: "name", label: "Complete name", type: "text", required: true },
-            { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
-            { key: "age", label: "Age", type: "number", min: 1, max: 100 },
+            [
+              { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+              { key: "age", label: "Age", type: "number", min: 1, max: 100 },
+            ],
           ],
         },
       ],
@@ -117,6 +119,14 @@
     assert(Boolean(groupNameInput), "repeatable group fields should render child text inputs from the shared input renderer");
     assert(Boolean(groupGenderSelect), "repeatable group fields should render child selects from the shared input renderer");
     assert(Boolean(groupAgeInput), "repeatable group fields should render child number inputs from the shared input renderer");
+    const groupRoot = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group');
+    assert(groupRoot?.classList.contains("is-chrome-less"), "incident type group fields should render shared field groups with chrome disabled");
+    assert(groupRoot?.dataset.chrome === "false", "incident type group fields should mark shared field groups as chrome-less");
+    assert(groupRoot?.querySelector(".ui-field-group-label-row")?.hidden === true, "incident type group fields should hide shared field group outer labels");
+    const groupRows = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-row');
+    assert(groupRows.length >= 2, "repeatable group fields should render declared field rows");
+    assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", "single field declarations should occupy a full row");
+    assert(groupRows[1]?.style.getPropertyValue("--ui-field-group-columns") === "2", "array field declarations should define the row column count");
     groupNameInput.value = "Juan Dela Cruz";
     groupNameInput.dispatchEvent(new Event("input", { bubbles: true }));
     groupGenderSelect.value = "Male";

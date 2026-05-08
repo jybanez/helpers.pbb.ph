@@ -66,7 +66,10 @@
             value: [{ name: "Ana Reyes", age: "34" }],
             fields: [
               { key: "name", label: "Complete name", type: "text", required: true },
-              { key: "age", label: "Age", type: "number", min: 1, max: 120 }
+              [
+                { key: "age", label: "Age", type: "number", min: 1, max: 120 },
+                { key: "local_citizen", label: "Local citizen", type: "select", options: ["Yes", "No"] }
+              ]
             ]
           }
         ],
@@ -97,6 +100,9 @@
     assert(initialValues.embeddable === true, "getValues should return checkbox state");
     assert(initialValues.evacuees?.[0]?.name === "Ana Reyes", "getValues should return repeatable group values");
     assert(initialValues.active === "1", "getValues should include hidden field values");
+    const groupRows = fieldset.root.querySelectorAll(".ui-field-group-row");
+    assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", "fieldset group single child fields should render as full rows");
+    assert(groupRows[1]?.style.getPropertyValue("--ui-field-group-columns") === "2", "fieldset group nested child arrays should define row column count");
 
     fieldset.setValue("app_code", "relay");
     fieldset.setValue("service_token", "new-token");

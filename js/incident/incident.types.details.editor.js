@@ -207,6 +207,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     const instance = createFieldGroup(groupHost, {
       ...field,
       name: getFieldKey(field),
+      chrome: false,
       value: parseFieldGroupValue(field, getFieldValue(field)),
       onChange(nextValue) {
         const serialized = serializeFieldGroupValue(field, nextValue);

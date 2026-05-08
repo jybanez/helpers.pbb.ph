@@ -92,8 +92,8 @@
         "Do not use it for arbitrary nested form builders. Keep child fields flat and purpose-specific.",
         "Do not store incident-specific JSON conventions in non-incident apps unless that backend actually needs string storage."
       ],
-      description: "The helper accepts child fields using <code>key</code>/<code>label</code>/<code>type</code>/<code>required</code> aliases and returns object values for non-repeatable groups or arrays of objects for repeatable groups.",
-      defaultSampleCode: `const group = createFieldGroup(host, {\n  name: "missing_persons",\n  ...fieldGroupPresets.missingPerson({ label: "Missing Persons" }),\n  onChange(value) {\n    console.log(value);\n  }\n});`,
+      description: "The helper accepts child fields using <code>key</code>/<code>label</code>/<code>type</code>/<code>required</code> aliases and returns object values for non-repeatable groups or arrays of objects for repeatable groups. A field object renders as one full row; a nested array renders one multi-column row.",
+      defaultSampleCode: `const group = createFieldGroup(host, {\n  name: "missing_persons",\n  repeatable: true,\n  fields: [\n    { key: "name", label: "Complete name", type: "text", required: true },\n    [\n      { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },\n      { key: "age", label: "Age", type: "number", min: 0, max: 120 }\n    ],\n    [\n      { key: "last_seen_days", label: "Last seen days", type: "number", min: 0 },\n      { key: "last_seen_location", label: "Last seen location", type: "text" }\n    ]\n  ],\n  onChange(value) {\n    console.log(value);\n  }\n});`,
       constructor: [
         { factory: "<code>createFieldGroup(container, options)</code>", arguments: "host container and group options", returns: "Field group instance" }
       ],
@@ -102,7 +102,8 @@
         { option: "<code>label</code>", default: "<code>name</code>", description: "Visible group label." },
         { option: "<code>repeatable</code>", default: "<code>false</code>", description: "When true, the value is an array of child-field objects." },
         { option: "<code>required</code>", default: "<code>false</code>", description: "Requires at least one non-empty group item." },
-        { option: "<code>fields</code>", default: "<code>[]</code>", description: "Flat child field definitions using <code>key</code>, <code>label</code>, <code>type</code>, options, and validation metadata." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set to <code>false</code> when the host surface already owns the surrounding label, border, background, and padding." },
+        { option: "<code>fields</code>", default: "<code>[]</code>", description: "Child field definitions using <code>key</code>, <code>label</code>, <code>type</code>, options, and validation metadata. Pass an object for one full-width row or an array of objects for one multi-column row." },
         { option: "<code>value</code>", default: "<code>null</code>", description: "Initial object or array value." },
         { option: "<code>onChange(value, meta)</code>", default: "<code>null</code>", description: "Called whenever a child value, add, or remove action changes the group value." }
       ],
@@ -152,6 +153,25 @@
     </section>
 
     <section class="panel">
+      <h2 class="ui-title">Chrome-less Missing Persons</h2>
+      <p class="muted">Same repeatable group with <code>chrome: false</code> so the panel owns the outer label, border, background, and padding.</p>
+      <div class="layout">
+        <div class="stack">
+          <div id="chromeLessHost"></div>
+          <pre>const chromeLessMissing = createFieldGroup(host, {
+  name: "missing_persons_flat",
+  chrome: false,
+  ...fieldGroupPresets.missingPerson({ label: "Missing Persons" })
+});</pre>
+        </div>
+        <div class="stack">
+          <pre id="chromeLessLog" class="log">No changes yet.</pre>
+          <button id="snapshotChromeLessBtn" class="ui-button ui-button-ghost" type="button">Snapshot Chrome-less</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
       <h2 class="ui-title">Evacuation Registry Form</h2>
       <div class="layout">
         <div class="stack">
@@ -177,15 +197,15 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { createFieldGroup } from "../js/ui/ui.field.group.js";
+    import { fieldGroupPresets } from "../js/ui/ui.field.group.presets.js";
+    import { createFieldset } from "../js/ui/ui.fieldset.js";
 
-    await window.__demoLoaderReady;
-    const createFieldGroup = await uiLoader.get("ui.field.group");
-    const fieldGroupPresets = await uiLoader.get("ui.field.group.presets");
-    const createFieldset = await uiLoader.get("ui.fieldset");
+    window.__demoLoaderReady?.catch?.(() => {});
 
     const page = document.querySelector("main.page");
     const missingLog = document.getElementById("missingLog");
+    const chromeLessLog = document.getElementById("chromeLessLog");
     const registryLog = document.getElementById("registryLog");
 
     function writeLog(target, label, payload) {
@@ -208,6 +228,27 @@
       ],
       onChange(value, meta) {
         writeLog(missingLog, "missing_persons changed", {
+          value,
+          validation: meta.validation
+        });
+      }
+    });
+
+    const chromeLessMissing = createFieldGroup(document.getElementById("chromeLessHost"), {
+      name: "missing_persons_flat",
+      chrome: false,
+      ...fieldGroupPresets.missingPerson({ label: "Missing Persons" }),
+      value: [
+        {
+          name: "Juan Dela Cruz",
+          gender: "Male",
+          age: "17",
+          last_seen_days: "2",
+          last_seen_location: "Barangay Hall"
+        }
+      ],
+      onChange(value, meta) {
+        writeLog(chromeLessLog, "missing_persons_flat changed", {
           value,
           validation: meta.validation
         });
@@ -240,10 +281,14 @@
             label: "Origin Address",
             span: 2,
             fields: [
-              { key: "neighborhood", label: "Neighborhood", type: "text" },
-              { key: "city", label: "City", type: "text" },
-              { key: "state", label: "State", type: "text" },
-              { key: "country", label: "Country", type: "text", default_value: "Philippines" }
+              [
+                { key: "neighborhood", label: "Neighborhood", type: "text" },
+                { key: "city", label: "City", type: "text" }
+              ],
+              [
+                { key: "state", label: "State", type: "text" },
+                { key: "country", label: "Country", type: "text", default_value: "Philippines" }
+              ]
             ],
             value: {
               neighborhood: "Zone 3",
@@ -289,6 +334,10 @@
       writeLog(missingLog, "snapshot", missingPersons.getValue());
     });
 
+    document.getElementById("snapshotChromeLessBtn").addEventListener("click", () => {
+      writeLog(chromeLessLog, "snapshot", chromeLessMissing.getValue());
+    });
+
     document.getElementById("registrySampleBtn").addEventListener("click", () => {
       registry.setValues({
         center_name: "South High School",
@@ -316,6 +365,7 @@
     });
 
     writeLog(missingLog, "initial", missingPersons.getValue());
+    writeLog(chromeLessLog, "initial", chromeLessMissing.getValue());
     writeLog(registryLog, "initial", registry.getValues());
   </script>
 </body>

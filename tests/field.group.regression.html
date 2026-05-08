@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field Group Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/ui/ui.checkbox.css">
+  <link rel="stylesheet" href="../css/ui/ui.checkbox.group.css">
+  <link rel="stylesheet" href="../css/ui/ui.field.group.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <div id="chromeLessHost"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createFieldGroup } from "../js/ui/ui.field.group.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const chromeLessHost = document.getElementById("chromeLessHost");
+    const results = document.getElementById("results");
+
+    const group = createFieldGroup(host, {
+      name: "evacuees",
+      label: "Evacuees",
+      repeatable: true,
+      value: [{ name: "Ana Reyes", gender: "Female", age: "34", local_citizen: "Yes" }],
+      fields: [
+        { key: "name", label: "Complete name", type: "text", required: true },
+        [
+          { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
+          { key: "age", label: "Age", type: "number", min: 0, max: 120 }
+        ],
+        { key: "local_citizen", label: "Local citizen", type: "select", options: ["Yes", "No"] }
+      ]
+    });
+
+    assertRowShape("initial");
+    assertRepeatableHeader("initial");
+    assert(group.getValue()[0]?.gender === "Female", "nested row field values should normalize into the same object");
+
+    group.update({ label: "Registered Evacuees" });
+    assertRowShape("after update");
+    assertRepeatableHeader("after update");
+
+    group.setValue([{ name: "Ben Cruz", gender: "Male", age: "9", local_citizen: "No" }]);
+    assert(group.getValue()[0]?.age === "9", "setValue should preserve nested row field values");
+
+    const chromeLess = createFieldGroup(chromeLessHost, {
+      name: "missing_persons",
+      label: "Missing Persons",
+      repeatable: true,
+      chrome: false,
+      value: [{ name: "Juan Dela Cruz" }],
+      fields: [
+        { key: "name", label: "Complete name", type: "text", required: true }
+      ]
+    });
+    const chromeLessRoot = chromeLessHost.querySelector(".ui-field-group");
+    const chromeLessBody = chromeLessHost.querySelector(".ui-field-group-body");
+    assert(chromeLessRoot?.classList.contains("is-chrome-less"), "chrome:false should add chrome-less class");
+    assert(chromeLessRoot?.dataset.chrome === "false", "chrome:false should set data chrome state");
+    assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === true, "chrome:false should hide the outer label row");
+    assert(getComputedStyle(chromeLessBody).backgroundColor === "rgba(0, 0, 0, 0)", "chrome:false should remove group body background");
+    assert(getComputedStyle(chromeLessBody).borderTopWidth === "0px", "chrome:false should remove group body border");
+    assert(chromeLessHost.querySelector(".ui-field-group-item-title")?.textContent === "#1", "chrome:false should keep repeatable item content");
+
+    chromeLess.update({ chrome: true });
+    assert(!chromeLessRoot?.classList.contains("is-chrome-less"), "update({ chrome:true }) should restore chrome class state");
+    assert(chromeLessRoot?.dataset.chrome === "true", "update({ chrome:true }) should restore data chrome state");
+    assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === false, "update({ chrome:true }) should restore label row");
+
+    chromeLess.destroy();
+    group.destroy();
+    assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
+    assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assertRowShape(label) {
+      const rows = host.querySelectorAll(".ui-field-group-row");
+      assert(rows.length === 3, `${label}: nested declarations should render three field rows`);
+      assert(rows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", `${label}: object declaration should render one-column row`);
+      assert(rows[1]?.style.getPropertyValue("--ui-field-group-columns") === "2", `${label}: nested array declaration should render two-column row`);
+      assert(rows[2]?.style.getPropertyValue("--ui-field-group-columns") === "1", `${label}: trailing object declaration should render one-column row`);
+    }
+
+    function assertRepeatableHeader(label) {
+      const title = host.querySelector(".ui-field-group-item-title");
+      const remove = host.querySelector(".ui-field-group-remove");
+      assert(title?.textContent === "#1", `${label}: repeatable group item title should render as #number`);
+      assert(remove?.textContent.trim() === "", `${label}: remove button should be icon-only`);
+      assert(remove?.getAttribute("aria-label") === "Remove #1", `${label}: remove button should keep accessible remove label`);
+      assert(remove?.querySelector('[data-icon="actions.delete"]'), `${label}: remove button should render delete icon`);
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>
