@@ -128,6 +128,7 @@
     assert(groupRoot?.classList.contains("is-chrome-less"), "incident type group fields should render shared field groups with chrome disabled");
     assert(groupRoot?.dataset.chrome === "false", "incident type group fields should mark shared field groups as chrome-less");
     assert(groupRoot?.querySelector(".ui-field-group-label-row")?.hidden === true, "incident type group fields should hide shared field group outer labels");
+    assert(getComputedStyle(groupRoot?.querySelector(".ui-field-group-label-row")).display === "none", "incident type group fields should visually suppress shared field group outer labels");
     const groupRows = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-row');
     assert(groupRows.length >= 3, "repeatable group fields should render resolved preset field rows");
     assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", "single field declarations should occupy a full row");

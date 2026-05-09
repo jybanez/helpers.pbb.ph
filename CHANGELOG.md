@@ -36,6 +36,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Added `chrome: false` to `ui.field.group` so hosts can flatten the outer group wrapper when they already own the surrounding field chrome.
 - Incident type detail editors now render grouped custom fields with `chrome: false` so the incident field row owns the outer field chrome.
 - Fixed incident editor grouped-field layout so editor-owned labels/required chips render outside chrome-less groups and two-column child inputs stay inside the repeatable item border.
+- Fixed chrome-less field groups so their internal label/required row is visually suppressed, preventing duplicate labels in incident type field rendering.
 - Fixed incident type viewer grouped-field rendering so repeatable group cards use a stacked full-width layout instead of being squeezed into the scalar field value column.
 - Changed incident type viewer repeatable group item headings to the same compact `#1`, `#2` numbering used by the editor.
 - Added `ui.field.group.presets` with plain schema factories for `person`, `address`, `missingPerson`, and `evacuee`; missing-person and evacuee presets extend the base person fields.

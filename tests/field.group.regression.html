@@ -68,6 +68,7 @@
     assert(chromeLessRoot?.classList.contains("is-chrome-less"), "chrome:false should add chrome-less class");
     assert(chromeLessRoot?.dataset.chrome === "false", "chrome:false should set data chrome state");
     assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === true, "chrome:false should hide the outer label row");
+    assert(getComputedStyle(chromeLessHost.querySelector(".ui-field-group-label-row")).display === "none", "chrome:false should visually suppress the outer label row");
     assert(getComputedStyle(chromeLessBody).backgroundColor === "rgba(0, 0, 0, 0)", "chrome:false should remove group body background");
     assert(getComputedStyle(chromeLessBody).borderTopWidth === "0px", "chrome:false should remove group body border");
     assert(chromeLessHost.querySelector(".ui-field-group-item-title")?.textContent === "#1", "chrome:false should keep repeatable item content");
@@ -76,6 +77,7 @@
     assert(!chromeLessRoot?.classList.contains("is-chrome-less"), "update({ chrome:true }) should restore chrome class state");
     assert(chromeLessRoot?.dataset.chrome === "true", "update({ chrome:true }) should restore data chrome state");
     assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === false, "update({ chrome:true }) should restore label row");
+    assert(getComputedStyle(chromeLessHost.querySelector(".ui-field-group-label-row")).display !== "none", "update({ chrome:true }) should visually restore label row");
 
     const presetHost = document.createElement("div");
     presetHost.style.width = "360px";
