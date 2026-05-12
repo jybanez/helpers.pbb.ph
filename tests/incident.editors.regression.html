@@ -110,12 +110,16 @@
     assert(typeItemEvent?.nextItem?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onItemChange should emit the updated item after field edits");
     assert(typeListEvent?.nextList?.[0]?.detail_entries?.[0]?.field_value === "Warehouse", "incident types onChange should emit the updated list after field edits");
 
-    const groupNameInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
+    const groupHiddenName = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
+    const groupLastNameInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_name"] .ui-input');
+    const groupFirstNameInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="first_name"] .ui-input');
     const groupGenderSelect = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="gender"] .ui-input');
     const groupAgeInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="age"] .ui-input');
     const groupLastSeenDaysInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_seen_days"] .ui-input');
     const groupLastSeenLocationInput = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_seen_location"] .ui-input');
-    assert(Boolean(groupNameInput), "repeatable group fields should render child text inputs from the shared input renderer");
+    assert(!groupHiddenName, "repeatable preset complete name should be hidden from the editor UI");
+    assert(Boolean(groupLastNameInput), "repeatable group fields should render split last name inputs from the shared input renderer");
+    assert(Boolean(groupFirstNameInput), "repeatable group fields should render split first name inputs from the shared input renderer");
     assert(Boolean(groupGenderSelect), "repeatable group fields should render child selects from the shared input renderer");
     assert(Boolean(groupAgeInput), "repeatable group fields should render child number inputs from the shared input renderer");
     assert(Boolean(groupLastSeenDaysInput), "preset-backed repeatable group fields should render preset child number inputs without fields[]");
@@ -131,35 +135,44 @@
     assert(getComputedStyle(groupRoot?.querySelector(".ui-field-group-label-row")).display === "none", "incident type group fields should visually suppress shared field group outer labels");
     const groupRows = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-row');
     assert(groupRows.length >= 3, "repeatable group fields should render resolved preset field rows");
-    assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "1", "single field declarations should occupy a full row");
+    assert(groupRows[0]?.style.getPropertyValue("--ui-field-group-columns") === "2", "split name declarations should define the first row column count");
     assert(groupRows[1]?.style.getPropertyValue("--ui-field-group-columns") === "2", "array field declarations should define the row column count");
     assert(groupRows[2]?.style.getPropertyValue("--ui-field-group-columns") === "2", "preset row declarations should preserve their column count");
-    groupNameInput.value = "Juan Dela Cruz";
-    groupNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupLastNameInput.value = "Dela Cruz";
+    groupLastNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupFirstNameInput.value = "Juan";
+    groupFirstNameInput.dispatchEvent(new Event("input", { bubbles: true }));
     groupGenderSelect.value = "Male";
     groupGenderSelect.dispatchEvent(new Event("change", { bubbles: true }));
     groupAgeInput.value = "17";
     groupAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupAgeInput.dispatchEvent(new Event("blur", { bubbles: true }));
     groupLastSeenDaysInput.value = "2";
     groupLastSeenDaysInput.dispatchEvent(new Event("input", { bubbles: true }));
+    groupLastSeenDaysInput.dispatchEvent(new Event("blur", { bubbles: true }));
     groupLastSeenLocationInput.value = "Barangay Hall";
     groupLastSeenLocationInput.dispatchEvent(new Event("input", { bubbles: true }));
 
     const addMissingPersonButton = document.querySelector('#incidentTypesHost [data-field-key="missing_persons"] .ui-field-group-add');
     addMissingPersonButton.click();
-    const groupNameInputs = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="name"] .ui-input');
-    assert(groupNameInputs.length === 2, "repeatable group fields should support adding multiple entries");
-    groupNameInputs[1].value = "Maria Santos";
-    groupNameInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+    const groupLastNameInputs = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="last_name"] .ui-input');
+    const groupFirstNameInputs = document.querySelectorAll('#incidentTypesHost [data-field-key="missing_persons"] [data-field-key="first_name"] .ui-input');
+    assert(groupLastNameInputs.length === 2 && groupFirstNameInputs.length === 2, "repeatable group fields should support adding multiple split-name entries");
+    groupLastNameInputs[1].value = "Santos";
+    groupLastNameInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+    groupFirstNameInputs[1].value = "Maria";
+    groupFirstNameInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
 
     const groupEntry = typeApi.getData()[0]?.detail_entries?.find((entry) => entry.field_key === "missing_persons");
     const groupValue = JSON.parse(groupEntry?.field_value || "[]");
-    assert(groupValue[0]?.name === "Juan Dela Cruz", "repeatable group fields should serialize the first child object");
+    assert(groupValue[0]?.last_name === "Dela Cruz", "repeatable group fields should serialize child last name values");
+    assert(groupValue[0]?.first_name === "Juan", "repeatable group fields should serialize child first name values");
+    assert(groupValue[0]?.name === "Dela Cruz, Juan", "repeatable group fields should serialize computed complete name values");
     assert(groupValue[0]?.gender === "Male", "repeatable group fields should serialize child select values");
-    assert(groupValue[0]?.age === "17", "repeatable group fields should serialize child number values");
-    assert(groupValue[0]?.last_seen_days === "2", "preset-backed repeatable group fields should serialize preset child number values");
+    assert(groupValue[0]?.age === 17, "repeatable group fields should serialize child number-stepper values");
+    assert(groupValue[0]?.last_seen_days === 2, "preset-backed repeatable group fields should serialize preset child number-stepper values");
     assert(groupValue[0]?.last_seen_location === "Barangay Hall", "preset-backed repeatable group fields should serialize preset child text values");
-    assert(groupValue[1]?.name === "Maria Santos", "repeatable group fields should serialize added entries");
+    assert(groupValue[1]?.name === "Santos, Maria", "repeatable group fields should serialize computed names for added entries");
 
     const incidentTypesViewerHost = document.getElementById("incidentTypesViewerHost");
     incidentTypesViewerHost.style.width = "360px";
@@ -170,7 +183,7 @@
       incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire" }],
     });
     assert(
-      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Juan Dela Cruz"),
+      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Dela Cruz, Juan"),
       "incident type viewer should render repeatable group values"
     );
     assert(

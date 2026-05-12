@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/ui/ui.icons.css">
   <link rel="stylesheet" href="../css/ui/ui.checkbox.css">
   <link rel="stylesheet" href="../css/ui/ui.checkbox.group.css">
+  <link rel="stylesheet" href="../css/ui/ui.number.stepper.css">
   <link rel="stylesheet" href="../css/ui/ui.field.group.css">
 </head>
 <body data-status="pending">
@@ -36,7 +37,7 @@
         { key: "name", label: "Complete name", type: "text", required: true },
         [
           { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
-          { key: "age", label: "Age", type: "number", min: 0, max: 120 }
+          { key: "age", label: "Age", type: "number-stepper", min: 0, max: 120 }
         ],
         { key: "local_citizen", label: "Local citizen", type: "select", options: ["Yes", "No"] }
       ]
@@ -45,13 +46,16 @@
     assertRowShape("initial");
     assertRepeatableHeader("initial");
     assert(group.getValue()[0]?.gender === "Female", "nested row field values should normalize into the same object");
+    assert(Boolean(host.querySelector('[data-field-key="age"] .ui-number-stepper')), "number-stepper child fields should render the shared number stepper");
+    host.querySelector('[data-field-key="age"] .ui-number-stepper-button-increment')?.click();
+    assert(group.getValue()[0]?.age === 35, "number-stepper child fields should update group values");
 
     group.update({ label: "Registered Evacuees" });
     assertRowShape("after update");
     assertRepeatableHeader("after update");
 
     group.setValue([{ name: "Ben Cruz", gender: "Male", age: "9", local_citizen: "No" }]);
-    assert(group.getValue()[0]?.age === "9", "setValue should preserve nested row field values");
+    assert(group.getValue()[0]?.age === 9, "setValue should preserve nested number-stepper row field values");
 
     const chromeLess = createFieldGroup(chromeLessHost, {
       name: "missing_persons",
@@ -94,9 +98,12 @@
       value: [{ name: "Liza Santos", gender: "Female", age: "28", last_seen_days: "2" }]
     });
     assert(isRepeatableFieldGroup({ config: { preset: "missingPerson" } }) === true, "preset metadata should resolve repeatable group options");
-    assert(resolveFieldGroupFields({ config_json: JSON.stringify({ preset: "missingPerson" }) }).map((field) => field.key).join(",") === "name,gender,age,last_seen_days,last_seen_location", "preset metadata should resolve child fields without fields[]");
+    assert(resolveFieldGroupFields({ config_json: JSON.stringify({ preset: "missingPerson" }) }).map((field) => field.key).join(",") === "name,last_name,first_name,gender,age,last_seen_days,last_seen_location", "preset metadata should resolve child fields without fields[]");
+    assert(!presetHost.querySelector('[data-field-key="name"]'), "preset computed complete name should stay hidden");
+    assert(Boolean(presetHost.querySelector('[data-field-key="last_name"] .ui-input')), "preset-backed groups should render split last name controls");
+    assert(Boolean(presetHost.querySelector('[data-field-key="first_name"] .ui-input')), "preset-backed groups should render split first name controls");
     assert(Boolean(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input')), "preset-backed groups should render preset child controls without expanded fields[]");
-    assert(presetGroup.getValue()[0]?.last_seen_days === "2", "preset-backed groups should normalize preset child values");
+    assert(presetGroup.getValue()[0]?.last_seen_days === 2, "preset-backed groups should normalize preset number-stepper child values");
     presetGroup.update({ config: { preset: "evacuee" }, value: [{ name: "Liza Santos", local_citizen: "Yes" }] });
     assert(Boolean(presetHost.querySelector('[data-field-key="local_citizen"] .ui-input')), "updating preset metadata should refresh resolved child controls");
     assert(!presetHost.querySelector('[data-field-key="last_seen_location"]'), "updating preset metadata should remove stale preset child controls");
@@ -107,9 +114,105 @@
     assert(inputStyle.boxSizing === "border-box", "group child inputs should use border-box sizing");
     assert(narrowInput?.right <= narrowItem?.right + 1, "two-column group child inputs should stay inside the repeatable item border");
 
+    const conditionalHost = document.createElement("div");
+    document.body.appendChild(conditionalHost);
+    const conditionalGroup = createFieldGroup(conditionalHost, {
+      name: "patients",
+      preset: "casualtyPatient",
+      value: [{ last_name: "Rizal", first_name: "Jose", condition: "Critical", consciousness: "Conscious", triage_color: "Red", transported: "Yes" }]
+    });
+    const conditionSelect = conditionalHost.querySelector('[data-field-key="condition"] .ui-input');
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="consciousness"]')), "visibleWhen fields should render while their rule matches");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="triage_color"]')), "visibleWhen row peers should render while their rule matches");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="transported"]')), "visibleWhen fields should render before deceased status");
+    conditionSelect.value = "Deceased";
+    conditionSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(!conditionalHost.querySelector('[data-field-key="consciousness"]'), "visibleWhen fields should hide when condition changes to deceased");
+    assert(!conditionalHost.querySelector('[data-field-key="triage_color"]'), "visibleWhen row peers should hide when condition changes to deceased");
+    assert(!conditionalHost.querySelector('[data-field-key="transported"]'), "visibleWhen fields should hide transported for deceased patients");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"]')), "destination facility should stay visible for deceased patients");
+
+    const breakdownHost = document.createElement("div");
+    document.body.appendChild(breakdownHost);
+    const breakdownGroup = createFieldGroup(breakdownHost, {
+      name: "families",
+      repeatable: true,
+      value: [{ household_head: "Ana", adult_count: 2, children_count: 3 }],
+      validations: [
+        {
+          type: "sum_eq",
+          fields: ["adult_male_count", "adult_female_count"],
+          maxField: "adult_count",
+          message: "Adult male + female counts should equal adult count."
+        }
+      ],
+      fields: [
+        { key: "household_head", label: "Household head", type: "text" },
+        [
+          {
+            key: "adult_count",
+            label: "Adult count",
+            type: "number-stepper",
+            min: 0,
+            allowEmpty: false,
+            breakdown: {
+              label: "Adult breakdown",
+              fields: [
+                [
+                  { key: "adult_male_count", label: "Male", type: "number-stepper", min: 0 },
+                  { key: "adult_female_count", label: "Female", type: "number-stepper", min: 0 }
+                ],
+                [
+                  { key: "adult_pregnant_count", label: "Pregnant", type: "number-stepper", min: 0 },
+                  null
+                ]
+              ]
+            }
+          },
+          { key: "children_count", label: "Children count", type: "number-stepper", min: 0, allowEmpty: false }
+        ],
+        { key: "member_count", label: "Member count", type: "number-stepper", min: 0, readonly: true, allowEmpty: false, computed: "adult_count + children_count", hidden: true }
+      ]
+    });
+    assert(breakdownGroup.getValue()[0]?.member_count === 5, "computed fields should initialize from their expression");
+    assert(!breakdownHost.querySelector('[data-field-key="member_count"]'), "hidden computed fields should stay out of the rendered operator UI");
+    let breakdownToggle = breakdownHost.querySelector('[data-field-key="adult_count"] .ui-field-group-breakdown-toggle');
+    assert(Boolean(breakdownToggle), "fields with breakdown should render a breakdown toggle");
+    assert(breakdownToggle?.getAttribute("aria-expanded") === "false", "breakdown should start collapsed by default");
+    breakdownGroup.setValue([{ household_head: "Ana", adult_count: 2, children_count: 3, adult_male_count: 1 }]);
+    assert(breakdownGroup.validate().warnings?.length === 0, "collapsed breakdowns should not validate breakdown rules even when subfield values exist");
+    breakdownToggle = breakdownHost.querySelector('[data-field-key="adult_count"] .ui-field-group-breakdown-toggle');
+    breakdownToggle.click();
+    assert(breakdownGroup.validate().warnings?.length === 1, "enabled breakdowns should validate breakdown rules");
+    assert(Boolean(breakdownHost.querySelector(".ui-field-group-breakdown")), "breakdown toggle should reveal subfields");
+    assert(getComputedStyle(breakdownHost.querySelector(".ui-field-group-breakdown")).gridColumnStart === "1", "expanded breakdown should start at the first parent row column");
+    assert(getComputedStyle(breakdownHost.querySelector(".ui-field-group-breakdown")).gridColumnEnd === "-1", "expanded breakdown should span the full parent field row");
+    const placeholderRow = Array.from(breakdownHost.querySelectorAll(".ui-field-group-breakdown-row")).find((candidate) => candidate.querySelector(".ui-field-group-placeholder"));
+    assert(placeholderRow?.style.getPropertyValue("--ui-field-group-columns") === "2", "breakdown placeholder rows should preserve two-column layout");
+    assert(breakdownHost.querySelector('[data-field-key="adult_female_count"] .ui-number-stepper-input')?.value === "", "empty breakdown subfield values should stay flat in the group item");
+    breakdownHost.querySelector('[data-field-key="adult_count"] .ui-number-stepper-button-increment')?.click();
+    assert(breakdownGroup.getValue()[0]?.member_count === 6, "computed fields should update when dependencies change");
+    assert(!breakdownHost.querySelector('[data-field-key="member_count"]'), "hidden computed fields should remain hidden after computed updates");
+    breakdownGroup.setValue([{ household_head: "Ana", adult_count: 2, children_count: 3, adult_male_count: 1, adult_female_count: 1 }]);
+    assert(!breakdownHost.querySelector(".ui-field-group-item-warning:not([hidden])"), "valid breakdown values should not show warning indicators");
+    assert(Boolean(breakdownHost.querySelector(".ui-field-group-breakdown-warning.is-valid")), "valid enabled breakdown rules should render muted validation text");
+    assert(!breakdownHost.querySelector(".ui-field-group-breakdown-warning.is-invalid"), "valid enabled breakdown rules should not render highlighted validation text");
+    breakdownHost.querySelector('[data-field-key="adult_female_count"] .ui-number-stepper-button-increment')?.click();
+    const breakdownValidation = breakdownGroup.validate();
+    assert(breakdownValidation.status === true, "warning-only field group validation should not block status");
+    assert(breakdownValidation.warnings?.length === 1, "field group validation should return warning entries");
+    assert(breakdownGroup.getValue()[0]?.adult_female_count === 2, "auto-validation should keep changed breakdown values");
+    assert(breakdownHost.querySelector(".ui-field-group-item-warning")?.textContent === "1 warning", "repeatable items should show warning counts");
+    assert(Boolean(breakdownHost.querySelector('[data-field-key="adult_count"] .ui-field-group-warning-badge')), "collapsed breakdown parents should show a warning badge");
+    assert(Boolean(breakdownHost.querySelector(".ui-field-group-breakdown-warning.is-invalid")), "invalid enabled breakdown rules should highlight existing validation text");
+
     chromeLess.destroy();
     presetGroup.destroy();
     presetHost.remove();
+    conditionalGroup.destroy();
+    conditionalHost.remove();
+    breakdownGroup.destroy();
+    breakdownHost.remove();
     group.destroy();
     assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
     assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");

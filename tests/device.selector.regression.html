@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Selector Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.select.css">
+  <link rel="stylesheet" href="../css/ui/ui.device.selector.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <div id="compact"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createDeviceSelector, createMediaDeviceAdapter } from "../js/ui/ui.device.selector.js";
+
+    const failures = [];
+    const events = [];
+    const host = document.getElementById("host");
+    const compact = document.getElementById("compact");
+    const results = document.getElementById("results");
+
+    const mockDevices = [
+      { id: "cam-1", label: "Front Camera", kind: "camera", transport: "mock", capabilities: { canTest: true } },
+      { id: "cam-2", label: "USB Camera", kind: "camera", transport: "mock", capabilities: { canTest: true } },
+    ];
+
+    const adapter = {
+      async isSupported() { return true; },
+      async listDevices() { return mockDevices; },
+      async selectDevice(device) { events.push(`select:${device.id}`); },
+      async testDevice(device) { events.push(`test:${device.id}`); return { message: `${device.label} tested.` }; },
+      subscribe(listener) {
+        events.push("subscribe");
+        this.listener = listener;
+        return () => events.push("unsubscribe");
+      },
+    };
+
+    try {
+      const selector = createDeviceSelector(host, {
+        kind: "camera",
+        label: "Camera",
+        selectedDeviceId: "cam-2",
+      }, {
+        adapter,
+        onRefresh: () => events.push("refresh"),
+        onSelectionChange: ({ selectedDeviceId }) => events.push(`change:${selectedDeviceId}`),
+        onTestComplete: ({ result }) => events.push(`complete:${result.message}`),
+      });
+
+      await waitFor(() => host.querySelector(".ui-device-selector")?.dataset.status === "ready");
+      let root = host.querySelector(".ui-device-selector");
+      assert(Boolean(root), "selector root should render");
+      assert(root.dataset.kind === "camera", "kind dataset should render");
+      assert(root.dataset.deviceCount === "2", "device count should render");
+      assert(root.querySelector(".ui-select"), "default presentation should use shared ui.select");
+      assert(!root.querySelector(".ui-device-selector-select"), "default presentation should not use native select");
+      assert(root.querySelector(".ui-select-value").textContent === "USB Camera", "selected device should be preserved after refresh");
+      assert(events.includes("subscribe"), "adapter subscription should be installed");
+      assert(events.includes("refresh"), "refresh callback should fire");
+
+      await selector.selectDevice("cam-1");
+      root = host.querySelector(".ui-device-selector");
+      assert(root.querySelector(".ui-select-value").textContent === "Front Camera", "selectDevice should update shared select value");
+      assert(events.includes("select:cam-1"), "adapter selectDevice should be called");
+      assert(events.includes("change:cam-1"), "selection callback should fire");
+
+      await selector.testSelectedDevice();
+      root = host.querySelector(".ui-device-selector");
+      assert(root.dataset.status === "ready", "successful test should return to ready");
+      assert(root.querySelector(".ui-device-selector-detail").textContent.includes("tested"), "test result detail should render");
+      assert(events.includes("test:cam-1"), "adapter testDevice should be called");
+
+      selector.update({}, { layout: "compact" });
+      assert(host.querySelector(".ui-device-selector").classList.contains("ui-device-selector--compact"), "compact layout class should render");
+      const state = selector.getState();
+      assert(state.selectedDevice?.id === "cam-1", "getState should include selected device");
+
+      selector.destroy();
+      assert(host.children.length === 0, "destroy should clear host");
+      assert(events.includes("unsubscribe"), "destroy should cleanup subscription");
+
+      const unsupportedSelector = createDeviceSelector(host, { kind: "usb", label: "USB Device" }, {
+        adapter: { async isSupported() { return false; }, async listDevices() { return []; } },
+      });
+      await waitFor(() => host.querySelector(".ui-device-selector")?.dataset.status === "unsupported");
+      assert(host.querySelector(".ui-device-selector-status").textContent === "Unsupported", "unsupported status should render");
+      unsupportedSelector.destroy();
+
+      const permissionSelector = createDeviceSelector(host, {
+        kind: "microphone",
+        label: "Microphone",
+        status: "permission-required",
+        detailText: "Allow microphone access.",
+      }, { autoRefresh: false });
+      assert(host.querySelector(".ui-device-selector").dataset.status === "permission-required", "permission-required state should render");
+      assert(host.querySelector(".ui-device-selector-detail").textContent.includes("Allow microphone"), "permission detail should render");
+      permissionSelector.destroy();
+
+      const manualSelector = createDeviceSelector(compact, {
+        kind: "speaker",
+        devices: [{ id: "default", label: "System default speaker", kind: "speaker" }],
+        selectedDeviceId: "default",
+      }, { autoRefresh: false, layout: "compact" });
+      assert(compact.querySelector(".ui-device-selector").dataset.status === "ready", "manual devices should render as ready");
+      manualSelector.destroy();
+
+      const nativeSelector = createDeviceSelector(compact, {
+        kind: "speaker",
+        devices: [{ id: "default", label: "System default speaker", kind: "speaker" }],
+        selectedDeviceId: "default",
+      }, { autoRefresh: false, layout: "compact", presentation: "native-select" });
+      assert(compact.querySelector(".ui-device-selector-select")?.value === "default", "native-select presentation should render native select fallback");
+      nativeSelector.destroy();
+
+      const menuSelector = createDeviceSelector(compact, {
+        kind: "camera",
+        devices: mockDevices,
+        selectedDeviceId: "cam-2",
+      }, { autoRefresh: false, presentation: "menu" });
+      assert(compact.querySelector(".ui-device-selector-menu-trigger")?.textContent.includes("USB Camera"), "menu presentation should render selected device trigger");
+      compact.querySelector(".ui-device-selector-menu-trigger").click();
+      assert(compact.querySelectorAll(".ui-device-selector-menu-item").length === 2, "menu presentation should render menu items when opened");
+      compact.querySelector(".ui-device-selector-menu-item").click();
+      assert(menuSelector.getState().selectedDeviceId === "cam-1", "menu item click should select device");
+      menuSelector.destroy();
+
+      const listSelector = createDeviceSelector(compact, {
+        kind: "camera",
+        devices: mockDevices,
+        selectedDeviceId: "cam-1",
+      }, { autoRefresh: false, presentation: "list" });
+      assert(compact.querySelectorAll(".ui-device-selector-list-item").length === 2, "list presentation should render visible device rows");
+      assert(compact.querySelector(".ui-device-selector-list-item.is-selected")?.textContent.includes("Front Camera"), "list presentation should mark selected row");
+      compact.querySelectorAll(".ui-device-selector-list-item")[1].click();
+      assert(listSelector.getState().selectedDeviceId === "cam-2", "list item click should select device");
+      listSelector.destroy();
+
+      assert(typeof createMediaDeviceAdapter === "function", "media adapter factory should export");
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    async function waitFor(predicate, timeout = 3000) {
+      const start = performance.now();
+      while (performance.now() - start < timeout) {
+        if (predicate()) {
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      throw new Error("Timed out waiting for assertion.");
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Device selector regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

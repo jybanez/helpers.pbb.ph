@@ -2,6 +2,7 @@ import { createCheckbox } from "./ui.checkbox.js";
 import { createCheckboxGroup } from "./ui.checkbox.group.js";
 import { fieldGroupPresets } from "./ui.field.group.presets.js";
 import { createIcon } from "./ui.icons.js";
+import { createNumberStepper } from "./ui.number.stepper.js";
 
 const DEFAULT_OPTIONS = {
   name: "",
@@ -10,7 +11,9 @@ const DEFAULT_OPTIONS = {
   repeatable: false,
   required: false,
   chrome: true,
+  autoValidate: true,
   fields: [],
+  validations: [],
   addLabel: "",
   removeLabel: "Remove",
   emptyItem: null,
@@ -24,7 +27,10 @@ export function createFieldGroup(container, options = {}) {
 
   let currentOptions = normalizeOptions(options);
   let value = normalizeValue(currentOptions.value, currentOptions);
+  let renderedValidation = { status: true, errors: [], warnings: [] };
   const listeners = [];
+  const expandedBreakdowns = new Set();
+  const collapsedBreakdowns = new Set();
 
   const refs = {
     root: document.createElement("div"),
@@ -77,7 +83,7 @@ export function createFieldGroup(container, options = {}) {
       render();
     },
     validate() {
-      return validateGroup(currentOptions, value);
+      return getCurrentValidation();
     },
     destroy() {
       clearListeners();
@@ -87,6 +93,7 @@ export function createFieldGroup(container, options = {}) {
 
   function render() {
     clearListeners();
+    renderedValidation = getCurrentValidation();
     refs.root.className = [
       "ui-field-group",
       currentOptions.chrome ? "" : "is-chrome-less",
@@ -131,6 +138,13 @@ export function createFieldGroup(container, options = {}) {
       title.className = "ui-field-group-item-title";
       title.textContent = `#${index + 1}`;
 
+      const itemWarnings = getItemWarnings(index);
+      const warning = document.createElement("span");
+      warning.className = "ui-field-group-item-warning";
+      warning.hidden = itemWarnings.length === 0;
+      warning.textContent = `${itemWarnings.length} ${itemWarnings.length === 1 ? "warning" : "warnings"}`;
+      warning.title = itemWarnings.map((item) => item.message || item.warning || item.error).filter(Boolean).join("\n");
+
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "ui-field-group-remove";
@@ -144,22 +158,32 @@ export function createFieldGroup(container, options = {}) {
         emitChange();
       });
 
-      header.append(title, remove);
+      header.append(title, warning, remove);
       itemEl.appendChild(header);
     }
 
     const rows = document.createElement("div");
     rows.className = "ui-field-group-rows";
     currentOptions.fieldRows.forEach((fieldRow) => {
+      const renderRow = safeArray(fieldRow).filter((field) => !field || isFieldVisibleForItem(field, item));
+      if (!renderRow.some((field) => field && getFieldKey(field))) {
+        return;
+      }
       const row = document.createElement("div");
       row.className = "ui-field-group-row";
-      row.style.setProperty("--ui-field-group-columns", String(Math.max(fieldRow.length, 1)));
-      fieldRow.forEach((field) => {
+      row.style.setProperty("--ui-field-group-columns", String(Math.max(renderRow.length, 1)));
+      renderRow.forEach((field) => {
         const childKey = getFieldKey(field);
         if (!childKey) {
+          row.appendChild(renderFieldPlaceholder());
           return;
         }
         row.appendChild(renderChildField(field, item, index));
+        const breakdown = normalizeBreakdown(field);
+        const breakdownKey = `${index}:${childKey}`;
+        if (breakdown && isBreakdownOpen(breakdownKey, breakdown)) {
+          row.appendChild(renderBreakdown(field, item, index, breakdown));
+        }
       });
       if (row.childElementCount) {
         rows.appendChild(row);
@@ -169,29 +193,87 @@ export function createFieldGroup(container, options = {}) {
     return itemEl;
   }
 
+  function isBreakdownOpen(key, breakdown) {
+    if (!breakdown) {
+      return false;
+    }
+    if (expandedBreakdowns.has(key)) {
+      return true;
+    }
+    if (collapsedBreakdowns.has(key)) {
+      return false;
+    }
+    return Boolean(breakdown.defaultOpen);
+  }
+
   function renderChildField(field, item, index) {
     const childKey = getFieldKey(field);
     const type = getFieldType(field);
+    const breakdown = normalizeBreakdown(field);
+    const breakdownKey = `${index}:${childKey}`;
+    const breakdownOpen = isBreakdownOpen(breakdownKey, breakdown);
+    const warningKeys = breakdown ? [childKey, ...getBreakdownFieldKeys(breakdown)] : [childKey];
+    const fieldWarnings = getFieldWarnings(index, warningKeys);
     const row = document.createElement("div");
-    row.className = "ui-field ui-field-group-child";
+    row.className = [
+      "ui-field ui-field-group-child",
+      fieldWarnings.length ? "has-warning" : "",
+    ].filter(Boolean).join(" ");
     row.dataset.fieldKey = childKey;
 
     const label = document.createElement("label");
     label.className = type === "checkbox" ? "ui-field-group-checkbox" : "ui-label";
     label.textContent = getFieldLabel(field, childKey);
 
+    const warningBadge = renderWarningBadge(fieldWarnings);
+
+    let labelNode = label;
+    if (breakdown) {
+      labelNode = document.createElement("div");
+      labelNode.className = "ui-field-group-child-label-row";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "ui-field-group-breakdown-toggle";
+      toggle.setAttribute("aria-expanded", breakdownOpen ? "true" : "false");
+      toggle.setAttribute("aria-label", `${breakdownOpen ? "Hide" : "Show"} ${breakdown.label}`);
+      toggle.title = `${breakdownOpen ? "Hide" : "Show"} ${breakdown.label}`;
+      toggle.appendChild(createIcon(breakdownOpen ? "navigation.chevron-up" : "navigation.chevron-down", { size: 14 }));
+      on(toggle, "click", () => {
+        if (isBreakdownOpen(breakdownKey, breakdown)) {
+          expandedBreakdowns.delete(breakdownKey);
+          collapsedBreakdowns.add(breakdownKey);
+        } else {
+          collapsedBreakdowns.delete(breakdownKey);
+          expandedBreakdowns.add(breakdownKey);
+        }
+        render();
+      });
+      const controls = document.createElement("span");
+      controls.className = "ui-field-group-child-label-controls";
+      if (warningBadge) {
+        controls.appendChild(warningBadge);
+      }
+      controls.appendChild(toggle);
+      labelNode.append(label, controls);
+    } else if (warningBadge) {
+      label.appendChild(warningBadge);
+    }
+
     const control = createControl(field, item?.[childKey] ?? field?.default_value ?? "");
     if (!control) {
       return row;
     }
 
-    if (type === "checkbox") {
+    if (type === "checkbox" || type === "checkbox-group") {
       row.appendChild(control);
     } else {
-      row.append(label, control);
+      row.append(labelNode, control);
     }
 
     const updateValue = () => {
+      const previousItem = currentOptions.repeatable
+        ? { ...(safeArray(value)[index] || {}) }
+        : { ...(value && typeof value === "object" ? value : {}) };
       const nextItems = currentOptions.repeatable
         ? safeArray(value).map((sourceItem) => ({ ...(sourceItem || {}) }))
         : [{ ...(value && typeof value === "object" ? value : {}) }];
@@ -199,16 +281,82 @@ export function createFieldGroup(container, options = {}) {
         nextItems[index] = {};
       }
       nextItems[index][childKey] = getControlValue(control, field);
+      const shouldRender = applyComputedValues(nextItems[index], currentOptions.fields, childKey);
+      const shouldRefreshVisibility = visibilitySignature(previousItem, currentOptions.fieldRows) !== visibilitySignature(nextItems[index], currentOptions.fieldRows);
       value = currentOptions.repeatable ? nextItems : nextItems[0];
-      emitChange();
+      const nextValidation = getCurrentValidation();
+      const shouldRefreshValidationUi = currentOptions.autoValidate && validationWarningSignature(renderedValidation) !== validationWarningSignature(nextValidation);
+      renderedValidation = nextValidation;
+      emitChange(nextValidation);
+      if (shouldRender || shouldRefreshVisibility || shouldRefreshValidationUi) {
+        render();
+      }
     };
 
     on(control, "change", updateValue);
-    if (!["select", "multiselect", "checkbox"].includes(type)) {
+    if (!["select", "multiselect", "checkbox", "number-stepper", "number_stepper"].includes(type)) {
       on(control, "input", updateValue);
     }
 
     return row;
+  }
+
+  function renderFieldPlaceholder() {
+    const placeholder = document.createElement("div");
+    placeholder.className = "ui-field-group-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+    return placeholder;
+  }
+
+  function renderBreakdown(field, item, index, breakdown) {
+    const wrap = document.createElement("div");
+    wrap.className = "ui-field-group-breakdown";
+    wrap.dataset.breakdownFor = getFieldKey(field);
+    wrap.style.setProperty("--ui-field-group-column-span", String(Math.max(Number(field?.breakdown?.columns || 0), 1)));
+
+    const title = document.createElement("div");
+    title.className = "ui-field-group-breakdown-title";
+    title.textContent = breakdown.label;
+    wrap.appendChild(title);
+
+    const validationLines = getBreakdownValidationLines(index, item, breakdown);
+    if (validationLines.length) {
+      const warningList = document.createElement("div");
+      warningList.className = "ui-field-group-breakdown-warnings";
+      validationLines.forEach((warning) => {
+        const line = document.createElement("div");
+        line.className = [
+          "ui-field-group-breakdown-warning",
+          warning.invalid ? "is-invalid" : "is-valid",
+        ].filter(Boolean).join(" ");
+        line.textContent = warning.message || "Check this breakdown.";
+        warningList.appendChild(line);
+      });
+      wrap.appendChild(warningList);
+    }
+
+    normalizeChildFieldRows({ fields: breakdown.fields }).forEach((fieldRow) => {
+      const renderRow = safeArray(fieldRow).filter((field) => !field || isFieldVisibleForItem(field, item));
+      if (!renderRow.some((field) => field && getFieldKey(field))) {
+        return;
+      }
+      const row = document.createElement("div");
+      row.className = "ui-field-group-breakdown-row";
+      row.style.setProperty("--ui-field-group-columns", String(Math.max(renderRow.length, 1)));
+      renderRow.forEach((child) => {
+        const key = getFieldKey(child);
+        if (key) {
+          row.appendChild(renderChildField(child, item, index));
+        } else {
+          row.appendChild(renderFieldPlaceholder());
+        }
+      });
+      if (row.childElementCount) {
+        wrap.appendChild(row);
+      }
+    });
+
+    return wrap;
   }
 
   function createControl(field, rawValue) {
@@ -282,6 +430,33 @@ export function createFieldGroup(container, options = {}) {
       return host;
     }
 
+    if (type === "number-stepper" || type === "number_stepper") {
+      const host = document.createElement("div");
+      host.className = "ui-field-group-number-stepper-host";
+      const numberStepper = createNumberStepper(host, {
+        name: getFieldKey(field),
+        value: rawValue,
+        min: field?.min ?? 0,
+        max: field?.max,
+        step: field?.step ?? 1,
+        decimals: field?.decimals ?? 0,
+        required: isRequiredField(field),
+        disabled: Boolean(field?.disabled),
+        readonly: Boolean(field?.readonly),
+        placeholder: field?.placeholder || "",
+        ariaLabel: getFieldLabel(field, getFieldKey(field)),
+        allowEmpty: field?.allowEmpty ?? !isRequiredField(field),
+        onInput() {
+          host.dispatchEvent(new Event("input", { bubbles: true }));
+        },
+        onChange() {
+          host.dispatchEvent(new Event("change", { bubbles: true }));
+        },
+      });
+      host.__uiNumberStepperInstance = numberStepper;
+      return host;
+    }
+
     const input = document.createElement("input");
     input.className = "ui-input";
     if (type === "checkbox") {
@@ -308,10 +483,10 @@ export function createFieldGroup(container, options = {}) {
     return input;
   }
 
-  function emitChange() {
+  function emitChange(validation = getCurrentValidation()) {
     currentOptions.onChange?.(cloneValue(value), {
       name: currentOptions.name,
-      validation: validateGroup(currentOptions, value),
+      validation,
     });
   }
 
@@ -322,6 +497,48 @@ export function createFieldGroup(container, options = {}) {
 
   function clearListeners() {
     listeners.splice(0).forEach((off) => off());
+  }
+
+  function getCurrentValidation() {
+    return validateGroup({
+      ...currentOptions,
+      enabledBreakdowns: expandedBreakdowns,
+      collapsedBreakdowns,
+    }, value);
+  }
+
+  function getItemWarnings(index) {
+    const prefix = getItemPathPrefix(currentOptions, index);
+    return safeArray(renderedValidation.warnings).filter((warning) => String(warning?.field_key || "").startsWith(prefix));
+  }
+
+  function getFieldWarnings(index, keys) {
+    const keySet = new Set(safeArray(keys).filter(Boolean));
+    return getItemWarnings(index).filter((warning) => {
+      const warningKey = getLastPathSegment(warning?.field_key);
+      const related = safeArray(warning?.related_fields);
+      return keySet.has(warningKey) || related.some((key) => keySet.has(key));
+    });
+  }
+
+  function getBreakdownValidationLines(index, item, breakdown) {
+    const breakdownKeys = getBreakdownFieldKeys(breakdown);
+    const options = {
+      ...currentOptions,
+      enabledBreakdowns: expandedBreakdowns,
+      collapsedBreakdowns,
+    };
+    return safeArray(currentOptions.validations).map((rule) => {
+      const context = getRuleBreakdownContext(rule, currentOptions);
+      if (!context || !context.keys.some((key) => breakdownKeys.includes(key))) {
+        return null;
+      }
+      const result = evaluateValidationRule(rule, item, options, index);
+      return {
+        invalid: Boolean(result),
+        message: result?.message || getValidationRuleMessage(rule, currentOptions),
+      };
+    }).filter(Boolean);
   }
 }
 
@@ -367,6 +584,7 @@ export function isRepeatableFieldGroup(field = {}) {
 
 function validateGroup(options, rawValue) {
   const errors = [];
+  const warnings = [];
   const items = options.repeatable ? safeArray(rawValue) : [rawValue && typeof rawValue === "object" ? rawValue : {}];
 
   if (options.required && (!items.length || items.every((item) => isEmptyItem(item, options.fields)))) {
@@ -375,6 +593,9 @@ function validateGroup(options, rawValue) {
 
   items.forEach((item, index) => {
     options.fields.forEach((field) => {
+      if (!isFieldVisibleForItem(field, item)) {
+        return;
+      }
       const childKey = getFieldKey(field);
       const childValue = item && typeof item === "object" ? item[childKey] : "";
       const trimmed = String(childValue ?? "").trim();
@@ -384,7 +605,7 @@ function validateGroup(options, rawValue) {
         errors.push({ field_key: nestedKey, error: "Required value is missing" });
       }
 
-      if (getFieldType(field) === "number" && trimmed) {
+      if (isNumberFieldType(field) && trimmed) {
         const numeric = Number(trimmed);
         if (!Number.isFinite(numeric)) {
           errors.push({ field_key: nestedKey, error: "Value must be a valid number" });
@@ -398,11 +619,26 @@ function validateGroup(options, rawValue) {
         }
       }
     });
+    safeArray(options.validations).forEach((rule) => {
+      if (!shouldEvaluateValidationRule(rule, item, options, index)) {
+        return;
+      }
+      const result = evaluateValidationRule(rule, item, options, index);
+      if (!result) {
+        return;
+      }
+      if (result.severity === "error") {
+        errors.push({ field_key: result.field_key, error: result.message, related_fields: result.related_fields });
+      } else {
+        warnings.push({ field_key: result.field_key, message: result.message, related_fields: result.related_fields });
+      }
+    });
   });
 
   return {
     status: errors.length === 0,
     errors,
+    warnings,
   };
 }
 
@@ -413,6 +649,7 @@ function normalizeOptions(options = {}) {
   const candidateFields = Object.prototype.hasOwnProperty.call(options, "rawFields") ? options.rawFields : options.fields;
   const rawFields = hasUsableFields(candidateFields) ? candidateFields : preset?.fields ?? candidateFields;
   const fieldRows = normalizeChildFieldRows({ fields: rawFields });
+  const fields = flattenFieldRows(fieldRows);
   return {
     ...DEFAULT_OPTIONS,
     ...(preset || {}),
@@ -422,10 +659,211 @@ function normalizeOptions(options = {}) {
     repeatable: Boolean(options?.repeatable ?? options?.multiple ?? config?.repeatable ?? preset?.repeatable),
     required: isRequiredField(options),
     chrome: options?.chrome !== false,
+    autoValidate: parseBoolean(options?.autoValidate ?? options?.validateOnChange ?? config?.autoValidate ?? config?.validateOnChange ?? preset?.autoValidate ?? true),
     rawFields: cloneFieldDefinitions(rawFields),
     fieldRows,
-    fields: flattenFieldRows(fieldRows),
+    fields: flattenFieldDefinitions(fields),
+    validations: cloneValidations(options?.validations ?? preset?.validations ?? config?.validations ?? []),
   };
+}
+
+function evaluateValidationRule(rule, item, options, index) {
+  if (!rule || typeof rule !== "object") {
+    return null;
+  }
+  const type = String(rule.type || "").toLowerCase();
+  const relatedFields = safeArray(rule.related_fields ?? rule.relatedFields);
+  const field = String(rule.field || rule.key || "").trim();
+  const fields = safeArray(rule.fields).map((key) => String(key || "").trim()).filter(Boolean);
+  const targetField = field || fields[0] || String(rule.maxField || rule.max_field || "").trim();
+  const fieldKey = buildNestedFieldKey(options, index, targetField || options.name);
+  const severity = String(rule.severity || "warning").toLowerCase() === "error" ? "error" : "warning";
+
+  if (type === "lte" || type === "max") {
+    const value = getNumericItemValue(item, field);
+    const max = getRuleMax(rule, item);
+    if (!field || max == null || value <= max) {
+      return null;
+    }
+    return {
+      field_key: fieldKey,
+      message: rule.message || `${getHumanFieldLabel(options, field)} should not exceed ${getRuleMaxLabel(rule, options)}.`,
+      related_fields: [...new Set([field, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
+      severity,
+    };
+  }
+
+  if (type === "sum_lte" || type === "sum_max") {
+    const sum = fields.reduce((total, key) => total + getNumericItemValue(item, key), 0);
+    const max = getRuleMax(rule, item);
+    if (!fields.length || max == null || sum <= max) {
+      return null;
+    }
+    return {
+      field_key: fieldKey,
+      message: rule.message || `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should not exceed ${getRuleMaxLabel(rule, options)}.`,
+      related_fields: [...new Set([...fields, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
+      severity,
+    };
+  }
+
+  if (type === "sum_eq" || type === "sum_equals") {
+    const sum = fields.reduce((total, key) => total + getNumericItemValue(item, key), 0);
+    const max = getRuleMax(rule, item);
+    if (!fields.length || max == null || sum === max) {
+      return null;
+    }
+    return {
+      field_key: fieldKey,
+      message: rule.message || `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should equal ${getRuleMaxLabel(rule, options)}.`,
+      related_fields: [...new Set([...fields, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
+      severity,
+    };
+  }
+
+  return null;
+}
+
+function getValidationRuleMessage(rule, options) {
+  if (rule?.message) {
+    return String(rule.message);
+  }
+  const type = String(rule?.type || "").toLowerCase();
+  const field = String(rule?.field || rule?.key || "").trim();
+  const fields = safeArray(rule?.fields).map((key) => String(key || "").trim()).filter(Boolean);
+  if (type === "lte" || type === "max") {
+    return `${getHumanFieldLabel(options, field)} should not exceed ${getRuleMaxLabel(rule, options)}.`;
+  }
+  if (type === "sum_eq" || type === "sum_equals") {
+    return `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should equal ${getRuleMaxLabel(rule, options)}.`;
+  }
+  if (type === "sum_lte" || type === "sum_max") {
+    return `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should not exceed ${getRuleMaxLabel(rule, options)}.`;
+  }
+  return "Check this breakdown.";
+}
+
+function shouldEvaluateValidationRule(rule, item, options, index) {
+  const breakdown = getRuleBreakdownContext(rule, options);
+  if (!breakdown) {
+    return true;
+  }
+  const stateKey = `${index}:${breakdown.parentKey}`;
+  if (options.enabledBreakdowns?.has?.(stateKey)) {
+    return true;
+  }
+  if (breakdown.defaultOpen && !options.collapsedBreakdowns?.has?.(stateKey)) {
+    return true;
+  }
+  return false;
+}
+
+function getRuleBreakdownContext(rule, options) {
+  const keys = getValidationRuleKeys(rule);
+  if (!keys.length) {
+    return null;
+  }
+  for (const field of safeArray(options.fieldRows).flatMap((row) => safeArray(row))) {
+    const parentKey = getFieldKey(field);
+    const breakdown = normalizeBreakdown(field);
+    if (!parentKey || !breakdown) {
+      continue;
+    }
+    const breakdownKeys = getBreakdownFieldKeys(breakdown);
+    const matchedKeys = keys.filter((key) => breakdownKeys.includes(key));
+    if (matchedKeys.length) {
+      return {
+        parentKey,
+        defaultOpen: Boolean(breakdown.defaultOpen),
+        keys: matchedKeys,
+      };
+    }
+  }
+  return null;
+}
+
+function getValidationRuleKeys(rule) {
+  return [
+    String(rule?.field || rule?.key || "").trim(),
+    ...safeArray(rule?.fields).map((key) => String(key || "").trim()),
+    String(rule?.maxField || rule?.max_field || "").trim(),
+    ...safeArray(rule?.related_fields ?? rule?.relatedFields).map((key) => String(key || "").trim()),
+  ].filter(Boolean);
+}
+
+function getRuleMax(rule, item) {
+  const maxField = String(rule.maxField || rule.max_field || "").trim();
+  if (maxField) {
+    return getNumericItemValue(item, maxField);
+  }
+  if (rule.max !== null && rule.max !== undefined && rule.max !== "") {
+    const max = Number(rule.max);
+    return Number.isFinite(max) ? max : null;
+  }
+  return null;
+}
+
+function getRuleMaxLabel(rule, options) {
+  const maxField = String(rule.maxField || rule.max_field || "").trim();
+  return maxField ? getHumanFieldLabel(options, maxField) : String(rule.max);
+}
+
+function getNumericItemValue(item, key) {
+  const number = Number(item && typeof item === "object" ? item[key] ?? 0 : 0);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getHumanFieldLabel(options, key) {
+  const field = safeArray(options.fields).find((candidate) => getFieldKey(candidate) === key);
+  return field ? getFieldLabel(field, key) : String(key || "value").replace(/_/g, " ");
+}
+
+function buildNestedFieldKey(options, index, key) {
+  if (!options.name) {
+    return options.repeatable ? `${index}.${key}` : String(key);
+  }
+  return options.repeatable ? `${options.name}.${index}.${key}` : `${options.name}.${key}`;
+}
+
+function getItemPathPrefix(options, index) {
+  if (!options.name) {
+    return options.repeatable ? `${index}.` : "";
+  }
+  return options.repeatable ? `${options.name}.${index}.` : `${options.name}.`;
+}
+
+function getLastPathSegment(path) {
+  const parts = String(path || "").split(".");
+  return parts[parts.length - 1] || "";
+}
+
+function getBreakdownFieldKeys(breakdown) {
+  return flattenFieldDefinitions(flattenFieldRows(normalizeChildFieldRows({ fields: breakdown?.fields }))).map(getFieldKey).filter(Boolean);
+}
+
+function renderWarningBadge(warnings) {
+  if (!safeArray(warnings).length) {
+    return null;
+  }
+  const badge = document.createElement("span");
+  badge.className = "ui-field-group-warning-badge";
+  badge.textContent = "!";
+  badge.title = safeArray(warnings).map((warning) => warning.message || warning.warning || warning.error).filter(Boolean).join("\n");
+  return badge;
+}
+
+function cloneValidations(validations) {
+  return safeArray(validations).map((rule) => (rule && typeof rule === "object" && !Array.isArray(rule) ? { ...rule } : null)).filter(Boolean);
+}
+
+function validationWarningSignature(validation) {
+  return JSON.stringify({
+    warnings: safeArray(validation?.warnings).map((item) => ({
+      field_key: item?.field_key || "",
+      message: item?.message || item?.warning || "",
+      related_fields: safeArray(item?.related_fields).join("|"),
+    })),
+  });
 }
 
 function resolvePresetOptions(options = {}, config = {}) {
@@ -513,13 +951,157 @@ function normalizeValue(rawValue, options) {
 
 function normalizeItem(rawValue, options) {
   const source = rawValue && typeof rawValue === "object" && !Array.isArray(rawValue) ? rawValue : {};
-  return options.fields.reduce((acc, field) => {
+  const item = options.fields.reduce((acc, field) => {
     const key = getFieldKey(field);
-    if (key) {
-      acc[key] = source[key] ?? field?.default_value ?? "";
+    if (key && !isComputedField(field)) {
+      acc[key] = normalizeFieldValue(field, source[key] ?? field?.default_value ?? "");
     }
     return acc;
   }, {});
+  applyComputedValues(item, options.fields, "", source);
+  return item;
+}
+
+function normalizeFieldValue(field, value) {
+  const type = getFieldType(field);
+  if (type === "number-stepper" || type === "number_stepper") {
+    if (value == null || value === "") {
+      return field?.allowEmpty === false || isRequiredField(field) ? Number(field?.min ?? 0) : null;
+    }
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return field?.allowEmpty === false || isRequiredField(field) ? Number(field?.min ?? 0) : null;
+    }
+    let next = number;
+    if (field?.min !== null && field?.min !== undefined && field?.min !== "") {
+      next = Math.max(next, Number(field.min));
+    }
+    if (field?.max !== null && field?.max !== undefined && field?.max !== "") {
+      next = Math.min(next, Number(field.max));
+    }
+    return next;
+  }
+  return value;
+}
+
+function applyComputedValues(item, fields, changedKey = "", source = null) {
+  if (!item || typeof item !== "object") {
+    return false;
+  }
+  let visibleChanged = false;
+  safeArray(fields).filter(isComputedField).forEach((field) => {
+    const key = getFieldKey(field);
+    if (!key) {
+      return;
+    }
+    const computedKeys = getComputedFieldKeys(field);
+    if (changedKey && !computedKeys.includes(changedKey)) {
+      return;
+    }
+    const next = computeFieldValue(field, item, source);
+    if (item[key] !== next) {
+      item[key] = next;
+      if (!isHiddenField(field)) {
+        visibleChanged = true;
+      }
+    }
+  });
+  return visibleChanged;
+}
+
+function isComputedField(field) {
+  return Boolean(field?.computed);
+}
+
+function isHiddenField(field) {
+  return parseBoolean(field?.hidden ?? field?.is_hidden ?? false);
+}
+
+function isFieldVisibleForItem(field, item) {
+  if (isHiddenField(field)) {
+    return false;
+  }
+  return matchesVisibleWhen(field?.visibleWhen ?? field?.visible_when, item);
+}
+
+function matchesVisibleWhen(rule, item) {
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) {
+    return true;
+  }
+  return Object.keys(rule).every((key) => {
+    const expected = rule[key];
+    const actual = item && typeof item === "object" ? item[key] : undefined;
+    if (Array.isArray(expected)) {
+      return expected.map(String).includes(String(actual ?? ""));
+    }
+    if (expected && typeof expected === "object" && !Array.isArray(expected)) {
+      if (Object.prototype.hasOwnProperty.call(expected, "not")) {
+        const denied = Array.isArray(expected.not) ? expected.not.map(String) : [String(expected.not)];
+        return !denied.includes(String(actual ?? ""));
+      }
+      if (Object.prototype.hasOwnProperty.call(expected, "in")) {
+        return safeArray(expected.in).map(String).includes(String(actual ?? ""));
+      }
+    }
+    return String(actual ?? "") === String(expected);
+  });
+}
+
+function visibilitySignature(item, fieldRows) {
+  return safeArray(fieldRows).flatMap((row) => safeArray(row))
+    .filter((field) => field && getFieldKey(field))
+    .map((field) => `${getFieldKey(field)}:${isFieldVisibleForItem(field, item) ? "1" : "0"}`)
+    .join("|");
+}
+
+function getComputedFieldKeys(field) {
+  const computed = field?.computed;
+  const expression = typeof computed === "string" ? computed : computed?.expression;
+  const template = typeof computed === "object" && computed ? computed.template : "";
+  return String(expression || template || "").match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+}
+
+function computeFieldValue(field, item, source = null) {
+  const computed = field?.computed;
+  const expression = typeof computed === "string" ? computed : computed?.expression;
+  const template = typeof computed === "object" && computed ? computed.template : "";
+  if (template) {
+    const rendered = String(template).replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (_, key) => String(item[key] ?? "").trim());
+    const normalized = normalizeComputedTemplateValue(rendered);
+    if (normalized) {
+      return normalizeFieldValue(field, normalized);
+    }
+    const fallbackKey = String(computed.fallbackKey ?? computed.fallback_key ?? "").trim();
+    if (fallbackKey && source && typeof source === "object") {
+      return normalizeFieldValue(field, source[fallbackKey] ?? "");
+    }
+    return normalizeFieldValue(field, "");
+  }
+  if (!expression) {
+    return normalizeFieldValue(field, field?.default_value ?? "");
+  }
+  const total = String(expression).split("+").reduce((sum, token) => {
+    const key = token.trim();
+    if (!key) {
+      return sum;
+    }
+    const literal = Number(key);
+    if (Number.isFinite(literal)) {
+      return sum + literal;
+    }
+    const value = Number(item[key] ?? 0);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+  return normalizeFieldValue(field, total);
+}
+
+function normalizeComputedTemplateValue(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/,\s*/g, ", ")
+    .replace(/^[,\s]+|[,\s]+$/g, "")
+    .trim();
 }
 
 function createEmptyItem(options) {
@@ -551,17 +1133,23 @@ function normalizeChildFieldRows(field) {
   const rows = rawFields.map((child, rowIndex) => {
     const sourceFields = Array.isArray(child) ? child : [child];
     return sourceFields
-      .filter((sourceField) => sourceField && typeof sourceField === "object" && !Array.isArray(sourceField))
+      .map((sourceField) => {
+        if (!sourceField || typeof sourceField !== "object" || Array.isArray(sourceField)) {
+          return null;
+        }
+        return sourceField;
+      })
       .map((sourceField, columnIndex) => ({
-        ...sourceField,
-        sort_order: sourceField.sort_order ?? rowIndex + 1,
-        column_order: sourceField.column_order ?? columnIndex + 1,
+        ...(sourceField || {}),
+        sort_order: sourceField?.sort_order ?? rowIndex + 1,
+        column_order: sourceField?.column_order ?? columnIndex + 1,
       }))
-      .sort((a, b) => Number(a?.column_order || 0) - Number(b?.column_order || 0));
-  }).filter((row) => row.length);
+      .sort((a, b) => Number(a?.column_order || 0) - Number(b?.column_order || 0))
+      .map((sourceField) => (getFieldKey(sourceField) ? sourceField : null));
+  }).filter((row) => row.some((sourceField) => sourceField && typeof sourceField === "object"));
 
   if (allSingleRows) {
-    return rows.sort((a, b) => Number(a?.[0]?.sort_order || 0) - Number(b?.[0]?.sort_order || 0));
+    return rows.sort((a, b) => Number(a?.find(Boolean)?.sort_order || 0) - Number(b?.find(Boolean)?.sort_order || 0));
   }
 
   return rows;
@@ -571,13 +1159,45 @@ function flattenFieldRows(rows) {
   return safeArray(rows).flatMap((row) => safeArray(row));
 }
 
+function flattenFieldDefinitions(fields) {
+  const result = [];
+  safeArray(fields).forEach((field) => {
+    if (!field || typeof field !== "object" || Array.isArray(field)) {
+      return;
+    }
+    result.push(field);
+    const breakdown = normalizeBreakdown(field);
+    if (breakdown) {
+      result.push(...flattenFieldDefinitions(flattenFieldRows(normalizeChildFieldRows({ fields: breakdown.fields }))));
+    }
+  });
+  return result;
+}
+
+function normalizeBreakdown(field) {
+  const source = field?.breakdown;
+  if (!source || typeof source !== "object" || Array.isArray(source)) {
+    return null;
+  }
+  const fields = source.fields;
+  if (!hasUsableFields(fields)) {
+    return null;
+  }
+  return {
+    ...source,
+    label: String(source.label || `${getFieldLabel(field, getFieldKey(field))} breakdown`),
+    fields,
+    defaultOpen: Boolean(source.defaultOpen),
+  };
+}
+
 function cloneFieldDefinitions(fields) {
   return safeArray(fields)
     .map((field) => {
       if (Array.isArray(field)) {
-        return field
-          .filter((child) => child && typeof child === "object" && !Array.isArray(child))
-          .map((child) => ({ ...child }));
+        const cloned = field
+          .map((child) => (child && typeof child === "object" && !Array.isArray(child) ? { ...child } : null));
+        return cloned.some(Boolean) ? cloned : null;
       }
       return field && typeof field === "object" ? { ...field } : null;
     })
@@ -614,7 +1234,15 @@ function getControlValue(control, field) {
   if (getFieldType(field) === "checkbox") {
     return control.__uiCheckboxInstance?.getValue?.() ?? false;
   }
+  if (getFieldType(field) === "number-stepper" || getFieldType(field) === "number_stepper") {
+    return control.__uiNumberStepperInstance?.getValue?.() ?? "";
+  }
   return control.value ?? "";
+}
+
+function isNumberFieldType(field) {
+  const type = getFieldType(field);
+  return type === "number" || type === "number-stepper" || type === "number_stepper";
 }
 
 function applyCommonAttrs(control, field) {
@@ -641,7 +1269,7 @@ function isEmptyItem(item, fields) {
   if (!item || typeof item !== "object") {
     return true;
   }
-  return fields.every((field) => !String(item[getFieldKey(field)] ?? "").trim());
+  return fields.filter((field) => isFieldVisibleForItem(field, item)).every((field) => !String(item[getFieldKey(field)] ?? "").trim());
 }
 
 function clearNode(node) {

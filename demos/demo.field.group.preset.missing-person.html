@@ -36,7 +36,8 @@
   name: "missing_persons",
   ...fieldGroupPresets.missingPerson({ label: "Missing Persons" }),
   value: [{
-    name: "Juan Dela Cruz",
+    last_name: "Dela Cruz",
+    first_name: "Juan",
     gender: "Male",
     age: "17",
     last_seen_days: "2",
@@ -72,10 +73,10 @@
       presetKey: "missingPerson",
       name: "missing_persons",
       label: "Missing Persons",
-      initialValue: [{ name: "Juan Dela Cruz", gender: "Male", age: "17", last_seen_days: "2", last_seen_location: "Barangay Hall" }],
+      initialValue: [{ last_name: "Dela Cruz", first_name: "Juan", gender: "Male", age: "17", last_seen_days: "2", last_seen_location: "Barangay Hall" }],
       sampleValue: [
-        { name: "Maria Santos", gender: "Female", age: "22", last_seen_days: "1", last_seen_location: "Public Market" },
-        { name: "Ramon Cruz", gender: "Male", age: "64", last_seen_days: "3", last_seen_location: "Riverside Road" }
+        { last_name: "Santos", first_name: "Maria", gender: "Female", age: "22", last_seen_days: "1", last_seen_location: "Public Market" },
+        { last_name: "Cruz", first_name: "Ramon", gender: "Male", age: "64", last_seen_days: "3", last_seen_location: "Riverside Road" }
       ]
     };
   </script>

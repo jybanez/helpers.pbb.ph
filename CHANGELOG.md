@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.device.selector` as an adapter-driven device selection/test helper with browser-media adapters for camera, microphone, and speaker V1, regular/compact layouts, shared `ui.select` default presentation plus `menu`, `list`, and `native-select` presentation modes, app-owned selection persistence callbacks, demo coverage, and regression coverage.
 - Added `mode: "compact"` to `createDevicePrimer(...)` and `createDevicePrimerModal(...)` for icon-strip device checks with a selected-check detail panel, shimmer checking state, and explicit retry for failed or blocked checks.
 - Added `statusContent` and `statusContentLabel` to `createNavbar(...)` for a persistent inline status region that remains visible beside the mobile hamburger without duplicating into the hamburger menu.
 - Added `ui.signal.strength` as a transport-agnostic 0-4 bar connectivity status primitive with stable compact text, tones, bars-only mode, accessible labels, demo coverage, and regression coverage.
@@ -40,6 +41,23 @@ All notable changes to `helpers.pbb.ph` are documented here.
 - Fixed incident type viewer grouped-field rendering so repeatable group cards use a stacked full-width layout instead of being squeezed into the scalar field value column.
 - Changed incident type viewer repeatable group item headings to the same compact `#1`, `#2` numbering used by the editor.
 - Added `ui.field.group.presets` with plain schema factories for `person`, `address`, `missingPerson`, and `evacuee`; missing-person and evacuee presets extend the base person fields.
+- Added operational field-group presets for `family`, `casualtyPatient`, `infrastructureDamage`, `shelterDamage`, and `roadAccessStatus`, including descriptive SITREP metadata and dedicated demo/reference pages.
+- Field groups now support `type: "number-stepper"` child fields backed by `createNumberStepper(...)`, and numeric preset fields now use the shared stepper controls.
+- Added generic field-group `breakdown` support for collapsed subfields stored flat in the item object, plus simple additive computed fields such as the Family preset's read-only `member_count = adult_count + children_count`.
+- Added non-blocking field-group validation warnings with inline warning indicators for breakdown fields, plus Family preset subtotal checks for overlapping population counts.
+- Added `autoValidate` / `validateOnChange` support to field groups so warning indicators refresh during autosaved operator input without requiring an explicit validate button press.
+- Changed breakdown-linked field-group validation so collapsed breakdowns do not show warnings until the breakdown is opened/enabled.
+- Changed open breakdown validation copy to stay mounted as muted guidance when valid and highlight when invalid, avoiding pop-in/pop-out relayout during autosaved input.
+- Tightened Family preset sex breakdown validation so adult male + female must equal adult count, and child male + female must equal children count.
+- Added generic hidden field support to `ui.field.group` and hid Family `member_count` from the operator UI while keeping it computed in the value payload.
+- Changed person-based field-group presets to collect `last_name` and `first_name`, while keeping hidden computed `name` payload values in `Last, First` format.
+- Added string-template computed fields for grouped values, such as `computed: { template: "{last_name}, {first_name}" }`.
+- Fixed field-group hosted `checkbox-group` controls so their label is not duplicated by an extra outer group label.
+- Added `visibleWhen` support to `ui.field.group` and hid casualty/patient consciousness, triage, and transported fields when condition is `Deceased`.
+- Added a lean repeatable `vehicleInvolved` field-group preset for bystander-friendly road accident vehicle details.
+- Changed `vehicleInvolved.color` from free text to a select of common vehicle colors plus `Other` and `Unknown`.
+- Added `SUV`, `Pick-up`, and `Heavy Equipment` to `vehicleInvolved.vehicle_type` options.
+- Updated the Family preset to use `adult_count` and `children_count` as operator-entered base counts, with adult/children breakdown toggles and computed `member_count`.
 - Grouped fields now resolve built-in presets from `preset`, `field_preset`, `config.preset`, or JSON `config_json.preset` when `fields[]` is omitted, including incident type editor/viewer rendering.
 - Updated field-group demos and preset reference pages to show metadata-only preset declarations alongside factory-spread examples.
 - Added individual field-group preset demo pages for person, address, missing person, and evacuee schemas.

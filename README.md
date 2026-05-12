@@ -39,6 +39,7 @@ css/
     ui.datepicker.css
     ui.elapsed.time.css
     ui.signal.strength.css
+    ui.device.selector.css
     ui.timeline.css
     ui.timeline.scrubber.css
     ui.command.palette.css
@@ -97,6 +98,7 @@ js/
     ui.datepicker.js
     ui.elapsed.time.js
     ui.signal.strength.js
+    ui.device.selector.js
     ui.timeline.js
     ui.timeline.scrubber.js
     ui.command.palette.js
@@ -239,7 +241,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.field.group.js`
   - `createFieldGroup(container, options)` reusable grouped-field editor with optional repeatable entries for workflows such as evacuation registries, missing-person reports, addresses, vehicles, and contact lists
 - `ui.field.group.presets.js`
-  - `fieldGroupPresets` schema factories for common grouped fields: person, address, missing person, and evacuee
+  - `fieldGroupPresets` schema factories for common grouped fields: person, address, missing person, evacuee, family, casualty/patient, infrastructure damage, shelter damage, and road/access status
 - `ui.fieldset.js`
   - `createFieldset(container, options)` semantic grouped form section helper using form-modal-style `rows[]` so pages can mix fields, repeatable field groups, notes, alerts, images, and custom content
 - `ui.device.primer.js`
@@ -406,6 +408,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.datepicker.css` datepicker styles
 - `ui.elapsed.time.css` elapsed-duration readout styles
 - `ui.signal.strength.css` signal-strength status indicator styles
+- `ui.device.selector.css` adapter-driven device selector styles
 - `ui.timeline.css` timeline styles
 - `ui.timeline.scrubber.css` timeline scrubber styles
 - `ui.command.palette.css` command palette styles
@@ -489,7 +492,7 @@ Public component families:
 - Modal and feedback:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
-  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
   - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
@@ -934,7 +937,11 @@ Grouped field example:
   repeatable: true,
   required: true,
   fields: [
-    { key: "name", label: "Complete name", type: "text", required: true },
+    { key: "name", label: "Complete name", type: "text", computed: { template: "{last_name}, {first_name}" }, hidden: true },
+    [
+      { key: "last_name", label: "Last name / Family name", type: "text", required: true },
+      { key: "first_name", label: "First name", type: "text", required: true }
+    ],
     { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
     { key: "age", label: "Age", type: "number", min: 1, max: 100 }
   ]
@@ -960,15 +967,15 @@ Repeatable group value shape:
 
 ```js
 [
-  { name: "Juan Dela Cruz", gender: "Male", age: "17" },
-  { name: "Maria Santos", gender: "Female", age: "22" }
+  { last_name: "Dela Cruz", first_name: "Juan", name: "Dela Cruz, Juan", gender: "Male", age: "17" },
+  { last_name: "Santos", first_name: "Maria", name: "Santos, Maria", gender: "Female", age: "22" }
 ]
 ```
 
 Group validation:
 
 - required group with no non-empty item fails validation
-- required child fields fail with nested `field_key` paths such as `missing_persons.0.name`
+- required child fields fail with nested `field_key` paths such as `missing_persons.0.last_name`
 - child number fields honor `min` and `max`
 - Resources section:
   - rendered only when `resources_needed` is not empty
@@ -2324,7 +2331,11 @@ const registry = createFieldset(container, {
       repeatable: true,
       chrome: false,
       fields: [
-        { key: "name", label: "Complete name", type: "text", required: true },
+        { key: "name", label: "Complete name", type: "text", computed: { template: "{last_name}, {first_name}" }, hidden: true },
+        [
+          { key: "last_name", label: "Last name / Family name", type: "text", required: true },
+          { key: "first_name", label: "First name", type: "text", required: true }
+        ],
         [
           { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
           { key: "age", label: "Age", type: "number", min: 1, max: 120 }
@@ -2337,7 +2348,7 @@ const registry = createFieldset(container, {
 registry.getValues();
 // {
 //   evacuees: [
-//     { name: "Ana Reyes", gender: "Female", age: "34" }
+//     { last_name: "Reyes", first_name: "Ana", name: "Reyes, Ana", gender: "Female", age: "34" }
 //   ]
 // }
 ```
@@ -2412,23 +2423,81 @@ Available presets:
 
 | Preset | Fields |
 |---|---|
-| `person()` | `name`, `gender`, `age` |
+| `person()` | `name` hidden computed from `last_name`/`first_name`, `last_name`, `first_name`, `gender`, `age` |
 | `address()` | `neighborhood`, `barangay`, `town`, `city`, `state`, `country` |
-| `missingPerson()` | `name`, `gender`, `age`, `last_seen_days`, `last_seen_location` |
-| `evacuee()` | `name`, `gender`, `age`, `local_citizen`, `needs` |
+| `missingPerson()` | person fields plus `last_seen_days`, `last_seen_location` |
+| `evacuee()` | person fields plus `local_citizen`, `needs` |
+| `family()` | `household_head`, `adult_count`, `children_count`, `member_count`, `displaced`, `address`; adult/children breakdown subfields |
+| `casualtyPatient()` | person fields plus `condition`, `injury_type`, `consciousness`, `triage_color`, `transported`, `destination_facility` |
+| `infrastructureDamage()` | `asset_type`, `name_location`, `damage_level`, `operational_status`, `estimated_affected_users` |
+| `shelterDamage()` | `structure_type`, `damage_level`, `families_affected`, `persons_affected`, `habitable` |
+| `roadAccessStatus()` | `route_location`, `status`, `obstruction_type`, `passable_by_vehicle_type`, `cleared` |
+| `vehicleInvolved()` | `vehicle_type`, `plate_number`, `color`, `damage_level` |
 
 Preset layout:
 
-- `person()` renders `name` as a full row, then `gender` and `age` as a two-column row.
+- `person()` renders `last_name` / `first_name` as a two-column row, keeps hidden computed `name` in the payload as `Last, First`, then renders `gender` and `age` as a two-column row.
 - `address()` renders three two-column rows: `neighborhood`/`barangay`, `town`/`city`, and `state`/`country`.
 - `missingPerson()` extends person with a `last_seen_days`/`last_seen_location` row.
 - `evacuee()` extends person with full-width `local_citizen` and `needs` rows.
+- `family()` captures affected household counts and local address/sitio/purok text. It intentionally omits barangay/city/province because those are expected to come from the hotline context. `adult_count` and `children_count` are operator-entered base counts, while hidden `member_count` is still computed into the value as `adult_count + children_count` for reporting/SITREP use.
+- `casualtyPatient()` extends person with condition, injury, consciousness, triage, transport, and destination facility fields.
+- In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` remains visible for morgue/hospital/funeral-home routing.
+- `infrastructureDamage()` captures asset damage and operational status for roads, bridges, utilities, facilities, communications, and other infrastructure.
+- `shelterDamage()` focuses on residential/shelter impact using structure types: house, apartment/boarding house, temporary shelter, evacuation center, and other.
+- `roadAccessStatus()` captures route status, obstruction type, passable vehicle types through `checkbox-group`, and clearance state.
+- `vehicleInvolved()` captures lean bystander-friendly vehicle details for road accidents: vehicle type, plate number when visible, common vehicle color through a select field, and apparent damage level.
+- Numeric preset fields use `type: "number-stepper"` so count-style values can be changed through the shared stepper controls while still allowing direct keyboard entry.
+
+Breakdown fields:
+
+- Any field-group child field can define `breakdown: { label, fields, defaultOpen? }`.
+- Breakdown fields render behind a compact toggle beside the parent field label.
+- Breakdown values are stored flat in the same group item object, not nested.
+- `family()` uses breakdowns on:
+  - `adult_count`: `adult_male_count`, `adult_female_count`, `adult_senior_count`, `adult_pwd_count`, `adult_pregnant_count`
+  - `children_count`: `children_male_count`, `children_female_count`, `children_pwd_count`
+
+Computed fields:
+
+- Field groups support simple additive computed expressions such as `computed: "adult_count + children_count"` and string templates such as `computed: { template: "{last_name}, {first_name}" }`.
+- Computed fields are normalized into the same group item object and update when their dependencies change.
+- Use `readonly: true` for computed fields that should display but not accept operator edits.
+- Use `hidden: true` for derived fields that should remain in the normalized value without rendering in the operator UI. Hidden fields are skipped by required/basic validation.
+- Use `visibleWhen` for value-dependent field visibility inside a group. String values mean exact match, arrays mean inclusion, and `{ not: value }` hides a field for one or more excluded values.
+
+Breakdown validation:
+
+- Field groups can define non-blocking `validations` alongside `fields`.
+- `validate()` and `onChange(..., meta.validation)` return `{ status, errors, warnings }`. Warning-only issues keep `status: true`, so autosave flows can persist operator input while still surfacing data-quality issues.
+- `autoValidate` defaults to `true`, refreshing warning indicators only when validation state changes. Set `autoValidate: false` or `validateOnChange: false` when a host wants to show warnings only after calling `validate()`.
+- Rules that reference breakdown subfields stay quiet while that breakdown is collapsed. They start evaluating only when the breakdown is opened/enabled.
+- Open breakdowns render their validation guidance in-place. Valid rules are shown muted, and invalid rules are highlighted, so the breakdown panel does not relayout when a warning appears or clears.
+- Supported validation rule types are `lte` for one field not exceeding another field or fixed `max`, `sum_lte` for a list of fields whose total must not exceed another field or fixed `max`, and `sum_eq` for a list of fields whose total must exactly match another field or fixed `max`.
+- Set `severity: "error"` on a rule only when the issue should block validation status. The default severity is `warning`.
+- `family()` includes exact-match warning rules for adult/child sex subtotals, plus upper-bound rules for senior/PWD subtotals and pregnant adults not exceeding adult female count. Overlapping categories such as senior and PWD are validated individually rather than summed together.
+
+SITREP metadata:
+
+- Operational presets expose a plain `sitrep` array for downstream reporting/aggregation hints.
+- This metadata is descriptive only; it does not render additional input fields.
+- Current SITREP hints are:
+  - `family()`: `affected_families`, `affected_persons`, `vulnerable_population`
+  - `casualtyPatient()`: `injured_count`, `critical_count`, `transported_count`
+  - `infrastructureDamage()`: `damaged_infrastructure_count`, `impassable_roads_bridges`
+  - `shelterDamage()`: `partially_damaged_houses`, `totally_damaged_houses`, `displaced_families`
+  - `roadAccessStatus()`: `blocked_routes`, `cleared_routes`
+  - `vehicleInvolved()`: `vehicles_involved_count`
 
 Custom row layout example:
 
 ```js
 fields: [
-  { key: "name", label: "Complete name", type: "text", required: true },
+  { key: "name", label: "Complete name", type: "text", computed: { template: "{last_name}, {first_name}" }, hidden: true },
+  [
+    { key: "last_name", label: "Last name / Family name", type: "text", required: true },
+    { key: "first_name", label: "First name", type: "text", required: true }
+  ],
   [
     { key: "gender", label: "Gender", type: "select", options: ["Male", "Female"] },
     { key: "age", label: "Age", type: "number", min: 0, max: 120 }
@@ -2482,6 +2551,12 @@ Related demos:
 - `demos/demo.field.group.preset.address.html`
 - `demos/demo.field.group.preset.missing-person.html`
 - `demos/demo.field.group.preset.evacuee.html`
+- `demos/demo.field.group.preset.family.html`
+- `demos/demo.field.group.preset.casualty-patient.html`
+- `demos/demo.field.group.preset.infrastructure-damage.html`
+- `demos/demo.field.group.preset.shelter-damage.html`
+- `demos/demo.field.group.preset.road-access-status.html`
+- `demos/demo.field.group.preset.vehicle-involved.html`
 - `demos/demo.fieldset.html`
 
 ### `createIcon(name, options)`, `getIconDefinition(name)`, `listIcons()`, `listIconCategories()` (`js/ui/ui.icons.js`)
@@ -4675,6 +4750,71 @@ Non-goals:
 Related demos:
 
 - `demos/demo.signal.strength.html`
+
+### `createDeviceSelector(container, data, options)` (`js/ui/ui.device.selector.js`)
+
+Purpose:
+
+- Adapter-driven device selection and test UX for browser media devices and future local-device sources.
+- V1 includes browser-media adapters for camera, microphone, and speaker/output selection where the browser supports it.
+- Host apps own persistence, call/session orchestration, hardware protocols, printer routing, and local-agent policy.
+
+Basic usage:
+
+```js
+import { createDeviceSelector, createMediaDeviceAdapter } from "./js/ui/ui.device.selector.js";
+
+const selector = createDeviceSelector(container, {
+  kind: "camera",
+  label: "Camera",
+  selectedDeviceId: savedCameraId,
+}, {
+  adapter: createMediaDeviceAdapter({ kind: "videoinput" }),
+  onSelectionChange({ selectedDeviceId }) {
+    saveCameraId(selectedDeviceId);
+  },
+});
+```
+
+Data:
+
+- `kind`: `camera`, `microphone`, `speaker`, `printer`, `scanner`, `usb`, `bluetooth`, `serial`, `hid`, or `custom`
+- `label`: visible selector label
+- `description`: optional regular-layout helper text
+- `devices`: optional normalized device list for app-provided/manual adapters
+- `selectedDeviceId`: current selected device id
+- `status`: optional initial state
+- `detailText`: optional status detail text
+
+Options:
+
+- `adapter`: optional adapter with `isSupported`, `listDevices`, `requestPermission`, `requestDevice`, `selectDevice`, `testDevice`, and `subscribe` hooks
+- `layout`: `regular` or `compact`
+- `presentation`: `select` by default using shared `ui.select`; also supports `menu`, `list`, and `native-select`
+- `autoRefresh`: defaults to `true` when an adapter is provided
+- `context`: optional app-owned context passed to adapter hooks
+- callbacks: `onRefresh`, `onPermissionRequest`, `onRequestDevice`, `onSelectionChange`, `onTestStart`, `onTestComplete`, `onError`
+
+Methods:
+
+- `refresh()`
+- `requestPermission()`
+- `requestDevice()`
+- `selectDevice(deviceId)`
+- `testSelectedDevice()`
+- `update(data, options?)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not universally enumerate USB, Bluetooth, or printers from the browser.
+- Does not own Realtime call setup, media capture pipelines, persistence policy, or hardware protocols.
+- Does not provide a native local-agent bridge; future local-agent support should use the same adapter contract.
+
+Related demos:
+
+- `demos/demo.device.selector.html`
 
 ### `createMapControls(container, options)` (`js/ui/ui.map.controls.js`)
 

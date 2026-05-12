@@ -162,8 +162,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.field.group": {
     js: "./ui.field.group.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css"],
-    deps: ["ui.checkbox", "ui.checkbox.group", "ui.field.group.presets", "ui.icons"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css", "../../css/ui/ui.number.stepper.css"],
+    deps: ["ui.checkbox", "ui.checkbox.group", "ui.field.group.presets", "ui.icons", "ui.number.stepper"],
     export: "createFieldGroup",
   },
   "ui.field.group.presets": {
@@ -183,6 +183,18 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.icons.css", `../../css/ui/ui.device.primer.css?v=${UI_DEVICE_PRIMER_REV}`],
     deps: ["ui.device.primer"],
     export: "createDevicePrimerModal",
+  },
+  "ui.device.selector": {
+    js: "./ui.device.selector.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css", "../../css/ui/ui.device.selector.css"],
+    deps: ["ui.select"],
+    export: "createDeviceSelector",
+  },
+  "ui.device.selector.media": {
+    js: "./ui.device.selector.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.select.css", "../../css/ui/ui.device.selector.css"],
+    deps: ["ui.device.selector"],
+    export: "createMediaDeviceAdapter",
   },
   "ui.icons": {
     js: `./ui.icons.js?v=${UI_ICONS_REV}`,
@@ -613,6 +625,8 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.field.group.presets",
     "ui.fieldset",
     "ui.property.editor",
+    "ui.device.selector",
+    "ui.device.selector.media",
     "ui.select",
     "ui.tree.select",
     "ui.toggle.button",

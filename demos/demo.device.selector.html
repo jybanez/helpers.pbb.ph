@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Selector Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .sample-card {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .navbar-preview {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, auto) auto;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+    }
+    .brand {
+      min-width: 0;
+      overflow: hidden;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    @media (max-width: 760px) {
+      .navbar-preview {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.device.selector", "ui.device.selector.media"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Device Selector",
+      overview: "Adapter-driven device selection and test UX for browser media devices and future local device sources.",
+      useWhen: [
+        "Use <code>createDeviceSelector(...)</code> when a PBB app needs a consistent camera, microphone, speaker, or adapter-backed device picker.",
+        "Use the browser-media adapter for media-device setup flows before app-owned call/session logic starts."
+      ],
+      avoidWhen: [
+        "Do not use it as a universal USB, Bluetooth, or printer enumeration layer.",
+        "Do not put persistence, Realtime call setup, or hardware protocol ownership inside the Helper component."
+      ],
+      description: "Device Selector renders the UX shell while adapters provide device access. V1 includes browser media adapters; app or local-agent adapters can follow the same contract later.",
+      defaultSampleCode: `const selector = createDeviceSelector(host, {\n  kind: "camera",\n  label: "Camera",\n  selectedDeviceId: savedCameraId,\n}, {\n  adapter: createMediaDeviceAdapter({ kind: "videoinput" }),\n  onSelectionChange({ selectedDeviceId }) {\n    saveCameraId(selectedDeviceId);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createDeviceSelector(container, data, options)</code>", arguments: "<code>container</code>, selector <code>data</code>, selector <code>options</code>", returns: "Device selector instance with refresh, requestPermission, requestDevice, selectDevice, testSelectedDevice, update, getState, and destroy methods" },
+        { factory: "<code>createMediaDeviceAdapter(options)</code>", arguments: "<code>{ kind: 'audioinput' | 'videoinput' | 'audiooutput' }</code>", returns: "Browser-media adapter for microphone, camera, or speaker selection" }
+      ],
+      options: [
+        { option: "<code>adapter</code>", default: "<code>null</code>", description: "Optional device adapter implementing list, permission, selection, test, and subscription hooks." },
+        { option: "<code>layout</code>", default: "<code>\"regular\"</code>", description: "Use <code>regular</code> for setup panels or <code>compact</code> for navbar/status regions." },
+        { option: "<code>autoRefresh</code>", default: "<code>true</code>", description: "Refresh adapter-backed device lists after creation." },
+        { option: "<code>onSelectionChange</code>", default: "<code>null</code>", description: "App-owned persistence hook for selected-device changes." }
+      ],
+      eventsText: "Callbacks include onRefresh, onPermissionRequest, onRequestDevice, onSelectionChange, onTestStart, onTestComplete, and onError.",
+      methods: [
+        { method: "<code>refresh()</code>", description: "Reload devices through the adapter." },
+        { method: "<code>requestPermission()</code>", description: "Run the adapter permission request from a user action." },
+        { method: "<code>requestDevice()</code>", description: "Run adapter-specific device-prompt selection when supported." },
+        { method: "<code>selectDevice(deviceId)</code>", description: "Select a normalized device by id." },
+        { method: "<code>testSelectedDevice()</code>", description: "Run the adapter test hook for the selected device." },
+        { method: "<code>getState()</code>", description: "Return normalized devices, selected device, status, and detail text." },
+        { method: "<code>destroy()</code>", description: "Clear the host and remove adapter subscriptions." }
+      ],
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">Device Selector Demo</h1>
+      <p class="muted">Browser media selectors below use the real browser APIs where available. The adapter example uses mock devices to show the future USB/Bluetooth/local-agent path without requiring hardware.</p>
+    </section>
+
+    <section class="grid">
+      <article class="sample-card">
+        <div id="cameraHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "camera",
+  label: "Camera",
+}, {
+  adapter: createMediaDeviceAdapter({ kind: "videoinput" }),
+  presentation: "select",
+  onSelectionChange({ selectedDeviceId }) {
+    saveCameraId(selectedDeviceId);
+  },
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="menuHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "camera",
+  devices,
+  selectedDeviceId: "cam-2",
+}, {
+  autoRefresh: false,
+  presentation: "menu",
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="listHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "microphone",
+  devices,
+  selectedDeviceId: "mic-1",
+}, {
+  autoRefresh: false,
+  presentation: "list",
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="nativeHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "speaker",
+  devices,
+  selectedDeviceId: "default",
+}, {
+  autoRefresh: false,
+  presentation: "native-select",
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="microphoneHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "microphone",
+  label: "Microphone",
+}, {
+  adapter: createMediaDeviceAdapter({ kind: "audioinput" }),
+  presentation: "select",
+  onSelectionChange({ selectedDeviceId }) {
+    saveMicrophoneId(selectedDeviceId);
+  },
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="speakerHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "speaker",
+  label: "Speaker",
+}, {
+  adapter: createMediaDeviceAdapter({ kind: "audiooutput" }),
+  presentation: "select",
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="mockHost"></div>
+        <pre>const adapter = {
+  async listDevices() {
+    return [{ id: "agent-printer-1", label: "Desk Printer", kind: "printer" }];
+  },
+  async testDevice(device) {
+    return { message: `${device.label} adapter test completed.` };
+  },
+};</pre>
+      </article>
+      <article class="sample-card">
+        <div id="unsupportedHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "usb",
+  label: "Unsupported Adapter",
+}, {
+  adapter: {
+    async isSupported() { return false; },
+    async listDevices() { return []; },
+  },
+});</pre>
+      </article>
+      <article class="sample-card">
+        <div id="permissionHost"></div>
+        <pre>createDeviceSelector(host, {
+  kind: "microphone",
+  status: "permission-required",
+  detailText: "Allow microphone access before device labels can be shown.",
+}, {
+  autoRefresh: false,
+});</pre>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="navbar-preview">
+        <div class="brand">Hotline Operator</div>
+        <div id="compactHost"></div>
+        <button class="ui-button" type="button">Menu</button>
+      </div>
+      <pre>createDeviceSelector(navbarHost, {
+  kind: "microphone",
+  label: "Mic",
+  devices: [{ id: "default", label: "System default microphone", kind: "microphone" }],
+  selectedDeviceId: "default",
+}, {
+  autoRefresh: false,
+  layout: "compact",
+  presentation: "select",
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Events</h2>
+      <pre id="log">Waiting for device selector activity...</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createDeviceSelector = await uiLoader.get("ui.device.selector");
+    const createMediaDeviceAdapter = await uiLoader.get("ui.device.selector.media");
+    const logNode = document.getElementById("log");
+
+    const log = (event, payload = {}) => {
+      logNode.textContent = `${new Date().toLocaleTimeString()} ${event}\n${JSON.stringify(payload, null, 2)}`;
+    };
+
+    createDeviceSelector(document.getElementById("cameraHost"), {
+      kind: "camera",
+      label: "Camera",
+      description: "Select the video input for citizen/operator media flows.",
+    }, {
+      adapter: createMediaDeviceAdapter({ kind: "videoinput" }),
+      onSelectionChange: (payload) => log("camera.selected", payload),
+      onError: ({ state }) => log("camera.error", state),
+    });
+
+    createDeviceSelector(document.getElementById("microphoneHost"), {
+      kind: "microphone",
+      label: "Microphone",
+      description: "Select the audio input before app-owned call setup.",
+    }, {
+      adapter: createMediaDeviceAdapter({ kind: "audioinput" }),
+      onSelectionChange: (payload) => log("microphone.selected", payload),
+      onError: ({ state }) => log("microphone.error", state),
+    });
+
+    createDeviceSelector(document.getElementById("speakerHost"), {
+      kind: "speaker",
+      label: "Speaker",
+      description: "Speaker selection falls back to the system default when direct output routing is unavailable.",
+    }, {
+      adapter: createMediaDeviceAdapter({ kind: "audiooutput" }),
+      onSelectionChange: (payload) => log("speaker.selected", payload),
+      onError: ({ state }) => log("speaker.error", state),
+    });
+
+    const mockAdapter = {
+      async isSupported() { return true; },
+      async listDevices() {
+        return [
+          { id: "agent-printer-1", label: "Barangay Desk Printer", kind: "printer", transport: "local-agent", capabilities: { canTest: true } },
+          { id: "bt-radio-1", label: "Bluetooth Dispatch Radio", kind: "bluetooth", transport: "local-agent", capabilities: { canTest: true } },
+        ];
+      },
+      async testDevice(device) {
+        return { message: `${device.label} adapter test completed.` };
+      },
+    };
+
+    const presentationDevices = [
+      { id: "cam-1", label: "Front Camera", kind: "camera", transport: "browser-media" },
+      { id: "cam-2", label: "USB Camera", kind: "camera", transport: "browser-media" },
+    ];
+
+    createDeviceSelector(document.getElementById("menuHost"), {
+      kind: "camera",
+      label: "Menu Presentation",
+      description: "Button-triggered menu for compact chrome.",
+      devices: presentationDevices,
+      selectedDeviceId: "cam-2",
+    }, {
+      autoRefresh: false,
+      presentation: "menu",
+      onSelectionChange: (payload) => log("menu.selected", payload),
+    });
+
+    createDeviceSelector(document.getElementById("listHost"), {
+      kind: "microphone",
+      label: "List Presentation",
+      description: "Visible rows for setup and kiosk-style screens.",
+      devices: [
+        { id: "mic-1", label: "USB Headset Microphone", kind: "microphone", transport: "browser-media" },
+        { id: "mic-2", label: "Laptop Microphone", kind: "microphone", transport: "browser-media" },
+      ],
+      selectedDeviceId: "mic-1",
+    }, {
+      autoRefresh: false,
+      presentation: "list",
+      onSelectionChange: (payload) => log("list.selected", payload),
+    });
+
+    createDeviceSelector(document.getElementById("nativeHost"), {
+      kind: "speaker",
+      label: "Native Select Fallback",
+      description: "Lightweight browser select fallback for constrained pages.",
+      devices: [
+        { id: "default", label: "System default speaker", kind: "speaker", transport: "browser-media" },
+        { id: "speaker-2", label: "USB Speaker", kind: "speaker", transport: "browser-media" },
+      ],
+      selectedDeviceId: "default",
+    }, {
+      autoRefresh: false,
+      presentation: "native-select",
+      onSelectionChange: (payload) => log("native.selected", payload),
+    });
+
+    createDeviceSelector(document.getElementById("mockHost"), {
+      kind: "custom",
+      label: "Local Agent Devices",
+      description: "Mock adapter showing the future OS-level/local-agent path.",
+    }, {
+      adapter: mockAdapter,
+      onSelectionChange: (payload) => log("agent.selected", payload),
+      onTestComplete: ({ result }) => log("agent.test", result),
+    });
+
+    createDeviceSelector(document.getElementById("unsupportedHost"), {
+      kind: "usb",
+      label: "Unsupported Adapter",
+      description: "Shows the browser/adapter unsupported state.",
+    }, {
+      adapter: {
+        async isSupported() { return false; },
+        async listDevices() { return []; },
+      },
+    });
+
+    createDeviceSelector(document.getElementById("permissionHost"), {
+      kind: "microphone",
+      label: "Permission Needed",
+      description: "Manual state example for permission-gated devices.",
+      status: "permission-required",
+      detailText: "Allow microphone access before device labels can be shown.",
+    }, {
+      autoRefresh: false,
+    });
+
+    createDeviceSelector(document.getElementById("compactHost"), {
+      kind: "microphone",
+      label: "Mic",
+      devices: [{ id: "default", label: "System default microphone", kind: "microphone", transport: "manual" }],
+      selectedDeviceId: "default",
+    }, {
+      autoRefresh: false,
+      layout: "compact",
+      onSelectionChange: (payload) => log("compact.selected", payload),
+    });
+  </script>
+</body>
+</html>

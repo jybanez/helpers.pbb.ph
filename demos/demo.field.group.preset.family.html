@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Field Group Preset Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 14px; align-items: start; }
+    .stack { display: grid; gap: 12px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { min-height: 260px; color: #b2c2e5; }
+    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.field.group", "ui.field.group.presets"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Family Field Group Preset",
+      overview: "Focused reference for repeatable affected-family records.",
+      useWhen: ["Use <code>fieldGroupPresets.family()</code> for affected-family and household impact intake."],
+      avoidWhen: ["Do not duplicate barangay/city/province in this preset when the hotline context already provides them."],
+      description: "The family preset captures household head, adult/children counts, optional breakdown subfields, displaced state, and local address/sitio/purok details. Member count is hidden from the operator UI but remains computed from adult count plus children count in the value payload. It exposes warning validations for breakdown inconsistencies and SITREP hints for affected families, affected persons, and vulnerable population.",
+      defaultSampleCode: `const group = createFieldGroup(host, {
+  name: "families",
+  ...fieldGroupPresets.family({ label: "Families" }),
+  value: [{
+    household_head: "Ana Reyes",
+    adult_count: 3,
+    children_count: 2,
+    adult_female_count: 2,
+    adult_pregnant_count: 1,
+    children_pwd_count: 1,
+    displaced: "Yes",
+    address: "Purok 3"
+  }]
+});`,
+      constructor: [{ factory: "<code>fieldGroupPresets.family(options?)</code>", arguments: "optional preset overrides", returns: "Plain repeatable field-group config for <code>createFieldGroup(...)</code>" }],
+      options: [
+        { option: "<code>label</code>", default: "<code>\"Family\"</code>", description: "Visible group label. Use plural labels for repeatable intake." },
+        { option: "<code>repeatable</code>", default: "<code>true</code>", description: "Returns an array value by default." },
+        { option: "<code>fields</code>", default: "preset row layout", description: "Array replacement for preset fields. Object overrides merge by field key." },
+        { option: "<code>autoValidate</code>", default: "<code>true</code>", description: "Refreshes warning indicators when validation state changes during autosaved input." },
+        { option: "<code>breakdown</code>", default: "adult/children breakdown fields", description: "Adult and children counts expose collapsed breakdown subfields while keeping values flat in each family object." },
+        { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "JSON <code>{ \"preset\": \"family\", \"repeatable\": true }</code> resolves the preset without duplicated <code>fields[]</code>." }
+      ],
+      properties: [
+        { property: "<code>sitrep</code>", type: "<code>Array</code>", description: "<code>affected_families</code>, <code>affected_persons</code>, <code>vulnerable_population</code>." },
+        { property: "<code>member_count.computed</code>", type: "<code>string</code>", description: "<code>adult_count + children_count</code>; hidden from the UI but retained in values." },
+        { property: "<code>adult_count.breakdown</code>", type: "<code>Object</code>", description: "Male, female, senior, PWD, and pregnant adult subcounts." },
+        { property: "<code>children_count.breakdown</code>", type: "<code>Object</code>", description: "Male, female, and PWD children subcounts." },
+        { property: "<code>displaced.options</code>", type: "<code>Array</code>", description: "Uses <code>Yes</code>/<code>No</code> select options." },
+        { property: "<code>validations</code>", type: "<code>Array</code>", description: "Warning rules for adult/child breakdown counts. Warning-only validation keeps <code>status: true</code> for autosave flows." }
+      ],
+      events: [
+        { event: "<code>onChange(value, meta)</code>", arguments: "<code>value</code> array, validation metadata", returns: "Provided to <code>createFieldGroup(...)</code>, not the preset factory." }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "Array of family objects." },
+        { method: "<code>setValue(value)</code>", arguments: "array of family objects", returns: "<code>void</code>" },
+        { method: "<code>validate()</code>", arguments: "none", returns: "<code>{ status, errors, warnings }</code>" }
+      ]
+    };
+    window.fieldGroupPresetDemo = {
+      presetKey: "family",
+      name: "families",
+      label: "Families",
+      initialValue: [{ household_head: "Ana Reyes", adult_count: 3, children_count: 2, adult_female_count: 2, adult_pregnant_count: 1, children_pwd_count: 1, displaced: "Yes", address: "Purok 3" }],
+      sampleValue: [{ household_head: "Marco Santos", adult_count: 2, children_count: 2, adult_male_count: 1, adult_female_count: 3, adult_pwd_count: 1, children_male_count: 1, children_female_count: 1, displaced: "No", address: "Sitio Riverside" }]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Family Preset</h1>
+      <p class="muted">Repeatable household impact entries for disaster intake and SITREP aggregation.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Families</h2>
+      <div class="layout">
+        <div class="stack">
+          <div id="presetHost"></div>
+          <div class="row">
+            <button id="sampleBtn" class="ui-button" type="button">Set Sample</button>
+            <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button>
+            <button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button>
+          </div>
+          <pre id="presetSchema"></pre>
+        </div>
+        <div class="stack">
+          <pre id="presetLog" class="log">No changes yet.</pre>
+          <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.field.group.preset.js"></script>
+</body>
+</html>

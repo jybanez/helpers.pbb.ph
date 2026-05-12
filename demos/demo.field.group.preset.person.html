@@ -31,11 +31,11 @@
         "Use metadata-only <code>preset: \"person\"</code> or <code>config_json.preset</code> when a backend should store only the preset reference."
       ],
       avoidWhen: ["Use <code>missingPerson()</code> or <code>evacuee()</code> when the workflow has domain-specific person fields."],
-      description: "The person preset renders <code>name</code> as a full row and <code>gender</code>/<code>age</code> as one two-column row.",
+      description: "The person preset renders last/family name and first name as operator-entered fields, then keeps <code>name</code> hidden and computed as <code>Last, First</code>. Gender and age render as one two-column row.",
       defaultSampleCode: `const group = createFieldGroup(host, {
   name: "person",
   ...fieldGroupPresets.person({ label: "Person" }),
-  value: { name: "Ana Reyes", gender: "Female", age: "34" }
+  value: { last_name: "Reyes", first_name: "Ana", gender: "Female", age: "34" }
 });`,
       constructor: [{ factory: "<code>fieldGroupPresets.person(options?)</code>", arguments: "optional preset overrides", returns: "Plain field-group config for <code>createFieldGroup(...)</code>" }],
       options: [
@@ -48,7 +48,7 @@
         { option: "<code>extraFields</code>", default: "<code>[]</code>", description: "Additional fields or field rows appended after the person fields." }
       ],
       properties: [
-        { property: "<code>fields</code>", type: "<code>Array</code>", description: "<code>name</code> full row, then <code>gender</code>/<code>age</code> in one two-column row." },
+        { property: "<code>fields</code>", type: "<code>Array</code>", description: "Hidden computed <code>name</code>, then <code>last_name</code>/<code>first_name</code> and <code>gender</code>/<code>age</code> two-column rows." },
         { property: "<code>label</code>", type: "<code>string</code>", description: "Preset label unless overridden." },
         { property: "<code>repeatable</code>", type: "<code>boolean | undefined</code>", description: "Omitted by default so <code>createFieldGroup(...)</code> treats the value as one object." }
       ],
@@ -66,8 +66,8 @@
       presetKey: "person",
       name: "person",
       label: "Person",
-      initialValue: { name: "Ana Reyes", gender: "Female", age: "34" },
-      sampleValue: { name: "Marco Santos", gender: "Male", age: "41" }
+      initialValue: { last_name: "Reyes", first_name: "Ana", gender: "Female", age: "34" },
+      sampleValue: { last_name: "Santos", first_name: "Marco", gender: "Male", age: "41" }
     };
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>
