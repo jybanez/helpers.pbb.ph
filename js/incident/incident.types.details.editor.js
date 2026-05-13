@@ -260,6 +260,13 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       titleWrap.appendChild(subtitle);
     }
 
+    if (currentData.description) {
+      const description = document.createElement("p");
+      description.className = "hh-description";
+      description.textContent = currentData.description;
+      titleWrap.appendChild(description);
+    }
+
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "hh-remove";
@@ -509,6 +516,7 @@ function normalizeIncidentTypeData(data) {
     incident_type_category_id: source.incident_type_category_id ?? null,
     incident_type_category_name: source.incident_type_category_name ?? source.category_name ?? "",
     name: source.name ?? "",
+    description: source.description ?? "",
     fields: safeArray(source.fields),
     detail_entries: safeArray(source.detail_entries).map((item) => ({ ...item })),
     resources: safeArray(source.resources).map((item) => ({ ...item })),

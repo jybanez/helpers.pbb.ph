@@ -61,7 +61,7 @@
       theme: "dark",
       incident_id: 30,
       categories: [{ id: 1, name: "Fire" }],
-      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire" }],
+      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire", description: "Fire affecting a house, building, or other structure." }],
       resources: [],
       removeIncidentType() {},
       onItemChange(nextItem, meta) {
@@ -100,6 +100,13 @@
 
     const typeData = typeApi.getData();
     assert(Boolean(typeData[0]?._client_key), "incident types should assign _client_key to unsaved rows");
+    assert(
+      document.querySelector("#incidentTypesHost .hh-description")?.textContent === "Fire affecting a house, building, or other structure.",
+      "incident type editor should render incident type descriptions as header helper text"
+    );
+    const incidentTypesHeader = document.querySelector("#incidentTypesHost .hh-incident-types-header");
+    assert(getComputedStyle(incidentTypesHeader).position === "sticky", "incident types list header should stay sticky inside scroll containers");
+    assert(getComputedStyle(incidentTypesHeader).top === "0px", "incident types sticky header should anchor to the top of its scroll container by default");
 
     const typeInput = document.querySelector("#incidentTypesHost .hh-field-row .hh-input");
     typeInput.value = "Warehouse";
@@ -180,7 +187,7 @@
       editable: false,
       theme: "dark",
       categories: [{ id: 1, name: "Fire" }],
-      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire" }],
+      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire", description: "Fire affecting a house, building, or other structure." }],
     });
     assert(
       document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Dela Cruz, Juan"),
@@ -259,6 +266,9 @@
 
     const assignmentData = assignmentsApi.getData();
     assert(Boolean(assignmentData[0]?._client_key), "team assignments should assign _client_key to unsaved rows");
+    const teamListHeader = document.querySelector("#assignmentsHost .hh-team-list-header");
+    assert(getComputedStyle(teamListHeader).position === "sticky", "team assignments list header should stay sticky inside scroll containers");
+    assert(getComputedStyle(teamListHeader).top === "0px", "team assignments sticky header should anchor to the top of its scroll container by default");
 
     const contactInput = document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input");
     contactInput.value = "Ana";

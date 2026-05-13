@@ -1,9 +1,16 @@
 .hh-incident-types .hh-incident-types-header {
+  position: sticky;
+  top: var(--hh-incident-types-header-top, 0);
+  z-index: 5;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin: calc(var(--hh-space-3) * -1) calc(var(--hh-space-3) * -1) 10px;
+  padding: var(--hh-space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--hh-border) 72%, transparent);
+  background: color-mix(in srgb, var(--hh-bg) 94%, transparent);
+  backdrop-filter: blur(8px);
 }
 
 .hh-incident-types .hh-incident-types-body {

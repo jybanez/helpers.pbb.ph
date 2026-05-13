@@ -316,6 +316,7 @@ export function incidentTypes(container, data, options = {}) {
         incident_type_category_id: incidentType?.category_id ?? null,
         incident_type_category_name: incidentType?.category?.name || "",
         name: incidentType?.name || "",
+        description: incidentType?.description || "",
         fields: safeArray(incidentType?.fields).map((field) => ({ ...field })),
         detail_entries: [],
         resources,
@@ -582,6 +583,7 @@ function getIncidentTypeItems(source, options) {
         incident_type_category_id: type?.category_id ?? lookupType?.category_id ?? null,
         incident_type_category_name: categoryName,
         name: type?.name ?? lookupType?.name ?? "",
+        description: type?.description ?? lookupType?.description ?? "",
         fields,
         detail_entries: detailEntries.filter(
           (entry) => String(entry?.incident_type_id) === String(type?.id)
@@ -622,6 +624,7 @@ function inferResources(type, lookupType, resourcesNeeded, options) {
 
 function normalizeIncidentTypeItem(item, options) {
   const source = item && typeof item === "object" ? item : {};
+  const lookupType = resolveIncidentTypeLookup(source.incident_type_id ?? source.id, options);
   const resources = safeArray(source.resources)
     .map((resource) => ({
       ...resource,
@@ -646,11 +649,22 @@ function normalizeIncidentTypeItem(item, options) {
       resolveCategoryName(source.incident_type_category_id, options) ||
       "",
     name: source.name || "",
+    description: source.description || lookupType?.description || "",
     fields: safeArray(source.fields).map((field) => ({ ...field })),
     detail_entries: safeArray(source.detail_entries).map((entry) => ({ ...entry })),
     resources,
     resources_needed: safeArray(source.resources_needed).map((entry) => ({ ...entry })),
   };
+}
+
+function resolveIncidentTypeLookup(incidentTypeId, options) {
+  if (incidentTypeId === undefined || incidentTypeId === null || incidentTypeId === "") {
+    return null;
+  }
+  const list = safeArray(options?.incidentTypes).length
+    ? safeArray(options?.incidentTypes)
+    : safeArray(options?.lookups?.incidentTypes);
+  return list.find((item) => String(item?.id) === String(incidentTypeId)) || null;
 }
 
 function resolveCategoryName(categoryId, options) {
