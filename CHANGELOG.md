@@ -11,6 +11,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Unreleased
 
 - Added `ui.device.selector` as an adapter-driven device selection/test helper with browser-media adapters for camera, microphone, and speaker V1, regular/compact layouts, shared `ui.select` default presentation plus `menu`, `list`, and `native-select` presentation modes, app-owned selection persistence callbacks, demo coverage, and regression coverage.
+- Improved incident type and team assignment drawer focus behavior: drawer search fields receive focus on open, and adding an incident/team moves focus into the first editable field on the newly added card.
 - Added `mode: "compact"` to `createDevicePrimer(...)` and `createDevicePrimerModal(...)` for icon-strip device checks with a selected-check detail panel, shimmer checking state, and explicit retry for failed or blocked checks.
 - Fixed `ui.window` title-bar layout so dense `headerActions` stay inline between an ellipsized title and fixed window controls, header actions no longer trigger drag, and maximized windows drop rounded outer chrome for flush workspace/map layouts.
 - Added app-owned busy state support to `incidentTeamsAssignments(...)` via `busyAssignments`, item-level busy fields, and `setItemBusy(...)` / `clearItemBusy(...)`, rendering `aria-busy`, disabled card controls, and compact per-assignment status rows for async mutations.

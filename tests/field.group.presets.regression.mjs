@@ -92,6 +92,7 @@ assert(fieldKeys(casualtyPatient).includes("triage_color"), "casualtyPatient pre
 assert(fieldKeys(casualtyPatient).includes("destination_facility"), "casualtyPatient preset should include destination facility");
 assert(flatFields(casualtyPatient.fields).find((field) => field.key === "destination_facility")?.type === "combobox", "casualtyPatient destination_facility should use combobox history");
 assert(Boolean(flatFields(casualtyPatient.fields).find((field) => field.key === "destination_facility")?.storageKey), "casualtyPatient destination_facility should define a local history storage key");
+assert(JSON.stringify(flatFields(casualtyPatient.fields).find((field) => field.key === "destination_facility")?.visibleWhen) === JSON.stringify({ condition: { not: "Deceased" }, transported: "Yes" }), "casualtyPatient destination_facility should show only when transported is Yes");
 assert(flatFields(casualtyPatient.fields).find((field) => field.key === "consciousness")?.visibleWhen?.condition?.not === "Deceased", "casualtyPatient consciousness should hide for deceased patients");
 assert(flatFields(casualtyPatient.fields).find((field) => field.key === "transported")?.visibleWhen?.condition?.not === "Deceased", "casualtyPatient transported should hide for deceased patients");
 assert(casualtyPatient.sitrep.includes("transported_count"), "casualtyPatient preset should expose transported SITREP metadata");

@@ -135,6 +135,7 @@ export function incidentTypes(container, data, options = {}) {
     }
     if (drawerApi) {
       drawerApi.open(document.body);
+      focusDrawerSearch();
       return;
     }
 
@@ -175,8 +176,16 @@ export function incidentTypes(container, data, options = {}) {
     drawerEvents = createEventBag();
     searchField.bind(drawerEvents);
 
-    drawerElements = { left, chips };
+    drawerElements = { left, chips, searchInput: searchField.input };
     renderDrawerContent(left, chips);
+    focusDrawerSearch();
+  }
+
+  function focusDrawerSearch() {
+    focusElementSoon(() => drawerElements?.searchInput, {
+      scope: drawerApi?.panel,
+      allowFocusedElement: drawerApi?.closeButton,
+    });
   }
 
   function renderDrawerContent(left, chips) {
@@ -224,15 +233,19 @@ export function incidentTypes(container, data, options = {}) {
 
         const payload = createInitialPayload(incidentType);
         list = [...list, payload];
+        const nextIndex = list.length - 1;
+        const nextKey = getItemKey(payload, nextIndex);
+        const nextAnchor = getIncidentTypeAnchor(payload, nextIndex);
         currentOptions.onAddIncidentType?.(cloneData(payload));
         emitNormalizedChange(payload, {
           reason: "add",
           localStateChanged: true,
-          key: getItemKey(payload, list.length - 1),
+          key: nextKey,
           nextList: cloneData(list),
         });
         closeDrawer();
         reconcile();
+        focusChildFirstFieldByAnchor(listEl, nextAnchor);
       });
       chips.appendChild(chip);
     });
@@ -720,12 +733,77 @@ function restoreAnchorPosition(anchorId, previousScrollY) {
   });
 }
 
+function focusChildFirstFieldByAnchor(root, anchorId) {
+  focusElementAfterDelay(() => {
+    const child = findElementByDataAttribute(root, "data-incident-type-anchor", anchorId);
+    return getFirstFieldControl(child);
+  }, 280);
+}
+
 function cloneData(value) {
   try {
     return structuredClone(value);
   } catch (_) {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+function focusElementSoon(target, options = {}) {
+  const resolve = typeof target === "function" ? target : () => target;
+  const run = () => {
+    const element = resolve();
+    if (element && typeof element.focus === "function") {
+      const scope = options?.scope;
+      const active = typeof document !== "undefined" ? document.activeElement : null;
+      const activeInsideScope = Boolean(scope && active && scope.contains?.(active));
+      if (
+        activeInsideScope &&
+        active !== element &&
+        active !== options?.allowFocusedElement
+      ) {
+        return;
+      }
+      element.focus({ preventScroll: true });
+    }
+  };
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(run);
+    window.requestAnimationFrame(() => window.requestAnimationFrame(run));
+    window.setTimeout(run, 24);
+    window.setTimeout(run, 60);
+    window.setTimeout(run, 120);
+    window.setTimeout(run, 240);
+    return;
+  }
+  setTimeout(run, 0);
+}
+
+function focusElementAfterDelay(target, delayMs = 0) {
+  const resolve = typeof target === "function" ? target : () => target;
+  setTimeout(() => {
+    const element = resolve();
+    if (element && typeof element.focus === "function") {
+      element.focus({ preventScroll: true });
+    }
+  }, Math.max(0, Number(delayMs) || 0));
+}
+
+function getFirstFieldControl(root) {
+  if (!root || typeof root.querySelector !== "function") {
+    return null;
+  }
+  return root.querySelector(
+    "input:not([type='hidden']):not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable='true']"
+  ) || root.querySelector("button:not([disabled])");
+}
+
+function findElementByDataAttribute(root, attribute, value) {
+  if (!root || !attribute || !value || typeof root.querySelectorAll !== "function") {
+    return null;
+  }
+  return Array.from(root.querySelectorAll(`[${attribute}]`)).find(
+    (node) => node.getAttribute(attribute) === value
+  ) || null;
 }
 
 function createIncidentTypeClientKey() {

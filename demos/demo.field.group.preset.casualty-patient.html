@@ -28,7 +28,7 @@
       overview: "Focused reference for repeatable casualty and patient intake records.",
       useWhen: ["Use <code>fieldGroupPresets.casualtyPatient()</code> for injured, critical, triage, and transported patient tracking."],
       avoidWhen: ["Use <code>person()</code> when medical condition and transport details are not needed."],
-      description: "The casualty/patient preset extends person fields with condition, injury type, consciousness, triage color, transported state, and destination facility. Consciousness, triage, and transported state hide when condition is Deceased; destination remains visible for morgue/hospital/funeral-home routing. It exposes SITREP hints for injured, critical, and transported counts.",
+      description: "The casualty/patient preset extends person fields with condition, injury type, consciousness, triage color, transported state, and destination facility. Consciousness, triage, and transported state hide when condition is Deceased; destination facility appears only when transported is Yes. It exposes SITREP hints for injured, critical, and transported counts.",
       defaultSampleCode: `const group = createFieldGroup(host, {
   name: "patients",
   ...fieldGroupPresets.casualtyPatient({ label: "Patients" }),
@@ -54,7 +54,7 @@
       properties: [
         { property: "<code>sitrep</code>", type: "<code>Array</code>", description: "<code>injured_count</code>, <code>critical_count</code>, <code>transported_count</code>." },
         { property: "<code>triage_color.options</code>", type: "<code>Array</code>", description: "<code>Green</code>, <code>Yellow</code>, <code>Red</code>, <code>Black</code>." },
-        { property: "<code>visibleWhen</code>", type: "<code>Object</code>", description: "Hides consciousness, triage, and transported fields when <code>condition</code> is <code>Deceased</code>." }
+        { property: "<code>visibleWhen</code>", type: "<code>Object</code>", description: "Hides consciousness, triage, and transported fields when <code>condition</code> is <code>Deceased</code>; destination facility appears only when <code>transported</code> is <code>Yes</code>." }
       ],
       events: [
         { event: "<code>onChange(value, meta)</code>", arguments: "<code>value</code> array, validation metadata", returns: "Provided to <code>createFieldGroup(...)</code>, not the preset factory." }
@@ -70,7 +70,7 @@
       name: "patients",
       label: "Patients",
       initialValue: [{ last_name: "Rizal", first_name: "Jose", age: "47", gender: "Male", condition: "Critical", injury_type: "Head injury", consciousness: "Conscious", triage_color: "Red", transported: "Yes", destination_facility: "District Hospital" }],
-      sampleValue: [{ last_name: "Santos", first_name: "Maria", age: "25", gender: "Female", condition: "Deceased", injury_type: "Head injury", destination_facility: "District Hospital morgue" }]
+      sampleValue: [{ last_name: "Santos", first_name: "Maria", age: "25", gender: "Female", condition: "Serious", injury_type: "Head injury", consciousness: "Conscious", triage_color: "Yellow", transported: "No" }]
     };
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>

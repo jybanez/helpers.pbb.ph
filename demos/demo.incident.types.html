@@ -79,7 +79,7 @@
         "Do not treat this as a generic form/list helper outside the incident domain.",
         "Do not bypass the shared incident helper with app-local list, drawer, or incident-type detail markup."
       ],
-      description: "This helper owns the incident-type list shell, add-from-drawer flow, and item editor/viewer switching. The app still owns the incident catalog, reference lookups, and persistence callbacks.",
+      description: "This helper owns the incident-type list shell, add-from-drawer flow, and item editor/viewer switching. The drawer focuses search on open, then moves focus to the first editable field on the new incident-type card after selection. The app still owns the incident catalog, reference lookups, and persistence callbacks.",
       sectionSamples: {
         "incident.types (editor)": `const listApi = incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: true,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n  drawerHeaderText: "Select Reported Incidents",\n  onAddIncidentType(payload) {\n    persistIncidentType(payload);\n  },\n  onItemChange(nextItem, meta) {\n    queueAutosave(nextItem, meta);\n  },\n  onChange(nextList, meta) {\n    renderPreview(nextList, meta);\n  },\n});`,
         "incident.types (viewer)": `incidentTypes(host, incidentTypesData, {\n  theme: "dark",\n  editable: false,\n  lookups,\n  incidentCategories,\n  resources: resourceTypes,\n  headerText: "Reported Incident Types",\n});`
@@ -91,7 +91,7 @@
       options: [
         { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between item editor rows and read-only viewer rows." },
         { option: "<code>headerText</code>", default: "<code>\"Incident Details\"</code>", description: "Header title shown above the incident-type list." },
-        { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Reported Incidents\"</code>", description: "Drawer title used by the add-incident-type picker." },
+        { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Reported Incidents\"</code>", description: "Drawer title used by the add-incident-type picker. The picker search field receives focus when the drawer opens." },
         { option: "<code>lookups</code>", default: "<code>{}</code>", description: "Shared incident lookup bag. The helper reads <code>lookups.incidentTypes</code>, <code>lookups.incidentCategories</code>, and <code>lookups.resourceTypes</code> as fallback catalogs when direct option arrays are omitted." },
         { option: "<code>incidentTypes</code>", default: "<code>[]</code>", description: "Direct incident-type catalog for the add-from-drawer picker. When omitted, the helper falls back to <code>lookups.incidentTypes</code>." },
         { option: "<code>incidentCategories</code>", default: "<code>[]</code>", description: "Incident-category list used to group and filter drawer items." },
@@ -110,7 +110,7 @@
       events: [
         { event: "<code>onOpenDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
         { event: "<code>onCloseDrawer()</code>", arguments: "none", returns: "<code>void</code>" },
-        { event: "<code>onAddIncidentType(payload)</code>", arguments: "normalized incident-type payload selected from the drawer", returns: "<code>void</code>" },
+        { event: "<code>onAddIncidentType(payload)</code>", arguments: "normalized incident-type payload selected from the drawer", returns: "<code>void</code>; the helper then closes the drawer and focuses the first editable field on the new card" },
         { event: "<code>onItemChange(nextItem, meta)</code>", arguments: "candidate next row plus a normalized mutation meta payload such as <code>{ reason: \"field\" }</code>", returns: "<code>void</code>" },
         { event: "<code>onChange(nextList, meta)</code>", arguments: "candidate next list plus the same normalized mutation meta payload", returns: "<code>void</code>" },
         { event: "<code>removeIncidentType(payload)</code>", arguments: "incident-type payload being removed", returns: "<code>void</code>" },

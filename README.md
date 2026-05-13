@@ -789,7 +789,9 @@ List behavior:
 - Assign drawer supports:
   - category filtering (`All Categories` default)
   - search within filtered team set
+  - initial focus on the search field when opened
 - duplicate hint on already assigned teams (same `team_id` where status is not `cancelled`)
+- adding a team closes the drawer and moves focus to the first editable field on the new assignment card
 - busy assignment cards set `aria-busy`, render a compact spinner/status row, and disable card controls until cleared by the app
 
 If required list options are missing:
@@ -921,7 +923,9 @@ Behavior implemented:
   - category filter from `options.categories`
   - type chips from `options.incidentTypes`
   - search with clear button and `Esc`-to-clear
+  - initial focus on the search field when opened
   - duplicate block on existing `incident_type_id` in current list
+- adding an incident type closes the drawer and moves focus to the first editable field on the new incident-type card
 - Fields section:
   - sorted by `field.sort_order`
   - supports `text|number|textarea|select|multiselect|group`
@@ -2519,7 +2523,7 @@ Preset layout:
 - `evacuee()` extends person with full-width `local_citizen` and `needs` rows.
 - `family()` captures affected household counts and local address/sitio/purok text. It intentionally omits barangay/city/province because those are expected to come from the hotline context. `address` uses combobox history. `adult_count` and `children_count` are operator-entered base counts, while hidden `member_count` is still computed into the value as `adult_count + children_count` for reporting/SITREP use.
 - `casualtyPatient()` extends person with condition, injury, consciousness, triage, transport, and destination facility fields.
-- In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` remains visible for morgue/hospital/funeral-home routing and uses combobox history.
+- In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` uses combobox history and appears only when `transported` is `Yes`.
 - `infrastructureDamage()` captures asset damage and operational status for roads, bridges, utilities, facilities, communications, and other infrastructure. `name_location` uses combobox history for repeated asset/place names.
 - `shelterDamage()` focuses on residential/shelter impact using structure types: house, apartment/boarding house, temporary shelter, evacuation center, and other.
 - `roadAccessStatus()` captures route access condition and passable vehicle types through `checkbox-group`; `obstruction_type` appears only when Access is `Blocked` or `Closed`, and closed access replaces vehicle passability choices with a highlighted not-passable warning.

@@ -122,17 +122,27 @@
       preset: "casualtyPatient",
       value: [{ last_name: "Rizal", first_name: "Jose", condition: "Critical", consciousness: "Conscious", triage_color: "Red", transported: "Yes" }]
     });
-    const conditionSelect = conditionalHost.querySelector('[data-field-key="condition"] .ui-input');
+    let conditionSelect = conditionalHost.querySelector('[data-field-key="condition"] .ui-input');
+    let transportedSelect = conditionalHost.querySelector('[data-field-key="transported"] .ui-input');
     assert(Boolean(conditionalHost.querySelector('[data-field-key="consciousness"]')), "visibleWhen fields should render while their rule matches");
     assert(Boolean(conditionalHost.querySelector('[data-field-key="triage_color"]')), "visibleWhen row peers should render while their rule matches");
     assert(Boolean(conditionalHost.querySelector('[data-field-key="transported"]')), "visibleWhen fields should render before deceased status");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"]')), "destination facility should render when transported is yes");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"] .ui-combobox')), "casualty patient destination facility should render the shared combobox input");
+    transportedSelect.value = "No";
+    transportedSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(!conditionalHost.querySelector('[data-field-key="destination_facility"]'), "destination facility should hide when transported is not yes");
+    transportedSelect = conditionalHost.querySelector('[data-field-key="transported"] .ui-input');
+    transportedSelect.value = "Yes";
+    transportedSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"]')), "destination facility should return when transported changes back to yes");
+    conditionSelect = conditionalHost.querySelector('[data-field-key="condition"] .ui-input');
     conditionSelect.value = "Deceased";
     conditionSelect.dispatchEvent(new Event("change", { bubbles: true }));
     assert(!conditionalHost.querySelector('[data-field-key="consciousness"]'), "visibleWhen fields should hide when condition changes to deceased");
     assert(!conditionalHost.querySelector('[data-field-key="triage_color"]'), "visibleWhen row peers should hide when condition changes to deceased");
     assert(!conditionalHost.querySelector('[data-field-key="transported"]'), "visibleWhen fields should hide transported for deceased patients");
-    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"]')), "destination facility should stay visible for deceased patients");
-    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"] .ui-combobox')), "casualty patient destination facility should render the shared combobox input");
+    assert(!conditionalHost.querySelector('[data-field-key="destination_facility"]'), "destination facility should hide for deceased patients");
 
     const breakdownHost = document.createElement("div");
     document.body.appendChild(breakdownHost);

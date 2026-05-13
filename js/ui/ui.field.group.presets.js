@@ -148,7 +148,7 @@ const CASUALTY_PATIENT_FIELDS = [
   ],
   [
     { key: "transported", label: "Transported", type: "select", options: YES_NO_OPTIONS, visibleWhen: { condition: { not: "Deceased" } } },
-    { key: "destination_facility", label: "Destination facility", type: "combobox", storageKey: "helpers.fieldGroup.casualtyPatient.destinationFacility", maxSuggestions: 20, placeholder: "Type or choose a saved facility" },
+    { key: "destination_facility", label: "Destination facility", type: "combobox", storageKey: "helpers.fieldGroup.casualtyPatient.destinationFacility", maxSuggestions: 20, placeholder: "Type or choose a saved facility", visibleWhen: { condition: { not: "Deceased" }, transported: "Yes" } },
   ],
 ];
 

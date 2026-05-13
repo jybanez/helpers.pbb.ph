@@ -61,7 +61,16 @@
       theme: "dark",
       incident_id: 30,
       categories: [{ id: 1, name: "Fire" }],
-      incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire", description: "Fire affecting a house, building, or other structure." }],
+      incidentTypes: [
+        { id: 10, category_id: 1, name: "Building Fire", description: "Fire affecting a house, building, or other structure." },
+        {
+          id: 11,
+          category_id: 1,
+          name: "Vehicle Fire",
+          description: "Vehicle-related fire.",
+          fields: [{ field_key: "plate", field_label: "Plate Number", input_type: "text", sort_order: 1 }],
+        },
+      ],
       resources: [],
       removeIncidentType() {},
       onItemChange(nextItem, meta) {
@@ -224,13 +233,24 @@
     const removeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "remove");
     assert(Array.isArray(removeListEvent?.nextList) && removeListEvent.nextList.length === 0, "incident types remove should emit the proposed next list without the removed row");
 
+    document.querySelector("#incidentTypesHost .hh-incident-types-header .hh-button").click();
+    await wait(40);
+    assert(document.activeElement?.matches(".hh-incident-type-search-wrap .hh-input"), "incident type drawer should focus the search field when opened");
+    const vehicleFireChip = Array.from(document.querySelectorAll(".hh-incident-type-chip")).find((node) => node.textContent.includes("Vehicle Fire"));
+    vehicleFireChip?.click();
+    await wait(340);
+    assert(document.activeElement?.matches("#incidentTypesHost .hh-field-row .hh-input"), "adding an incident type should focus the first editable field");
+
     const assignmentsApi = incidentTeamsAssignments(document.getElementById("assignmentsHost"), [], {
       theme: "dark",
       editable: true,
       incident_id: 30,
       operator_id: 7,
       categories: [{ id: 2, name: "Medical" }],
-      teams: [{ id: 91, name: "Responder One", team_category_id: 2 }],
+      teams: [
+        { id: 91, name: "Responder One", team_category_id: 2 },
+        { id: 92, name: "Responder Two", team_category_id: 2 },
+      ],
       noticeAlreadyExist() {},
       confirmStatus() { return true; },
       confirmCancel(fromStatus, reasonCode, reasonNote) {
@@ -316,6 +336,19 @@
     assert(cancelItemEvent?.nextItem?.cancel_reason_note === "Unit reassigned by command.", "team assignments cancel should emit the candidate cancel note");
     assert(cancelListEvent?.nextList?.[0]?.status === "cancelled", "team assignments cancel should emit the candidate cancelled list");
 
+    document.querySelector("#assignmentsHost .hh-team-list-header .hh-button").click();
+    await wait(40);
+    assert(document.activeElement?.matches(".hh-team-search-wrap .hh-input"), "team assignment drawer should focus the search field when opened");
+    window.setTimeout(() => {
+      document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input")?.focus();
+    }, 80);
+    await wait(260);
+    assert(document.activeElement?.matches(".hh-team-search-wrap .hh-input"), "team assignment drawer should recover search focus when outside focus is restored during open");
+    const responderTwoChip = Array.from(document.querySelectorAll(".hh-team-chip")).find((node) => node.textContent.includes("Responder Two"));
+    responderTwoChip?.click();
+    await wait(340);
+    assert(document.activeElement?.matches("#assignmentsHost .hh-contact-wrap .hh-input"), "adding a team assignment should focus the contact-person field");
+
     typeApi.destroy();
     viewerApi.destroy();
     assignmentsApi.destroy();
@@ -332,6 +365,10 @@
       if (!condition) {
         failures.push(message);
       }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
     }
   </script>
 </body>
