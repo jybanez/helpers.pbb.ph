@@ -148,6 +148,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createNumberStepper",
   },
+  "ui.combobox": {
+    js: "./ui.combobox.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.combobox.css"],
+    deps: [],
+    export: "createCombobox",
+  },
   "ui.checkbox": {
     js: "./ui.checkbox.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.checkbox.css"],
@@ -162,8 +168,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.field.group": {
     js: "./ui.field.group.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css", "../../css/ui/ui.number.stepper.css"],
-    deps: ["ui.checkbox", "ui.checkbox.group", "ui.field.group.presets", "ui.icons", "ui.number.stepper"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css", "../../css/ui/ui.number.stepper.css", "../../css/ui/ui.combobox.css"],
+    deps: ["ui.checkbox", "ui.checkbox.group", "ui.combobox", "ui.field.group.presets", "ui.icons", "ui.number.stepper"],
     export: "createFieldGroup",
   },
   "ui.field.group.presets": {
@@ -621,6 +627,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.password",
     "ui.checkbox",
     "ui.checkbox.group",
+    "ui.combobox",
     "ui.field.group",
     "ui.field.group.presets",
     "ui.fieldset",

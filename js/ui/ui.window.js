@@ -727,7 +727,7 @@ function createManagedWindow(context) {
     if (!options.draggable || state.maximized || event.button !== 0) {
       return;
     }
-    if (event.target.closest("button")) {
+    if (isWindowHeaderInteractiveTarget(event.target)) {
       return;
     }
     dragState = {
@@ -839,6 +839,12 @@ function createManagedWindow(context) {
   renderContent(options.content);
 
   return { id, api, options, state, setActive, setZIndex, getState, syncMaximizedLayout, buildTaskbarItem, destroy };
+}
+
+function isWindowHeaderInteractiveTarget(target) {
+  return Boolean(target?.closest?.(
+    ".ui-window-header-actions, .ui-window-controls, button, a, input, select, textarea, [role=\"button\"], [data-ui-window-no-drag]"
+  ));
 }
 
 function normalizeManagerOptions(options = {}) {

@@ -29,7 +29,7 @@ const MISSING_PERSON_FIELDS = [
   ...PERSON_FIELDS,
   [
     { key: "last_seen_days", label: "Last seen days", type: "number-stepper", min: 0 },
-    { key: "last_seen_location", label: "Last seen location", type: "text" },
+    { key: "last_seen_location", label: "Last seen location", type: "combobox", storageKey: "helpers.fieldGroup.missingPerson.lastSeenLocation", maxSuggestions: 20, placeholder: "Type or choose a saved location" },
   ],
 ];
 
@@ -94,7 +94,7 @@ const FAMILY_FIELDS = [
     { key: "member_count", label: "Member count", type: "number-stepper", min: 0, readonly: true, allowEmpty: false, computed: "adult_count + children_count", hidden: true },
     { key: "displaced", label: "Displaced", type: "select", options: YES_NO_OPTIONS },
   ],
-  { key: "address", label: "Address", type: "text" },
+  { key: "address", label: "Address", type: "combobox", storageKey: "helpers.fieldGroup.family.address", maxSuggestions: 20, placeholder: "Type or choose a saved address/sitio/purok" },
 ];
 
 const FAMILY_VALIDATIONS = [
@@ -148,14 +148,14 @@ const CASUALTY_PATIENT_FIELDS = [
   ],
   [
     { key: "transported", label: "Transported", type: "select", options: YES_NO_OPTIONS, visibleWhen: { condition: { not: "Deceased" } } },
-    { key: "destination_facility", label: "Destination facility", type: "text" },
+    { key: "destination_facility", label: "Destination facility", type: "combobox", storageKey: "helpers.fieldGroup.casualtyPatient.destinationFacility", maxSuggestions: 20, placeholder: "Type or choose a saved facility" },
   ],
 ];
 
 const INFRASTRUCTURE_DAMAGE_FIELDS = [
   [
     { key: "asset_type", label: "Asset type", type: "select", options: ["Road", "Bridge", "Power", "Water", "School", "Health Facility", "Government Facility", "Communications", "Other"] },
-    { key: "name_location", label: "Name / location", type: "text", required: true },
+    { key: "name_location", label: "Name / location", type: "combobox", required: true, storageKey: "helpers.fieldGroup.infrastructureDamage.nameLocation", maxSuggestions: 20, placeholder: "Type or choose a saved asset/location" },
   ],
   [
     { key: "damage_level", label: "Damage level", type: "select", options: DAMAGE_LEVEL_OPTIONS },
@@ -178,7 +178,7 @@ const SHELTER_DAMAGE_FIELDS = [
 
 const ROAD_ACCESS_STATUS_FIELDS = [
   [
-    { key: "route_location", label: "Route / location", type: "text", required: true },
+    { key: "route_location", label: "Route / location", type: "combobox", required: true, storageKey: "helpers.fieldGroup.roadAccessStatus.routeLocation", maxSuggestions: 20, placeholder: "Type or choose a saved route/location" },
     { key: "status", label: "Access", type: "select", options: ["Open", "Limited", "Blocked", "Closed", "Cleared"], required: true },
   ],
   { key: "obstruction_type", label: "Obstruction type", type: "select", options: ["Flooding", "Landslide", "Fallen tree", "Debris", "Collapsed structure", "Vehicle obstruction", "Other"], required: true, visibleWhen: { status: ["Blocked", "Closed"] } },

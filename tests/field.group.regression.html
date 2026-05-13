@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/ui/ui.icons.css">
   <link rel="stylesheet" href="../css/ui/ui.checkbox.css">
   <link rel="stylesheet" href="../css/ui/ui.checkbox.group.css">
+  <link rel="stylesheet" href="../css/ui/ui.combobox.css">
   <link rel="stylesheet" href="../css/ui/ui.number.stepper.css">
   <link rel="stylesheet" href="../css/ui/ui.field.group.css">
 </head>
@@ -102,7 +103,7 @@
     assert(!presetHost.querySelector('[data-field-key="name"]'), "preset computed complete name should stay hidden");
     assert(Boolean(presetHost.querySelector('[data-field-key="last_name"] .ui-input')), "preset-backed groups should render split last name controls");
     assert(Boolean(presetHost.querySelector('[data-field-key="first_name"] .ui-input')), "preset-backed groups should render split first name controls");
-    assert(Boolean(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input')), "preset-backed groups should render preset child controls without expanded fields[]");
+    assert(Boolean(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-combobox')), "preset-backed groups should render preset combobox child controls without expanded fields[]");
     assert(presetGroup.getValue()[0]?.last_seen_days === 2, "preset-backed groups should normalize preset number-stepper child values");
     presetGroup.update({ config: { preset: "evacuee" }, value: [{ name: "Liza Santos", local_citizen: "Yes" }] });
     assert(Boolean(presetHost.querySelector('[data-field-key="local_citizen"] .ui-input')), "updating preset metadata should refresh resolved child controls");
@@ -131,6 +132,7 @@
     assert(!conditionalHost.querySelector('[data-field-key="triage_color"]'), "visibleWhen row peers should hide when condition changes to deceased");
     assert(!conditionalHost.querySelector('[data-field-key="transported"]'), "visibleWhen fields should hide transported for deceased patients");
     assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"]')), "destination facility should stay visible for deceased patients");
+    assert(Boolean(conditionalHost.querySelector('[data-field-key="destination_facility"] .ui-combobox')), "casualty patient destination facility should render the shared combobox input");
 
     const breakdownHost = document.createElement("div");
     document.body.appendChild(breakdownHost);
@@ -240,6 +242,7 @@
       preset: "roadAccessStatus",
       value: [{ route_location: "Coastal Road", status: "Open", obstruction_type: "Flooding" }]
     });
+    assert(Boolean(roadAccessHost.querySelector('[data-field-key="route_location"] .ui-combobox')), "road access route/location should render the shared combobox input");
     assert(!roadAccessHost.querySelector('[data-field-key="obstruction_type"]'), "road access obstruction type should stay hidden while access is passable");
     const accessSelect = roadAccessHost.querySelector('[data-field-key="status"] .ui-input');
     accessSelect.value = "Blocked";

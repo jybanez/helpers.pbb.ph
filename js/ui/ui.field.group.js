@@ -1,5 +1,6 @@
 import { createCheckbox } from "./ui.checkbox.js";
 import { createCheckboxGroup } from "./ui.checkbox.group.js";
+import { createCombobox } from "./ui.combobox.js";
 import { fieldGroupPresets } from "./ui.field.group.presets.js";
 import { createIcon } from "./ui.icons.js";
 import { createNumberStepper } from "./ui.number.stepper.js";
@@ -438,6 +439,34 @@ export function createFieldGroup(container, options = {}) {
         help: field?.help || "",
       });
       host.__uiCheckboxGroupInstance = checkboxGroup;
+      return host;
+    }
+
+    if (type === "combobox" || type === "suggest" || type === "local-history") {
+      const host = document.createElement("div");
+      host.className = "ui-field-group-combobox-host";
+      const combobox = createCombobox(host, {
+        name: getFieldKey(field),
+        id: field?.id || "",
+        value: rawValue,
+        placeholder: field?.placeholder || "",
+        required: isRequiredField(field),
+        disabled: Boolean(field?.disabled),
+        readonly: Boolean(field?.readonly),
+        ariaLabel: getFieldLabel(field, getFieldKey(field)),
+        suggestions: field?.suggestions || field?.options || [],
+        storageKey: field?.storageKey || field?.historyStorageKey || field?.history_storage_key || "",
+        maxSuggestions: field?.maxSuggestions ?? field?.max_suggestions ?? 20,
+        minChars: field?.minChars ?? field?.min_chars ?? 0,
+        noResultsText: field?.noResultsText || field?.no_results_text || "No saved entries",
+        onInput() {
+          host.dispatchEvent(new Event("input", { bubbles: true }));
+        },
+        onChange() {
+          host.dispatchEvent(new Event("change", { bubbles: true }));
+        },
+      });
+      host.__uiComboboxInstance = combobox;
       return host;
     }
 
@@ -1297,6 +1326,9 @@ function getControlValue(control, field) {
   }
   if (getFieldType(field) === "checkbox") {
     return control.__uiCheckboxInstance?.getValue?.() ?? false;
+  }
+  if (["combobox", "suggest", "local-history"].includes(getFieldType(field))) {
+    return control.__uiComboboxInstance?.getValue?.() ?? "";
   }
   if (getFieldType(field) === "number-stepper" || getFieldType(field) === "number_stepper") {
     return control.__uiNumberStepperInstance?.getValue?.() ?? "";

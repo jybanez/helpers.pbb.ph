@@ -38,6 +38,8 @@ assert(missingPerson.repeatable === true, "missingPerson preset should default t
 assert(fieldKeys(missingPerson).includes("last_seen_days"), "missingPerson preset should include last_seen_days");
 assert(fieldKeys(missingPerson).includes("last_seen_location"), "missingPerson preset should include last_seen_location");
 assert(flatFields(missingPerson.fields).find((field) => field.key === "last_seen_days")?.type === "number-stepper", "missingPerson last_seen_days should use number-stepper");
+assert(flatFields(missingPerson.fields).find((field) => field.key === "last_seen_location")?.type === "combobox", "missingPerson last_seen_location should use combobox history");
+assert(Boolean(flatFields(missingPerson.fields).find((field) => field.key === "last_seen_location")?.storageKey), "missingPerson last_seen_location should define a local history storage key");
 
 const evacuee = fieldGroupPresets.evacuee();
 assert(evacuee.repeatable === true, "evacuee preset should default to repeatable");
@@ -73,6 +75,8 @@ assert(flatFields(family.fields).find((field) => field.key === "member_count")?.
 assert(flatFields(family.fields).find((field) => field.key === "member_count")?.computed === "adult_count + children_count", "family member_count should be computed from adults and children");
 assert(flatFields(family.fields).find((field) => field.key === "member_count")?.readonly === true, "family member_count should be readonly");
 assert(flatFields(family.fields).find((field) => field.key === "member_count")?.hidden === true, "family member_count should stay in values but be hidden from operator UI");
+assert(flatFields(family.fields).find((field) => field.key === "address")?.type === "combobox", "family address should use combobox history");
+assert(Boolean(flatFields(family.fields).find((field) => field.key === "address")?.storageKey), "family address should define a local history storage key");
 assert(breakdownKeys(family, "adult_count").join(",") === "adult_male_count,adult_female_count,adult_senior_count,adult_pwd_count,adult_pregnant_count", "family adult_count should expose adult breakdown fields");
 assert(breakdownKeys(family, "children_count").join(",") === "children_male_count,children_female_count,children_pwd_count", "family children_count should expose children breakdown fields");
 assert(flatFields(flatFields(family.fields).find((field) => field.key === "adult_count")?.breakdown?.fields || []).length === 6, "family adult breakdown should preserve placeholder columns");
@@ -86,6 +90,8 @@ assert(family.validations?.some((rule) => rule.field === "children_pwd_count" &&
 const casualtyPatient = fieldGroupPresets.casualtyPatient();
 assert(fieldKeys(casualtyPatient).includes("triage_color"), "casualtyPatient preset should include triage color");
 assert(fieldKeys(casualtyPatient).includes("destination_facility"), "casualtyPatient preset should include destination facility");
+assert(flatFields(casualtyPatient.fields).find((field) => field.key === "destination_facility")?.type === "combobox", "casualtyPatient destination_facility should use combobox history");
+assert(Boolean(flatFields(casualtyPatient.fields).find((field) => field.key === "destination_facility")?.storageKey), "casualtyPatient destination_facility should define a local history storage key");
 assert(flatFields(casualtyPatient.fields).find((field) => field.key === "consciousness")?.visibleWhen?.condition?.not === "Deceased", "casualtyPatient consciousness should hide for deceased patients");
 assert(flatFields(casualtyPatient.fields).find((field) => field.key === "transported")?.visibleWhen?.condition?.not === "Deceased", "casualtyPatient transported should hide for deceased patients");
 assert(casualtyPatient.sitrep.includes("transported_count"), "casualtyPatient preset should expose transported SITREP metadata");
@@ -93,6 +99,8 @@ assert(casualtyPatient.sitrep.includes("transported_count"), "casualtyPatient pr
 const infrastructureDamage = fieldGroupPresets.infrastructureDamage();
 assert(fieldKeys(infrastructureDamage).join(",") === "asset_type,name_location,damage_level,operational_status,estimated_affected_users", "infrastructureDamage preset should include asset damage fields");
 assert(flatFields(infrastructureDamage.fields).find((field) => field.key === "asset_type")?.options.includes("Bridge"), "infrastructureDamage asset_type should include Bridge");
+assert(flatFields(infrastructureDamage.fields).find((field) => field.key === "name_location")?.type === "combobox", "infrastructureDamage name_location should use combobox history");
+assert(Boolean(flatFields(infrastructureDamage.fields).find((field) => field.key === "name_location")?.storageKey), "infrastructureDamage name_location should define a local history storage key");
 assert(flatFields(infrastructureDamage.fields).find((field) => field.key === "estimated_affected_users")?.type === "number-stepper", "infrastructureDamage estimated users should use number-stepper");
 
 const shelterDamage = fieldGroupPresets.shelterDamage();
@@ -102,6 +110,8 @@ assert(flatFields(shelterDamage.fields).find((field) => field.key === "families_
 
 const roadAccessStatus = fieldGroupPresets.roadAccessStatus();
 assert(fieldKeys(roadAccessStatus).join(",") === "route_location,status,obstruction_type,passable_by_vehicle_type,passability_warning", "roadAccessStatus preset should include access status fields");
+assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "route_location")?.type === "combobox", "roadAccessStatus route/location should use local-history combobox");
+assert(Boolean(flatFields(roadAccessStatus.fields).find((field) => field.key === "route_location")?.storageKey), "roadAccessStatus route/location should define a local history storage key");
 assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "status")?.label === "Access", "roadAccessStatus status key should render with Access label");
 assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "status")?.required === true, "roadAccessStatus access field should be required");
 assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "obstruction_type")?.required === true, "roadAccessStatus obstruction type should be required when visible");

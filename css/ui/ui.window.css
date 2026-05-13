@@ -94,6 +94,12 @@
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.46);
 }
 
+.ui-window.is-maximized {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .ui-window.is-minimized {
   display: none;
 }
@@ -112,8 +118,11 @@
 }
 
 .ui-window-title-wrap {
+  flex: 1 1 auto;
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 6px;
 }
 
@@ -131,6 +140,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.ui-window-header-actions {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .ui-window-controls {
@@ -220,6 +237,10 @@
 .ui-window-resize-handle.is-nw { top: -4px; left: -4px; cursor: nw-resize; }
 .ui-window-resize-handle.is-se { bottom: -4px; right: -4px; cursor: se-resize; }
 .ui-window-resize-handle.is-sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+
+.ui-window.is-maximized .ui-window-resize-handle {
+  display: none;
+}
 
 .ui-window-taskbar-item {
   flex: 0 0 auto;

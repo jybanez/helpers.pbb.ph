@@ -53,9 +53,41 @@
       height: 220,
       content: "<p>Preview</p>",
     });
+    const toolbar = document.createElement("button");
+    toolbar.type = "button";
+    toolbar.textContent = "Tool";
+    toolbar.className = "ui-button ui-button-ghost";
+    const dense = manager.createWindow({
+      id: "dense",
+      title: "Dense Header Actions With A Long Title",
+      x: 520,
+      y: 40,
+      width: 340,
+      height: 220,
+      content: "<p>Dense</p>",
+      headerActions: [
+        { id: "one", label: "One" },
+        { id: "two", label: "Two" },
+        { id: "three", label: "Three" },
+      ],
+    });
 
     await wait(40);
-    assert(manager.getWindows().length === 2, "manager should track multiple windows");
+    assert(manager.getWindows().length === 3, "manager should track multiple windows");
+    assert(getComputedStyle(dense.refs.header).display === "flex", "window header should use a single title-bar flex row");
+    assert(getComputedStyle(dense.refs.headerActions).display === "flex", "header actions should render as an inline action region");
+    const titleRect = dense.refs.title.getBoundingClientRect();
+    const actionsRect = dense.refs.headerActions.getBoundingClientRect();
+    assert(actionsRect.top < titleRect.bottom && actionsRect.bottom > titleRect.top, "dense header actions should remain inline with the title");
+
+    const beforeActionPointer = dense.getState();
+    const actionButton = dense.refs.headerActions.querySelector("button");
+    actionButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, clientX: 620, clientY: 60 }));
+    document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: 700, clientY: 110 }));
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, clientX: 700, clientY: 110 }));
+    await wait(20);
+    const afterActionPointer = dense.getState();
+    assert(afterActionPointer.x === beforeActionPointer.x && afterActionPointer.y === beforeActionPointer.y, "header action interaction should not start window dragging");
 
     inspector.focus();
     await wait(20);
@@ -101,6 +133,8 @@
     assert(maximizedWithTaskbar.maximized === true, "maximize should set maximized state");
     assert(maximizedWithTaskbar.width === host.clientWidth, "maximize should fill manager width");
     assert(maximizedWithTaskbar.height === host.clientHeight - taskbar.offsetHeight, "maximize should reserve taskbar height when taskbar is visible");
+    assert(getComputedStyle(inspector.refs.root).borderRadius === "0px", "maximized window should remove rounded corners");
+    assert(getComputedStyle(inspector.refs.root).boxShadow === "none", "maximized window should remove floating shadow");
     inspector.restore();
     await wait(20);
     const restoredFromTaskbarMax = inspector.getState();

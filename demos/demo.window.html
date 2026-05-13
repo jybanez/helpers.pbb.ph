@@ -80,14 +80,14 @@ const win = manager.createWindow({
       options: [
         { option: "<code>title</code>", default: "<code>\"Window\"</code>", description: "Title-bar label." },
         { option: "<code>content</code>", default: "<code>null</code>", description: "Node, HTML string, or content factory for the body." },
-        { option: "<code>headerActions</code>", default: "<code>[]</code>", description: "Extra title-bar actions before the minimize/maximize/close controls." },
+        { option: "<code>headerActions</code>", default: "<code>[]</code>", description: "Extra title-bar actions kept inline between the shrinking title and fixed minimize/maximize/close controls." },
         { option: "<code>draggable</code>", default: "<code>true</code>", description: "Enables title-bar drag." },
         { option: "<code>resizable</code>", default: "<code>true</code>", description: "Enables edge and corner resize handles." },
         { option: "<code>minimizable</code>", default: "<code>true</code>", description: "Enables minimize and taskbar recovery." },
         { option: "<code>maximizable</code>", default: "<code>true</code>", description: "Enables maximize and restore behavior." },
         { option: "<code>initialState</code>", default: "<code>\"normal\"</code>", description: "Initial window state.", values: ["normal", "maximized", "minimized"] }
       ],
-      propertiesText: "No stable public instance properties are documented. Use <code>getState()</code> plus the instance methods instead of reading DOM state directly.",
+      propertiesText: "No stable public instance properties are documented. Use <code>getState()</code> plus the instance methods instead of reading DOM state directly. Maximized windows render flush to the manager work area without rounded outer chrome.",
       events: [
         { event: "<code>onOpen</code>", arguments: "<code>(state)</code>", returns: "<code>void</code>" },
         { event: "<code>onClose</code>", arguments: "<code>(meta, state)</code>", returns: "<code>void</code>" },

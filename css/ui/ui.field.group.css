@@ -162,6 +162,7 @@
 
 .ui-field-group-child > .ui-input,
 .ui-field-group-checkbox-group-host,
+.ui-field-group-combobox-host,
 .ui-field-group-number-stepper-host,
 .ui-field-group-multiselect {
   box-sizing: border-box;

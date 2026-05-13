@@ -120,6 +120,7 @@ const DEMO_GROUPS = [
       { href: "./demo.toggle.group.html", label: "Toggle Group" },
       { href: "./demo.checkbox.html", label: "Checkbox" },
       { href: "./demo.checkbox.group.html", label: "Checkbox Group" },
+      { href: "./demo.combobox.html", label: "Combobox" },
       { href: "./demo.number.stepper.html", label: "Number Stepper" },
       { href: "./demo.buttons.html", label: "Buttons" },
       { href: "./demo.password.html", label: "Password Field" },

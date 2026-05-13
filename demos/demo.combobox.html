@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combobox Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .host { max-width: 420px; border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; display: grid; gap: 8px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.combobox"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Combobox",
+      overview: "Free-text input with reusable suggestions and optional local history.",
+      useWhen: [
+        "Use <code>createCombobox(...)</code> when operators can type new values but often reuse prior entries.",
+        "Use <code>storageKey</code> for local, per-browser history such as route names, facilities, or landmarks."
+      ],
+      avoidWhen: [
+        "Use a select when the value must be limited to a controlled vocabulary.",
+        "Avoid local history for sensitive values that should not persist on the device."
+      ],
+      description: "The combobox stores committed values in localStorage when a storage key is provided, deduplicates entries case-insensitively, and keeps recent values first.",
+      defaultSampleCode: "const route = createCombobox(host, {\n  name: \"route_location\",\n  storageKey: \"helpers.fieldGroup.roadAccessStatus.routeLocation\",\n  suggestions: [\"Coastal Road\", \"Old Bridge\"],\n  onChange(value) {\n    console.log(value);\n  }\n});",
+      constructor: [
+        { factory: "<code>createCombobox(container, options)</code>", arguments: "host node, combobox options", returns: "Combobox instance" }
+      ],
+      options: [
+        { option: "<code>value</code>", default: "<code>\"\"</code>", description: "Initial input value." },
+        { option: "<code>suggestions</code>", default: "<code>[]</code>", description: "Static suggestion values merged with local history." },
+        { option: "<code>storageKey</code>", default: "<code>\"\"</code>", description: "localStorage key used for committed value history." },
+        { option: "<code>maxSuggestions</code>", default: "<code>20</code>", description: "Maximum number of suggestions shown and retained." },
+        { option: "<code>minChars</code>", default: "<code>0</code>", description: "Minimum typed characters before suggestions appear." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Receives the committed value." }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "Current text value." },
+        { method: "<code>setValue(value)</code>", arguments: "string", returns: "<code>void</code>" },
+        { method: "<code>getSuggestions()</code>", arguments: "none", returns: "Filtered suggestion array." },
+        { method: "<code>clearHistory()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div>
+      <h1 class="ui-title">Combobox Demo</h1>
+      <p class="muted">Type a route/location, commit it, then reuse it from local history.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Local History Suggestions</h2>
+      <div class="host">
+        <label class="ui-label" for="routeInput">Route / location</label>
+        <div id="comboHost"></div>
+      </div>
+      <div class="row">
+        <button id="sampleBtn" class="ui-button" type="button">Set Sample</button>
+        <button id="clearHistoryBtn" class="ui-button ui-button-ghost" type="button">Clear History</button>
+        <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+      </div>
+      <pre>createCombobox(host, {
+  id: "routeInput",
+  storageKey: "demo.combobox.routeLocation",
+  suggestions: ["Coastal Road", "Old Bridge", "North Creek Bridge"]
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createCombobox = await uiLoader.get("ui.combobox");
+
+    const page = document.querySelector("main.page");
+    const log = document.getElementById("log");
+    const storageKey = "demo.combobox.routeLocation";
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const combo = createCombobox(document.getElementById("comboHost"), {
+      id: "routeInput",
+      name: "route_location",
+      placeholder: "Type or choose a saved route/location",
+      storageKey,
+      suggestions: ["Coastal Road", "Old Bridge", "North Creek Bridge"],
+      onChange(value) {
+        writeLog("combobox.change", { value, history: JSON.parse(localStorage.getItem(storageKey) || "[]") });
+      },
+    });
+
+    document.getElementById("sampleBtn").addEventListener("click", () => {
+      combo.setValue("South Bridge");
+      combo.input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+      combo.clearHistory();
+      writeLog("combobox.clearHistory", {});
+    });
+    document.getElementById("snapshotBtn").addEventListener("click", () => {
+      writeLog("combobox.snapshot", { value: combo.getValue(), suggestions: combo.getSuggestions() });
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "light" ? "dark" : "light";
+      document.body.style.background = page.dataset.theme === "light" ? "#edf2f8" : "#0c1017";
+    });
+    writeLog("combobox.initial", { suggestions: combo.getSuggestions() });
+  </script>
+</body>
+</html>

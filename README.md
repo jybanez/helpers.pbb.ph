@@ -238,6 +238,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createCheckbox(container, options)` shared checkbox primitive with boolean mode and explicit `checkedValue` / `uncheckedValue` mode
 - `ui.checkbox.group.js`
   - `createCheckboxGroup(container, options)` shared multi-checkbox primitive with array values and min/max validation
+- `ui.combobox.js`
+  - `createCombobox(container, options)` free-text input with suggestions and optional localStorage-backed recent history
 - `ui.field.group.js`
   - `createFieldGroup(container, options)` reusable grouped-field editor with optional repeatable entries for workflows such as evacuation registries, missing-person reports, addresses, vehicles, and contact lists
 - `ui.field.group.presets.js`
@@ -1627,6 +1629,7 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.field.group.html` -> repeatable grouped custom field page
 - `demos/demo.checkbox.html` -> shared checkbox primitive page
 - `demos/demo.checkbox.group.html` -> shared multi-checkbox primitive page
+- `demos/demo.combobox.html` -> shared local-history combobox page
 - `demos/demo.fieldset.html` -> dedicated fieldset/grouped-form page
   - semantic `fieldset` / `legend` grouping
   - form-modal-style `rows[]` outside modal lifecycle
@@ -2272,6 +2275,62 @@ Related demos:
 
 - `demos/demo.checkbox.group.html`
 
+### `createCombobox(container, options)` (`js/ui/ui.combobox.js`)
+
+Purpose:
+
+- Shared free-text input for values that operators can type manually but often reuse.
+- Supports static suggestions plus optional localStorage-backed history through `storageKey`.
+- Useful for route/location names, facilities, landmarks, contact points, and other repeated operational text values.
+
+Factory:
+
+```js
+import { createCombobox } from "./js/ui/ui.combobox.js";
+
+const route = createCombobox(container, {
+  name: "route_location",
+  storageKey: "helpers.fieldGroup.roadAccessStatus.routeLocation",
+  suggestions: ["Coastal Road", "Old Bridge"],
+  maxSuggestions: 20,
+  onChange(value) {
+    console.log(value);
+  }
+});
+```
+
+Behavior notes:
+
+- The input remains free text; suggestions never restrict valid values.
+- Committed non-empty values are stored locally when `storageKey` is provided.
+- History is deduplicated case-insensitively and kept recent-first.
+- Avoid local history for sensitive values that should not persist on the device.
+
+Methods:
+
+- `getValue()`
+- `setValue(value)`
+- `getSuggestions()`
+- `clearHistory()`
+- `update(options)`
+- `focus()`
+- `destroy()`
+
+`createFieldGroup(...)` can host combobox fields with:
+
+```js
+{
+  type: "combobox",
+  key: "route_location",
+  label: "Route / location",
+  storageKey: "helpers.fieldGroup.roadAccessStatus.routeLocation"
+}
+```
+
+Related demos:
+
+- `demos/demo.combobox.html`
+
 ### `createFieldset(container, options)` (`js/ui/ui.fieldset.js`)
 
 Purpose:
@@ -2456,12 +2515,12 @@ Preset layout:
 
 - `person()` renders `last_name` / `first_name` as a two-column row, keeps hidden computed `name` in the payload as `Last, First`, then renders `gender` and `age` as a two-column row.
 - `address()` renders three two-column rows: `neighborhood`/`barangay`, `town`/`city`, and `state`/`country`.
-- `missingPerson()` extends person with a `last_seen_days`/`last_seen_location` row.
+- `missingPerson()` extends person with a `last_seen_days`/`last_seen_location` row; `last_seen_location` uses combobox history for repeated landmarks.
 - `evacuee()` extends person with full-width `local_citizen` and `needs` rows.
-- `family()` captures affected household counts and local address/sitio/purok text. It intentionally omits barangay/city/province because those are expected to come from the hotline context. `adult_count` and `children_count` are operator-entered base counts, while hidden `member_count` is still computed into the value as `adult_count + children_count` for reporting/SITREP use.
+- `family()` captures affected household counts and local address/sitio/purok text. It intentionally omits barangay/city/province because those are expected to come from the hotline context. `address` uses combobox history. `adult_count` and `children_count` are operator-entered base counts, while hidden `member_count` is still computed into the value as `adult_count + children_count` for reporting/SITREP use.
 - `casualtyPatient()` extends person with condition, injury, consciousness, triage, transport, and destination facility fields.
-- In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` remains visible for morgue/hospital/funeral-home routing.
-- `infrastructureDamage()` captures asset damage and operational status for roads, bridges, utilities, facilities, communications, and other infrastructure.
+- In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` remains visible for morgue/hospital/funeral-home routing and uses combobox history.
+- `infrastructureDamage()` captures asset damage and operational status for roads, bridges, utilities, facilities, communications, and other infrastructure. `name_location` uses combobox history for repeated asset/place names.
 - `shelterDamage()` focuses on residential/shelter impact using structure types: house, apartment/boarding house, temporary shelter, evacuation center, and other.
 - `roadAccessStatus()` captures route access condition and passable vehicle types through `checkbox-group`; `obstruction_type` appears only when Access is `Blocked` or `Closed`, and closed access replaces vehicle passability choices with a highlighted not-passable warning.
 - `roadAccessStatus()` includes warning validation for responder-critical routing data: route/location and Access should be filled, blocked/closed access needs an obstruction type, and closed access should not list passable vehicle types.
@@ -2885,7 +2944,7 @@ Window options:
 | `closable` | `boolean` | `true` | no | Enables close action. |
 | `initialState` | `"normal" \| "maximized" \| "minimized"` | `"normal"` | no | Initial state applied after creation. |
 | `className` | `string` | `""` | no | Extra class names for the window root. |
-| `headerActions` | `Array<Action>` | `[]` | no | Extra title-bar actions before minimize/maximize/close controls. |
+| `headerActions` | `Array<Action>` | `[]` | no | Extra title-bar actions kept inline between the shrinking title and fixed minimize/maximize/close controls. |
 | `onOpen` | `({ state }) => void` | `null` | no | Fires when this window opens. |
 | `onClose` | `({ state, meta? }) => void` | `null` | no | Fires when this window closes. |
 | `onFocus` | `({ state }) => void` | `null` | no | Fires when this window becomes active. |
@@ -2894,6 +2953,8 @@ Window options:
 | `onStateChange` | `({ type, state }) => void` | `null` | no | Fires on minimize, maximize, restore, move, and resize transitions. |
 
 Header action object contract:
+
+Header actions stay inside the title-bar row. The title truncates as needed, built-in window controls remain fixed on the far right, and interactive header actions do not initiate title-bar dragging. Maximized windows render flush to the manager work area without rounded outer chrome.
 
 | Property | Type | Default | Required | Description |
 |---|---|---:|---|---|

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Combobox Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.combobox.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createCombobox } from "../js/ui/ui.combobox.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const storageKey = "tests.combobox.routeLocation";
+    localStorage.removeItem(storageKey);
+
+    const changes = [];
+    const combo = createCombobox(host, {
+      value: "",
+      storageKey,
+      suggestions: ["Old Bridge", "Coastal Road"],
+      maxSuggestions: 5,
+      onChange(value) {
+        changes.push(value);
+      },
+    });
+
+    assert(combo.getSuggestions().includes("Old Bridge"), "combobox should expose static suggestions");
+    combo.input.focus();
+    combo.input.value = "Bridge";
+    combo.input.dispatchEvent(new Event("input", { bubbles: true }));
+    assert(combo.getSuggestions().join(",") === "Old Bridge", "combobox should filter suggestions by typed text");
+    combo.input.value = "New Bridge";
+    combo.input.dispatchEvent(new Event("input", { bubbles: true }));
+    combo.input.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(JSON.parse(localStorage.getItem(storageKey) || "[]")[0] === "New Bridge", "combobox should store committed custom values locally");
+    combo.input.value = "old";
+    combo.input.dispatchEvent(new Event("input", { bubbles: true }));
+    combo.input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    combo.input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    assert(combo.getValue() === "Old Bridge", "combobox should select highlighted suggestions with Enter");
+    assert(changes.includes("Old Bridge"), "combobox should notify on selected suggestion changes");
+
+    combo.destroy();
+    assert(host.innerHTML.trim() === "", "combobox destroy should clear host markup");
+    localStorage.removeItem(storageKey);
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>
