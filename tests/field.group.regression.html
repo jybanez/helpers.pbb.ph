@@ -206,6 +206,33 @@
     assert(Boolean(breakdownHost.querySelector('[data-field-key="adult_count"] .ui-field-group-warning-badge')), "collapsed breakdown parents should show a warning badge");
     assert(Boolean(breakdownHost.querySelector(".ui-field-group-breakdown-warning.is-invalid")), "invalid enabled breakdown rules should highlight existing validation text");
 
+    const narrowStepperHost = document.createElement("div");
+    narrowStepperHost.style.width = "280px";
+    document.body.appendChild(narrowStepperHost);
+    const narrowStepperGroup = createFieldGroup(narrowStepperHost, {
+      name: "affected_families",
+      repeatable: true,
+      value: [{ adult_count: 0, children_count: 0 }],
+      fields: [
+        [
+          { key: "adult_count", label: "Adult count", type: "number-stepper", min: 0 },
+          { key: "children_count", label: "Children count", type: "number-stepper", min: 0 }
+        ]
+      ]
+    });
+    const narrowRow = narrowStepperHost.querySelector(".ui-field-group-row");
+    const adultChild = narrowStepperHost.querySelector('[data-field-key="adult_count"]');
+    const childrenChild = narrowStepperHost.querySelector('[data-field-key="children_count"]');
+    const adultStepper = adultChild?.querySelector(".ui-number-stepper");
+    const childrenStepper = childrenChild?.querySelector(".ui-number-stepper");
+    const narrowItemRect = narrowStepperHost.querySelector(".ui-field-group-item")?.getBoundingClientRect();
+    const adultStepperRect = adultStepper?.getBoundingClientRect();
+    const childrenStepperRect = childrenStepper?.getBoundingClientRect();
+    assert(getComputedStyle(narrowRow).gridTemplateColumns.split(" ").length === 1, "narrow field group rows should stack based on component width");
+    assert(adultStepperRect?.right <= narrowItemRect?.right + 1, "narrow adult number-stepper should stay inside the repeatable item border");
+    assert(childrenStepperRect?.right <= narrowItemRect?.right + 1, "narrow children number-stepper should stay inside the repeatable item border");
+    assert(childrenStepperRect?.top > adultStepperRect?.bottom, "narrow sibling number-steppers should not overlap vertically");
+
     chromeLess.destroy();
     presetGroup.destroy();
     presetHost.remove();
@@ -213,6 +240,8 @@
     conditionalHost.remove();
     breakdownGroup.destroy();
     breakdownHost.remove();
+    narrowStepperGroup.destroy();
+    narrowStepperHost.remove();
     group.destroy();
     assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
     assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");
