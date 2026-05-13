@@ -36,6 +36,21 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
   let contactDraft = String(currentData?.contact_person || "");
   const listeners = [];
 
+  function getBusyState() {
+    const itemBusy = currentData?.busy || currentData?.busy_state;
+    const optionBusy = currentOptions?.busy;
+    const busy = Boolean(optionBusy || itemBusy);
+    return {
+      busy,
+      action: currentOptions?.busyAction ?? currentData?.busyAction ?? currentData?.busy_action ?? "",
+      message: currentOptions?.busyMessage ?? currentData?.busyMessage ?? currentData?.busy_message ?? "",
+    };
+  }
+
+  function isBusy() {
+    return getBusyState().busy;
+  }
+
   function destroyListeners() {
     listeners.splice(0).forEach((off) => off());
   }
@@ -96,6 +111,40 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       return;
     }
     console.error(`[incident.teams.assignments.editor] ${message}`);
+  }
+
+  function renderBusyState(root) {
+    const busyState = getBusyState();
+    if (!busyState.busy) {
+      return;
+    }
+    const row = document.createElement("div");
+    row.className = "hh-assignment-busy";
+    row.setAttribute("role", "status");
+    row.setAttribute("aria-live", "polite");
+    const spinner = document.createElement("span");
+    spinner.className = "hh-assignment-busy-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.className = "hh-assignment-busy-text";
+    text.textContent = String(busyState.message || "Updating assignment...");
+    row.append(spinner, text);
+    root.appendChild(row);
+  }
+
+  function applyBusyState(root) {
+    const busyState = getBusyState();
+    if (!busyState.busy || !root) {
+      return;
+    }
+    root.classList.add("is-busy");
+    root.setAttribute("aria-busy", "true");
+    if (busyState.action) {
+      root.dataset.busyAction = String(busyState.action);
+    }
+    root.querySelectorAll("button, input, textarea, select").forEach((control) => {
+      control.disabled = true;
+    });
   }
 
   function getTeamResources() {
@@ -285,7 +334,10 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       }
     });
 
-    bind(addButton, "click", () => {
+      bind(addButton, "click", () => {
+      if (isBusy()) {
+        return;
+      }
       const note = String(noteInput.value || "").trim();
       if (!note) {
         return;
@@ -349,6 +401,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       input.value = String(allocated);
 
       bind(input, "change", () => {
+        if (isBusy()) {
+          return;
+        }
         const next = clampInt(input.value, 0, available);
         input.value = String(next);
         allocationMap[String(resourceTypeId)] = next;
@@ -396,6 +451,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       cancelButton.className = "hh-icon-button ui-button";
       cancelButton.textContent = "Cancel";
       bind(cancelButton, "click", async () => {
+        if (isBusy()) {
+          return;
+        }
         if (status === "assigned") {
           const ok = await runConfirm(currentOptions.confirmDelete, [], "options.confirmDelete");
           if (ok) {
@@ -459,6 +517,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     next.className = "hh-button ui-button";
     next.textContent = `Mark ${STEP_LABELS[nextStatus] || nextStatus}`;
     bind(next, "click", async () => {
+      if (isBusy()) {
+        return;
+      }
       if (status === "accepted" && !String(contactInput?.value || "").trim()) {
         showGuardMessage("Contact person is required before moving to En Route.");
         if (contactInput) {
@@ -506,6 +567,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     }
 
     renderHeader(root);
+    renderBusyState(root);
 
     const body = document.createElement("div");
     body.className = "hh-editor-body";
@@ -520,6 +582,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     renderNotes(body);
 
     root.appendChild(body);
+    applyBusyState(root);
   }
 
   render();
@@ -582,6 +645,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       edit.className = "hh-button ui-button hh-contact-edit";
       edit.textContent = "Edit";
       bind(edit, "click", async () => {
+        if (isBusy()) {
+          return;
+        }
         const ok = await runConfirm(
           currentOptions.confirmContactEdit || (() => window.confirm("Edit locked contact person?")),
           [],
@@ -610,6 +676,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       input.value = isContactOverrideEditing ? contactDraft : String(currentData?.contact_person || "");
 
       bind(input, "input", () => {
+        if (isBusy()) {
+          return;
+        }
         contactDraft = input.value;
         if (canInlineEdit) {
           currentData = { ...currentData, contact_person: input.value };
@@ -632,6 +701,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         save.className = "hh-button ui-button";
         save.textContent = "Save Contact";
         bind(save, "click", () => {
+          if (isBusy()) {
+            return;
+          }
           currentData = { ...currentData, contact_person: String(contactDraft || "").trim() };
           currentOptions.onContactChange?.(currentData?.id, currentData.contact_person);
           emitItemChange("contact", {
@@ -647,6 +719,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         cancel.className = "hh-button ui-button";
         cancel.textContent = "Cancel";
         bind(cancel, "click", () => {
+          if (isBusy()) {
+            return;
+          }
           isContactOverrideEditing = false;
           contactDraft = String(currentData?.contact_person || "");
           render();

@@ -25,6 +25,7 @@ let assignmentClientKeySeed = 0;
 export function incidentTeamsAssignments(container, data, options = {}) {
   let currentData = data;
   let currentOptions = normalizeListOptions(options);
+  let busyAssignments = normalizeBusyAssignments(currentOptions.busyAssignments);
   let listItems = getAssignments(currentData);
   let childMap = new Map(); // key -> { instance, li, mode }
   let orderKeys = [];
@@ -303,14 +304,35 @@ export function incidentTeamsAssignments(container, data, options = {}) {
   }
 
   function buildItemOptions(item) {
+    const busyState = resolveBusyForItem(item);
     return {
       ...currentOptions,
       className: "",
       incident_id: item?.incident_id ?? currentOptions.incident_id,
       team_id: item?.team_id ?? currentOptions.team_id,
       assigned_by_operator_id: item?.assigned_by_operator_id ?? currentOptions.operator_id,
-      onItemChange: undefined,
+      busy: busyState.busy,
+      busyAction: busyState.action,
+      busyMessage: busyState.message,
     };
+  }
+
+  function buildChildOptions(item, key) {
+    const itemOptions = buildItemOptions(item);
+    itemOptions.onItemChange = (nextItem, meta = {}) => {
+      const nextMeta = { ...meta, key };
+      if (meta.localStateChanged !== false) {
+        replaceListItemByKey(key, nextItem);
+      }
+      const nextList = meta.localStateChanged === false
+        ? buildListProposalByKey(key, nextItem, meta)
+        : cloneData(listItems);
+      emitNormalizedChange(nextItem, {
+        ...nextMeta,
+        nextList,
+      });
+    };
+    return itemOptions;
   }
 
   function itemMode() {
@@ -326,20 +348,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     li.appendChild(mount);
 
     const mode = itemMode();
-    const itemOptions = buildItemOptions(item);
-    itemOptions.onItemChange = (nextItem, meta = {}) => {
-      const nextMeta = { ...meta, key };
-      if (meta.localStateChanged !== false) {
-        replaceListItemByKey(key, nextItem);
-      }
-      const nextList = meta.localStateChanged === false
-        ? buildListProposalByKey(key, nextItem, meta)
-        : cloneData(listItems);
-      emitNormalizedChange(nextItem, {
-        ...nextMeta,
-        nextList,
-      });
-    };
+    const itemOptions = buildChildOptions(item, key);
 
     const instance =
       mode === "editor"
@@ -384,7 +393,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       const existing = childMap.get(key);
       if (existing && existing.mode === mode) {
         existing.li.setAttribute("data-assignment-anchor", getAssignmentAnchor(item, index));
-        existing.instance.update(item, buildItemOptions(item));
+        existing.instance.update(item, buildChildOptions(item, key));
       } else {
         if (existing) {
           existing.instance.destroy?.();
@@ -422,6 +431,29 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       const active = normalizeStatus(item?.status) !== "cancelled";
       return sameTeam && active;
     });
+  }
+
+  function resolveBusyForItem(item) {
+    const itemBusy = normalizeBusyEntry({
+      busy: item?.busy,
+      action: item?.busyAction ?? item?.busy_action,
+      message: item?.busyMessage ?? item?.busy_message,
+    }, Boolean(item?.busy));
+    if (itemBusy.busy) {
+      return itemBusy;
+    }
+    const keys = [
+      item?.id,
+      item?._client_key,
+      item?.client_key,
+      item?.team_assignment_id,
+    ].map((value) => String(value ?? "").trim()).filter(Boolean);
+    for (const key of keys) {
+      if (busyAssignments[key]?.busy) {
+        return busyAssignments[key];
+      }
+    }
+    return { busy: false, action: "", message: "" };
   }
 
   function destroyChildren() {
@@ -474,6 +506,27 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     renderFull();
   }
 
+  function setItemBusy(assignmentId, busy = true, options = {}) {
+    const key = String(assignmentId ?? "").trim();
+    if (!key) {
+      return;
+    }
+    if (busy) {
+      busyAssignments[key] = normalizeBusyEntry(options, true);
+    } else {
+      delete busyAssignments[key];
+    }
+    currentOptions = {
+      ...currentOptions,
+      busyAssignments: cloneData(busyAssignments),
+    };
+    renderFull();
+  }
+
+  function clearItemBusy(assignmentId) {
+    setItemBusy(assignmentId, false);
+  }
+
   renderFull();
 
   return {
@@ -493,9 +546,14 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     update(nextData, nextOptions = {}) {
       currentData = nextData;
       currentOptions = normalizeListOptions({ ...currentOptions, ...nextOptions });
+      if (Object.prototype.hasOwnProperty.call(nextOptions || {}, "busyAssignments")) {
+        busyAssignments = normalizeBusyAssignments(currentOptions.busyAssignments);
+      }
       listItems = getAssignments(currentData);
       renderFull();
     },
+    setItemBusy,
+    clearItemBusy,
     setList,
     getData() {
       if (!orderKeys.length) {
@@ -513,6 +571,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       return {
         list: cloneData(listItems),
         options: cloneData(currentOptions),
+        busyAssignments: cloneData(busyAssignments),
         drawerState: cloneData(drawerState),
       };
     },
@@ -539,6 +598,38 @@ function normalizeListOptions(options = {}) {
     ...normalized,
     ...DEFAULT_LIST_OPTIONS,
     ...options,
+    busyAssignments: normalizeBusyAssignments(options.busyAssignments),
+  };
+}
+
+function normalizeBusyAssignments(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.entries(value).reduce((map, [key, entry]) => {
+    const normalizedKey = String(key ?? "").trim();
+    if (!normalizedKey) {
+      return map;
+    }
+    const normalizedEntry = normalizeBusyEntry(entry, Boolean(entry));
+    if (normalizedEntry.busy) {
+      map[normalizedKey] = normalizedEntry;
+    }
+    return map;
+  }, {});
+}
+
+function normalizeBusyEntry(entry = {}, fallbackBusy = false) {
+  if (entry === true) {
+    return { busy: true, action: "", message: "" };
+  }
+  if (!entry || typeof entry !== "object") {
+    return { busy: Boolean(fallbackBusy), action: "", message: "" };
+  }
+  return {
+    busy: entry.busy == null ? Boolean(fallbackBusy) : entry.busy !== false,
+    action: entry.action == null ? "" : String(entry.action),
+    message: entry.message == null ? "" : String(entry.message),
   };
 }
 

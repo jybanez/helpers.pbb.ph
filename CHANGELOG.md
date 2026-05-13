@@ -12,6 +12,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 - Added `ui.device.selector` as an adapter-driven device selection/test helper with browser-media adapters for camera, microphone, and speaker V1, regular/compact layouts, shared `ui.select` default presentation plus `menu`, `list`, and `native-select` presentation modes, app-owned selection persistence callbacks, demo coverage, and regression coverage.
 - Added `mode: "compact"` to `createDevicePrimer(...)` and `createDevicePrimerModal(...)` for icon-strip device checks with a selected-check detail panel, shimmer checking state, and explicit retry for failed or blocked checks.
+- Added app-owned busy state support to `incidentTeamsAssignments(...)` via `busyAssignments`, item-level busy fields, and `setItemBusy(...)` / `clearItemBusy(...)`, rendering `aria-busy`, disabled card controls, and compact per-assignment status rows for async mutations.
 - Added `statusContent` and `statusContentLabel` to `createNavbar(...)` for a persistent inline status region that remains visible beside the mobile hamburger without duplicating into the hamburger menu.
 - Added `ui.signal.strength` as a transport-agnostic 0-4 bar connectivity status primitive with stable compact text, tones, bars-only mode, accessible labels, demo coverage, and regression coverage.
 - Added `emptyText` and `showEmptyPlaceholder` options to `ui.kanban` so compact rails can leave empty lanes blank while the default `"No cards."` placeholder remains unchanged.

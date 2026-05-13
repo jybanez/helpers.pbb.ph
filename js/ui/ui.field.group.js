@@ -361,6 +361,17 @@ export function createFieldGroup(container, options = {}) {
 
   function createControl(field, rawValue) {
     const type = getFieldType(field);
+    if (type === "notice" || type === "message") {
+      const notice = document.createElement("div");
+      notice.className = [
+        "ui-field-group-notice",
+        `is-${String(field?.tone || field?.severity || "info").toLowerCase()}`,
+      ].join(" ");
+      notice.textContent = String(field?.message ?? field?.text ?? field?.help_text ?? field?.help ?? "");
+      notice.setAttribute("role", String(field?.role || "note"));
+      return notice;
+    }
+
     if (type === "textarea") {
       const textarea = document.createElement("textarea");
       textarea.className = "ui-input";
@@ -678,6 +689,36 @@ function evaluateValidationRule(rule, item, options, index) {
   const targetField = field || fields[0] || String(rule.maxField || rule.max_field || "").trim();
   const fieldKey = buildNestedFieldKey(options, index, targetField || options.name);
   const severity = String(rule.severity || "warning").toLowerCase() === "error" ? "error" : "warning";
+  const when = rule.when ?? rule.visibleWhen ?? rule.visible_when;
+  if (when && !matchesVisibleWhen(when, item)) {
+    return null;
+  }
+
+  if (type === "required" || type === "required_when") {
+    const value = getItemValue(item, field);
+    if (!field || !isEmptyFieldValue(value)) {
+      return null;
+    }
+    return {
+      field_key: fieldKey,
+      message: rule.message || `${getHumanFieldLabel(options, field)} is required.`,
+      related_fields: [...new Set([field, ...Object.keys(when || {}), ...relatedFields].filter(Boolean))],
+      severity,
+    };
+  }
+
+  if (type === "empty" || type === "empty_when" || type === "forbidden_when") {
+    const value = getItemValue(item, field);
+    if (!field || isEmptyFieldValue(value)) {
+      return null;
+    }
+    return {
+      field_key: fieldKey,
+      message: rule.message || `${getHumanFieldLabel(options, field)} should be empty.`,
+      related_fields: [...new Set([field, ...Object.keys(when || {}), ...relatedFields].filter(Boolean))],
+      severity,
+    };
+  }
 
   if (type === "lte" || type === "max") {
     const value = getNumericItemValue(item, field);
@@ -733,6 +774,12 @@ function getValidationRuleMessage(rule, options) {
   const fields = safeArray(rule?.fields).map((key) => String(key || "").trim()).filter(Boolean);
   if (type === "lte" || type === "max") {
     return `${getHumanFieldLabel(options, field)} should not exceed ${getRuleMaxLabel(rule, options)}.`;
+  }
+  if (type === "required" || type === "required_when") {
+    return `${getHumanFieldLabel(options, field)} is required.`;
+  }
+  if (type === "empty" || type === "empty_when" || type === "forbidden_when") {
+    return `${getHumanFieldLabel(options, field)} should be empty.`;
   }
   if (type === "sum_eq" || type === "sum_equals") {
     return `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should equal ${getRuleMaxLabel(rule, options)}.`;
@@ -811,6 +858,23 @@ function getRuleMaxLabel(rule, options) {
 function getNumericItemValue(item, key) {
   const number = Number(item && typeof item === "object" ? item[key] ?? 0 : 0);
   return Number.isFinite(number) ? number : 0;
+}
+
+function getItemValue(item, key) {
+  if (!item || typeof item !== "object") {
+    return "";
+  }
+  return item[key];
+}
+
+function isEmptyFieldValue(value) {
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+  if (value && typeof value === "object") {
+    return Object.keys(value).length === 0;
+  }
+  return String(value ?? "").trim() === "";
 }
 
 function getHumanFieldLabel(options, key) {

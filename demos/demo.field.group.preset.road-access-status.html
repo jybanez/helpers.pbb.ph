@@ -25,10 +25,10 @@
   <script>
     window.demoMeta = {
       title: "Road / Access Status Field Group Preset",
-      overview: "Focused reference for repeatable route access and clearance records.",
-      useWhen: ["Use <code>fieldGroupPresets.roadAccessStatus()</code> for blocked routes, cleared routes, obstructions, and vehicle passability."],
+      overview: "Focused reference for repeatable route access records.",
+      useWhen: ["Use <code>fieldGroupPresets.roadAccessStatus()</code> for blocked routes, obstructions, and vehicle passability."],
       avoidWhen: ["Use <code>infrastructureDamage()</code> when the focus is asset damage rather than current access status."],
-      description: "The road/access status preset captures route location, status, obstruction type, passable vehicle types, and clearance state. Vehicle passability uses the shared checkbox-group component.",
+      description: "The road/access status preset captures route location, access condition, and passable vehicle types. Obstruction type appears only when access is blocked or closed. When access is closed, vehicle passability choices are replaced by a highlighted not-passable warning.",
       defaultSampleCode: `const group = createFieldGroup(host, {
   name: "road_access",
   ...fieldGroupPresets.roadAccessStatus({ label: "Road / Access Status" }),
@@ -36,8 +36,7 @@
     route_location: "Coastal Road",
     status: "Blocked",
     obstruction_type: "Flooding",
-    passable_by_vehicle_type: ["Pedestrian", "Motorcycle"],
-    cleared: "No"
+    passable_by_vehicle_type: ["Pedestrian", "Motorcycle"]
   }]
 });`,
       constructor: [{ factory: "<code>fieldGroupPresets.roadAccessStatus(options?)</code>", arguments: "optional preset overrides", returns: "Plain repeatable field-group config for <code>createFieldGroup(...)</code>" }],
@@ -47,7 +46,9 @@
         { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "JSON <code>{ \"preset\": \"roadAccessStatus\", \"repeatable\": true }</code> resolves the preset without duplicated <code>fields[]</code>." }
       ],
       properties: [
-        { property: "<code>sitrep</code>", type: "<code>Array</code>", description: "<code>blocked_routes</code>, <code>cleared_routes</code>." },
+        { property: "<code>sitrep</code>", type: "<code>Array</code>", description: "<code>blocked_routes</code>." },
+        { property: "<code>validations</code>", type: "<code>Array</code>", description: "Warns when route/access are missing, blocked/closed access has no obstruction type, or closed access lists passable vehicle types." },
+        { property: "<code>passability_warning.type</code>", type: "<code>notice</code>", description: "Shows a highlighted warning instead of passability choices when Access is closed." },
         { property: "<code>passable_by_vehicle_type.type</code>", type: "<code>checkbox-group</code>", description: "Allows multiple passable modes such as pedestrian, motorcycle, light vehicle, truck, and emergency vehicle." }
       ],
       events: [
@@ -63,8 +64,8 @@
       presetKey: "roadAccessStatus",
       name: "road_access",
       label: "Road / Access Status",
-      initialValue: [{ route_location: "Coastal Road", status: "Blocked", obstruction_type: "Flooding", passable_by_vehicle_type: ["Pedestrian", "Motorcycle"], cleared: "No" }],
-      sampleValue: [{ route_location: "Mountain Route", status: "Limited", obstruction_type: "Landslide", passable_by_vehicle_type: ["Pedestrian", "Emergency vehicle"], cleared: "No" }]
+      initialValue: [{ route_location: "Coastal Road", status: "Blocked", obstruction_type: "Flooding", passable_by_vehicle_type: ["Pedestrian", "Motorcycle"] }],
+      sampleValue: [{ route_location: "Mountain Route", status: "Limited", obstruction_type: "Landslide", passable_by_vehicle_type: ["Pedestrian", "Emergency vehicle"] }]
     };
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>

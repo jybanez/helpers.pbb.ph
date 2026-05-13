@@ -288,9 +288,25 @@
     assert(statusItemEvent?.nextItem?.status === "accepted", "team assignments status change should emit the candidate next item");
     assert(statusListEvent?.nextList?.[0]?.status === "accepted", "team assignments status change should emit the candidate next list");
 
+    assignmentsApi.setItemBusy(assignmentData[0]._client_key, true, {
+      action: "status",
+      message: "Updating assignment...",
+    });
+    const busyCard = document.querySelector("#assignmentsHost .hh-incident-teams-assignments-editor");
+    assert(busyCard?.getAttribute("aria-busy") === "true", "busy team assignment should set aria-busy on the card");
+    assert(busyCard?.classList.contains("is-busy"), "busy team assignment should add an is-busy class");
+    assert(busyCard?.dataset.busyAction === "status", "busy team assignment should expose the busy action");
+    assert(busyCard?.querySelector(".hh-assignment-busy")?.textContent.includes("Updating assignment"), "busy team assignment should render a compact busy message");
+    assert(Array.from(busyCard?.querySelectorAll("button, input, textarea, select") || []).every((control) => control.disabled), "busy team assignment should disable controls");
+    assert(assignmentsApi.getState().busyAssignments[assignmentData[0]._client_key]?.message === "Updating assignment...", "team assignments state should expose the busy map");
+    assignmentsApi.clearItemBusy(assignmentData[0]._client_key);
+    assert(!document.querySelector("#assignmentsHost .hh-incident-teams-assignments-editor")?.hasAttribute("aria-busy"), "clearItemBusy should remove card busy state");
+
     const cancelButton = document.querySelector("#assignmentsHost .hh-icon-button");
     cancelButton.click();
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 20));
     const cancelItemEvent = assignmentEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "cancel");
     const cancelListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "cancel");
     assert(confirmCancelCalls[0]?.reasonCode === "other", "team assignments cancel should pass requestCancelReason output into confirmCancel");

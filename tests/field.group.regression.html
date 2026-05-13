@@ -233,6 +233,32 @@
     assert(childrenStepperRect?.right <= narrowItemRect?.right + 1, "narrow children number-stepper should stay inside the repeatable item border");
     assert(childrenStepperRect?.top > adultStepperRect?.bottom, "narrow sibling number-steppers should not overlap vertically");
 
+    const roadAccessHost = document.createElement("div");
+    document.body.appendChild(roadAccessHost);
+    const roadAccessGroup = createFieldGroup(roadAccessHost, {
+      name: "road_access",
+      preset: "roadAccessStatus",
+      value: [{ route_location: "Coastal Road", status: "Open", obstruction_type: "Flooding" }]
+    });
+    assert(!roadAccessHost.querySelector('[data-field-key="obstruction_type"]'), "road access obstruction type should stay hidden while access is passable");
+    const accessSelect = roadAccessHost.querySelector('[data-field-key="status"] .ui-input');
+    accessSelect.value = "Blocked";
+    accessSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(Boolean(roadAccessHost.querySelector('[data-field-key="obstruction_type"]')), "road access obstruction type should render when access is blocked");
+    roadAccessGroup.setValue([{ route_location: "Coastal Road", status: "Blocked", passable_by_vehicle_type: [] }]);
+    const blockedValidation = roadAccessGroup.validate();
+    assert(blockedValidation.warnings?.some((warning) => warning.field_key === "road_access.0.obstruction_type"), "road access should warn when blocked access has no obstruction type");
+    assert(Boolean(roadAccessHost.querySelector('[data-field-key="obstruction_type"] .ui-field-group-warning-badge')), "road access obstruction warnings should show a field warning badge");
+    roadAccessGroup.setValue([{ route_location: "Coastal Road", status: "Closed", obstruction_type: "Flooding", passable_by_vehicle_type: ["Pedestrian"] }]);
+    const closedValidation = roadAccessGroup.validate();
+    assert(closedValidation.warnings?.some((warning) => warning.field_key === "road_access.0.passable_by_vehicle_type"), "road access should warn when closed access has passable vehicle types");
+    assert(!roadAccessHost.querySelector('[data-field-key="passable_by_vehicle_type"]'), "closed road access should hide passable vehicle choices");
+    assert(Boolean(roadAccessHost.querySelector('[data-field-key="passability_warning"] .ui-field-group-notice.is-warning')), "closed road access should render a highlighted passability warning notice");
+    assert(
+      roadAccessHost.querySelector('[data-field-key="passability_warning"] .ui-field-group-notice')?.textContent.includes("not passable"),
+      "closed road access warning should explain that the route is not passable"
+    );
+
     chromeLess.destroy();
     presetGroup.destroy();
     presetHost.remove();
@@ -242,6 +268,8 @@
     breakdownHost.remove();
     narrowStepperGroup.destroy();
     narrowStepperHost.remove();
+    roadAccessGroup.destroy();
+    roadAccessHost.remove();
     group.destroy();
     assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
     assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");

@@ -770,6 +770,7 @@ Required options:
 Optional list options:
 
 - `editable` (default `true`)
+- `busyAssignments` (default `{}`), keyed by assignment `id`, `_client_key`, `client_key`, or `team_assignment_id`
 - `headerText` (default `"Dispatch Details"`)
 - `drawerHeaderText` (default `"Select Teams to Dispatch"`)
 - `onAssignTeam(newAssignment)`
@@ -786,7 +787,8 @@ List behavior:
 - Assign drawer supports:
   - category filtering (`All Categories` default)
   - search within filtered team set
-  - duplicate hint on already assigned teams (same `team_id` where status is not `cancelled`)
+- duplicate hint on already assigned teams (same `team_id` where status is not `cancelled`)
+- busy assignment cards set `aria-busy`, render a compact spinner/status row, and disable card controls until cleared by the app
 
 If required list options are missing:
 
@@ -824,6 +826,7 @@ Editor callbacks:
 - `onAllocateChange(assignmentId, resourceTypeId, allocated)`
 - `onItemChange(nextItem, meta)`
 - `requestCancelReason(fromStatus, meta)` -> `{ reasonCode, reasonNote } | null` (sync or async)
+- item-level `busy`, `busyAction`/`busy_action`, and `busyMessage`/`busy_message` fields may be supplied directly on an assignment row
 
 Confirm handlers (required in editor):
 
@@ -838,8 +841,10 @@ Runtime methods:
 - `incidentTeamsAssignmentsEditor.getData()` -> current assignment payload object
 - `incidentTeamsAssignmentsViewer.getData()` -> current assignment payload object
 - `incidentTeamsAssignments.setList(items[])` -> replaces current list and rebuilds child instances
+- `incidentTeamsAssignments.setItemBusy(assignmentId, true, { action, message })` -> marks one assignment busy
+- `incidentTeamsAssignments.clearItemBusy(assignmentId)` -> clears one assignment busy state
 - `incidentTeamsAssignments.getData()` -> array of assignment payloads from child instances
-- `incidentTeamsAssignments.getState()` -> `{ list, options, drawerState }`
+- `incidentTeamsAssignments.getState()` -> `{ list, options, busyAssignments, drawerState }`
 
 Normalized change contract:
 
@@ -848,6 +853,7 @@ Normalized change contract:
 - `onChange(nextList, meta)` emits the corresponding normalized candidate list
 - persistence, debounce/autosave timing, optimistic behavior, rollback/conflict handling, and canonical state ownership remain app-owned
 - `requestCancelReason(fromStatus, meta)` lets the host replace the native prompt-based cancel-reason collector with Helper modal UI or another app-owned adapter while preserving the existing `confirmCancel(...)` and `onCancel(...)` boundaries
+- `busyAssignments` and item-level busy fields are app-owned async state; the helper only reflects and gates the affected card
 
 ## Incident Types Helpers
 
@@ -1710,6 +1716,7 @@ Required options:
 Optional options:
 
 - `editable` (default `true`)
+- `busyAssignments` (default `{}`), keyed by assignment `id`, `_client_key`, `client_key`, or `team_assignment_id`
 - `headerText` (default `"Dispatch Details"`)
 - `drawerHeaderText` (default `"Select Teams to Dispatch"`)
 - `theme` (default `"dark"`), used to set the helper variant while inheriting colors from the shared `--ui-*` theme tokens
@@ -1718,10 +1725,13 @@ Optional options:
 - `onItemChange(nextItem, meta)`
 - `onChange(nextList, meta)`
 - `requestCancelReason(fromStatus, meta)` -> `{ reasonCode, reasonNote } | null` (sync or async)
+- item-level `busy`, `busyAction`/`busy_action`, and `busyMessage`/`busy_message`
 
 Methods:
 
 - `setList(items[])`
+- `setItemBusy(assignmentId, true, { action, message })`
+- `clearItemBusy(assignmentId)`
 - `getData()`
 - `getState()`
 - `update(nextData, nextOptions?)`
@@ -1745,6 +1755,14 @@ const api = incidentTeamsAssignments(container, incidentPayload, {
     console.log("New assignment payload:", payload);
   },
 });
+
+api.setItemBusy(assignmentId, true, {
+  action: "status",
+  message: "Updating assignment...",
+});
+
+await saveAssignmentStatus(assignmentId, nextStatus);
+api.clearItemBusy(assignmentId);
 ```
 
 ### `incidentTeamsAssignmentsEditor(container, data, options)`
@@ -2431,7 +2449,7 @@ Available presets:
 | `casualtyPatient()` | person fields plus `condition`, `injury_type`, `consciousness`, `triage_color`, `transported`, `destination_facility` |
 | `infrastructureDamage()` | `asset_type`, `name_location`, `damage_level`, `operational_status`, `estimated_affected_users` |
 | `shelterDamage()` | `structure_type`, `damage_level`, `families_affected`, `persons_affected`, `habitable` |
-| `roadAccessStatus()` | `route_location`, `status`, `obstruction_type`, `passable_by_vehicle_type`, `cleared` |
+| `roadAccessStatus()` | `route_location`, `status` rendered as Access, `obstruction_type`, `passable_by_vehicle_type`, `passability_warning` notice when closed |
 | `vehicleInvolved()` | `vehicle_type`, `plate_number`, `color`, `damage_level` |
 
 Preset layout:
@@ -2445,7 +2463,8 @@ Preset layout:
 - In `casualtyPatient()`, `consciousness`, `triage_color`, and `transported` hide when `condition` is `Deceased`; `destination_facility` remains visible for morgue/hospital/funeral-home routing.
 - `infrastructureDamage()` captures asset damage and operational status for roads, bridges, utilities, facilities, communications, and other infrastructure.
 - `shelterDamage()` focuses on residential/shelter impact using structure types: house, apartment/boarding house, temporary shelter, evacuation center, and other.
-- `roadAccessStatus()` captures route status, obstruction type, passable vehicle types through `checkbox-group`, and clearance state.
+- `roadAccessStatus()` captures route access condition and passable vehicle types through `checkbox-group`; `obstruction_type` appears only when Access is `Blocked` or `Closed`, and closed access replaces vehicle passability choices with a highlighted not-passable warning.
+- `roadAccessStatus()` includes warning validation for responder-critical routing data: route/location and Access should be filled, blocked/closed access needs an obstruction type, and closed access should not list passable vehicle types.
 - `vehicleInvolved()` captures lean bystander-friendly vehicle details for road accidents: vehicle type, plate number when visible, common vehicle color through a select field, and apparent damage level.
 - Numeric preset fields use `type: "number-stepper"` so count-style values can be changed through the shared stepper controls while still allowing direct keyboard entry.
 
@@ -2474,6 +2493,7 @@ Breakdown validation:
 - Rules that reference breakdown subfields stay quiet while that breakdown is collapsed. They start evaluating only when the breakdown is opened/enabled.
 - Open breakdowns render their validation guidance in-place. Valid rules are shown muted, and invalid rules are highlighted, so the breakdown panel does not relayout when a warning appears or clears.
 - Supported validation rule types are `lte` for one field not exceeding another field or fixed `max`, `sum_lte` for a list of fields whose total must not exceed another field or fixed `max`, and `sum_eq` for a list of fields whose total must exactly match another field or fixed `max`.
+- `required` / `required_when` rules warn when a field is empty, optionally gated by `when`; `empty` / `empty_when` / `forbidden_when` rules warn when a field has a value under a matching condition.
 - Set `severity: "error"` on a rule only when the issue should block validation status. The default severity is `warning`.
 - `family()` includes exact-match warning rules for adult/child sex subtotals, plus upper-bound rules for senior/PWD subtotals and pregnant adults not exceeding adult female count. Overlapping categories such as senior and PWD are validated individually rather than summed together.
 
@@ -2486,7 +2506,7 @@ SITREP metadata:
   - `casualtyPatient()`: `injured_count`, `critical_count`, `transported_count`
   - `infrastructureDamage()`: `damaged_infrastructure_count`, `impassable_roads_bridges`
   - `shelterDamage()`: `partially_damaged_houses`, `totally_damaged_houses`, `displaced_families`
-  - `roadAccessStatus()`: `blocked_routes`, `cleared_routes`
+  - `roadAccessStatus()`: `blocked_routes`
   - `vehicleInvolved()`: `vehicles_involved_count`
 
 Custom row layout example:

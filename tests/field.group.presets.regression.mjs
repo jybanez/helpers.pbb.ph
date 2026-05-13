@@ -101,9 +101,18 @@ assert(flatFields(shelterDamage.fields).find((field) => field.key === "structure
 assert(flatFields(shelterDamage.fields).find((field) => field.key === "families_affected")?.type === "number-stepper", "shelterDamage affected counts should use number-stepper");
 
 const roadAccessStatus = fieldGroupPresets.roadAccessStatus();
-assert(fieldKeys(roadAccessStatus).join(",") === "route_location,status,obstruction_type,passable_by_vehicle_type,cleared", "roadAccessStatus preset should include access status fields");
+assert(fieldKeys(roadAccessStatus).join(",") === "route_location,status,obstruction_type,passable_by_vehicle_type,passability_warning", "roadAccessStatus preset should include access status fields");
+assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "status")?.label === "Access", "roadAccessStatus status key should render with Access label");
+assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "status")?.required === true, "roadAccessStatus access field should be required");
+assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "obstruction_type")?.required === true, "roadAccessStatus obstruction type should be required when visible");
+assert(JSON.stringify(flatFields(roadAccessStatus.fields).find((field) => field.key === "obstruction_type")?.visibleWhen) === JSON.stringify({ status: ["Blocked", "Closed"] }), "roadAccessStatus obstruction type should show only when access is not passable");
+assert(JSON.stringify(flatFields(roadAccessStatus.fields).find((field) => field.key === "passable_by_vehicle_type")?.visibleWhen) === JSON.stringify({ status: { not: "Closed" } }), "roadAccessStatus passable vehicle choices should hide when access is closed");
+assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "passability_warning")?.type === "notice", "roadAccessStatus should show a warning notice when access is closed");
+assert(roadAccessStatus.validations?.some((rule) => rule.type === "required_when" && rule.field === "obstruction_type"), "roadAccessStatus preset should validate obstruction type for blocked/closed access");
+assert(roadAccessStatus.validations?.some((rule) => rule.type === "empty_when" && rule.field === "passable_by_vehicle_type"), "roadAccessStatus preset should validate closed access passability conflicts");
 assert(flatFields(roadAccessStatus.fields).find((field) => field.key === "passable_by_vehicle_type")?.type === "checkbox-group", "roadAccessStatus passable vehicle field should use checkbox-group");
 assert(roadAccessStatus.sitrep.includes("blocked_routes"), "roadAccessStatus preset should expose blocked route SITREP metadata");
+assert(!roadAccessStatus.sitrep.includes("cleared_routes"), "roadAccessStatus preset should not expose cleared route SITREP metadata");
 
 const vehicleInvolved = fieldGroupPresets.vehicleInvolved();
 assert(vehicleInvolved.repeatable === true, "vehicleInvolved preset should default to repeatable");

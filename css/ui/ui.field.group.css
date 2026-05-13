@@ -173,6 +173,25 @@
   width: 100%;
 }
 
+.ui-field-group-notice {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--ui-border, #2a3448) 82%, transparent);
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: var(--ui-text-muted, #9fb2d8);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--ui-bg-soft, #151d2d) 42%, transparent);
+}
+
+.ui-field-group-notice.is-warning {
+  border-color: color-mix(in srgb, var(--ui-warning, #f6b44b) 52%, var(--ui-border, #2a3448));
+  color: color-mix(in srgb, var(--ui-warning, #f6b44b) 82%, var(--ui-text, #edf2ff));
+  background: color-mix(in srgb, var(--ui-warning, #f6b44b) 12%, var(--ui-bg, #0d1523));
+  font-weight: 600;
+}
+
 .ui-field-group-breakdown {
   grid-column: 1 / -1;
   position: relative;

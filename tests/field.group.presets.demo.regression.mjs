@@ -61,7 +61,7 @@ const pages = [
   },
   {
     file: "demo.field.group.preset.road-access-status.html",
-    required: ["Road / Access Status Field Group Preset", "Road / Access Status", "Passable by vehicle type", "Coastal Road", "blocked_routes", "checkbox-group"],
+    required: ["Road / Access Status Field Group Preset", "Road / Access Status", "Access", "Passable by vehicle type", "Coastal Road", "blocked_routes", "checkbox-group"],
   },
   {
     file: "demo.field.group.preset.vehicle-involved.html",
@@ -88,6 +88,9 @@ for (const page of pages) {
     failures.push(`${page.file}: missing ${missing.join(", ")}`);
   }
   if (page.file === "demo.field.group.preset.road-access-status.html") {
+    if (output.includes('data-field-key="cleared"') || output.includes("cleared_routes")) {
+      failures.push(`${page.file}: should not render cleared field or cleared_routes metadata`);
+    }
     const outerLabelPattern = /data-field-key="passable_by_vehicle_type"[\s\S]*?<label class="ui-label">Passable by vehicle type<\/label>/;
     const ownedLabelPattern = /class="ui-label ui-checkbox-group-label">Passable by vehicle type<\/div>/;
     if (outerLabelPattern.test(output)) {

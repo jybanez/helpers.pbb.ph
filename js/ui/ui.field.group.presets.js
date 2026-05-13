@@ -179,11 +179,36 @@ const SHELTER_DAMAGE_FIELDS = [
 const ROAD_ACCESS_STATUS_FIELDS = [
   [
     { key: "route_location", label: "Route / location", type: "text", required: true },
-    { key: "status", label: "Status", type: "select", options: ["Open", "Limited", "Blocked", "Closed", "Cleared"] },
+    { key: "status", label: "Access", type: "select", options: ["Open", "Limited", "Blocked", "Closed", "Cleared"], required: true },
   ],
-  { key: "obstruction_type", label: "Obstruction type", type: "select", options: ["Flooding", "Landslide", "Fallen tree", "Debris", "Collapsed structure", "Vehicle obstruction", "Other"] },
-  { key: "passable_by_vehicle_type", label: "Passable by vehicle type", type: "checkbox-group", options: ["Pedestrian", "Motorcycle", "Light vehicle", "Truck", "Emergency vehicle"] },
-  { key: "cleared", label: "Cleared", type: "select", options: YES_NO_OPTIONS },
+  { key: "obstruction_type", label: "Obstruction type", type: "select", options: ["Flooding", "Landslide", "Fallen tree", "Debris", "Collapsed structure", "Vehicle obstruction", "Other"], required: true, visibleWhen: { status: ["Blocked", "Closed"] } },
+  { key: "passable_by_vehicle_type", label: "Passable by vehicle type", type: "checkbox-group", options: ["Pedestrian", "Motorcycle", "Light vehicle", "Truck", "Emergency vehicle"], visibleWhen: { status: { not: "Closed" } } },
+  { key: "passability_warning", label: "Passable by vehicle type", type: "notice", tone: "warning", message: "Closed access is not passable and may pose risks to responders.", visibleWhen: { status: "Closed" } },
+];
+
+const ROAD_ACCESS_STATUS_VALIDATIONS = [
+  {
+    type: "required",
+    field: "route_location",
+    message: "Route / location is required for responder routing.",
+  },
+  {
+    type: "required",
+    field: "status",
+    message: "Access is required for responder routing.",
+  },
+  {
+    type: "required_when",
+    field: "obstruction_type",
+    when: { status: ["Blocked", "Closed"] },
+    message: "Obstruction type is required when access is blocked or closed.",
+  },
+  {
+    type: "empty_when",
+    field: "passable_by_vehicle_type",
+    when: { status: "Closed" },
+    message: "Closed access should not list passable vehicle types.",
+  },
 ];
 
 const VEHICLE_INVOLVED_FIELDS = [
@@ -268,7 +293,8 @@ export const fieldGroupPresets = {
       label: "Road / Access Status",
       repeatable: true,
       fields: ROAD_ACCESS_STATUS_FIELDS,
-      sitrep: ["blocked_routes", "cleared_routes"],
+      validations: ROAD_ACCESS_STATUS_VALIDATIONS,
+      sitrep: ["blocked_routes"],
     }, overrides);
   },
 
