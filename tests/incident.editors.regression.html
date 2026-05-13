@@ -88,7 +88,8 @@
       incident_type_category_name: "Fire",
       name: "Building Fire",
       fields: [
-        { field_key: "structure", field_label: "Structure", input_type: "text", sort_order: 1 },
+        { field_key: "structure", field_label: "Structure", input_type: "text", is_required: true, sort_order: 1 },
+        { field_key: "risk_level", field_label: "Risk level", input_type: "select", is_required: true, options: ["Low", "High"], sort_order: 1.5 },
         {
           field_key: "missing_persons",
           field_label: "Missing Persons",
@@ -118,8 +119,19 @@
     assert(getComputedStyle(incidentTypesHeader).top === "0px", "incident types sticky header should anchor to the top of its scroll container by default");
 
     const typeInput = document.querySelector("#incidentTypesHost .hh-field-row .hh-input");
+    const structureRow = document.querySelector('#incidentTypesHost [data-field-key="structure"]');
+    const riskSelect = document.querySelector('#incidentTypesHost [data-field-key="risk_level"] .hh-input');
+    assert(structureRow?.classList.contains("has-warning"), "required scalar text fields should show warning state when empty");
+    assert(typeInput?.getAttribute("aria-invalid") === "true", "required scalar text controls should set aria-invalid when empty");
+    assert(structureRow?.querySelector(".hh-field-warning-badge:not([hidden])")?.title.includes("Required"), "required scalar text fields should expose warning details");
+    assert(riskSelect?.closest(".hh-field-row")?.classList.contains("has-warning"), "required scalar select fields should show warning state when empty");
     typeInput.value = "Warehouse";
     typeInput.dispatchEvent(new Event("input", { bubbles: true }));
+    assert(!structureRow?.classList.contains("has-warning"), "required scalar text warning should clear after input");
+    assert(!typeInput?.hasAttribute("aria-invalid"), "required scalar text controls should clear aria-invalid after input");
+    riskSelect.value = "High";
+    riskSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(!riskSelect?.closest(".hh-field-row")?.classList.contains("has-warning"), "required scalar select warning should clear after selection");
 
     const typeItemEvent = typeEvents.find((entry) => entry.kind === "item" && entry.meta?.reason === "field");
     const typeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "field");

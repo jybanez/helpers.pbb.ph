@@ -93,6 +93,13 @@
   gap: var(--hh-space-1);
 }
 
+.hh-incident-types-details-editor .hh-field-label-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
 .hh-incident-types-details-editor .hh-field-label {
   font-size: 0.95rem;
   font-weight: 600;
@@ -104,6 +111,35 @@
   border-radius: 999px;
   border: 1px solid var(--hh-border);
   color: var(--hh-text-soft);
+}
+
+.hh-incident-types-details-editor .hh-field-warning-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, var(--hh-warning) 54%, var(--hh-border));
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--hh-warning) 78%, var(--hh-text));
+  background: color-mix(in srgb, var(--hh-warning) 14%, var(--hh-bg));
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hh-incident-types-details-editor .hh-field-warning-badge[hidden] {
+  display: none;
+}
+
+.hh-incident-types-details-editor .hh-field-row.has-warning .hh-field-label {
+  color: color-mix(in srgb, var(--hh-warning) 74%, var(--hh-text));
+}
+
+.hh-incident-types-details-editor .hh-field-row.has-warning .hh-input,
+.hh-incident-types-details-editor .hh-field-row.has-warning .hh-multiselect {
+  border-color: color-mix(in srgb, var(--hh-warning) 52%, var(--hh-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hh-warning) 12%, transparent);
 }
 
 .hh-incident-types-details-editor .hh-input[multiple] {

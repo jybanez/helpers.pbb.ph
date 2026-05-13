@@ -232,11 +232,25 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     label.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
     labelWrap.appendChild(label);
 
+    const controls = document.createElement("span");
+    controls.className = "hh-field-label-controls";
+
     if (isRequiredField(field)) {
       const required = document.createElement("span");
       required.className = "hh-required";
       required.textContent = "Required";
-      labelWrap.appendChild(required);
+      controls.appendChild(required);
+    }
+
+    const warning = document.createElement("span");
+    warning.className = "hh-field-warning-badge";
+    warning.textContent = "!";
+    warning.hidden = true;
+    warning.setAttribute("aria-hidden", "true");
+    controls.appendChild(warning);
+
+    if (controls.childElementCount) {
+      labelWrap.appendChild(controls);
     }
 
     return labelWrap;
@@ -321,6 +335,10 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
         input.required = true;
       }
 
+      const refreshValidation = () => {
+        applyFieldValidationState(row, input, field, getInputValue(input, field));
+      };
+
       bind(input, "change", () => {
         const value = getInputValue(input, field);
         setFieldValue(field, value);
@@ -329,6 +347,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
           fieldKey: getFieldKey(field),
           value,
         });
+        refreshValidation();
       });
       if (!["select", "multiselect"].includes(getFieldType(field))) {
         bind(input, "input", () => {
@@ -339,10 +358,12 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
             fieldKey: getFieldKey(field),
             value,
           });
+          refreshValidation();
         });
       }
 
       row.append(labelWrap, input);
+      refreshValidation();
       grid.appendChild(row);
     });
 
@@ -440,28 +461,19 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     fields.forEach((field) => {
       const fieldKey = getFieldKey(field);
       const value = entryMap[fieldKey] ?? "";
-      const trimmed = String(value).trim();
       const inputType = getFieldType(field);
       if (inputType === "group") {
         errors.push(...validateFieldGroup({ ...field, name: fieldKey }, parseFieldGroupValue(field, value)).errors);
         return;
       }
 
-      if (isRequiredField(field) && !trimmed) {
-        errors.push({ field_key: fieldKey, error: "Required value is missing" });
-      }
-
-      if (inputType === "number" && trimmed) {
-        const numeric = Number(trimmed);
-        if (!Number.isFinite(numeric)) {
-          errors.push({ field_key: fieldKey, error: "Value must be a valid number" });
-        } else {
-          if (field?.min !== null && field?.min !== undefined && field?.min !== "" && numeric < Number(field.min)) {
-            errors.push({ field_key: fieldKey, error: `Value must be >= ${field.min}` });
-          }
-          if (field?.max !== null && field?.max !== undefined && field?.max !== "" && numeric > Number(field.max)) {
-            errors.push({ field_key: fieldKey, error: `Value must be <= ${field.max}` });
-          }
+      const fieldError = getScalarFieldValidationMessage(field, value);
+      if (fieldError) {
+        errors.push({ field_key: fieldKey, error: fieldError });
+        const row = findFieldRow(container, fieldKey);
+        const input = row?.querySelector?.(".hh-input, .hh-multiselect");
+        if (row && input) {
+          applyFieldValidationState(row, input, field, value);
         }
       }
     });
@@ -546,6 +558,61 @@ function getFieldType(field) {
 
 function isRequiredField(field) {
   return Boolean(field?.is_required ?? field?.required);
+}
+
+function getScalarFieldValidationMessage(field, value) {
+  const inputType = getFieldType(field);
+  if (inputType === "group") {
+    return "";
+  }
+  const trimmed = String(value ?? "").trim();
+  if (isRequiredField(field) && !trimmed) {
+    return "Required value is missing";
+  }
+  if (inputType === "number" && trimmed) {
+    const numeric = Number(trimmed);
+    if (!Number.isFinite(numeric)) {
+      return "Value must be a valid number";
+    }
+    if (field?.min !== null && field?.min !== undefined && field?.min !== "" && numeric < Number(field.min)) {
+      return `Value must be >= ${field.min}`;
+    }
+    if (field?.max !== null && field?.max !== undefined && field?.max !== "" && numeric > Number(field.max)) {
+      return `Value must be <= ${field.max}`;
+    }
+  }
+  return "";
+}
+
+function applyFieldValidationState(row, input, field, value) {
+  if (!row || !input) {
+    return;
+  }
+  const message = getScalarFieldValidationMessage(field, value);
+  row.classList.toggle("has-warning", Boolean(message));
+  if (message) {
+    row.dataset.validationState = "warning";
+    input.setAttribute("aria-invalid", "true");
+  } else {
+    delete row.dataset.validationState;
+    input.removeAttribute("aria-invalid");
+  }
+
+  const badge = row.querySelector(".hh-field-warning-badge");
+  if (badge) {
+    badge.hidden = !message;
+    badge.title = message;
+    badge.setAttribute("aria-label", message || "");
+  }
+}
+
+function findFieldRow(root, fieldKey) {
+  if (!root || typeof root.querySelectorAll !== "function") {
+    return null;
+  }
+  return Array.from(root.querySelectorAll("[data-field-key]")).find(
+    (row) => row.getAttribute("data-field-key") === fieldKey
+  ) || null;
 }
 
 function isRepeatableGroup(field) {

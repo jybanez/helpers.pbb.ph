@@ -104,7 +104,7 @@
         { option: "<code>onItemChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next incident-type row plus a small <code>meta</code> reason payload." },
         { option: "<code>onChange</code>", default: "<code>undefined</code>", description: "Normalized post-mutation hook that receives the candidate next incident-type list plus the same <code>meta</code> payload." },
         { option: "<code>removeIncidentType</code>", default: "<code>undefined</code>", description: "Editable-only removal hook for an incident-type row." },
-        { option: "<code>onFieldChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for field changes within an incident-type row." },
+        { option: "<code>onFieldChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for field changes within an incident-type row. Scalar required/number fields paint warning state and <code>aria-invalid</code> while invalid, matching grouped preset validation affordances." },
         { option: "<code>onResourceChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for required-resource quantity changes." }
       ],
       events: [

@@ -931,6 +931,7 @@ Behavior implemented:
   - supports `text|number|textarea|select|multiselect|group`
   - supports existing backend field keys (`field_key`, `field_label`, `input_type`, `is_required`) and schema-style aliases (`key`, `label`, `type`, `required`)
   - required indicator + required attribute for required fields
+  - scalar required/number validation paints warning state on the field row, sets `aria-invalid`, and clears the warning as the operator corrects the value
   - number `min/max/step` support
   - multiselect stored as comma-separated values in `detail_entries[].field_value`
   - grouped fields render nested child fields using the same text/number/textarea/select/multiselect input renderer
