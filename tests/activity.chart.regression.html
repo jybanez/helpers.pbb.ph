@@ -52,7 +52,13 @@
     });
 
     assert(document.querySelectorAll(".ui-activity-chart-cell").length === 4, "matrix should render one cell per project/day pair");
+    assert(document.querySelector(".ui-activity-chart-header") === null, "activity chart header should be optional and hidden by default");
     assert(document.querySelector(".ui-activity-chart-summary-main strong")?.textContent === "15", "summary should total all messages");
+    const cornerHeader = document.querySelector(".ui-activity-chart-matrix thead th:first-child");
+    const dateHeader = document.querySelector(".ui-activity-chart-matrix thead th:nth-child(2)");
+    const projectHeader = document.querySelector(".ui-activity-chart-project");
+    assert(Number.parseInt(getComputedStyle(dateHeader).zIndex, 10) > Number.parseInt(getComputedStyle(projectHeader).zIndex, 10), "sticky date headers should layer above project cells while scrolling");
+    assert(Number.parseInt(getComputedStyle(cornerHeader).zIndex, 10) > Number.parseInt(getComputedStyle(projectHeader).zIndex, 10), "sticky corner header should layer above project cells while scrolling");
     document.querySelector('.ui-activity-chart-cell[data-project="PBB Relay"][data-date="2026-05-18"]')?.click();
     assert(events.length === 1, "cell click should call onSelect once");
     assert(events[0].project === "PBB Relay" && events[0].date === "2026-05-18", "selection should include project and date");
@@ -72,8 +78,13 @@
       projects: ["PBB Kit Setup"],
       dates: ["2026-05-18"],
       mode: "matrix",
+      showHeader: true,
+      eyebrow: "Activity",
+      title: "Last 7 days",
     });
     assert(document.querySelectorAll(".ui-activity-chart-cell").length === 1, "update should replace records and rerender");
+    assert(document.querySelector(".ui-activity-chart-eyebrow")?.textContent === "Activity", "optional activity chart eyebrow should render when enabled");
+    assert(document.querySelector(".ui-activity-chart-title")?.textContent === "Last 7 days", "optional activity chart title should render when enabled");
 
     chart.destroy();
     assert(document.querySelector(".ui-activity-chart") === null, "destroy should remove chart DOM");

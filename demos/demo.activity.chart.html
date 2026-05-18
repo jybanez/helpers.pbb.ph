@@ -117,6 +117,9 @@
       options: [
         { option: "<code>mode</code>", default: "<code>\"matrix\"</code>", description: "Visual layout.", values: ["matrix", "stacked-bars", "sparklines"] },
         { option: "<code>metric</code>", default: "<code>\"total\"</code>", description: "Metric used for cell intensity and sparklines.", values: ["total", "direct", "broadcast", "targeted"] },
+        { option: "<code>showHeader</code>", default: "<code>false</code>", description: "Renders an optional compact header above the summary." },
+        { option: "<code>eyebrow</code>", default: "<code>\"Activity\"</code>", description: "Optional header eyebrow text when <code>showHeader</code> is enabled." },
+        { option: "<code>title</code>", default: "<code>\"Last 7 days\"</code>", description: "Optional header title text when <code>showHeader</code> is enabled." },
         { option: "<code>projects</code>", default: "<code>[]</code>", description: "Optional fixed project ordering/list." },
         { option: "<code>dates</code>", default: "<code>[]</code>", description: "Optional fixed date range." },
         { option: "<code>selectedProject</code>", default: "<code>\"\"</code>", description: "Externally controlled selected project." },
@@ -182,6 +185,7 @@ const chart = createActivityChart(document.getElementById("activityHost"), recor
   dates,
   mode: "matrix",
   metric: "total",
+  showHeader: false,
   onSelect({ project, date, summary }) {
     filterTimelineByProjectDay(project, date, summary);
   },

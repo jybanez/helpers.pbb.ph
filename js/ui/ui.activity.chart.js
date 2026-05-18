@@ -8,6 +8,9 @@ const DEFAULT_OPTIONS = {
   metric: "total", // total | direct | broadcast | targeted
   locale: "en-US",
   emptyText: "No activity to display.",
+  showHeader: false,
+  eyebrow: "Activity",
+  title: "Last 7 days",
   projects: [],
   dates: [],
   selectedProject: "",
@@ -49,6 +52,8 @@ export function createActivityChart(container, records = [], options = {}) {
       },
     });
 
+    renderHeader(root);
+
     if (!state.projects.length || !state.dates.length) {
       root.appendChild(createElement("p", {
         className: "ui-activity-chart-empty",
@@ -71,6 +76,27 @@ export function createActivityChart(container, records = [], options = {}) {
       renderLegend(root);
     }
     container.appendChild(root);
+  }
+
+  function renderHeader(host) {
+    if (!currentOptions.showHeader) {
+      return;
+    }
+
+    const header = createElement("div", { className: "ui-activity-chart-header" });
+    if (currentOptions.eyebrow) {
+      header.appendChild(createElement("div", {
+        className: "ui-activity-chart-eyebrow",
+        text: currentOptions.eyebrow,
+      }));
+    }
+    if (currentOptions.title) {
+      header.appendChild(createElement("div", {
+        className: "ui-activity-chart-title",
+        text: currentOptions.title,
+      }));
+    }
+    host.appendChild(header);
   }
 
   function renderSummary(host) {
@@ -424,6 +450,9 @@ function normalizeOptions(options = {}) {
     ...options,
     mode,
     metric,
+    showHeader: Boolean(options.showHeader),
+    eyebrow: typeof options.eyebrow === "string" ? options.eyebrow : DEFAULT_OPTIONS.eyebrow,
+    title: typeof options.title === "string" ? options.title : DEFAULT_OPTIONS.title,
     projects: Array.isArray(options.projects) ? options.projects.map(String).filter(Boolean) : [],
     dates: Array.isArray(options.dates) ? options.dates.map(normalizeDate).filter(Boolean) : [],
     selectedProject: options.selectedProject ? String(options.selectedProject) : "",
