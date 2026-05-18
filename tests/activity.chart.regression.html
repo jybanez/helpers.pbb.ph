@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity Chart Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.activity.chart.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      max-width: 960px;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createActivityChart } from "../js/ui/ui.activity.chart.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const host = document.getElementById("host");
+    const events = [];
+    const records = [
+      { date: "2026-05-17", project: "PBB Relay", total: 3, direct: 2, broadcast: 1, targeted: 2 },
+      { date: "2026-05-18", project: "PBB Relay", total: 5, direct: 4, broadcast: 0, targeted: 3 },
+      { date: "2026-05-18", project: "PBB Realtime", total: 7, direct: 5, broadcast: 1, targeted: 4 },
+    ];
+
+    const chart = createActivityChart(host, records, {
+      projects: ["PBB Relay", "PBB Realtime"],
+      dates: ["2026-05-17", "2026-05-18"],
+      onSelect(selection) {
+        events.push(selection);
+      },
+    });
+
+    assert(document.querySelectorAll(".ui-activity-chart-cell").length === 4, "matrix should render one cell per project/day pair");
+    assert(document.querySelector(".ui-activity-chart-summary-main strong")?.textContent === "15", "summary should total all messages");
+    document.querySelector('.ui-activity-chart-cell[data-project="PBB Relay"][data-date="2026-05-18"]')?.click();
+    assert(events.length === 1, "cell click should call onSelect once");
+    assert(events[0].project === "PBB Relay" && events[0].date === "2026-05-18", "selection should include project and date");
+    assert(document.querySelector('.ui-activity-chart-cell[data-project="PBB Relay"][data-date="2026-05-18"]')?.classList.contains("is-selected"), "clicked cell should be marked selected after rerender");
+
+    chart.setMode("stacked-bars");
+    assert(document.querySelectorAll(".ui-activity-chart-bar-row").length === 2, "stacked-bars mode should render one row per project");
+    assert(document.querySelector(".ui-activity-chart-bar-segment.is-direct"), "stacked-bars mode should render direct segments");
+
+    chart.setMode("sparklines");
+    chart.setMetric("direct");
+    assert(document.querySelectorAll(".ui-activity-chart-spark-row").length === 2, "sparklines mode should render one row per project");
+    assert(document.querySelectorAll(".ui-activity-chart-spark-bar").length === 4, "sparklines mode should render one bar per project/day pair");
+    assert(chart.getState().options.metric === "direct", "setMetric should update public state");
+
+    chart.update([{ date: "2026-05-18", project: "PBB Kit Setup", total: 2 }], {
+      projects: ["PBB Kit Setup"],
+      dates: ["2026-05-18"],
+      mode: "matrix",
+    });
+    assert(document.querySelectorAll(".ui-activity-chart-cell").length === 1, "update should replace records and rerender");
+
+    chart.destroy();
+    assert(document.querySelector(".ui-activity-chart") === null, "destroy should remove chart DOM");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

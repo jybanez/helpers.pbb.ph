@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Mind Map Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .demo-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--demo-shell-content-width, 700px);
+      grid-column: 2 / 4;
+      min-height: 100vh;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .demo-workbench__center,
+    .demo-workbench__content {
+      min-height: 0;
+      overflow: auto;
+      padding: 20px;
+    }
+    .demo-workbench__center {
+      display: grid;
+      gap: 14px;
+      background:
+        radial-gradient(circle at top left, rgba(58, 92, 158, 0.12), transparent 32%),
+        #0c1017;
+    }
+    .demo-workbench__content {
+      display: grid;
+      gap: 14px;
+      border-left: 1px solid #263146;
+      background: #0f1521;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 14px;
+      background: #111826;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .intro h1,
+    .intro p,
+    .content-section h2,
+    .content-section p,
+    .content-section ul,
+    .content-section li {
+      margin: 0;
+    }
+    .intro p,
+    .content-section p,
+    .content-section li,
+    .muted {
+      color: #9fb2d8;
+      line-height: 1.5;
+    }
+    .eyebrow {
+      color: #8db5ff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .demo-stack-list {
+      display: grid;
+      gap: 14px;
+    }
+    .demo-stack {
+      display: grid;
+      gap: 0;
+      border: 1px solid #263146;
+      border-radius: 14px;
+      background: #0b1220;
+    }
+    .demo-stack__row {
+      padding: 14px 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .demo-stack__row + .demo-stack__row {
+      border-top: 1px solid #24314a;
+    }
+    .demo-stack__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .demo-stack__header h2,
+    .demo-stack__header p {
+      margin: 0;
+    }
+    .demo-stack__header p {
+      color: #9fb2d8;
+      max-width: 760px;
+      line-height: 1.5;
+    }
+    .row,
+    .controls,
+    .anchor-links {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .demo-chip,
+    .anchor-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 10px;
+      border: 1px solid #334563;
+      border-radius: 999px;
+      background: #10192b;
+      color: #b7c9eb;
+      font-size: 12px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .anchor-links a {
+      min-height: 30px;
+      color: #d7e0f4;
+      background: #0b1423;
+    }
+    .anchor-links a:hover {
+      border-color: #4a5f86;
+      background: #101a2b;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #0d1626;
+    }
+    .stat strong {
+      font-size: 20px;
+    }
+    .live-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 12px;
+      align-items: start;
+    }
+    .map-frame,
+    .selection-panel,
+    .demo-code {
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #09111d;
+    }
+    .map-frame {
+      padding: 12px;
+      min-height: 740px;
+    }
+    #mapHost {
+      min-height: 700px;
+    }
+    .selection-panel {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-height: 740px;
+      align-content: start;
+    }
+    .selection-panel h3,
+    .selection-panel p {
+      margin: 0;
+    }
+    .selection-panel p {
+      color: #9fb2d8;
+      font-size: 13px;
+    }
+    .selection-output,
+    .demo-code {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #c8d6f2;
+      font-family: Consolas, "Courier New", monospace;
+      padding: 10px;
+      overflow: auto;
+    }
+    .selection-output {
+      border: 1px solid #2b3750;
+      border-radius: 10px;
+      background: #0b1220;
+      min-height: 320px;
+      max-height: 560px;
+    }
+    .demo-code {
+      max-height: 300px;
+    }
+    .content-section ul {
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+    }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #263146;
+      border-radius: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #24314a;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #8db5ff;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: #0f1829;
+      position: sticky;
+      top: 0;
+    }
+    td code {
+      color: #ffffff;
+    }
+    @media (max-width: 1500px) {
+      .live-layout {
+        grid-template-columns: 1fr;
+      }
+      .selection-panel {
+        min-height: 0;
+      }
+    }
+    @media (max-width: 1260px) {
+      .demo-workbench {
+        grid-template-columns: 1fr;
+      }
+      .demo-workbench__content {
+        border-left: 0;
+        border-top: 1px solid #263146;
+      }
+    }
+    @media (max-width: 860px) {
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.tree.mind.map"]);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="demo-workbench">
+    <section class="demo-workbench__center">
+      <section class="panel intro">
+        <span class="eyebrow">Data</span>
+        <h1>Tree Mind Map</h1>
+        <p>Canvas-backed tree visualization for large hierarchical registry data. This demo uses sample PBB HQ hub data with three regions, five cities or municipalities per region, and ten barangays per city or municipality.</p>
+      </section>
+
+      <section class="demo-stack-list">
+        <article class="demo-stack">
+          <div class="demo-stack__row">
+            <div class="demo-stack__header">
+              <div>
+                <h2>Live Tree Mind Map</h2>
+                <p>Collapse branches, pan the canvas, zoom into dense sections, and select one or many nodes. The selection payload is an array of node objects for app-owned detail rendering.</p>
+              </div>
+            </div>
+
+            <div class="row">
+              <span class="demo-chip">Canvas renderer</span>
+              <span class="demo-chip">154 sample nodes</span>
+              <span class="demo-chip">multi-select</span>
+              <span class="demo-chip">theme config</span>
+            </div>
+
+            <div class="controls">
+              <button class="ui-button" id="fitButton" type="button">Fit To View</button>
+              <button class="ui-button" id="resetButton" type="button">Reset View</button>
+              <button class="ui-button" id="expandButton" type="button">Expand All</button>
+              <button class="ui-button" id="collapseButton" type="button">Collapse All</button>
+              <button class="ui-button ui-button-ghost" id="themeButton" type="button">Light Theme Config</button>
+              <button class="ui-button ui-button-ghost" id="clearSelectionButton" type="button">Clear Selection</button>
+            </div>
+
+            <div class="stats">
+              <div class="stat"><span class="muted">Regions</span><strong id="regionCount">3</strong></div>
+              <div class="stat"><span class="muted">Cities / Municipalities</span><strong id="cityCount">15</strong></div>
+              <div class="stat"><span class="muted">Barangays</span><strong id="barangayCount">150</strong></div>
+              <div class="stat"><span class="muted">Total Nodes</span><strong id="nodeCount">154</strong></div>
+            </div>
+
+            <div class="live-layout">
+              <div class="map-frame">
+                <div id="mapHost"></div>
+              </div>
+              <aside class="selection-panel">
+                <h3>Selection</h3>
+                <p>Click a node to select it. Ctrl/cmd-click adds or removes nodes from the selection set.</p>
+                <pre id="selectionOutput" class="selection-output">[]</pre>
+              </aside>
+            </div>
+          </div>
+
+          <div class="demo-stack__row">
+            <pre class="demo-code">const map = createTreeMindMap(document.getElementById("mapHost"), {
+  nodes,
+  rootId: "hq",
+  selectionMode: "multi",
+  expandDepth: 2,
+  onSelectionChange(selectedNodes) {
+    renderDetails(selectedNodes);
+  },
+});
+
+map.setTheme(themeConfig);
+map.loadTheme("./theme.json");</pre>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <aside class="demo-workbench__content">
+      <section class="panel content-section" id="overview">
+        <span class="eyebrow">Reference</span>
+        <h2>Tree Mind Map</h2>
+        <p>Canvas tree visualization for large rooted datasets. It is optimized for registry-style navigation where a separate app component owns selected-node details.</p>
+        <div class="anchor-links">
+          <a href="#overview">Overview</a>
+          <a href="#constructor">Constructor</a>
+          <a href="#options">Options</a>
+          <a href="#node-contract">Node Contract</a>
+          <a href="#events">Events</a>
+          <a href="#methods">Methods</a>
+        </div>
+      </section>
+
+      <section class="panel content-section" id="use-this-when">
+        <h2>Use This When</h2>
+        <ul>
+          <li>You need a visual tree for hundreds or thousands of hierarchical nodes.</li>
+          <li>You need collapse/expand, pan, zoom, and multi-selection in one reusable surface.</li>
+          <li>The selected nodes should feed a separate detail panel, form, table, or action workflow.</li>
+        </ul>
+      </section>
+
+      <section class="panel content-section" id="do-not-use-this-when">
+        <h2>Do Not Use This When</h2>
+        <ul>
+          <li>The user needs aligned columns, sorting, or report-style scanning; use <code>createTreeGrid(...)</code>.</li>
+          <li>The main view is geographic location; use map tooling instead.</li>
+          <li>The data is a free-form graph with many arbitrary cross-links; use a graph-specific component.</li>
+        </ul>
+      </section>
+
+      <section class="panel content-section" id="description">
+        <h2>Description</h2>
+        <p><code>createTreeMindMap(...)</code> renders nodes and edges on a Canvas surface for better large-data performance than a DOM-heavy SVG tree. The component keeps the data contract generic; apps adapt their own records into <code>id</code>, <code>parentId</code>, <code>label</code>, <code>subtitle</code>, <code>status</code>, and <code>data</code>.</p>
+      </section>
+
+      <section class="panel content-section" id="constructor">
+        <h2>Constructor / Initialization</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Factory</th><th>Arguments</th><th>Returns</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>createTreeMindMap(container, options)</code></td>
+                <td><code>container</code>: host element, <code>options</code>: map configuration</td>
+                <td>Instance with data, selection, collapse, zoom/pan, theme, and lifecycle methods</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel content-section" id="options">
+        <h2>Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>nodes</code></td><td><code>[]</code></td><td>Flat or nested node array.</td></tr>
+              <tr><td><code>rootId</code></td><td><code>null</code></td><td>Root node id. Falls back to the first node without a known parent.</td></tr>
+              <tr><td><code>selectionMode</code></td><td><code>"multi"</code></td><td><code>"single"</code>, <code>"multi"</code>, or <code>"multi-sticky"</code>.</td></tr>
+              <tr><td><code>selectedIds</code></td><td><code>[]</code></td><td>Initial selected node ids.</td></tr>
+              <tr><td><code>collapsedIds</code></td><td><code>[]</code></td><td>Initial collapsed branch ids.</td></tr>
+              <tr><td><code>expandDepth</code></td><td><code>2</code></td><td>Initial branch expansion depth when explicit collapsed ids are not provided.</td></tr>
+              <tr><td><code>height</code></td><td><code>680</code></td><td>Canvas viewport height.</td></tr>
+              <tr><td><code>nodeWidth</code></td><td><code>196</code></td><td>Rendered node width.</td></tr>
+              <tr><td><code>nodeHeight</code></td><td><code>68</code></td><td>Rendered node height.</td></tr>
+              <tr><td><code>pan</code></td><td><code>true</code></td><td>Enables drag panning.</td></tr>
+              <tr><td><code>zoom</code></td><td><code>true</code></td><td>Enables wheel and method-driven zooming.</td></tr>
+              <tr><td><code>theme</code></td><td><code>null</code></td><td>Theme object merged over component defaults.</td></tr>
+              <tr><td><code>themeUrl</code></td><td><code>""</code></td><td>JSON theme config URL loaded after construction.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel content-section" id="node-contract">
+        <h2>Node Contract</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>Yes</td><td>Stable unique node id.</td></tr>
+              <tr><td><code>parentId</code></td><td>No</td><td>Parent node id for flat arrays.</td></tr>
+              <tr><td><code>children</code></td><td>No</td><td>Nested child nodes. Flattened internally.</td></tr>
+              <tr><td><code>label</code></td><td>No</td><td>Primary node text. Falls back to <code>name</code> or <code>id</code>.</td></tr>
+              <tr><td><code>subtitle</code></td><td>No</td><td>Secondary node text.</td></tr>
+              <tr><td><code>status</code></td><td>No</td><td>Status key used by the theme color map.</td></tr>
+              <tr><td><code>data</code></td><td>No</td><td>App-owned payload returned in selected-node objects.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel content-section" id="events">
+        <h2>Events</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Arguments</th><th>Return Effect</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>onSelectionChange</code></td><td><code>selectedNodes[]</code></td><td>No return effect.</td></tr>
+              <tr><td><code>onNodeSelect</code></td><td><code>{ node, selectedNodes }</code></td><td>No return effect.</td></tr>
+              <tr><td><code>onNodeToggle</code></td><td><code>{ node, collapsed }</code></td><td>No return effect.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel content-section" id="methods">
+        <h2>Methods</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Arguments</th><th>Returns</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>getState()</code></td><td>none</td><td>Visible counts, selected ids, collapsed ids, zoom, pan, and bounds.</td></tr>
+              <tr><td><code>getSelectedNodes()</code></td><td>none</td><td>Cloned selected node object array.</td></tr>
+              <tr><td><code>setData(nodes, options)</code></td><td>node array, optional partial options</td><td><code>void</code></td></tr>
+              <tr><td><code>setSelectedIds(ids)</code></td><td>node id array</td><td><code>void</code></td></tr>
+              <tr><td><code>clearSelection()</code></td><td>none</td><td><code>void</code></td></tr>
+              <tr><td><code>expandNode(id)</code></td><td>node id</td><td><code>void</code></td></tr>
+              <tr><td><code>collapseNode(id)</code></td><td>node id</td><td><code>void</code></td></tr>
+              <tr><td><code>expandAll()</code></td><td>none</td><td><code>void</code></td></tr>
+              <tr><td><code>collapseAll()</code></td><td>none</td><td><code>void</code></td></tr>
+              <tr><td><code>fitToView()</code></td><td>none</td><td><code>void</code></td></tr>
+              <tr><td><code>setTheme(config)</code></td><td>theme object</td><td><code>void</code></td></tr>
+              <tr><td><code>loadTheme(url)</code></td><td>JSON URL</td><td><code>Promise&lt;void&gt;</code></td></tr>
+              <tr><td><code>destroy()</code></td><td>none</td><td><code>void</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module">
+    import { createTreeMindMap } from "../js/ui/ui.tree.mind.map.js";
+
+    await window.__demoLoaderReady;
+
+    const output = document.getElementById("selectionOutput");
+    const sampleRegions = [
+      {
+        id: "region-07",
+        label: "Region VII",
+        cityPrefix: "Central Visayas",
+        barangays: ["Guadalupe", "Lahug", "Mabolo", "Talamban", "Tisa", "Pardo", "Banilad", "Apas", "Basak", "Subangdaku"],
+      },
+      {
+        id: "region-11",
+        label: "Region XI",
+        cityPrefix: "Davao",
+        barangays: ["Buhangin", "Matina", "Toril", "Agdao", "Bunawan", "Talomo", "Calinan", "Tugbok", "Sasa", "Mintal"],
+      },
+      {
+        id: "region-13",
+        label: "NCR",
+        cityPrefix: "Metro Manila",
+        barangays: ["Bagong Pag-asa", "Bel-Air", "Commonwealth", "San Antonio", "Tondo", "Poblacion", "Payatas", "Holy Spirit", "Ugong", "Pinagbuhatan"],
+      },
+    ];
+    const nodes = buildSampleNodes(sampleRegions);
+    document.getElementById("nodeCount").textContent = String(nodes.length);
+
+    const map = createTreeMindMap(document.getElementById("mapHost"), {
+      nodes,
+      rootId: "hq",
+      height: 700,
+      expandDepth: 2,
+      selectionMode: "multi",
+      onSelectionChange(selection) {
+        output.textContent = JSON.stringify(selection, null, 2);
+      },
+    });
+
+    document.getElementById("fitButton").addEventListener("click", () => map.fitToView());
+    document.getElementById("resetButton").addEventListener("click", () => map.resetView());
+    document.getElementById("expandButton").addEventListener("click", () => map.expandAll());
+    document.getElementById("collapseButton").addEventListener("click", () => map.collapseAll());
+    document.getElementById("clearSelectionButton").addEventListener("click", () => map.clearSelection());
+    document.getElementById("themeButton").addEventListener("click", () => {
+      map.setTheme({
+        background: "#f7faff",
+        grid: "rgba(42, 74, 118, 0.1)",
+        edge: "rgba(66, 99, 145, 0.55)",
+        nodeFill: "#ffffff",
+        nodeFillHover: "#f1f6ff",
+        nodeBorder: "#b8c9e5",
+        nodeBorderSelected: "#2f73d8",
+        nodeText: "#15213a",
+        nodeSubtext: "#5d6c84",
+        toggleFill: "#f7faff",
+        toggleBorder: "#9fb5d6",
+      });
+    });
+
+    function buildSampleNodes(regions) {
+      const outputNodes = [{
+        id: "hq",
+        label: "PBB HQ",
+        subtitle: "Canonical hub registry",
+        status: "active",
+        data: { node_type: "root" },
+      }];
+      const cityLabels = ["City Hall", "Municipal Hall", "Operations Center", "Civic Center", "Command Office"];
+      const statuses = ["active", "planned", "provisioning", "maintenance"];
+
+      regions.forEach((region, regionIndex) => {
+        outputNodes.push({
+          id: region.id,
+          parentId: "hq",
+          label: region.label,
+          subtitle: "Regional office",
+          status: statuses[regionIndex % statuses.length],
+          data: { deployment: "region", sample: true },
+        });
+
+        for (let cityIndex = 1; cityIndex <= 5; cityIndex += 1) {
+          const cityId = `${region.id}-citymun-${cityIndex}`;
+          outputNodes.push({
+            id: cityId,
+            parentId: region.id,
+            label: `${region.cityPrefix} ${cityIndex}`,
+            subtitle: cityLabels[(cityIndex - 1) % cityLabels.length],
+            status: statuses[(regionIndex + cityIndex) % statuses.length],
+            data: { deployment: cityIndex % 2 ? "city" : "municipality", sample: true },
+          });
+
+          region.barangays.forEach((barangay, barangayIndex) => {
+            outputNodes.push({
+              id: `${cityId}-brgy-${barangayIndex + 1}`,
+              parentId: cityId,
+              label: `${barangay} ${cityIndex}`,
+              subtitle: "Barangay hall",
+              status: statuses[(regionIndex + cityIndex + barangayIndex) % statuses.length],
+              data: {
+                deployment: "barangay",
+                sample: true,
+                region: region.label,
+                city_municipality: `${region.cityPrefix} ${cityIndex}`,
+              },
+            });
+          });
+        }
+      });
+
+      return outputNodes;
+    }
+  </script>
+</body>
+</html>

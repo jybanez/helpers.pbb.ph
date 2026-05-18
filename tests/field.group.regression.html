@@ -62,6 +62,7 @@
       name: "missing_persons",
       label: "Missing Persons",
       repeatable: true,
+      required: true,
       chrome: false,
       value: [{ name: "Juan Dela Cruz" }],
       fields: [
@@ -72,6 +73,7 @@
     const chromeLessBody = chromeLessHost.querySelector(".ui-field-group-body");
     assert(chromeLessRoot?.classList.contains("is-chrome-less"), "chrome:false should add chrome-less class");
     assert(chromeLessRoot?.dataset.chrome === "false", "chrome:false should set data chrome state");
+    assert(!chromeLessHost.querySelector(".ui-field-group-remove"), "repeatable groups should hide the remove button on the first entry");
     assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === true, "chrome:false should hide the outer label row");
     assert(getComputedStyle(chromeLessHost.querySelector(".ui-field-group-label-row")).display === "none", "chrome:false should visually suppress the outer label row");
     assert(getComputedStyle(chromeLessBody).backgroundColor === "rgba(0, 0, 0, 0)", "chrome:false should remove group body background");
@@ -83,6 +85,10 @@
     assert(chromeLessRoot?.dataset.chrome === "true", "update({ chrome:true }) should restore data chrome state");
     assert(chromeLessHost.querySelector(".ui-field-group-label-row")?.hidden === false, "update({ chrome:true }) should restore label row");
     assert(getComputedStyle(chromeLessHost.querySelector(".ui-field-group-label-row")).display !== "none", "update({ chrome:true }) should visually restore label row");
+    chromeLess.update({ chrome: true, value: [{ name: "Juan Dela Cruz" }, { name: "Maria Santos" }] });
+    const chromeLessRemoveButtons = chromeLessHost.querySelectorAll(".ui-field-group-remove");
+    assert(chromeLessRemoveButtons.length === 1, "repeatable groups should only show remove buttons on entries after the first");
+    assert(chromeLessRemoveButtons[0]?.getAttribute("aria-label") === "Remove #2", "shown remove buttons should keep accessible remove labels");
 
     const presetHost = document.createElement("div");
     presetHost.style.width = "360px";
@@ -114,6 +120,19 @@
     const inputStyle = getComputedStyle(presetHost.querySelector('[data-field-key="last_seen_location"] .ui-input'));
     assert(inputStyle.boxSizing === "border-box", "group child inputs should use border-box sizing");
     assert(narrowInput?.right <= narrowItem?.right + 1, "two-column group child inputs should stay inside the repeatable item border");
+
+    const requiredErrorsHost = document.createElement("div");
+    document.body.appendChild(requiredErrorsHost);
+    const requiredErrorsGroup = createFieldGroup(requiredErrorsHost, {
+      name: "missing_persons",
+      preset: "missingPerson",
+      value: [{ last_name: "", first_name: "" }]
+    });
+    const requiredErrorsValidation = requiredErrorsGroup.validate();
+    assert(requiredErrorsValidation.status === false, "field group validation should fail when required child fields are empty");
+    assert(requiredErrorsHost.querySelector(".ui-field-group-item-warning.is-error")?.textContent === "2 errors", "repeatable items should show blocking error counts");
+    assert(Boolean(requiredErrorsHost.querySelector('[data-field-key="last_name"].has-error .ui-field-group-warning-badge.is-error')), "required child errors should show a field error badge");
+    assert(Boolean(requiredErrorsHost.querySelector('[data-field-key="first_name"].has-error .ui-field-group-warning-badge.is-error')), "second required child errors should show a field error badge");
 
     const conditionalHost = document.createElement("div");
     document.body.appendChild(conditionalHost);
@@ -275,6 +294,8 @@
     chromeLess.destroy();
     presetGroup.destroy();
     presetHost.remove();
+    requiredErrorsGroup.destroy();
+    requiredErrorsHost.remove();
     conditionalGroup.destroy();
     conditionalHost.remove();
     breakdownGroup.destroy();
@@ -307,9 +328,7 @@
       const title = host.querySelector(".ui-field-group-item-title");
       const remove = host.querySelector(".ui-field-group-remove");
       assert(title?.textContent === "#1", `${label}: repeatable group item title should render as #number`);
-      assert(remove?.textContent.trim() === "", `${label}: remove button should be icon-only`);
-      assert(remove?.getAttribute("aria-label") === "Remove #1", `${label}: remove button should keep accessible remove label`);
-      assert(remove?.querySelector('[data-icon="actions.delete"]'), `${label}: remove button should render delete icon`);
+      assert(!remove, `${label}: repeatable groups should hide the remove button on the first entry`);
     }
 
     function assert(condition, message) {

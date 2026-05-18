@@ -127,7 +127,7 @@ assert(!roadAccessStatus.sitrep.includes("cleared_routes"), "roadAccessStatus pr
 
 const vehicleInvolved = fieldGroupPresets.vehicleInvolved();
 assert(vehicleInvolved.repeatable === true, "vehicleInvolved preset should default to repeatable");
-assert(fieldKeys(vehicleInvolved).join(",") === "vehicle_type,plate_number,color,damage_level", "vehicleInvolved preset should keep bystander vehicle fields lean");
+assert(fieldKeys(vehicleInvolved).join(",") === "vehicle_type,plate_number,color,damage_level,passenger_count,flammable_hazardous_cargo", "vehicleInvolved preset should keep bystander vehicle fields lean");
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "vehicle_type")?.options.includes("Motorcycle"), "vehicleInvolved vehicle_type should include Motorcycle");
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "vehicle_type")?.options.includes("SUV"), "vehicleInvolved vehicle_type should include SUV");
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "vehicle_type")?.options.includes("Pick-up"), "vehicleInvolved vehicle_type should include Pick-up");
@@ -135,6 +135,8 @@ assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "vehicle
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "color")?.type === "select", "vehicleInvolved color should use a select");
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "color")?.options.includes("Unknown"), "vehicleInvolved color should allow Unknown");
 assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "damage_level")?.options.includes("Unknown"), "vehicleInvolved damage_level should allow Unknown");
+assert(flatFields(vehicleInvolved.fields).find((field) => field.key === "passenger_count")?.type === "number-stepper", "vehicleInvolved passenger_count should use number-stepper");
+assert(JSON.stringify(flatFields(vehicleInvolved.fields).find((field) => field.key === "flammable_hazardous_cargo")?.options) === JSON.stringify(["Yes", "No"]), "vehicleInvolved flammable/hazardous cargo should use Yes/No options");
 assert(vehicleInvolved.sitrep.includes("vehicles_involved_count"), "vehicleInvolved preset should expose vehicles involved SITREP metadata");
 
 assert(fieldKeys(createFamilyFieldGroupPreset()).length === 6, "named family factory should return family preset");
@@ -142,7 +144,7 @@ assert(fieldKeys(createCasualtyPatientFieldGroupPreset()).length === 11, "named 
 assert(fieldKeys(createInfrastructureDamageFieldGroupPreset()).length === 5, "named infrastructure damage factory should return infrastructureDamage preset");
 assert(fieldKeys(createShelterDamageFieldGroupPreset()).length === 5, "named shelter damage factory should return shelterDamage preset");
 assert(fieldKeys(createRoadAccessStatusFieldGroupPreset()).length === 5, "named road access status factory should return roadAccessStatus preset");
-assert(fieldKeys(createVehicleInvolvedFieldGroupPreset()).length === 4, "named vehicle involved factory should return vehicleInvolved preset");
+assert(fieldKeys(createVehicleInvolvedFieldGroupPreset()).length === 6, "named vehicle involved factory should return vehicleInvolved preset");
 
 if (failures.length) {
   console.error("Field group presets regression test failed:");

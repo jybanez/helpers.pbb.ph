@@ -218,6 +218,10 @@ const VEHICLE_INVOLVED_FIELDS = [
     { key: "color", label: "Color", type: "select", options: ["White", "Black", "Silver", "Gray", "Red", "Blue", "Green", "Yellow", "Brown", "Orange", "Other", "Unknown"] },
     { key: "damage_level", label: "Damage level", type: "select", options: ["None visible", "Minor", "Major", "Severe", "Unknown"] },
   ],
+  [
+    { key: "passenger_count", label: "Passenger count", type: "number-stepper", min: 0 },
+    { key: "flammable_hazardous_cargo", label: "Flammable / hazardous cargo", type: "select", options: YES_NO_OPTIONS },
+  ],
 ];
 
 export const fieldGroupPresets = {

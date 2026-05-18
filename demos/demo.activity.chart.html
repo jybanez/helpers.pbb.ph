@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Chart Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .select-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .select-label select {
+      border: 1px solid #31405c;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+    }
+    #activityHost {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      padding: 12px;
+      background: #0b1220;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .log {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #b2c2e5;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      min-height: 120px;
+      overflow: auto;
+    }
+    .sample-code {
+      margin: 0;
+      white-space: pre;
+      overflow: auto;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #cfe0ff;
+      padding: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.activity.chart"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Activity Chart",
+      overview: "Project/day activity visualization for shared logs, operational reviews, and timeline summary navigation.",
+      useWhen: [
+        "Use <code>createActivityChart(...)</code> to summarize daily activity by project.",
+        "Use matrix mode beside a timeline when chart cells should filter the visible log."
+      ],
+      avoidWhen: [
+        "Do not use it for arbitrary numeric analytics dashboards.",
+        "Do not use it when individual records need a full table; use <code>createGrid(...)</code>."
+      ],
+      description: "The activity chart helper renders daily project activity as a heat matrix, stacked project bars, or compact sparklines. It is designed for dense coordination views such as the PBB shared chat log.",
+      sectionSamples: {
+        "matrix": `createActivityChart(host, dailyRecords, {\n  mode: "matrix",\n  metric: "total",\n  onSelect({ project, date }) {\n    filterTimeline(project, date);\n  },\n});`,
+        "stacked bars": `chart.setMode("stacked-bars");\nchart.setMetric("direct");`,
+        "sparklines": `chart.setMode("sparklines");`
+      },
+      constructor: [
+        { factory: "<code>createActivityChart(container, records, options)</code>", arguments: "container, daily activity records, options", returns: "Activity chart instance" }
+      ],
+      options: [
+        { option: "<code>mode</code>", default: "<code>\"matrix\"</code>", description: "Visual layout.", values: ["matrix", "stacked-bars", "sparklines"] },
+        { option: "<code>metric</code>", default: "<code>\"total\"</code>", description: "Metric used for cell intensity and sparklines.", values: ["total", "direct", "broadcast", "targeted"] },
+        { option: "<code>projects</code>", default: "<code>[]</code>", description: "Optional fixed project ordering/list." },
+        { option: "<code>dates</code>", default: "<code>[]</code>", description: "Optional fixed date range." },
+        { option: "<code>selectedProject</code>", default: "<code>\"\"</code>", description: "Externally controlled selected project." },
+        { option: "<code>selectedDate</code>", default: "<code>\"\"</code>", description: "Externally controlled selected day." },
+        { option: "<code>onSelect</code>", default: "<code>null</code>", description: "Called when a project or project/day cell is activated." },
+        { option: "<code>onHover</code>", default: "<code>null</code>", description: "Called when a project/day cell receives hover or focus." }
+      ],
+      propertiesText: "Records are intentionally simple: <code>{ date, project, total, direct, broadcast, targeted, targets?, topics? }</code>. Unknown fields are preserved on each source record so app code can keep IDs or filter payloads alongside the rendered summary.",
+      methods: [
+        { method: "<code>update(records, options?)</code>", arguments: "next records and optional options", returns: "<code>void</code>" },
+        { method: "<code>setMode(mode)</code>", arguments: "matrix, stacked-bars, or sparklines", returns: "<code>void</code>" },
+        { method: "<code>setMetric(metric)</code>", arguments: "total, direct, broadcast, or targeted", returns: "<code>void</code>" },
+        { method: "<code>setSelection(selection)</code>", arguments: "<code>{ project, date? }</code>", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options, records, dates, projects, and totals" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ],
+      events: [
+        { event: "<code>onSelect</code>", arguments: "<code>{ project, date, metric, mode, summary }</code>", returns: "App-owned filtering or drill-in behavior." },
+        { event: "<code>onHover</code>", arguments: "<code>{ project, date, metric, mode, summary }</code>", returns: "App-owned preview/status behavior." }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Activity Chart Demo</h1>
+      <p>Reusable project/day activity chart for shared coordination logs.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Matrix</h2>
+      <div class="row">
+        <label class="select-label">Mode
+          <select id="modeSelect">
+            <option value="matrix">Matrix</option>
+            <option value="stacked-bars">Stacked bars</option>
+            <option value="sparklines">Sparklines</option>
+          </select>
+        </label>
+        <label class="select-label">Metric
+          <select id="metricSelect">
+            <option value="total">Total</option>
+            <option value="direct">Direct</option>
+            <option value="broadcast">Broadcast</option>
+            <option value="targeted">Targeted</option>
+          </select>
+        </label>
+      </div>
+      <div id="activityHost"></div>
+      <pre class="sample-code"><code>import { uiLoader } from "../js/ui/ui.loader.js";
+
+await uiLoader.loadMany(["ui.activity.chart"]);
+const createActivityChart = await uiLoader.get("ui.activity.chart");
+
+const chart = createActivityChart(document.getElementById("activityHost"), records, {
+  projects,
+  dates,
+  mode: "matrix",
+  metric: "total",
+  onSelect({ project, date, summary }) {
+    filterTimelineByProjectDay(project, date, summary);
+  },
+  onHover({ project, date, summary }) {
+    previewActivity(project, date, summary);
+  },
+});
+
+chart.setMetric("direct");
+chart.setMode("sparklines");</code></pre>
+      <pre id="log" class="log" tabindex="0" aria-label="Activity chart event log">No selection yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createActivityChart = await uiLoader.get("ui.activity.chart");
+
+    const page = document.querySelector("main.page");
+    const host = document.getElementById("activityHost");
+    const log = document.getElementById("log");
+    const modeSelect = document.getElementById("modeSelect");
+    const metricSelect = document.getElementById("metricSelect");
+
+    const dates = [
+      "2026-05-12",
+      "2026-05-13",
+      "2026-05-14",
+      "2026-05-15",
+      "2026-05-16",
+      "2026-05-17",
+      "2026-05-18",
+    ];
+    const projects = [
+      "PBB Kit Setup",
+      "PBB Relay",
+      "PBB Realtime",
+      "PBB Hotline Beta",
+      "PBB Maestro",
+      "PBB MapServer",
+      "PBB Chatviewer",
+    ];
+    const records = [
+      { date: "2026-05-12", project: "PBB Chatviewer", total: 3, direct: 1, broadcast: 1, targeted: 1 },
+      { date: "2026-05-12", project: "PBB Kit Setup", total: 5, direct: 3, broadcast: 1, targeted: 2 },
+      { date: "2026-05-13", project: "PBB Realtime", total: 4, direct: 2, broadcast: 1, targeted: 2 },
+      { date: "2026-05-13", project: "PBB Hotline Beta", total: 6, direct: 4, broadcast: 1, targeted: 3 },
+      { date: "2026-05-14", project: "PBB Kit Setup", total: 8, direct: 5, broadcast: 3, targeted: 4, topics: ["installer"] },
+      { date: "2026-05-15", project: "PBB Relay", total: 6, direct: 4, broadcast: 1, targeted: 3 },
+      { date: "2026-05-15", project: "PBB Realtime", total: 5, direct: 3, broadcast: 1, targeted: 2 },
+      { date: "2026-05-16", project: "PBB Kit Setup", total: 14, direct: 9, broadcast: 3, targeted: 7 },
+      { date: "2026-05-16", project: "PBB Relay", total: 10, direct: 7, broadcast: 2, targeted: 5 },
+      { date: "2026-05-16", project: "PBB MapServer", total: 7, direct: 3, broadcast: 1, targeted: 2 },
+      { date: "2026-05-17", project: "PBB Maestro", total: 9, direct: 6, broadcast: 1, targeted: 5 },
+      { date: "2026-05-17", project: "PBB Hotline Beta", total: 7, direct: 5, broadcast: 1, targeted: 4 },
+      { date: "2026-05-18", project: "PBB Kit Setup", total: 18, direct: 11, broadcast: 4, targeted: 8 },
+      { date: "2026-05-18", project: "PBB Realtime", total: 11, direct: 8, broadcast: 1, targeted: 7 },
+      { date: "2026-05-18", project: "PBB Hotline Beta", total: 6, direct: 4, broadcast: 0, targeted: 3 },
+      { date: "2026-05-18", project: "PBB Relay", total: 5, direct: 4, broadcast: 0, targeted: 3 },
+      { date: "2026-05-18", project: "PBB Maestro", total: 4, direct: 3, broadcast: 0, targeted: 2 },
+      { date: "2026-05-18", project: "PBB MapServer", total: 3, direct: 2, broadcast: 0, targeted: 1 },
+      { date: "2026-05-18", project: "PBB Chatviewer", total: 2, direct: 1, broadcast: 1, targeted: 1 },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload, null, 2)}\n`;
+      log.textContent = log.textContent === "No selection yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const chart = createActivityChart(host, records, {
+      projects,
+      dates,
+      onSelect(selection) {
+        writeLog("activity.select", selection);
+      },
+      onHover(selection) {
+        log.dataset.hover = `${selection.project}:${selection.date}`;
+      },
+    });
+
+    modeSelect.addEventListener("change", () => {
+      chart.setMode(modeSelect.value);
+      writeLog("activity.mode", { mode: modeSelect.value });
+    });
+
+    metricSelect.addEventListener("change", () => {
+      chart.setMetric(metricSelect.value);
+      writeLog("activity.metric", { metric: metricSelect.value });
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = page.dataset.theme === "dark" ? "light" : "dark";
+      page.dataset.theme = next;
+      writeLog("theme.toggle", { theme: next });
+    });
+  </script>
+</body>
+</html>

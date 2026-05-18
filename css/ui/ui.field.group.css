@@ -82,6 +82,12 @@
   padding: 2px 7px;
 }
 
+.ui-field-group-item-warning.is-error {
+  border-color: color-mix(in srgb, var(--ui-danger, #ff5f67) 52%, var(--ui-border, #2a3448));
+  color: color-mix(in srgb, var(--ui-danger, #ff5f67) 42%, var(--ui-text, #edf2ff));
+  background: color-mix(in srgb, var(--ui-danger, #ff5f67) 10%, transparent);
+}
+
 .ui-field-group-rows {
   display: grid;
   gap: 10px;
@@ -135,9 +141,27 @@
   line-height: 1;
 }
 
+.ui-field-group-warning-badge.is-error {
+  border-color: color-mix(in srgb, var(--ui-danger, #ff5f67) 58%, var(--ui-border, #2a3448));
+  background: color-mix(in srgb, var(--ui-danger, #ff5f67) 14%, var(--ui-bg, #0d1523));
+  color: color-mix(in srgb, var(--ui-danger, #ff5f67) 36%, var(--ui-text, #edf2ff));
+}
+
 .ui-field-group-child.has-warning > .ui-label,
 .ui-field-group-child.has-warning .ui-field-group-child-label-row > .ui-label {
   color: color-mix(in srgb, var(--ui-warning, #f6b44b) 74%, var(--ui-text, #edf2ff));
+}
+
+.ui-field-group-child.has-error > .ui-label,
+.ui-field-group-child.has-error .ui-field-group-child-label-row > .ui-label {
+  color: color-mix(in srgb, var(--ui-danger, #ff5f67) 38%, var(--ui-text, #edf2ff));
+}
+
+.ui-field-group-child.has-error > .ui-input,
+.ui-field-group-child.has-error .ui-combobox-input,
+.ui-field-group-child.has-error .ui-number-stepper,
+.ui-field-group-child.has-error .ui-checkbox-group {
+  border-color: color-mix(in srgb, var(--ui-danger, #ff5f67) 58%, var(--ui-border, #2a3448));
 }
 
 .ui-field-group-breakdown-toggle {

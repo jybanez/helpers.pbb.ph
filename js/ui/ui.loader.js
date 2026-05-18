@@ -310,6 +310,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createTimeline",
   },
+  "ui.activity.chart": {
+    js: "./ui.activity.chart.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.activity.chart.css"],
+    deps: [],
+    export: "createActivityChart",
+  },
   "ui.timeline.scrubber": {
     js: "./ui.timeline.scrubber.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.timeline.scrubber.css"],
@@ -435,6 +441,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.hierarchy.map.css"],
     deps: [],
     export: "createHierarchyMap",
+  },
+  "ui.tree.mind.map": {
+    js: "./ui.tree.mind.map.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.tree.mind.map.css"],
+    deps: [],
+    export: "createTreeMindMap",
   },
   "ui.virtual.list": {
     js: "./ui.virtual.list.js",
@@ -650,6 +662,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.grid",
     "ui.tree.grid",
     "ui.hierarchy.map",
+    "ui.tree.mind.map",
     "ui.progress",
     "ui.virtual.list",
     "ui.scheduler",
@@ -657,6 +670,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.signal.strength",
     "ui.map.controls",
     "ui.timeline",
+    "ui.activity.chart",
     "ui.timeline.scrubber",
     "ui.data.inspector",
     "ui.empty.state",

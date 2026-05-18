@@ -65,7 +65,7 @@ const pages = [
   },
   {
     file: "demo.field.group.preset.vehicle-involved.html",
-    required: ["Vehicle Involved Field Group Preset", "Vehicles Involved", "Vehicle type", "Plate number", "Black", "vehicles_involved_count", "vehicleInvolved"],
+    required: ["Vehicle Involved Field Group Preset", "Vehicles Involved", "Vehicle type", "Plate number", "Passenger count", "Flammable / hazardous cargo", "Black", "vehicles_involved_count", "vehicleInvolved"],
   },
 ];
 

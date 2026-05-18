@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tree Mind Map Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.tree.mind.map.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      width: 920px;
+      max-width: 100%;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createTreeMindMap } from "../js/ui/ui.tree.mind.map.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const selectedSnapshots = [];
+    const nodes = [
+      { id: "hq", label: "PBB HQ", subtitle: "Root", status: "active" },
+      { id: "region-07", parentId: "hq", label: "Region VII", subtitle: "Region", status: "active" },
+      { id: "cebu", parentId: "region-07", label: "Cebu", subtitle: "Province", status: "planned" },
+      { id: "cebu-city", parentId: "cebu", label: "Cebu City", subtitle: "City", status: "provisioning" },
+      { id: "guadalupe", parentId: "cebu-city", label: "Guadalupe", subtitle: "Barangay", status: "maintenance" },
+      { id: "ngo-1", parentId: "hq", label: "Partner Foundation", subtitle: "Foundation", status: "active", data: { kind: "ngo" } },
+    ];
+
+    const map = createTreeMindMap(document.getElementById("host"), {
+      nodes,
+      rootId: "hq",
+      height: 520,
+      expandDepth: 2,
+      selectedIds: ["region-07"],
+      onSelectionChange(selection) {
+        selectedSnapshots.push(selection);
+      },
+    });
+
+    await wait(160);
+    assert(document.querySelector(".ui-tree-mind-map__canvas"), "canvas should render");
+    assert(map.getState().totalNodeCount === 6, "state should expose total node count");
+    assert(map.getSelectedNodes()[0]?.id === "region-07", "initial selected node should be returned as object");
+
+    map.selectNode("cebu", { additive: true });
+    await wait(80);
+    assert(map.getSelectedNodes().map((node) => node.id).includes("region-07"), "multi-select should preserve existing selection");
+    assert(map.getSelectedNodes().map((node) => node.id).includes("cebu"), "multi-select should add selected node");
+    assert(selectedSnapshots.at(-1)?.length === 2, "selection callback should receive array of selected node objects");
+
+    map.collapseNode("region-07");
+    await wait(80);
+    assert(map.getState().collapsedIds.includes("region-07"), "collapseNode should mark branch collapsed");
+    const collapsedVisible = map.getState().visibleNodeCount;
+    map.expandNode("region-07");
+    await wait(80);
+    assert(map.getState().visibleNodeCount > collapsedVisible, "expandNode should restore descendants");
+
+    const beforeZoom = map.getState().zoom;
+    map.zoomIn();
+    await wait(80);
+    assert(map.getState().zoom > beforeZoom, "zoomIn should increase scale");
+    map.fitToView();
+    await wait(80);
+    assert(map.getState().zoom > 0, "fitToView should keep a valid scale");
+
+    map.setTheme({
+      background: "#101010",
+      nodeFill: "#202020",
+      status: { active: "#00ff99" },
+    });
+    await wait(80);
+    await map.loadTheme("./fixtures/tree-mind-map-theme.json");
+    await wait(80);
+
+    map.destroy();
+    assert(document.getElementById("host").children.length === 0, "destroy should clean host");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

@@ -62,6 +62,7 @@ css/
     ui.grid.css
     ui.tree.grid.css
     ui.hierarchy.map.css
+    ui.tree.mind.map.css
     ui.progress.css
     ui.virtual.list.css
     ui.scheduler.css
@@ -120,6 +121,7 @@ js/
     ui.grid.js
     ui.tree.grid.js
     ui.hierarchy.map.js
+    ui.tree.mind.map.js
     ui.progress.js
     ui.virtual.list.js
     ui.scheduler.js
@@ -151,6 +153,7 @@ demos/
   demo.grid.html
   demo.tree.grid.html
   demo.hierarchy.map.html
+  demo.tree.mind.map.html
   demo.progress.html
   demo.virtual.list.html
   demo.scheduler.html
@@ -352,6 +355,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createTreeGrid(container, options)` tree grid with first-column hierarchy, aligned tabular columns, expand/collapse controls, tree-aware search, column resize, optional fixed-row-height virtualization, lazy child loading, and optional chrome-less rendering
 - `ui.hierarchy.map.js`
   - `createHierarchyMap(container, options)` hierarchy-first visual explorer with external entity lane, overlay relationship links, search, zoom/pan, selection, and optional chrome-less rendering
+- `ui.tree.mind.map.js`
+  - `createTreeMindMap(container, options)` Canvas tree mind-map surface for large hierarchical registries with expand/collapse, zoom/pan, single or multi node selection, selected-node object arrays for external detail panels, and object or JSON-loaded theme configuration
 - `ui.progress.js`
   - `createProgress(container, data, options)` progress indicator with multiple styles (linear, segmented, steps, radial, ring, etc.)
 - `ui.virtual.list.js`
@@ -430,6 +435,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.grid.css` data-grid/table styles
 - `ui.tree.grid.css` tree-grid styles
 - `ui.hierarchy.map.css` hierarchy map styles
+- `ui.tree.mind.map.css` tree mind-map canvas shell styles
 - `ui.progress.css` progress styles
 - `ui.virtual.list.css` virtual-list styles
 - `ui.scheduler.css` scheduler styles
@@ -496,7 +502,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-  - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -4174,6 +4180,50 @@ Behavior notes:
 Related demos:
 
 - `demos/demo.hierarchy.map.html`
+
+### `createTreeMindMap(container, options)` (`js/ui/ui.tree.mind.map.js`)
+
+Purpose:
+
+- Canvas-backed tree mind-map surface for large registry/topology data where the host app owns the surrounding filters and detail panel.
+
+Usage:
+
+```js
+import { createTreeMindMap } from "./js/ui/ui.tree.mind.map.js";
+
+const map = createTreeMindMap(container, {
+  nodes: [
+    { id: "hq", label: "PBB HQ", subtitle: "Root", status: "active" },
+    { id: "region-07", parentId: "hq", label: "Region VII", subtitle: "Region", status: "active" },
+  ],
+  rootId: "hq",
+  selectionMode: "multi",
+  onSelectionChange(selectedNodes) {
+    renderDetails(selectedNodes);
+  },
+});
+```
+
+Node contract:
+
+- `id`: stable unique id
+- `parentId`: optional parent id
+- `label`: primary node text
+- `subtitle`: secondary node text
+- `status`: theme status key
+- `data`: app-owned payload copied back through selected-node arrays
+
+Options and methods:
+
+- `expandDepth`, `collapsedIds`, `expandNode(id)`, `collapseNode(id)`, `toggleNode(id)`, `expandAll()`, `collapseAll()`
+- `selectionMode: "single" | "multi" | "multi-sticky"`, `selectedIds`, `selectNode(id, meta)`, `setSelectedIds(ids)`, `getSelectedNodes()`
+- `zoomIn()`, `zoomOut()`, `setZoom(scale)`, `resetView()`, `fitToView()`
+- `theme` accepts a plain object; `themeUrl` / `loadTheme(url)` load JSON theme config
+
+Related demos:
+
+- `demos/demo.tree.mind.map.html`
 
 ### `createProgress(container, data, options)` (`js/ui/ui.progress.js`)
 

@@ -1,0 +1,9 @@
+{
+  "background": "#101820",
+  "nodeFill": "#172536",
+  "nodeBorderSelected": "#50e3c2",
+  "status": {
+    "active": "#50e3c2",
+    "maintenance": "#ffd166"
+  }
+}

@@ -139,27 +139,35 @@ export function createFieldGroup(container, options = {}) {
       title.className = "ui-field-group-item-title";
       title.textContent = `#${index + 1}`;
 
-      const itemWarnings = getItemWarnings(index);
+      const itemIssues = getItemIssues(index);
       const warning = document.createElement("span");
-      warning.className = "ui-field-group-item-warning";
-      warning.hidden = itemWarnings.length === 0;
-      warning.textContent = `${itemWarnings.length} ${itemWarnings.length === 1 ? "warning" : "warnings"}`;
-      warning.title = itemWarnings.map((item) => item.message || item.warning || item.error).filter(Boolean).join("\n");
+      const itemErrorCount = itemIssues.filter((issue) => issue.severity === "error").length;
+      const itemWarningCount = itemIssues.filter((issue) => issue.severity !== "error").length;
+      warning.className = [
+        "ui-field-group-item-warning",
+        itemErrorCount ? "is-error" : "",
+      ].filter(Boolean).join(" ");
+      warning.hidden = itemIssues.length === 0;
+      warning.textContent = itemErrorCount
+        ? `${itemErrorCount} ${itemErrorCount === 1 ? "error" : "errors"}`
+        : `${itemWarningCount} ${itemWarningCount === 1 ? "warning" : "warnings"}`;
+      warning.title = itemIssues.map((item) => item.message || item.warning || item.error).filter(Boolean).join("\n");
 
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "ui-field-group-remove";
-      remove.setAttribute("aria-label", `${currentOptions.removeLabel} #${index + 1}`);
-      remove.title = `${currentOptions.removeLabel} #${index + 1}`;
-      remove.appendChild(createIcon("actions.delete", { size: 16 }));
-      remove.disabled = itemCount <= 1 && currentOptions.required;
-      on(remove, "click", () => {
-        value = safeArray(value).filter((_, itemIndex) => itemIndex !== index);
-        render();
-        emitChange();
-      });
-
-      header.append(title, warning, remove);
+      header.append(title, warning);
+      if (index > 0) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "ui-field-group-remove";
+        remove.setAttribute("aria-label", `${currentOptions.removeLabel} #${index + 1}`);
+        remove.title = `${currentOptions.removeLabel} #${index + 1}`;
+        remove.appendChild(createIcon("actions.delete", { size: 16 }));
+        on(remove, "click", () => {
+          value = safeArray(value).filter((_, itemIndex) => itemIndex !== index);
+          render();
+          emitChange();
+        });
+        header.appendChild(remove);
+      }
       itemEl.appendChild(header);
     }
 
@@ -213,12 +221,14 @@ export function createFieldGroup(container, options = {}) {
     const breakdown = normalizeBreakdown(field);
     const breakdownKey = `${index}:${childKey}`;
     const breakdownOpen = isBreakdownOpen(breakdownKey, breakdown);
-    const warningKeys = breakdown ? [childKey, ...getBreakdownFieldKeys(breakdown)] : [childKey];
-    const fieldWarnings = getFieldWarnings(index, warningKeys);
+    const issueKeys = breakdown ? [childKey, ...getBreakdownFieldKeys(breakdown)] : [childKey];
+    const fieldIssues = getFieldIssues(index, issueKeys);
+    const hasErrors = fieldIssues.some((issue) => issue.severity === "error");
     const row = document.createElement("div");
     row.className = [
       "ui-field ui-field-group-child",
-      fieldWarnings.length ? "has-warning" : "",
+      fieldIssues.length ? "has-warning" : "",
+      hasErrors ? "has-error" : "",
     ].filter(Boolean).join(" ");
     row.dataset.fieldKey = childKey;
 
@@ -226,7 +236,7 @@ export function createFieldGroup(container, options = {}) {
     label.className = type === "checkbox" ? "ui-field-group-checkbox" : "ui-label";
     label.textContent = getFieldLabel(field, childKey);
 
-    const warningBadge = renderWarningBadge(fieldWarnings);
+    const warningBadge = renderIssueBadge(fieldIssues);
 
     let labelNode = label;
     if (breakdown) {
@@ -286,11 +296,15 @@ export function createFieldGroup(container, options = {}) {
       const shouldRefreshVisibility = visibilitySignature(previousItem, currentOptions.fieldRows) !== visibilitySignature(nextItems[index], currentOptions.fieldRows);
       value = currentOptions.repeatable ? nextItems : nextItems[0];
       const nextValidation = getCurrentValidation();
-      const shouldRefreshValidationUi = currentOptions.autoValidate && validationWarningSignature(renderedValidation) !== validationWarningSignature(nextValidation);
-      renderedValidation = nextValidation;
+      const shouldRefreshValidationUi = currentOptions.autoValidate && validationIssueSignature(renderedValidation) !== validationIssueSignature(nextValidation);
       emitChange(nextValidation);
       if (shouldRender || shouldRefreshVisibility || shouldRefreshValidationUi) {
-        render();
+        if (shouldRender || shouldRefreshVisibility) {
+          renderedValidation = nextValidation;
+          render();
+        } else {
+          updateValidationUi(nextValidation);
+        }
       }
     };
 
@@ -547,14 +561,15 @@ export function createFieldGroup(container, options = {}) {
     }, value);
   }
 
-  function getItemWarnings(index) {
+  function getItemIssues(index) {
     const prefix = getItemPathPrefix(currentOptions, index);
-    return safeArray(renderedValidation.warnings).filter((warning) => String(warning?.field_key || "").startsWith(prefix));
+    return normalizeValidationIssues(renderedValidation)
+      .filter((issue) => String(issue?.field_key || "").startsWith(prefix));
   }
 
-  function getFieldWarnings(index, keys) {
+  function getFieldIssues(index, keys) {
     const keySet = new Set(safeArray(keys).filter(Boolean));
-    return getItemWarnings(index).filter((warning) => {
+    return getItemIssues(index).filter((warning) => {
       const warningKey = getLastPathSegment(warning?.field_key);
       const related = safeArray(warning?.related_fields);
       return keySet.has(warningKey) || related.some((key) => keySet.has(key));
@@ -579,6 +594,99 @@ export function createFieldGroup(container, options = {}) {
         message: result?.message || getValidationRuleMessage(rule, currentOptions),
       };
     }).filter(Boolean);
+  }
+
+  function updateValidationUi(nextValidation) {
+    renderedValidation = nextValidation;
+    const itemEls = currentOptions.repeatable
+      ? Array.from(refs.body.querySelectorAll(":scope > .ui-field-group-item"))
+      : Array.from(refs.body.children).filter((node) => node?.classList?.contains("ui-field-group-item"));
+
+    itemEls.forEach((itemEl, index) => {
+      const item = currentOptions.repeatable
+        ? safeArray(value)[index]
+        : value;
+      const itemIssues = getItemIssues(index);
+      const itemErrorCount = itemIssues.filter((issue) => issue.severity === "error").length;
+      const itemWarningCount = itemIssues.filter((issue) => issue.severity !== "error").length;
+      const itemBadge = itemEl.querySelector(":scope > .ui-field-group-item-header .ui-field-group-item-warning");
+      if (itemBadge) {
+        itemBadge.classList.toggle("is-error", itemErrorCount > 0);
+        itemBadge.hidden = itemIssues.length === 0;
+        itemBadge.textContent = itemErrorCount
+          ? `${itemErrorCount} ${itemErrorCount === 1 ? "error" : "errors"}`
+          : `${itemWarningCount} ${itemWarningCount === 1 ? "warning" : "warnings"}`;
+        itemBadge.title = itemIssues.map((item) => item.message || item.warning || item.error).filter(Boolean).join("\n");
+      }
+
+      safeArray(currentOptions.fields).forEach((field) => {
+        const childKey = getFieldKey(field);
+        if (!childKey) {
+          return;
+        }
+        const breakdown = normalizeBreakdown(field);
+        const issueKeys = breakdown ? [childKey, ...getBreakdownFieldKeys(breakdown)] : [childKey];
+        updateFieldIssueUi(itemEl, index, childKey, issueKeys);
+        if (breakdown) {
+          updateBreakdownValidationUi(itemEl, index, item, childKey, breakdown);
+        }
+      });
+    });
+  }
+
+  function updateFieldIssueUi(itemEl, index, childKey, issueKeys) {
+    const fieldIssues = getFieldIssues(index, issueKeys);
+    const hasIssues = fieldIssues.length > 0;
+    const hasErrors = fieldIssues.some((issue) => issue.severity === "error");
+    itemEl.querySelectorAll(`[data-field-key="${cssEscape(childKey)}"]`).forEach((row) => {
+      row.classList.toggle("has-warning", hasIssues);
+      row.classList.toggle("has-error", hasErrors);
+      row.querySelectorAll(":scope .ui-field-group-warning-badge").forEach((badge) => badge.remove());
+      const badge = renderIssueBadge(fieldIssues);
+      if (!badge) {
+        return;
+      }
+      const controls = row.querySelector(":scope > .ui-field-group-child-label-row .ui-field-group-child-label-controls");
+      if (controls) {
+        controls.prepend(badge);
+        return;
+      }
+      const label = row.querySelector(":scope > .ui-label");
+      label?.appendChild(badge);
+    });
+  }
+
+  function updateBreakdownValidationUi(itemEl, index, item, childKey, breakdown) {
+    const wrap = itemEl.querySelector(`.ui-field-group-breakdown[data-breakdown-for="${cssEscape(childKey)}"]`);
+    if (!wrap) {
+      return;
+    }
+    const validationLines = getBreakdownValidationLines(index, item, breakdown);
+    let list = wrap.querySelector(":scope > .ui-field-group-breakdown-warnings");
+    if (!validationLines.length) {
+      list?.remove();
+      return;
+    }
+    if (!list) {
+      list = document.createElement("div");
+      list.className = "ui-field-group-breakdown-warnings";
+      const title = wrap.querySelector(":scope > .ui-field-group-breakdown-title");
+      if (title?.nextSibling) {
+        wrap.insertBefore(list, title.nextSibling);
+      } else {
+        wrap.appendChild(list);
+      }
+    }
+    clearNode(list);
+    validationLines.forEach((warning) => {
+      const line = document.createElement("div");
+      line.className = [
+        "ui-field-group-breakdown-warning",
+        warning.invalid ? "is-invalid" : "is-valid",
+      ].filter(Boolean).join(" ");
+      line.textContent = warning.message || "Check this breakdown.";
+      list.appendChild(line);
+    });
   }
 }
 
@@ -930,18 +1038,29 @@ function getLastPathSegment(path) {
   return parts[parts.length - 1] || "";
 }
 
+function cssEscape(value) {
+  if (globalThis.CSS && typeof globalThis.CSS.escape === "function") {
+    return globalThis.CSS.escape(String(value));
+  }
+  return String(value).replace(/["\\]/g, "\\$&");
+}
+
 function getBreakdownFieldKeys(breakdown) {
   return flattenFieldDefinitions(flattenFieldRows(normalizeChildFieldRows({ fields: breakdown?.fields }))).map(getFieldKey).filter(Boolean);
 }
 
-function renderWarningBadge(warnings) {
-  if (!safeArray(warnings).length) {
+function renderIssueBadge(issues) {
+  if (!safeArray(issues).length) {
     return null;
   }
+  const hasErrors = safeArray(issues).some((issue) => issue.severity === "error");
   const badge = document.createElement("span");
-  badge.className = "ui-field-group-warning-badge";
+  badge.className = [
+    "ui-field-group-warning-badge",
+    hasErrors ? "is-error" : "",
+  ].filter(Boolean).join(" ");
   badge.textContent = "!";
-  badge.title = safeArray(warnings).map((warning) => warning.message || warning.warning || warning.error).filter(Boolean).join("\n");
+  badge.title = safeArray(issues).map((warning) => warning.message || warning.warning || warning.error).filter(Boolean).join("\n");
   return badge;
 }
 
@@ -949,14 +1068,34 @@ function cloneValidations(validations) {
   return safeArray(validations).map((rule) => (rule && typeof rule === "object" && !Array.isArray(rule) ? { ...rule } : null)).filter(Boolean);
 }
 
-function validationWarningSignature(validation) {
+function validationIssueSignature(validation) {
   return JSON.stringify({
+    errors: safeArray(validation?.errors).map((item) => ({
+      field_key: item?.field_key || "",
+      message: item?.message || item?.error || "",
+      related_fields: safeArray(item?.related_fields).join("|"),
+    })),
     warnings: safeArray(validation?.warnings).map((item) => ({
       field_key: item?.field_key || "",
       message: item?.message || item?.warning || "",
       related_fields: safeArray(item?.related_fields).join("|"),
     })),
   });
+}
+
+function normalizeValidationIssues(validation) {
+  return [
+    ...safeArray(validation?.errors).map((item) => ({
+      ...item,
+      message: item?.message || item?.error || "",
+      severity: "error",
+    })),
+    ...safeArray(validation?.warnings).map((item) => ({
+      ...item,
+      message: item?.message || item?.warning || "",
+      severity: "warning",
+    })),
+  ];
 }
 
 function resolvePresetOptions(options = {}, config = {}) {

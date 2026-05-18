@@ -28,7 +28,7 @@
       overview: "Focused reference for repeatable bystander-friendly vehicle entries.",
       useWhen: ["Use <code>fieldGroupPresets.vehicleInvolved()</code> for road accidents and other incidents where a caller can describe visible vehicles."],
       avoidWhen: ["Do not use this preset for ownership, insurance, towing, or investigation details; keep those in responder-side workflows."],
-      description: "The vehicle-involved preset captures only what a bystander can usually report quickly: vehicle type, plate number when visible, common vehicle color, and apparent damage level.",
+      description: "The vehicle-involved preset captures what a bystander can usually report quickly: vehicle type, plate number when visible, common vehicle color, apparent damage level, passenger count, and whether flammable or hazardous cargo may be involved.",
       defaultSampleCode: `const group = createFieldGroup(host, {
   name: "vehicles_involved",
   ...fieldGroupPresets.vehicleInvolved({ label: "Vehicles Involved" }),
@@ -36,7 +36,9 @@
     vehicle_type: "Motorcycle",
     plate_number: "ABC 1234",
     color: "Black",
-    damage_level: "Major"
+    damage_level: "Major",
+    passenger_count: 2,
+    flammable_hazardous_cargo: "No"
   }]
 });`,
       constructor: [{ factory: "<code>fieldGroupPresets.vehicleInvolved(options?)</code>", arguments: "optional preset overrides", returns: "Plain repeatable field-group config for <code>createFieldGroup(...)</code>" }],
@@ -49,7 +51,9 @@
         { property: "<code>sitrep</code>", type: "<code>Array</code>", description: "<code>vehicles_involved_count</code>." },
         { property: "<code>vehicle_type.options</code>", type: "<code>Array</code>", description: "Motorcycle, car, SUV, van, pick-up, truck, bus, jeepney, tricycle, bicycle, heavy equipment, and other." },
         { property: "<code>color.options</code>", type: "<code>Array</code>", description: "Common vehicle colors plus other and unknown." },
-        { property: "<code>damage_level.options</code>", type: "<code>Array</code>", description: "None visible, minor, major, severe, and unknown." }
+        { property: "<code>damage_level.options</code>", type: "<code>Array</code>", description: "None visible, minor, major, severe, and unknown." },
+        { property: "<code>passenger_count</code>", type: "<code>number-stepper</code>", description: "Estimated number of passengers in or around the vehicle." },
+        { property: "<code>flammable_hazardous_cargo.options</code>", type: "<code>Array</code>", description: "Yes or no." }
       ],
       events: [
         { event: "<code>onChange(value, meta)</code>", arguments: "<code>value</code> array, validation metadata", returns: "Provided to <code>createFieldGroup(...)</code>, not the preset factory." }
@@ -64,8 +68,8 @@
       presetKey: "vehicleInvolved",
       name: "vehicles_involved",
       label: "Vehicles Involved",
-      initialValue: [{ vehicle_type: "Motorcycle", plate_number: "ABC 1234", color: "Black", damage_level: "Major" }],
-      sampleValue: [{ vehicle_type: "Car", plate_number: "", color: "White", damage_level: "Minor" }]
+      initialValue: [{ vehicle_type: "Motorcycle", plate_number: "ABC 1234", color: "Black", damage_level: "Major", passenger_count: 2, flammable_hazardous_cargo: "No" }],
+      sampleValue: [{ vehicle_type: "Car", plate_number: "", color: "White", damage_level: "Minor", passenger_count: 3, flammable_hazardous_cargo: "No" }]
     };
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>
