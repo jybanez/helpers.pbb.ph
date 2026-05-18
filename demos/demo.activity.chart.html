@@ -120,6 +120,7 @@
         { option: "<code>showHeader</code>", default: "<code>false</code>", description: "Renders an optional compact header above the summary." },
         { option: "<code>eyebrow</code>", default: "<code>\"Activity\"</code>", description: "Optional header eyebrow text when <code>showHeader</code> is enabled." },
         { option: "<code>title</code>", default: "<code>\"Last 7 days\"</code>", description: "Optional header title text when <code>showHeader</code> is enabled." },
+        { option: "<code>projectOrder</code>", default: "<code>\"alpha\"</code>", description: "Project row ordering. Use <code>\"input\"</code> to preserve the supplied <code>projects</code> order.", values: ["alpha", "input"] },
         { option: "<code>projects</code>", default: "<code>[]</code>", description: "Optional fixed project ordering/list." },
         { option: "<code>dates</code>", default: "<code>[]</code>", description: "Optional fixed date range." },
         { option: "<code>selectedProject</code>", default: "<code>\"\"</code>", description: "Externally controlled selected project." },
@@ -186,6 +187,7 @@ const chart = createActivityChart(document.getElementById("activityHost"), recor
   mode: "matrix",
   metric: "total",
   showHeader: false,
+  projectOrder: "input",
   onSelect({ project, date, summary }) {
     filterTimelineByProjectDay(project, date, summary);
   },

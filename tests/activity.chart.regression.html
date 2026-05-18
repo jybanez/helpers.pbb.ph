@@ -53,6 +53,7 @@
 
     assert(document.querySelectorAll(".ui-activity-chart-cell").length === 4, "matrix should render one cell per project/day pair");
     assert(document.querySelector(".ui-activity-chart-header") === null, "activity chart header should be optional and hidden by default");
+    assert(Array.from(document.querySelectorAll(".ui-activity-chart-project button")).map((button) => button.textContent).join("|") === "PBB Realtime|PBB Relay", "matrix should sort project rows alphabetically by default");
     assert(document.querySelector(".ui-activity-chart-summary-main strong")?.textContent === "15", "summary should total all messages");
     const cornerHeader = document.querySelector(".ui-activity-chart-matrix thead th:first-child");
     const dateHeader = document.querySelector(".ui-activity-chart-matrix thead th:nth-child(2)");
@@ -85,6 +86,14 @@
     assert(document.querySelectorAll(".ui-activity-chart-cell").length === 1, "update should replace records and rerender");
     assert(document.querySelector(".ui-activity-chart-eyebrow")?.textContent === "Activity", "optional activity chart eyebrow should render when enabled");
     assert(document.querySelector(".ui-activity-chart-title")?.textContent === "Last 7 days", "optional activity chart title should render when enabled");
+
+    chart.update(records, {
+      projects: ["PBB Relay", "PBB Realtime"],
+      dates: ["2026-05-17", "2026-05-18"],
+      projectOrder: "input",
+      showHeader: false,
+    });
+    assert(Array.from(document.querySelectorAll(".ui-activity-chart-project button")).map((button) => button.textContent).join("|") === "PBB Relay|PBB Realtime", "projectOrder input should preserve caller-provided project row order");
 
     chart.destroy();
     assert(document.querySelector(".ui-activity-chart") === null, "destroy should remove chart DOM");

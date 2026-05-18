@@ -11,6 +11,7 @@ const DEFAULT_OPTIONS = {
   showHeader: false,
   eyebrow: "Activity",
   title: "Last 7 days",
+  projectOrder: "alpha", // alpha | input
   projects: [],
   dates: [],
   selectedProject: "",
@@ -23,6 +24,7 @@ const DEFAULT_OPTIONS = {
 
 const METRIC_KEYS = new Set(["total", "direct", "broadcast", "targeted"]);
 const MODE_KEYS = new Set(["matrix", "stacked-bars", "sparklines"]);
+const PROJECT_ORDER_KEYS = new Set(["alpha", "input"]);
 
 export function createActivityChart(container, records = [], options = {}) {
   const events = createEventBag();
@@ -445,11 +447,13 @@ export function createActivityChart(container, records = [], options = {}) {
 function normalizeOptions(options = {}) {
   const mode = MODE_KEYS.has(String(options.mode)) ? String(options.mode) : DEFAULT_OPTIONS.mode;
   const metric = METRIC_KEYS.has(String(options.metric)) ? String(options.metric) : DEFAULT_OPTIONS.metric;
+  const projectOrder = PROJECT_ORDER_KEYS.has(String(options.projectOrder)) ? String(options.projectOrder) : DEFAULT_OPTIONS.projectOrder;
   return {
     ...DEFAULT_OPTIONS,
     ...options,
     mode,
     metric,
+    projectOrder,
     showHeader: Boolean(options.showHeader),
     eyebrow: typeof options.eyebrow === "string" ? options.eyebrow : DEFAULT_OPTIONS.eyebrow,
     title: typeof options.title === "string" ? options.title : DEFAULT_OPTIONS.title,
@@ -518,7 +522,10 @@ function deriveState(records, options) {
     totals.targeted += bucket.targeted;
   });
 
-  const projects = Array.from(projectSet).sort((a, b) => a.localeCompare(b));
+  const projects = Array.from(projectSet);
+  if (options.projectOrder === "alpha") {
+    projects.sort((a, b) => a.localeCompare(b));
+  }
   const dates = Array.from(dateSet).sort();
   const maxMetric = Math.max(0, ...Array.from(bucketMap.values()).map((bucket) => getMetricValue(bucket, options.metric)));
 
