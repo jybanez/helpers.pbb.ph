@@ -19,6 +19,7 @@ const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true 
 const icons = await loader.get("ui.icons", { css: false });
 const createBusyOverlay = await loader.get("ui.busy.overlay", { css: false });
 const createFormModal = await loader.get("ui.form.modal", { css: false });
+const createPathPicker = await loader.get("ui.path.picker", { css: false });
 const createDeviceSelector = await loader.get("ui.device.selector", { css: false });
 const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
@@ -34,6 +35,10 @@ if (typeof createFormModal !== "function") {
 
 if (typeof createBusyOverlay !== "function") {
   throw new Error("Bundle-backed ui.busy.overlay did not resolve to a factory function.");
+}
+
+if (typeof createPathPicker !== "function") {
+  throw new Error("Bundle-backed ui.path.picker did not resolve to a factory function.");
 }
 
 if (typeof createDeviceSelector !== "function") {
@@ -56,6 +61,7 @@ if (
   !diagnostics.loadedModules.includes("ui.icons") ||
   !diagnostics.loadedModules.includes("ui.busy.overlay") ||
   !diagnostics.loadedModules.includes("ui.form.modal") ||
+  !diagnostics.loadedModules.includes("ui.path.picker") ||
   !diagnostics.loadedModules.includes("ui.device.selector") ||
   !diagnostics.loadedModules.includes("ui.device.selector.media") ||
   !diagnostics.loadedModules.includes("incident.types")

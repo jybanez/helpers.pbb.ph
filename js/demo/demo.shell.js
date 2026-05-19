@@ -35,6 +35,7 @@ const DEMO_GROUPS = [
       { href: "./demo.grid.html", label: "Grid" },
       { href: "./demo.datepicker.html", label: "Datepicker" },
       { href: "./demo.file.uploader.html", label: "File Uploader" },
+      { href: "./demo.path.picker.html", label: "Path Picker" },
       { href: "./demo.tree.html", label: "Tree" },
       { href: "./demo.tree.grid.html", label: "Tree Grid" },
       { href: "./demo.hierarchy.map.html", label: "Hierarchy Map" },

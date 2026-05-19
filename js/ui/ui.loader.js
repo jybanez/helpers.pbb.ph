@@ -142,6 +142,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createPasswordField",
   },
+  "ui.path.picker": {
+    js: "./ui.path.picker.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.path.picker.css"],
+    deps: [],
+    export: "createPathPicker",
+  },
   "ui.number.stepper": {
     js: "./ui.number.stepper.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.number.stepper.css"],
@@ -637,6 +643,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.form.modal.status",
     "ui.form.modal.reason",
     "ui.password",
+    "ui.path.picker",
     "ui.checkbox",
     "ui.checkbox.group",
     "ui.combobox",

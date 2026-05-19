@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Path Picker Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .settings-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .mock-picker-dialog {
+      width: min(560px, calc(100vw - 32px));
+      border: 1px solid #2d4771;
+      border-radius: 10px;
+      background: #0f1726;
+      color: #d7e0f4;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      padding: 0;
+    }
+    .mock-picker-dialog::backdrop {
+      background: rgba(2, 6, 14, 0.68);
+    }
+    .mock-picker-dialog__body {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+    }
+    .mock-picker-dialog__header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .mock-picker-dialog__title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .mock-picker-dialog__list {
+      display: grid;
+      gap: 8px;
+    }
+    .mock-picker-dialog__option {
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 42px;
+      text-align: left;
+      font-family: Consolas, "Courier New", monospace;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .log,
+    pre:not(.log) {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    .log {
+      color: #b2c2e5;
+      min-height: 180px;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.path.picker"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Path Picker",
+      overview: "Adapter-driven file/folder path input for local runtime setup screens where admins configure executable, config, and generated-output paths.",
+      useWhen: [
+        "Use <code>createPathPicker(...)</code> when the app stores a local filesystem path rather than uploading file contents.",
+        "Use it for PBB Kit setup fields such as PHP, Apache, MySQL, config JSON, or generated output folders."
+      ],
+      avoidWhen: [
+        "Do not use it for upload queues; use <code>createFileUploader(...)</code> when files are transferred to a server.",
+        "Do not rely on browser file inputs for real local paths. Provide an app/native/local-agent picker adapter."
+      ],
+      description: "The helper owns the path text field, browse/clear controls, required and extension validation, async host validation, and status rendering. The host owns filesystem access through <code>pickFile</code>, <code>pickFolder</code>, or <code>pickPath</code>.",
+      defaultSampleCode: `const phpPicker = createPathPicker(host, {\n  label: "PHP",\n  mode: "file",\n  value: "C:\\\\wamp64\\\\bin\\\\php\\\\php8.2.29\\\\php.exe",\n  extensions: [".exe"],\n  browseLabel: "Choose PHP executable",\n  async pickFile(context) {\n    return kitBridge.pickFile(context);\n  },\n  async validatePath(path) {\n    return kitBridge.validateExecutable(path);\n  },\n  onChange(value) {\n    saveSetting("php_path", value);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createPathPicker(container, options)</code>", arguments: "<code>container</code>, path-picker <code>options</code>", returns: "Path-picker instance" }
+      ],
+      options: [
+        { option: "<code>mode</code>", default: "<code>\"file\"</code>", description: "Picker target. Supported values: <code>file</code>, <code>folder</code>, <code>save-file</code>." },
+        { option: "<code>value</code>", default: "<code>\"\"</code>", description: "Initial path value." },
+        { option: "<code>label</code>", default: "<code>\"\"</code>", description: "Optional field label." },
+        { option: "<code>placeholder</code>", default: "<code>\"\"</code>", description: "Input placeholder." },
+        { option: "<code>extensions</code>", default: "<code>[]</code>", description: "Allowed file extensions such as <code>[\".exe\", \".json\"]</code>. Folder mode ignores file-extension validation." },
+        { option: "<code>accept</code>", default: "<code>\"\"</code>", description: "Accept-style extension string. Used as an extension fallback when <code>extensions</code> is empty." },
+        { option: "<code>required</code>", default: "<code>false</code>", description: "Marks empty paths invalid." },
+        { option: "<code>pickFile</code>", default: "<code>null</code>", description: "Adapter called by file/save-file browse actions." },
+        { option: "<code>pickFolder</code>", default: "<code>null</code>", description: "Adapter called by folder browse actions." },
+        { option: "<code>pickPath</code>", default: "<code>null</code>", description: "Generic adapter fallback for any mode." },
+        { option: "<code>validatePath</code>", default: "<code>null</code>", description: "Optional sync/async host validation. Return <code>true</code>, a message string, or <code>{ valid, tone, message }</code>." },
+        { option: "<code>validateOnChange</code>", default: "<code>true</code>", description: "Runs local/host validation as the value changes." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Called when manual, browse, or clear changes update the path." }
+      ],
+      propertiesText: "Returned instance exposes <code>root</code>, <code>input</code>, <code>browseButton</code>, <code>clearButton</code>, and <code>statusEl</code> DOM references.",
+      events: [
+        { event: "<code>onChange(value, meta)</code>", arguments: "path value and source metadata", returns: "<code>void</code>" },
+        { event: "<code>onBrowse(value, meta)</code>", arguments: "selected path and raw adapter result", returns: "<code>void</code>" },
+        { event: "<code>onValidate(result, meta)</code>", arguments: "normalized validation result and source metadata", returns: "<code>void</code>" },
+        { event: "<code>onError(error, meta)</code>", arguments: "browse or validation error and source metadata", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "current path string" },
+        { method: "<code>setValue(value, meta)</code>", arguments: "path string and optional metadata", returns: "<code>void</code>" },
+        { method: "<code>browse()</code>", arguments: "none", returns: "<code>Promise&lt;string | null&gt;</code>" },
+        { method: "<code>validate(meta)</code>", arguments: "optional source metadata", returns: "normalized validation result" },
+        { method: "<code>setStatus(message, tone)</code>", arguments: "status copy and tone", returns: "normalized validation result" },
+        { method: "<code>clearStatus()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>focus()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="validateAllBtn" class="ui-button" type="button">Validate Paths</button>
+        <button id="simulateMissingBtn" class="ui-button ui-button-ghost" type="button">Simulate Missing PHP</button>
+      </div>
+      <h1 class="ui-title">Path Picker Demo</h1>
+      <p class="muted">Local setup fields with app-owned picker adapters and helper-owned path validation/status UI.</p>
+      <p class="muted">The browser demo uses mock adapters; PBB Kit Setup should wire these buttons to its native/local-agent file and folder picker.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">PBB Kit Platform Paths</h2>
+      <div class="settings-grid">
+        <div id="phpPicker"></div>
+        <div id="apachePicker"></div>
+        <div id="mysqlPicker"></div>
+        <div id="configPicker"></div>
+        <div id="outputFolderPicker"></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Sample Code</h2>
+      <pre>const phpPicker = createPathPicker(host, {
+  label: "PHP",
+  mode: "file",
+  extensions: [".exe"],
+  browseLabel: "Choose PHP executable",
+  pickFile(context) {
+    return kitBridge.pickFile(context);
+  },
+  validatePath(path) {
+    return kitBridge.validateExecutable(path);
+  }
+});</pre>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    const createPathPicker = await uiLoader.get("ui.path.picker");
+    const eventLog = document.getElementById("eventLog");
+    const events = [];
+
+    function writeLog(type, detail) {
+      events.unshift({ type, detail, at: new Date().toLocaleTimeString() });
+      eventLog.textContent = events.slice(0, 12).map((event) => `${event.at} ${event.type} ${JSON.stringify(event.detail)}`).join("\n");
+    }
+
+    function fakeValidate(path, kind) {
+      const value = String(path || "");
+      if (!value.trim()) {
+        return "Path is required.";
+      }
+      if (value.includes("missing")) {
+        return { valid: false, tone: "error", message: `${kind} was not found.` };
+      }
+      return { valid: true, message: `${kind} path accepted: ${value}` };
+    }
+
+    function createDemoPicker(eventType, paths) {
+      return (context) => showMockPicker({ eventType, paths, context });
+    }
+
+    function showMockPicker({ eventType, paths, context }) {
+      return new Promise((resolve) => {
+        const dialog = document.createElement("dialog");
+        dialog.className = "mock-picker-dialog";
+        dialog.innerHTML = `
+          <form method="dialog" class="mock-picker-dialog__body">
+            <div class="mock-picker-dialog__header">
+              <div>
+                <h2 class="mock-picker-dialog__title">Demo ${context.mode === "folder" ? "Folder" : "File"} Picker</h2>
+                <p class="muted">Select a mock path. PBB Kit Setup should replace this with its native/local-agent picker.</p>
+              </div>
+              <button class="ui-button ui-button-ghost" type="submit" value="cancel">Cancel</button>
+            </div>
+            <div class="mock-picker-dialog__list"></div>
+          </form>
+        `;
+        const list = dialog.querySelector(".mock-picker-dialog__list");
+        paths.forEach((path) => {
+          const button = document.createElement("button");
+          button.className = "ui-button mock-picker-dialog__option";
+          button.type = "button";
+          button.textContent = path;
+          button.addEventListener("click", () => {
+            writeLog(eventType, { mode: context.mode, selected: path });
+            dialog.close("selected");
+            cleanup();
+            resolve(path);
+          });
+          list.appendChild(button);
+        });
+        dialog.addEventListener("close", () => {
+          if (dialog.returnValue !== "selected") {
+            cleanup();
+            resolve(null);
+          }
+        }, { once: true });
+        function cleanup() {
+          dialog.remove();
+        }
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        list.querySelector("button")?.focus();
+      });
+    }
+
+    const pickers = [
+      createPathPicker(document.getElementById("phpPicker"), {
+        label: "PHP",
+        value: "C:\\wamp64\\bin\\php\\php8.2.29\\php.exe",
+        mode: "file",
+        extensions: [".exe"],
+        required: true,
+        browseLabel: "Choose PHP executable",
+        pickFile: createDemoPicker("php.browse", [
+          "C:\\wamp64\\bin\\php\\php8.3.0\\php.exe",
+          "C:\\wamp64\\bin\\php\\php8.2.29\\php.exe",
+        ]),
+        validatePath: (path) => fakeValidate(path, "PHP executable"),
+        onBrowse: (value, meta) => writeLog("php.selected", { value, source: meta.source }),
+        onChange: (value, meta) => writeLog("php.change", { value, source: meta.source }),
+      }),
+      createPathPicker(document.getElementById("apachePicker"), {
+        label: "Apache httpd.exe",
+        value: "C:\\wamp64\\bin\\apache\\apache2.4.65\\bin\\httpd.exe",
+        mode: "file",
+        extensions: [".exe"],
+        browseLabel: "Choose Apache executable",
+        pickFile: createDemoPicker("apache.browse", [
+          "C:\\wamp64\\bin\\apache\\apache2.4.65\\bin\\httpd.exe",
+          "C:\\wamp64\\bin\\apache\\apache2.4.62\\bin\\httpd.exe",
+        ]),
+        validatePath: (path) => fakeValidate(path, "Apache executable"),
+        onBrowse: (value, meta) => writeLog("apache.selected", { value, source: meta.source }),
+        onChange: (value, meta) => writeLog("apache.change", { value, source: meta.source }),
+      }),
+      createPathPicker(document.getElementById("mysqlPicker"), {
+        label: "MySQL/MariaDB mysql.exe",
+        value: "C:\\wamp64\\bin\\mysql\\mysql8.4.7\\bin\\mysql.exe",
+        mode: "file",
+        extensions: [".exe"],
+        browseLabel: "Choose MySQL executable",
+        pickFile: createDemoPicker("mysql.browse", [
+          "C:\\wamp64\\bin\\mysql\\mysql8.4.7\\bin\\mysql.exe",
+          "C:\\wamp64\\bin\\mariadb\\mariadb11.4\\bin\\mysql.exe",
+        ]),
+        validatePath: (path) => fakeValidate(path, "MySQL executable"),
+        onBrowse: (value, meta) => writeLog("mysql.selected", { value, source: meta.source }),
+        onChange: (value, meta) => writeLog("mysql.change", { value, source: meta.source }),
+      }),
+      createPathPicker(document.getElementById("configPicker"), {
+        label: "Config",
+        value: "C:\\Program Files\\Project Bantay Bayan\\resources\\app\\examples\\kit-config.local-all.example.json",
+        mode: "file",
+        extensions: [".json"],
+        browseLabel: "Choose config JSON",
+        pickFile: createDemoPicker("config.browse", [
+          "C:\\Program Files\\Project Bantay Bayan\\resources\\app\\kit-config.local.json",
+          "C:\\ProgramData\\Project Bantay Bayan\\kit\\kit-config.local.json",
+        ]),
+        validatePath: (path) => fakeValidate(path, "Config file"),
+        onBrowse: (value, meta) => writeLog("config.selected", { value, source: meta.source }),
+        onChange: (value, meta) => writeLog("config.change", { value, source: meta.source }),
+      }),
+      createPathPicker(document.getElementById("outputFolderPicker"), {
+        label: "Generated config folder",
+        value: "C:\\ProgramData\\Project Bantay Bayan\\kit",
+        mode: "folder",
+        browseLabel: "Choose output folder",
+        pickFolder: createDemoPicker("folder.browse", [
+          "C:\\ProgramData\\Project Bantay Bayan\\kit",
+          "D:\\PBB\\kit-output",
+        ]),
+        validatePath: (path) => fakeValidate(path, "Output folder"),
+        onBrowse: (value, meta) => writeLog("folder.selected", { value, source: meta.source }),
+        onChange: (value, meta) => writeLog("folder.change", { value, source: meta.source }),
+      }),
+    ];
+
+    document.getElementById("validateAllBtn").addEventListener("click", async () => {
+      const results = await Promise.all(pickers.map((picker) => picker.validate({ source: "validate-all" })));
+      writeLog("validate.all", results);
+    });
+
+    document.getElementById("simulateMissingBtn").addEventListener("click", () => {
+      pickers[0].setValue("C:\\missing\\php.exe", { source: "demo", validate: true });
+      writeLog("demo.missing", { target: "php" });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Path Picker Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.path.picker.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #host {
+      max-width: 760px;
+      display: grid;
+      gap: 12px;
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createPathPicker } from "../js/ui/ui.path.picker.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+    const host = document.getElementById("host");
+    const events = [];
+
+    const picker = createPathPicker(host, {
+      id: "php-path",
+      name: "php_path",
+      label: "PHP",
+      value: "C:\\wamp64\\bin\\php\\php8.2.29\\php.exe",
+      mode: "file",
+      extensions: [".exe"],
+      required: true,
+      browseLabel: "Choose PHP executable",
+      pickFile() {
+        return "C:\\wamp64\\bin\\php\\php8.3.0\\php.exe";
+      },
+      validatePath(value) {
+        if (String(value).includes("missing")) {
+          return { valid: false, tone: "error", message: "File does not exist." };
+        }
+        return { valid: true, message: "Path looks valid." };
+      },
+      onChange(value, meta) {
+        events.push({ type: "change", value, source: meta.source });
+      },
+      onValidate(result) {
+        events.push({ type: "validate", result });
+      },
+    });
+
+    assert(picker.getValue().endsWith("php.exe"), "path picker should expose initial value");
+    assert(document.querySelector("label[for='php-path']")?.textContent === "PHP", "path picker should render external label");
+    assert(picker.input.getAttribute("aria-describedby")?.includes("status"), "path picker input should reference status text");
+
+    picker.input.value = "C:\\wamp64\\bin\\php\\php8.2.29\\php.dll";
+    picker.input.dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(40);
+    assert(picker.root.classList.contains("is-warning"), "extension mismatch should set warning state");
+    assert(picker.input.getAttribute("aria-invalid") === "true", "extension mismatch should set aria-invalid");
+    assert(picker.statusEl.textContent.includes(".exe"), "extension mismatch should explain expected extension");
+
+    picker.input.value = "C:\\missing\\php.exe";
+    picker.input.dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(40);
+    assert(picker.root.classList.contains("is-error"), "adapter validation failure should set error state");
+    assert(picker.statusEl.textContent.includes("does not exist"), "adapter validation failure should render message");
+
+    await picker.browse();
+    await wait(40);
+    assert(picker.getValue().includes("php8.3.0"), "browse adapter should update the path");
+    assert(events.some((event) => event.type === "change" && event.source === "browse"), "browse should emit a change event with source");
+
+    picker.setValue("", { source: "test", validate: true });
+    await wait(40);
+    assert(picker.root.classList.contains("is-warning"), "required empty value should set warning state");
+
+    const folderHost = document.createElement("div");
+    host.appendChild(folderHost);
+    const folderPicker = createPathPicker(folderHost, {
+      mode: "folder",
+      value: "C:\\pbb\\kit",
+      extensions: [".exe"],
+      pickFolder() {
+        return { path: "C:\\pbb\\kit\\runtime" };
+      },
+    });
+    await folderPicker.browse();
+    assert(folderPicker.getValue().endsWith("runtime"), "folder picker should use pickFolder adapter");
+    const folderValidation = await folderPicker.validate();
+    assert(folderValidation.status === true, "folder mode should not apply file extension validation");
+
+    const noAdapterHost = document.createElement("div");
+    host.appendChild(noAdapterHost);
+    const noAdapter = createPathPicker(noAdapterHost, { value: "", browseUnavailableText: "Adapter unavailable." });
+    await noAdapter.browse();
+    assert(noAdapter.statusEl.textContent === "Adapter unavailable.", "missing adapter should render configured unavailable message");
+
+    picker.destroy();
+    folderPicker.destroy();
+    noAdapter.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

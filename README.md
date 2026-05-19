@@ -40,6 +40,7 @@ css/
     ui.elapsed.time.css
     ui.signal.strength.css
     ui.device.selector.css
+    ui.path.picker.css
     ui.timeline.css
     ui.timeline.scrubber.css
     ui.command.palette.css
@@ -100,6 +101,7 @@ js/
     ui.elapsed.time.js
     ui.signal.strength.js
     ui.device.selector.js
+    ui.path.picker.js
     ui.timeline.js
     ui.timeline.scrubber.js
     ui.command.palette.js
@@ -235,6 +237,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
 - `ui.password.js`
   - `createPasswordField(container, options)` reusable password input with shared show/hide toggle behavior for standalone use and auth flows
+- `ui.path.picker.js`
+  - `createPathPicker(container, options)` adapter-driven file/folder path input for local runtime setup and admin configuration
 - `ui.number.stepper.js`
   - `createNumberStepper(container, options)` numeric stepper with decrement/increment buttons, typed input, min/max bounds, and optional prefix/suffix text
 - `ui.checkbox.js`
@@ -416,6 +420,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.elapsed.time.css` elapsed-duration readout styles
 - `ui.signal.strength.css` signal-strength status indicator styles
 - `ui.device.selector.css` adapter-driven device selector styles
+- `ui.path.picker.css` local file/folder path picker styles
 - `ui.timeline.css` timeline styles
 - `ui.timeline.scrubber.css` timeline scrubber styles
 - `ui.command.palette.css` command palette styles
@@ -500,7 +505,7 @@ Public component families:
 - Modal and feedback:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
-  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
 - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
@@ -2005,6 +2010,75 @@ Related demos:
 - `demos/demo.password.html`
 - `demos/demo.form.modal.login.html`
 - `demos/demo.form.modal.reauth.html`
+
+### `createPathPicker(container, options)` (`js/ui/ui.path.picker.js`)
+
+Purpose:
+
+- Adapter-driven file/folder path input for local setup and admin configuration screens.
+- Use this when the app stores a local filesystem path, not when it uploads file contents.
+- Helper owns the text-editable path UI, browse/clear controls, required and extension validation, async host validation, and status rendering.
+- The host app owns filesystem access through `pickFile`, `pickFolder`, or `pickPath`; browser-only file inputs should not be treated as a reliable real-path source.
+
+Factory:
+
+```js
+import { createPathPicker } from "./js/ui/ui.path.picker.js";
+
+const phpPicker = createPathPicker(container, {
+  label: "PHP",
+  mode: "file",
+  value: "C:\\wamp64\\bin\\php\\php8.2.29\\php.exe",
+  extensions: [".exe"],
+  browseLabel: "Choose PHP executable",
+  async pickFile(context) {
+    return kitBridge.pickFile(context);
+  },
+  async validatePath(path) {
+    return kitBridge.validateExecutable(path);
+  },
+});
+```
+
+Options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `mode` | `"file" \| "folder" \| "save-file"` | `"file"` | Picker target mode. |
+| `value` | `string` | `""` | Initial path value. |
+| `label` | `string` | `""` | Optional visible field label. |
+| `placeholder` | `string` | `""` | Input placeholder text. |
+| `name` / `id` | `string` | `""` | Standard input attributes. |
+| `accept` | `string` | `""` | Accept-style extension string, used as an extension fallback. |
+| `extensions` | `string[]` | `[]` | Allowed file extensions such as `[".exe", ".json"]`; ignored in folder mode. |
+| `required` | `boolean` | `false` | Marks an empty path invalid. |
+| `browseLabel` | `string` | mode-specific | Browse button label. |
+| `showClear` | `boolean` | `true` | Shows a clear button when a value is present. |
+| `validateOnChange` | `boolean` | `true` | Runs validation as the value changes. |
+| `pickFile` / `pickFolder` / `pickPath` | `function` | `null` | App/native/local-agent picker adapters. |
+| `validatePath` | `function` | `null` | Optional sync/async host validation. Return `true`, a message string, or `{ valid, tone, message }`. |
+| `onChange` | `function` | `null` | Called as `onChange(value, meta)` for manual, browse, and clear updates. |
+| `onBrowse` | `function` | `null` | Called after a browse adapter resolves. |
+| `onValidate` | `function` | `null` | Called with normalized validation results. |
+| `onError` | `function` | `null` | Called when browse or adapter validation fails unexpectedly. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `getValue()` | none | `string` | Returns the current path. |
+| `setValue(value, meta?)` | path string | `void` | Updates the current path and optionally validates. |
+| `browse()` | none | `Promise<string \| null>` | Runs the configured picker adapter. |
+| `validate(meta?)` | optional metadata | `Promise<object>` | Runs local and host validation. |
+| `setStatus(message, tone)` | status copy, tone | `object` | Applies a manual status message. |
+| `clearStatus()` | none | `void` | Clears the status state. |
+| `focus()` | none | `void` | Focuses the path input. |
+| `update(options)` | partial options | `void` | Re-renders with updated options. |
+| `destroy()` | none | `void` | Removes helper content from the host container. |
+
+Related demos:
+
+- `demos/demo.path.picker.html`
 
 ### `createNumberStepper(container, options)` (`js/ui/ui.number.stepper.js`)
 

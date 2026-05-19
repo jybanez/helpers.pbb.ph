@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.path.picker` as an adapter-driven file/folder path input for local runtime setup and admin configuration, with text editing, browse/clear controls, required and extension validation, async host validation, demo coverage, and regression coverage.
 - Added `ui.tree.mind.map` as a Canvas-backed reusable tree mind-map component for large hierarchical registries, with expand/collapse, zoom/pan, single or multi node selection, selected-node object arrays for app-owned detail panels, theme object support, JSON theme loading, demo coverage, and regression coverage.
 - Added `ui.device.selector` as an adapter-driven device selection/test helper with browser-media adapters for camera, microphone, and speaker V1, regular/compact layouts, shared `ui.select` default presentation plus `menu`, `list`, and `native-select` presentation modes, app-owned selection persistence callbacks, demo coverage, and regression coverage.
 - Added visual validation state to scalar incident type fields, so required text/select/multiselect and number min/max issues get warning styling, `aria-invalid`, and a warning badge instead of only returning errors from `validate()`.
