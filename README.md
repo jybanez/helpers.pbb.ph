@@ -5181,16 +5181,18 @@ Recommended step shape:
 | Property | Type | Description |
 |---|---|---|
 | `id` | `string` | Stable step identifier. |
-| `label` | `string` | Visible step label. |
-| `description` | `string` | Optional secondary copy. |
-| `status` | `"complete" \| "current" \| "upcoming" \| string` | Optional explicit status override. |
+| `title` | `string` | Visible step title. |
+| `subtitle` | `string` | Optional secondary copy. |
+| `status` | `"complete" \| "completed" \| "current" \| "future" \| "error" \| string` | Optional explicit status. When `currentStepId` is supplied, it owns the current marker and stale per-step `current` statuses are repainted on update. |
+| `disabled` | `boolean` | Disables the step trigger. |
+| `icon` | `string` | Optional marker text/icon override. |
 
 Options:
 
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | no | Stepper orientation. |
-| `clickable` | `boolean` | `false` | no | Enables step click navigation. |
+| `clickable` | `boolean` | `true` | no | Enables step click navigation. |
 | `currentStepId` | `string` | first step/default | no | Active step id. |
 
 Events / callbacks:
@@ -5211,6 +5213,7 @@ Returned API:
 Behavior notes:
 
 - `currentStepId` should be a stable step id, not an array index, so state survives reordered step lists.
+- `update(nextSteps, { currentStepId })` is idempotent: repeated progress updates repaint current/completed/future/error classes without requiring destroy/recreate.
 - Use `clickable` only when the surrounding flow genuinely supports direct navigation.
 - Prefer `createProgress(...)` instead when the UI only needs a scalar progress meter rather than named workflow steps.
 

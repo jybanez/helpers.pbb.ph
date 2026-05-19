@@ -21,7 +21,8 @@ export function createStepper(container, steps = [], options = {}) {
     events.clear();
     clearNode(container);
 
-    const activeId = currentOptions.currentStepId ?? inferActiveStepId(currentSteps);
+    const hasExplicitActiveId = currentOptions.currentStepId != null;
+    const activeId = hasExplicitActiveId ? currentOptions.currentStepId : inferActiveStepId(currentSteps);
     const root = createElement("section", {
       className: [
         "ui-stepper",
@@ -34,7 +35,7 @@ export function createStepper(container, steps = [], options = {}) {
     const activeIndex = currentSteps.findIndex((step) => step.id === activeId);
 
     currentSteps.forEach((step, index) => {
-      const stateClass = resolveStateClass(step, index, activeIndex);
+      const stateClass = resolveStateClass(step, index, activeIndex, hasExplicitActiveId);
       const item = createElement("li", {
         className: `ui-stepper-item ${stateClass}`.trim(),
       });
@@ -131,9 +132,18 @@ function inferActiveStepId(steps) {
   return firstPending ? firstPending.id : (steps[0]?.id ?? null);
 }
 
-function resolveStateClass(step, index, activeIndex) {
+function resolveStateClass(step, index, activeIndex, hasExplicitActiveId = false) {
   if (step.status === "error") {
     return "is-error";
+  }
+  if (hasExplicitActiveId && activeIndex >= 0) {
+    if (index === activeIndex) {
+      return "is-current";
+    }
+    if (index < activeIndex || step.status === "complete" || step.status === "completed") {
+      return "is-complete";
+    }
+    return "is-future";
   }
   if (step.status === "complete" || step.status === "completed") {
     return "is-complete";
@@ -151,4 +161,3 @@ function resolveStateClass(step, index, activeIndex) {
   }
   return "is-future";
 }
-

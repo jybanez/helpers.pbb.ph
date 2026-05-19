@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stepper Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.stepper.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">pending</pre>
+  <script type="module">
+    import { createStepper } from "../js/ui/ui.stepper.js";
+
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const failures = [];
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function classesFor(stepTitle) {
+      const items = Array.from(host.querySelectorAll(".ui-stepper-item"));
+      const item = items.find((entry) => entry.textContent.includes(stepTitle));
+      return item ? Array.from(item.classList) : [];
+    }
+
+    try {
+      const steps = [
+        { id: "inputs", title: "Inputs", status: "complete" },
+        { id: "validate", title: "Validate", status: "current" },
+        { id: "prepare", title: "Prepare", status: "future" },
+        { id: "install", title: "Install", status: "future" },
+      ];
+
+      const stepper = createStepper(host, steps, {
+        currentStepId: "validate",
+        clickable: false,
+      });
+
+      assert(classesFor("Validate").includes("is-current"), "initial explicit currentStepId should render Validate as current");
+
+      stepper.update([
+        { id: "inputs", title: "Inputs", status: "complete" },
+        { id: "validate", title: "Validate", status: "current" },
+        { id: "prepare", title: "Prepare", status: "future" },
+        { id: "install", title: "Install", status: "future" },
+      ], {
+        currentStepId: "prepare",
+        clickable: true,
+      });
+
+      assert(classesFor("Validate").includes("is-complete"), "stale status=current should become complete when currentStepId advances");
+      assert(!classesFor("Validate").includes("is-current"), "old current step should not remain current after update");
+      assert(classesFor("Prepare").includes("is-current"), "new currentStepId should repaint the current marker");
+
+      stepper.update([
+        { id: "inputs", title: "Inputs", status: "complete" },
+        { id: "validate", title: "Validate", status: "current" },
+        { id: "prepare", title: "Prepare", status: "current" },
+        { id: "install", title: "Install", status: "future" },
+      ], {
+        currentStepId: "install",
+        onStepClick() {},
+      });
+
+      assert(classesFor("Validate").includes("is-complete"), "multiple stale current statuses before active step should become complete");
+      assert(classesFor("Prepare").includes("is-complete"), "previous current step should become complete on later update");
+      assert(classesFor("Install").includes("is-current"), "later currentStepId should repaint without destroy/recreate");
+
+      stepper.update([
+        { id: "inputs", title: "Inputs", status: "complete" },
+        { id: "validate", title: "Validate", status: "complete" },
+        { id: "prepare", title: "Prepare", status: "error" },
+        { id: "install", title: "Install", status: "future" },
+      ], {
+        currentStepId: "install",
+      });
+
+      assert(classesFor("Prepare").includes("is-error"), "explicit error state should remain visible with currentStepId");
+      assert(classesFor("Install").includes("is-current"), "currentStepId should still render current marker when a prior step has error status");
+
+      stepper.destroy();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+    }
+
+    const passed = failures.length === 0;
+    document.body.dataset.status = passed ? "pass" : "fail";
+    results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Stepper regression test passed." : failures.join("\n")}`;
+  </script>
+</body>
+</html>

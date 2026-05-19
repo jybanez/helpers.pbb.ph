@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed `ui.stepper.update(nextSteps, { currentStepId })` so an explicit `currentStepId` repaints the current marker/classes idempotently even when incoming step rows retain stale `status: "current"` values from prior progress states.
 - Added `ui.path.picker` as an adapter-driven file/folder path input for local runtime setup and admin configuration, with text editing, browse/clear controls, required and extension validation, async host validation, demo coverage, and regression coverage.
 - Added `ui.tree.mind.map` as a Canvas-backed reusable tree mind-map component for large hierarchical registries, with expand/collapse, zoom/pan, single or multi node selection, selected-node object arrays for app-owned detail panels, theme object support, JSON theme loading, demo coverage, and regression coverage.
 - Added `ui.device.selector` as an adapter-driven device selection/test helper with browser-media adapters for camera, microphone, and speaker V1, regular/compact layouts, shared `ui.select` default presentation plus `menu`, `list`, and `native-select` presentation modes, app-owned selection persistence callbacks, demo coverage, and regression coverage.

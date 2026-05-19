@@ -31,13 +31,24 @@
         "Do not use it for large page navigation."
       ],
       description: "The stepper is a flow indicator, not a form container. It helps with orientation in multi-step tasks without owning the content of each step.",
-      defaultSampleCode: `const stepper = createStepper(host, steps, {\n  currentStep: 2,\n  onStepClick(step) {\n    writeLog("stepper.click", step);\n  },\n});`,
+      defaultSampleCode: `const stepper = createStepper(host, steps, {\n  currentStepId: "validate",\n  clickable: true,\n  onStepClick(step) {\n    stepper.update(steps, { currentStepId: step.id });\n  },\n});`,
       constructor: [
         { factory: "<code>createStepper(container, steps, options)</code>", arguments: "container, step list, options", returns: "Stepper instance" }
       ],
+      options: [
+        { option: "orientation", default: "<code>\"horizontal\"</code>", description: "Stepper layout. Allowed values: <code>horizontal</code>, <code>vertical</code>." },
+        { option: "clickable", default: "<code>true</code>", description: "Enables step triggers and <code>onStepClick</code>." },
+        { option: "currentStepId", default: "<code>null</code>", description: "Explicit active step id. When supplied, update repainting treats this as authoritative over stale per-step <code>status: \"current\"</code> values." },
+        { option: "onStepClick", default: "<code>null</code>", description: "Callback fired with <code>(step, index, state)</code> when a clickable step is selected." }
+      ],
+      properties: [
+        { property: "<code>steps</code>", description: "Each step accepts <code>id</code>, <code>title</code>, optional <code>subtitle</code>, <code>status</code>, <code>disabled</code>, and <code>icon</code>." },
+        { property: "<code>status</code>", description: "Supported visual states include <code>complete</code>/<code>completed</code>, <code>current</code>, <code>future</code>, and <code>error</code>." }
+      ],
       methods: [
-        { method: "<code>setCurrent(index)</code>", arguments: "step index", returns: "<code>void</code>" },
-        { method: "<code>setSteps(steps)</code>", arguments: "step list", returns: "<code>void</code>" },
+        { method: "<code>update(nextSteps, nextOptions)</code>", arguments: "step list, options", returns: "<code>void</code>" },
+        { method: "<code>setCurrentStep(stepId)</code>", arguments: "step id", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "<code>object</code>" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
