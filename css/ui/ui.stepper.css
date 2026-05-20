@@ -30,6 +30,7 @@
 }
 
 .ui-stepper-marker {
+  position: relative;
   width: 22px;
   height: 22px;
   border-radius: 999px;
@@ -39,6 +40,7 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 700;
+  isolation: isolate;
 }
 
 .ui-stepper-labels {
@@ -63,8 +65,24 @@
 }
 
 .ui-stepper-item.is-current .ui-stepper-marker {
-  border-color: #64a8ff;
+  border-color: rgba(100, 168, 255, 0.45);
   color: #dff0ff;
+}
+
+.ui-stepper-item.is-current .ui-stepper-marker::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from 0deg, rgba(100, 168, 255, 0.08), #64a8ff 28%, rgba(100, 168, 255, 0.18) 46%, #64a8ff 68%, rgba(100, 168, 255, 0.08));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: ui-stepper-current-ring 1.05s linear infinite;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .ui-stepper-item.is-error .ui-stepper-marker {
@@ -72,3 +90,14 @@
   color: #ffc0cf;
 }
 
+@keyframes ui-stepper-current-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-stepper-item.is-current .ui-stepper-marker::before {
+    animation: none;
+  }
+}

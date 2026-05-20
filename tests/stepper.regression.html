@@ -41,6 +41,9 @@
       });
 
       assert(classesFor("Validate").includes("is-current"), "initial explicit currentStepId should render Validate as current");
+      const initialCurrentMarker = host.querySelector(".ui-stepper-item.is-current .ui-stepper-marker");
+      const initialRingStyle = getComputedStyle(initialCurrentMarker, "::before");
+      assert(initialRingStyle.animationName === "ui-stepper-current-ring", "current step marker should expose the default rotating ring animation");
 
       stepper.update([
         { id: "inputs", title: "Inputs", status: "complete" },
