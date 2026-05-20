@@ -40,6 +40,7 @@
               { id: "opacity", label: "Opacity", kind: "number", value: 0.5, min: 0, max: 1, step: 0.1 },
               { id: "visible", label: "Visible", kind: "checkbox", value: true },
               { id: "locked", label: "Locked", kind: "toggle", value: false },
+              { id: "sync_enabled", label: "Sync", kind: "toggle", value: false, onLabel: "Enabled", offLabel: "Disabled" },
               { id: "layer", label: "Layer", kind: "select", value: "dimensions", options: [
                 { value: "dimensions", label: "dimensions" },
                 { value: "annotations", label: "annotations" }
@@ -74,6 +75,8 @@
       assert(host.querySelector(".ui-property-editor-row.is-mixed"), "mixed-value rows should render");
       assert(host.querySelector(".ui-property-editor-display").textContent.includes("0x3d0"), "read-only display rows should render");
       assert(host.querySelector(".ui-toggle-button"), "toggle property should render shared toggle button");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="locked"] .ui-toggle-button').textContent.includes("Off"), "default false toggle label should render Off");
+      assert(host.querySelector('.ui-property-editor-row[data-property-id="sync_enabled"] .ui-toggle-button').textContent.includes("Disabled"), "custom offLabel should render for false toggles");
       assert(host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-select'), "ui.select property rows should render the shared hosted select surface");
       assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password'), "password property rows should render the shared hosted password surface");
       assert(host.querySelector('.ui-property-editor-row[data-property-id="realtime_secret"] .ui-password-input')?.type === "password", "password property rows should render masked by default");
@@ -90,8 +93,23 @@
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
       assert(events.some((event) => event.type === "change" && event.propertyId === "visible" && event.value === false), "checkbox changes should emit structured events");
 
-      host.querySelector('.ui-toggle-button').click();
+      let lockedToggle = host.querySelector('.ui-property-editor-row[data-property-id="locked"] .ui-toggle-button');
+      lockedToggle.click();
+      lockedToggle = host.querySelector('.ui-property-editor-row[data-property-id="locked"] .ui-toggle-button');
       assert(events.some((event) => event.type === "change" && event.propertyId === "locked" && event.value === true), "toggle changes should emit structured events");
+      assert(lockedToggle.getAttribute("aria-pressed") === "true", "toggle click should update aria-pressed to true");
+      assert(lockedToggle.textContent.includes("On"), "toggle click should update default label to On");
+      lockedToggle.click();
+      lockedToggle = host.querySelector('.ui-property-editor-row[data-property-id="locked"] .ui-toggle-button');
+      assert(lockedToggle.getAttribute("aria-pressed") === "false", "second toggle click should update aria-pressed to false");
+      assert(lockedToggle.textContent.includes("Off"), "second toggle click should update default label back to Off");
+
+      let customToggle = host.querySelector('.ui-property-editor-row[data-property-id="sync_enabled"] .ui-toggle-button');
+      customToggle.click();
+      customToggle = host.querySelector('.ui-property-editor-row[data-property-id="sync_enabled"] .ui-toggle-button');
+      assert(events.some((event) => event.type === "change" && event.propertyId === "sync_enabled" && event.value === true), "custom-label toggle changes should emit structured events");
+      assert(customToggle.getAttribute("aria-pressed") === "true", "custom-label toggle click should update aria-pressed to true");
+      assert(customToggle.textContent.includes("Enabled"), "custom onLabel should render after toggle click");
 
       const hostedSelectHost = host.querySelector('.ui-property-editor-row[data-property-id="visible_in"] .ui-property-editor-select-host');
       hostedSelectHost.__uiSelectInstance.setValue(["plan", "section"]);

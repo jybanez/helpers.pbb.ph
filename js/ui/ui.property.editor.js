@@ -359,14 +359,20 @@ export function createPropertyEditor(container, data = {}, options = {}) {
     const host = createElement("div", { className: "ui-property-editor-toggle-host" });
     const toggleApi = createToggleButton(host, {
       id: property.id,
-      label: property.mixed ? currentOptions.mixedLabel : (Boolean(property.value) ? "On" : "Off"),
+      label: property.mixed ? currentOptions.mixedLabel : getToggleLabel(property, Boolean(property.value)),
       ariaLabel: property.label,
       pressed: Boolean(property.value),
       disabled: property.disabled,
       variant: "pill",
       quiet: !property.value,
       onChange(payload) {
-        updatePropertyValue(section.id, property.id, Boolean(payload.pressed), { source: host, previousValue: property.value, mixedCleared: property.mixed });
+        const nextPressed = Boolean(payload.pressed);
+        payload.button?.update?.({
+          pressed: nextPressed,
+          label: getToggleLabel(property, nextPressed),
+          quiet: !nextPressed,
+        });
+        updatePropertyValue(section.id, property.id, nextPressed, { source: host, previousValue: property.value, mixedCleared: property.mixed });
       },
     });
     toggleApis.push(toggleApi);
@@ -742,6 +748,8 @@ function normalizeProperties(properties = []) {
     step: property?.step,
     actions: normalizeActions(property?.actions || []),
     errorText: property?.errorText == null ? "" : String(property.errorText),
+    onLabel: property?.onLabel == null ? "" : String(property.onLabel),
+    offLabel: property?.offLabel == null ? "" : String(property.offLabel),
   })) : [];
 }
 
@@ -814,6 +822,13 @@ function formatDisplayValue(value, fallback) {
 
 function formatBoolean(value) {
   return value ? "Yes" : "No";
+}
+
+function getToggleLabel(property, pressed) {
+  if (pressed) {
+    return property?.onLabel || "On";
+  }
+  return property?.offLabel || "Off";
 }
 
 function getEditorId(sectionId, propertyId) {

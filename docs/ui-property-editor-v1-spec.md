@@ -217,6 +217,12 @@ Supported V1 kinds should map to narrow built-in controls:
 - `action`: button-like action row
 - `divider`: non-editable visual separator
 
+Toggle properties use the shared `ui.toggle.button` control. The visible button label must refresh immediately when the pressed/value state changes:
+
+- false/default label: `offLabel` or `"Off"`
+- true/default label: `onLabel` or `"On"`
+- `aria-pressed` must stay synchronized with the current boolean value
+
 ### 4. Read-Only Properties
 
 If `readOnly: true`:

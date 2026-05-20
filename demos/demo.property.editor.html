@@ -31,7 +31,7 @@
         "Do not use it as a full schema designer or arbitrary plugin-host surface in V1."
       ],
       description: "The helper stays narrow: sectioned inspector layout, stable label/editor/action columns, mixed/read-only states, and structured change/action callbacks. It is not a modal form engine and it is not a domain model runtime.",
-      defaultSampleCode: `const editor = createPropertyEditor(host, {\n  selectionLabel: 'Radial Dimension (1)',\n  sections: [{\n    id: 'general',\n    title: 'General Properties',\n    properties: [\n      { id: 'layer', label: 'Layer', kind: 'select', value: 'dimensions', options: [\n        { value: 'dimensions', label: 'dimensions' },\n        { value: 'annotations', label: 'annotations' }\n      ] },\n      { id: 'visible_in', label: 'Visible In', kind: 'ui.select', value: ['plan', 'elevation'], multiple: true, items: [\n        { value: 'plan', label: 'Plan' },\n        { value: 'elevation', label: 'Elevation' },\n        { value: 'section', label: 'Section' }\n      ] },\n      { id: 'realtime_secret', label: 'Realtime Token Signing Secret', kind: 'password', value: '', autocomplete: 'off' },\n      { id: 'locked', label: 'Locked', kind: 'toggle', value: false },\n      { id: 'handle', label: 'Handle', kind: 'display', value: '0x3d0', readOnly: true }\n    ]\n  }]\n}, {\n  onPropertyChange(change) {\n    console.log(change.propertyId, change.value);\n  }\n});`,
+      defaultSampleCode: `const editor = createPropertyEditor(host, {\n  selectionLabel: 'Radial Dimension (1)',\n  sections: [{\n    id: 'general',\n    title: 'General Properties',\n    properties: [\n      { id: 'layer', label: 'Layer', kind: 'select', value: 'dimensions', options: [\n        { value: 'dimensions', label: 'dimensions' },\n        { value: 'annotations', label: 'annotations' }\n      ] },\n      { id: 'visible_in', label: 'Visible In', kind: 'ui.select', value: ['plan', 'elevation'], multiple: true, items: [\n        { value: 'plan', label: 'Plan' },\n        { value: 'elevation', label: 'Elevation' },\n        { value: 'section', label: 'Section' }\n      ] },\n      { id: 'realtime_secret', label: 'Realtime Token Signing Secret', kind: 'password', value: '', autocomplete: 'off' },\n      { id: 'locked', label: 'Locked', kind: 'toggle', value: false, onLabel: 'Locked', offLabel: 'Unlocked' },\n      { id: 'handle', label: 'Handle', kind: 'display', value: '0x3d0', readOnly: true }\n    ]\n  }]\n}, {\n  onPropertyChange(change) {\n    console.log(change.propertyId, change.value);\n  }\n});`,
       constructor: [
         { factory: "<code>createPropertyEditor(container, data, options)</code>", arguments: "host container, editor data, and editor options", returns: "Property editor instance" }
       ],
@@ -46,7 +46,8 @@
         { option: "<code>mixedLabel</code>", default: '<code>"Mixed"</code>', description: "Display label used when a property has <code>mixed: true</code>." },
         { option: "<code>readOnlyValueFallback</code>", default: '<code>"—"</code>', description: "Fallback display for empty read-only values." },
         { option: "<code>property.kind = \"ui.select\"</code>", default: "n/a", description: "Uses the shared hosted select surface and supports <code>multiple</code>, <code>searchable</code>, <code>clearable</code>, and item arrays for richer property editing." },
-        { option: "<code>property.kind = \"password\"</code>", default: "n/a", description: "Uses the shared hosted password surface so secret-bearing settings stay masked by default but still participate in normal property change events." }
+        { option: "<code>property.kind = \"password\"</code>", default: "n/a", description: "Uses the shared hosted password surface so secret-bearing settings stay masked by default but still participate in normal property change events." },
+        { option: "<code>property.kind = \"toggle\"</code>", default: "n/a", description: "Uses the shared toggle button. Labels refresh immediately on click and can be customized with <code>onLabel</code> / <code>offLabel</code>; defaults are <code>On</code> / <code>Off</code>." }
       ],
       propertiesText: "No stable direct instance properties are documented. Use <code>getState()</code> instead of reading DOM or internal references directly.",
       events: [
@@ -115,7 +116,7 @@
               { value: "detail", label: "Detail" }
             ], help: "Hosted multi-value select using the shared ui.select helper." },
             { id: "realtime_secret", label: "Realtime Token Signing Secret", kind: "password", value: "signed-admission-secret", autocomplete: "off", help: "Hosted password field using the shared ui.password helper so integration secrets stay inside the same property-editor contract." },
-            { id: "locked", label: "Locked", kind: "toggle", value: false, help: "Prevents accidental edits when enabled." },
+            { id: "locked", label: "Locked", kind: "toggle", value: false, onLabel: "Locked", offLabel: "Unlocked", help: "Prevents accidental edits when enabled." },
             { id: "color", label: "Color", kind: "color-select", value: "#ffffff", options: [
               { value: "#ffffff", label: "By Layer" },
               { value: "#7198e5", label: "Highlight" },
