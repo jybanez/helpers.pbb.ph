@@ -72,17 +72,18 @@
 .ui-stepper-item.is-current .ui-stepper-marker::before {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -4px;
   border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(from 0deg, rgba(100, 168, 255, 0.08), #64a8ff 28%, rgba(100, 168, 255, 0.18) 46%, #64a8ff 68%, rgba(100, 168, 255, 0.08));
+  padding: 3px;
+  background: conic-gradient(from 0deg, #8ec2ff 0 76deg, rgba(100, 168, 255, 0.16) 78deg 132deg, transparent 134deg 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  animation: ui-stepper-current-ring 1.05s linear infinite;
+  animation: ui-stepper-current-ring 0.9s linear infinite;
   pointer-events: none;
   z-index: -1;
+  filter: drop-shadow(0 0 4px rgba(100, 168, 255, 0.5));
 }
 
 .ui-stepper-item.is-error .ui-stepper-marker {
@@ -93,11 +94,5 @@
 @keyframes ui-stepper-current-ring {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ui-stepper-item.is-current .ui-stepper-marker::before {
-    animation: none;
   }
 }

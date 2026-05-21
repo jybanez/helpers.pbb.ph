@@ -10,7 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
-- Added a default rotating ring highlight to the active `ui.stepper` marker, with reduced-motion support, so long-running current steps are visually distinct without app-local styling.
+- Added a default rotating ring highlight to the active `ui.stepper` marker so long-running current steps are visually distinct without app-local styling.
 - Fixed `ui.property.editor` toggle rows so embedded `ui.toggle.button` labels refresh immediately when clicked, and added optional per-property `onLabel` / `offLabel` text for localized or domain-specific toggle labels.
 - Fixed `ui.stepper.update(nextSteps, { currentStepId })` so an explicit `currentStepId` repaints the current marker/classes idempotently even when incoming step rows retain stale `status: "current"` values from prior progress states.
 - Added `ui.path.picker` as an adapter-driven file/folder path input for local runtime setup and admin configuration, with text editing, browse/clear controls, required and extension validation, async host validation, demo coverage, and regression coverage.
