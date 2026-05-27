@@ -88,6 +88,8 @@
   background: var(--ui-bg, #0b1220);
   padding: 8px;
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
   gap: 6px;
   overflow: auto;
 }

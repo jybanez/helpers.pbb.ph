@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed incident type and team assignment drawer category rails so sparse category lists keep intrinsic card height and scroll normally instead of stretching cards to fill the drawer.
 - Added a default rotating ring highlight to the active `ui.stepper` marker so long-running current steps are visually distinct without app-local styling.
 - Fixed `ui.property.editor` toggle rows so embedded `ui.toggle.button` labels refresh immediately when clicked, and added optional per-property `onLabel` / `offLabel` text for localized or domain-specific toggle labels.
 - Fixed `ui.stepper.update(nextSteps, { currentStepId })` so an explicit `currentStepId` repaints the current marker/classes idempotently even when incoming step rows retain stale `status: "current"` values from prior progress states.

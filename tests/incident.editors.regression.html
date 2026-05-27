@@ -248,6 +248,11 @@
     document.querySelector("#incidentTypesHost .hh-incident-types-header .hh-button").click();
     await wait(40);
     assert(document.activeElement?.matches(".hh-incident-type-search-wrap .hh-input"), "incident type drawer should focus the search field when opened");
+    const incidentCategoryRail = document.querySelector(".hh-incident-type-categories");
+    const incidentCategoryCard = document.querySelector(".hh-incident-type-category-card");
+    assert(getComputedStyle(incidentCategoryRail).alignContent === "start", "incident type drawer categories should align to the top instead of stretching");
+    assert(getComputedStyle(incidentCategoryRail).gridAutoRows === "max-content", "incident type drawer categories should keep intrinsic row height");
+    assert((incidentCategoryCard?.getBoundingClientRect().height || 0) < 90, "incident type drawer category cards should not stretch vertically");
     const vehicleFireChip = Array.from(document.querySelectorAll(".hh-incident-type-chip")).find((node) => node.textContent.includes("Vehicle Fire"));
     vehicleFireChip?.click();
     await wait(340);
@@ -351,6 +356,11 @@
     document.querySelector("#assignmentsHost .hh-team-list-header .hh-button").click();
     await wait(40);
     assert(document.activeElement?.matches(".hh-team-search-wrap .hh-input"), "team assignment drawer should focus the search field when opened");
+    const teamCategoryRail = document.querySelector(".hh-team-categories");
+    const teamCategoryCard = document.querySelector(".hh-team-category-card");
+    assert(getComputedStyle(teamCategoryRail).alignContent === "start", "team assignment drawer categories should align to the top instead of stretching");
+    assert(getComputedStyle(teamCategoryRail).gridAutoRows === "max-content", "team assignment drawer categories should keep intrinsic row height");
+    assert((teamCategoryCard?.getBoundingClientRect().height || 0) < 90, "team assignment drawer category cards should not stretch vertically");
     window.setTimeout(() => {
       document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input")?.focus();
     }, 80);
