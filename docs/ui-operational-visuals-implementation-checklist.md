@@ -29,16 +29,16 @@ This checklist tracks the Helper-side rollout for the SITREP icon expansion, ope
 
 ## Phase 2: `ui.stat.cards`
 
-- [ ] Finalize the `createStatCards(container, items, options)` contract.
-- [ ] Implement card rendering with icon, label, value, unit, note, detail, trend, tone, and action metadata.
-- [ ] Implement `columns`, `size`, `chrome`, `selectable`, `selectedId`, `emptyText`, `formatter`, and `onSelect` options.
-- [ ] Add stable responsive grid sizing and long-label/value handling.
-- [ ] Add accessible labels and non-color-only tone communication.
-- [ ] Add update, setItems, getState, and destroy lifecycle methods.
-- [ ] Add `demos/demo.stat.cards.html`.
-- [ ] Add regression coverage for empty state, icons, tones, selection, update, destroy, and accessibility.
-- [ ] Register the demo in shared navigation and reference metadata.
-- [ ] Rebuild `dist/`.
+- [x] Finalize the `createStatCards(container, items, options)` contract.
+- [x] Implement card rendering with icon, label, value, unit, note, detail, trend, tone, and action metadata.
+- [x] Implement `columns`, `size`, `chrome`, `selectable`, `selectedId`, `emptyText`, `formatter`, and `onSelect` options.
+- [x] Add stable responsive grid sizing and long-label/value handling.
+- [x] Add accessible labels and non-color-only tone communication.
+- [x] Add update, setItems, getState, and destroy lifecycle methods.
+- [x] Add `demos/demo.stat.cards.html`.
+- [x] Add regression coverage for empty state, icons, tones, selection, update, destroy, and accessibility.
+- [x] Register the demo in shared navigation and reference metadata.
+- [x] Rebuild `dist/`.
 
 ## Phase 3: `ui.map.legend`
 

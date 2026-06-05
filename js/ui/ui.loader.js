@@ -304,6 +304,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createSignalStrength",
   },
+  "ui.stat.cards": {
+    js: "./ui.stat.cards.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.stat.cards.css"],
+    deps: ["ui.icons"],
+    export: "createStatCards",
+  },
   "ui.map.controls": {
     js: "./ui.map.controls.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.map.controls.css"],
@@ -675,6 +681,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.scheduler",
     "ui.elapsed.time",
     "ui.signal.strength",
+    "ui.stat.cards",
     "ui.map.controls",
     "ui.timeline",
     "ui.activity.chart",

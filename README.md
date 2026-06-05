@@ -39,6 +39,7 @@ css/
     ui.datepicker.css
     ui.elapsed.time.css
     ui.signal.strength.css
+    ui.stat.cards.css
     ui.device.selector.css
     ui.path.picker.css
     ui.timeline.css
@@ -100,6 +101,7 @@ js/
     ui.datepicker.js
     ui.elapsed.time.js
     ui.signal.strength.js
+    ui.stat.cards.js
     ui.device.selector.js
     ui.path.picker.js
     ui.timeline.js
@@ -313,6 +315,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
 - `ui.signal.strength.js`
   - `createSignalStrength(container, options)` transport-agnostic 0-4 bar signal indicator with stable compact text, tone variants, bars-only mode, and update/destroy lifecycle
+- `ui.stat.cards.js`
+  - `createStatCards(container, items, options)` operational KPI cards with shared icons, tones, trends, selection, chrome-less rendering, and update/destroy lifecycle
 - `ui.map.controls.js`
   - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
 - `ui.timeline.js`
@@ -1588,6 +1592,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - stable navbar/header placement
   - all signal levels and tones
   - bars-only compact mode
+- `demos/demo.stat.cards.html` -> dedicated stat-cards playground
+  - operational KPI rows
+  - selectable cards, tones, trends, and chrome-less rendering
+  - responsive column and size controls
 - `demos/demo.map.controls.html` -> dedicated MapLibre-style map-controls playground
   - zoom and compass/bearing controls
   - pitch presets
@@ -4970,6 +4978,83 @@ Non-goals:
 Related demos:
 
 - `demos/demo.signal.strength.html`
+
+### `createStatCards(container, items, options)` (`js/ui/ui.stat.cards.js`)
+
+Purpose:
+
+- Compact operational metric cards for dashboards, SITREP summaries, support views, and incident status panels.
+- Supports shared icons, tone variants, trend labels, selectable cards, and chrome-less rendering.
+- Host apps own metric aggregation and feed already-computed values into the helper.
+
+Basic usage:
+
+```js
+import { createStatCards } from "./js/ui/ui.stat.cards.js";
+
+const stats = createStatCards(container, [
+  {
+    id: "risk",
+    label: "People at Risk",
+    value: 61,
+    unit: "people",
+    note: "Across 5 source hubs",
+    icon: "population.people-at-risk",
+    tone: "warning",
+    trend: { direction: "up", label: "+12" },
+  },
+], {
+  columns: "auto",
+  selectable: true,
+  onSelect(item) {
+    openMetric(item.id);
+  },
+});
+```
+
+Item fields:
+
+- `id`: stable card id
+- `label`: visible metric label
+- `value`: metric value
+- `unit`: optional unit label
+- `note`: optional supporting text
+- `detail`: optional tooltip/accessibility detail
+- `icon`: optional `ui.icons` id
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `trend`: optional `{ direction, label }` where direction is `up`, `down`, or `flat`
+- `action`: optional `{ label, value }` metadata label
+- `meta`: app-owned metadata copy
+
+Options:
+
+- `columns`: `auto`, `1`, `2`, `3`, or `4`
+- `size`: `sm`, `md`, or `lg`
+- `chrome`: set `false` when the host surface owns borders/background
+- `selectable`: when true and `onSelect` is provided, cards render as buttons
+- `selectedId`: selected card id
+- `emptyText`: empty-state text
+- `formatter`: optional `(value, item) => string`
+- `onSelect`: optional `(item, meta) => void`
+- `ariaLabel`: accessible label for the card group
+- `className`: extra root class name
+
+Methods:
+
+- `update(items, options)`
+- `setItems(items)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not calculate SITREP metrics or dashboard aggregates.
+- Does not replace detailed grid/table drill-down.
+- Does not own navigation; `onSelect` only reports the selected item.
+
+Related demos:
+
+- `demos/demo.stat.cards.html`
 
 ### `createDeviceSelector(container, data, options)` (`js/ui/ui.device.selector.js`)
 

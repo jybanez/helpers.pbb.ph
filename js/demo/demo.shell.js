@@ -45,6 +45,7 @@ const DEMO_GROUPS = [
       { href: "./demo.scheduler.html", label: "Scheduler" },
       { href: "./demo.elapsed.time.html", label: "Elapsed Time" },
       { href: "./demo.signal.strength.html", label: "Signal Strength" },
+      { href: "./demo.stat.cards.html", label: "Stat Cards" },
       { href: "./demo.map.controls.html", label: "Map Controls" },
       { href: "./demo.activity.chart.html", label: "Activity Chart" },
       { href: "./demo.inspector.html", label: "Inspector" },

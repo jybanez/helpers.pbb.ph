@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stat Cards Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .control {
+      display: inline-grid;
+      grid-auto-flow: column;
+      align-items: center;
+      gap: 6px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .control select {
+      min-height: 32px;
+      border: 1px solid #36517a;
+      border-radius: 7px;
+      background: #0f1b2f;
+      color: #d7e0f4;
+      padding: 4px 8px;
+    }
+    .stat-demo-band {
+      display: grid;
+      gap: 12px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.stat.cards"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Stat Cards",
+      overview: "Reusable operational metric cards for compact dashboards and SITREP summaries.",
+      useWhen: [
+        "Use <code>createStatCards(...)</code> for KPI rows, report summaries, and operational dashboard metrics.",
+        "Use it when values need consistent icon, tone, trend, selection, and responsive grid behavior."
+      ],
+      avoidWhen: [
+        "Do not use stat cards for detailed tabular drill-down; use grids or tables.",
+        "Do not embed app-specific SITREP calculations in the component; feed computed values from the host app."
+      ],
+      description: "Stat Cards renders framework-agnostic metric cards using the shared icon registry and Helper tokens. The host app owns data aggregation and can update the cards whenever dashboard or SITREP data changes.",
+      defaultSampleCode: `const stats = createStatCards(host, [\n  {\n    id: "risk",\n    label: "People at Risk",\n    value: 61,\n    unit: "people",\n    note: "Across 5 source hubs",\n    icon: "population.people-at-risk",\n    tone: "warning",\n    trend: { direction: "up", label: "+12" },\n  },\n], {\n  columns: "auto",\n  selectable: true,\n  onSelect(item) {\n    openMetric(item.id);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createStatCards(container, items, options)</code>", arguments: "<code>container</code>, stat-card <code>items[]</code>, options", returns: "Stat cards instance with update, setItems, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>columns</code>", default: "<code>\"auto\"</code>", description: "Grid columns. Allowed values: <code>auto</code>, <code>1</code>, <code>2</code>, <code>3</code>, <code>4</code>." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "Card density. Allowed values: <code>sm</code>, <code>md</code>, <code>lg</code>." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set false when the host surface owns borders/background." },
+        { option: "<code>selectable</code>", default: "<code>false</code>", description: "When true and <code>onSelect</code> is provided, cards render as buttons." },
+        { option: "<code>selectedId</code>", default: "<code>\"\"</code>", description: "Selected card id for controlled initial state or updates." },
+        { option: "<code>emptyText</code>", default: "<code>\"No metrics to display.\"</code>", description: "Text shown when <code>items[]</code> is empty." },
+        { option: "<code>formatter</code>", default: "<code>null</code>", description: "Optional function receiving <code>(value, item)</code> and returning display text." },
+        { option: "<code>onSelect</code>", default: "<code>null</code>", description: "Callback fired with <code>(item, meta)</code> when a selectable card is clicked." }
+      ],
+      propertiesText: "Each card exposes <code>data-id</code>, <code>data-tone</code>, and <code>data-selected</code>. Use <code>getState()</code> for supported runtime reads.",
+      eventsText: "<code>onSelect(item, meta)</code> fires for selectable cards and updates the internal selected id.",
+      methods: [
+        { method: "<code>update(items, options)</code>", arguments: "next item array and optional options", returns: "<code>void</code>" },
+        { method: "<code>setItems(items)</code>", arguments: "next item array", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized items/options snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <label class="control">Columns
+          <select id="columnsSelect">
+            <option value="auto">Auto</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label class="control">Size
+          <select id="sizeSelect">
+            <option value="sm">Small</option>
+            <option value="md" selected>Medium</option>
+            <option value="lg">Large</option>
+          </select>
+        </label>
+        <button id="toggleChrome" class="ui-button" type="button">Toggle Chrome</button>
+        <button id="toggleEmpty" class="ui-button" type="button">Toggle Empty</button>
+      </div>
+      <h1 class="ui-title">Stat Cards Demo</h1>
+      <p class="muted">Operational metric cards for active incidents, SITREPs, and support dashboards.</p>
+    </section>
+
+    <section class="panel stat-demo-band">
+      <h2 class="ui-title">SITREP Summary</h2>
+      <div id="statCardsHost"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const stats = createStatCards(host, [
+  {
+    id: "risk",
+    label: "People at Risk",
+    value: 61,
+    unit: "people",
+    note: "Across 5 source hubs",
+    icon: "population.people-at-risk",
+    tone: "warning",
+    trend: { direction: "up", label: "+12" },
+  },
+], {
+  selectable: true,
+  onSelect(item) {
+    openMetric(item.id);
+  },
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Events</h2>
+      <pre id="eventLog">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createStatCards = await uiLoader.get("ui.stat.cards");
+
+    const baseItems = [
+      { id: "risk", label: "People at Risk", value: 61, unit: "people", note: "Across 5 source hubs", icon: "population.people-at-risk", tone: "warning", trend: { direction: "up", label: "+12" } },
+      { id: "helped", label: "People Helped", value: 8, unit: "people", note: "Verified source accomplishments", icon: "population.people-helped", tone: "success", trend: { direction: "flat", label: "steady" } },
+      { id: "records", label: "Current Records", value: 42, unit: "reports", note: "Active operational records", icon: "assets.clipboard", tone: "info" },
+      { id: "constraints", label: "Areas Constrained", value: 2, unit: "areas", note: "Road or access limitations", icon: "route.caution", tone: "danger", action: { label: "View routes", value: "routes" } },
+    ];
+    const eventLog = document.getElementById("eventLog");
+    let chrome = true;
+    let empty = false;
+
+    const stats = createStatCards(document.getElementById("statCardsHost"), baseItems, {
+      columns: "auto",
+      size: "md",
+      chrome,
+      selectable: true,
+      selectedId: "risk",
+      onSelect(item) {
+        eventLog.textContent = `selected: ${item.id}\n${JSON.stringify(item, null, 2)}`;
+      },
+    });
+
+    function refresh() {
+      stats.update(empty ? [] : baseItems, {
+        columns: document.getElementById("columnsSelect").value,
+        size: document.getElementById("sizeSelect").value,
+        chrome,
+        selectable: true,
+      });
+    }
+
+    document.getElementById("columnsSelect").addEventListener("change", refresh);
+    document.getElementById("sizeSelect").addEventListener("change", refresh);
+    document.getElementById("toggleChrome").addEventListener("click", () => {
+      chrome = !chrome;
+      refresh();
+    });
+    document.getElementById("toggleEmpty").addEventListener("click", () => {
+      empty = !empty;
+      refresh();
+    });
+  </script>
+</body>
+</html>
