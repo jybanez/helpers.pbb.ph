@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Markers Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .marker-map {
+      min-height: 420px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(72, 92, 128, 0.28) 1px, transparent 1px),
+        linear-gradient(rgba(72, 92, 128, 0.22) 1px, transparent 1px),
+        radial-gradient(circle at 38% 42%, rgba(244, 179, 80, 0.22), transparent 9%),
+        radial-gradient(circle at 70% 54%, rgba(255, 107, 107, 0.18), transparent 10%),
+        #071018;
+      background-size: 72px 72px, 72px 72px, auto, auto, auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .marker-slot {
+      position: absolute;
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      transform: translate(-50%, -50%);
+    }
+    .marker-label {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 999px;
+      background: rgba(7, 16, 24, 0.74);
+      color: #d7e0f4;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 7px;
+      white-space: nowrap;
+    }
+    .marker-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .marker-card {
+      min-height: 92px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.markers"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Map Markers",
+      overview: "Plain DOM marker factories for MapLibre, Leaflet, and app-owned operational map surfaces.",
+      useWhen: [
+        "Use <code>createMapMarker(...)</code> when a map engine needs a standardized DOM marker element.",
+        "Use <code>createMapClusterMarker(...)</code> for cluster marker DOM while the host map owns clustering and placement."
+      ],
+      avoidWhen: [
+        "Do not use it to place markers, create map layers, or own map engine state.",
+        "Do not use it for non-map badges or chips; use app-local layout or stat cards instead."
+      ],
+      description: "Map Markers provides DOM elements and marker class names only. Host apps pass the returned elements to MapLibre, Leaflet, or another map implementation and keep ownership of coordinates, clustering, popups, and layer lifecycle.",
+      defaultSampleCode: `const el = createMapMarker({\n  type: "incident",\n  tone: "warning",\n  icon: "hazard.flood",\n  label: "Flood incident",\n  count: 3,\n});\n\nnew maplibregl.Marker({ element: el })\n  .setLngLat([lng, lat])\n  .addTo(map);`,
+      constructor: [
+        { factory: "<code>createMapMarker(options)</code>", arguments: "marker options", returns: "<code>HTMLElement</code>" },
+        { factory: "<code>createMapClusterMarker(options)</code>", arguments: "cluster options", returns: "<code>HTMLElement</code>" },
+        { factory: "<code>getMapMarkerClass(options)</code>", arguments: "marker options", returns: "marker class string" }
+      ],
+      options: [
+        { option: "<code>type</code>", default: "<code>\"incident\"</code>", description: "Marker type: <code>incident</code>, <code>source-hub</code>, <code>target-hub</code>, <code>hotspot</code>, <code>route</code>, <code>boundary-centroid</code>." },
+        { option: "<code>shape</code>", default: "derived", description: "Optional shape override: <code>pin</code>, <code>dot</code>, <code>hub</code>, <code>cluster</code>, <code>hotspot</code>, <code>route</code>." },
+        { option: "<code>tone</code>", default: "<code>\"neutral\"</code>", description: "Visual tone: <code>neutral</code>, <code>info</code>, <code>success</code>, <code>warning</code>, <code>danger</code>, <code>critical</code>." },
+        { option: "<code>icon</code>", default: "<code>\"\"</code>", description: "Optional shared <code>ui.icons</code> id." },
+        { option: "<code>count</code>", default: "<code>\"\"</code>", description: "Optional count badge." },
+        { option: "<code>selected</code>, <code>active</code>, <code>muted</code>, <code>pulse</code>", default: "<code>false</code>", description: "State classes for map interaction and emphasis." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "Allowed values: <code>sm</code>, <code>md</code>, <code>lg</code>." },
+        { option: "<code>color</code>", default: "<code>\"\"</code>", description: "Optional CSS color override." }
+      ],
+      propertiesText: "Markers expose data attributes for <code>id</code>, <code>type</code>, <code>tone</code>, <code>shape</code>, <code>size</code>, and state flags.",
+      eventsText: "No events are emitted. Host maps own marker click, hover, popup, and lifecycle wiring.",
+      methods: [
+        { method: "<code>createMapMarker(options)</code>", arguments: "marker options", returns: "<code>HTMLElement</code>" },
+        { method: "<code>createMapClusterMarker(options)</code>", arguments: "cluster options", returns: "<code>HTMLElement</code>" },
+        { method: "<code>getMapMarkerClass(options)</code>", arguments: "marker options", returns: "class string" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">Map Markers Demo</h1>
+      <p class="muted">Standard marker DOM for operational maps. Placement, coordinates, clustering, and popups remain app-owned.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Map Surface</h2>
+      <div class="marker-map" id="mapSurface"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Marker Gallery</h2>
+      <div class="marker-gallery" id="gallery"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const el = createMapMarker({
+  type: "incident",
+  tone: "warning",
+  icon: "hazard.flood",
+  label: "Flood incident",
+  count: 3,
+});
+
+new maplibregl.Marker({ element: el })
+  .setLngLat([lng, lat])
+  .addTo(map);</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createMapMarker, createMapClusterMarker } = await uiLoader.get("ui.map.markers");
+
+    const markers = [
+      { label: "Flood", x: 27, y: 38, options: { type: "incident", tone: "warning", icon: "hazard.flood", label: "Flood incident", count: 3, pulse: true } },
+      { label: "Source Hub", x: 45, y: 58, options: { type: "source-hub", tone: "info", icon: "map.source-hub", label: "Source hub", active: true } },
+      { label: "Target Hub", x: 63, y: 42, options: { type: "target-hub", tone: "success", icon: "map.target-hub", label: "Target hub", selected: true } },
+      { label: "Blocked Route", x: 68, y: 70, options: { type: "route", tone: "danger", label: "Blocked route", pulse: true } },
+      { label: "Hotspot", x: 78, y: 30, cluster: { count: 14, tone: "critical", label: "14 incidents", active: true } },
+    ];
+
+    markers.forEach((entry) => {
+      const slot = document.createElement("div");
+      slot.className = "marker-slot";
+      slot.style.left = `${entry.x}%`;
+      slot.style.top = `${entry.y}%`;
+      slot.appendChild(entry.cluster ? createMapClusterMarker(entry.cluster) : createMapMarker(entry.options));
+      const label = document.createElement("span");
+      label.className = "marker-label";
+      label.textContent = entry.label;
+      slot.appendChild(label);
+      document.getElementById("mapSurface").appendChild(slot);
+    });
+
+    [
+      { title: "Small Dot", options: { shape: "dot", size: "sm", tone: "success", label: "Small dot" } },
+      { title: "Incident Pin", options: { type: "incident", tone: "warning", icon: "hazard.fire", label: "Incident pin", count: 1 } },
+      { title: "Hub", options: { type: "source-hub", tone: "info", icon: "map.source-hub", label: "Hub marker" } },
+      { title: "Cluster", cluster: { count: 27, tone: "critical", label: "27 incidents" } },
+      { title: "Muted", options: { type: "boundary-centroid", tone: "neutral", label: "Muted boundary", muted: true } },
+      { title: "Route", options: { type: "route", tone: "danger", label: "Route issue", pulse: true } },
+    ].forEach((entry) => {
+      const card = document.createElement("article");
+      card.className = "marker-card";
+      card.appendChild(entry.cluster ? createMapClusterMarker(entry.cluster) : createMapMarker(entry.options));
+      const text = document.createElement("span");
+      text.className = "muted";
+      text.textContent = entry.title;
+      card.appendChild(text);
+      document.getElementById("gallery").appendChild(card);
+    });
+  </script>
+</body>
+</html>

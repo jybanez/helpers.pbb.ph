@@ -56,16 +56,16 @@ This checklist tracks the Helper-side rollout for the SITREP icon expansion, ope
 
 ## Phase 4: `ui.map.markers`
 
-- [ ] Finalize `createMapMarker(...)`, `createMapClusterMarker(...)`, and `getMapMarkerClass(...)` contracts.
-- [ ] Implement marker types: incident, source-hub, target-hub, hotspot, route, and boundary-centroid.
-- [ ] Implement marker shapes: pin, dot, hub, cluster, hotspot, and route.
-- [ ] Support icon, count badge, selected, active, muted, size, pulse, label, tone, and custom color metadata.
-- [ ] Return plain `HTMLElement` instances suitable for MapLibre markers and other app-owned map engines.
-- [ ] Add accessible labels for all marker variants.
-- [ ] Add `demos/demo.map.markers.html`.
-- [ ] Add regression coverage for marker types, shapes, states, count badges, accessibility, and no MapLibre global dependency.
-- [ ] Register the demo in shared navigation and reference metadata.
-- [ ] Rebuild `dist/`.
+- [x] Finalize `createMapMarker(...)`, `createMapClusterMarker(...)`, and `getMapMarkerClass(...)` contracts.
+- [x] Implement marker types: incident, source-hub, target-hub, hotspot, route, and boundary-centroid.
+- [x] Implement marker shapes: pin, dot, hub, cluster, hotspot, and route.
+- [x] Support icon, count badge, selected, active, muted, size, pulse, label, tone, and custom color metadata.
+- [x] Return plain `HTMLElement` instances suitable for MapLibre markers and other app-owned map engines.
+- [x] Add accessible labels for all marker variants.
+- [x] Add `demos/demo.map.markers.html`.
+- [x] Add regression coverage for marker types, shapes, states, count badges, accessibility, and no MapLibre global dependency.
+- [x] Register the demo in shared navigation and reference metadata.
+- [x] Rebuild `dist/`.
 
 ## Phase 5: `ui.charts`
 

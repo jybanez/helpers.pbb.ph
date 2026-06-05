@@ -70,6 +70,7 @@ css/
     ui.scheduler.css
     ui.map.controls.css
     ui.map.legend.css
+    ui.map.markers.css
     ui.nav.css
   incident/
     incident.css
@@ -132,6 +133,7 @@ js/
     ui.scheduler.js
     ui.map.controls.js
     ui.map.legend.js
+    ui.map.markers.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -323,6 +325,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
 - `ui.map.legend.js`
   - `createMapLegend(container, options)` MapLibre-agnostic legend for alert levels, markers, line/route styles, counts, and data-quality keys
+- `ui.map.markers.js`
+  - `createMapMarker(options)`, `createMapClusterMarker(options)`, and `getMapMarkerClass(options)` MapLibre-compatible DOM marker factories for incidents, hubs, hotspots, routes, and clusters
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -1608,6 +1612,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - alert, marker, route, and data-quality sections
   - compact, collapsible, count, and empty states
   - works without MapLibre globals
+- `demos/demo.map.markers.html` -> dedicated map-marker playground
+  - incidents, hubs, hotspots, routes, boundary centroids, and clusters
+  - selected, active, muted, pulsing, count, and custom-color states
+  - returns plain DOM elements for app-owned map engines
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
@@ -5272,6 +5280,84 @@ Non-goals:
 Related demos:
 
 - `demos/demo.map.legend.html`
+
+### `createMapMarker(options)` (`js/ui/ui.map.markers.js`)
+
+Purpose:
+
+- Map-engine-compatible DOM marker factory for operational map surfaces.
+- Suitable for incidents, source hubs, target hubs, hotspots, route points, boundary centroids, and marker clusters.
+- Host apps own MapLibre/Leaflet/map rendering, marker coordinates, lifecycle, and click handling.
+
+Basic usage:
+
+```js
+import { createMapMarker, createMapClusterMarker } from "./js/ui/ui.map.markers.js";
+
+const markerElement = createMapMarker({
+  id: "incident-216",
+  type: "incident",
+  tone: "critical",
+  icon: "hazard.fire",
+  label: "Building fire",
+  count: 3,
+  selected: true,
+  pulse: true,
+});
+
+new maplibregl.Marker({ element: markerElement })
+  .setLngLat([123.885, 10.330])
+  .addTo(map);
+
+const clusterElement = createMapClusterMarker({
+  count: 12,
+  tone: "warning",
+  label: "12 active incidents",
+});
+```
+
+Marker fields:
+
+- `id`: optional stable marker id exposed as `data-marker-id`
+- `type`: `incident`, `source-hub`, `target-hub`, `hotspot`, `route`, or `boundary-centroid`
+- `shape`: optional shape override; defaults by type
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `icon`: optional `ui.icons` id
+- `label`: accessible label and optional title text
+- `count`: optional numeric/text count badge
+- `selected`: selected visual state
+- `active`: active/current visual state
+- `muted`: reduced-emphasis visual state
+- `pulse`: animated attention ring
+- `size`: `sm`, `md`, or `lg`
+- `color`: optional CSS color override
+- `meta`: optional app-owned metadata retained on `element.__uiMapMarker`
+
+Cluster fields:
+
+- `count`: required cluster count
+- `tone`: optional tone
+- `label`: accessible label override
+- `size`: `sm`, `md`, or `lg`
+- `selected`: selected visual state
+- `active`: active/current visual state
+- `color`: optional CSS color override
+
+Exports:
+
+- `createMapMarker(options)` returns a plain marker `HTMLElement`
+- `createMapClusterMarker(options)` returns a count-oriented cluster `HTMLElement`
+- `getMapMarkerClass(options)` returns the normalized class string for app-owned custom marker wrappers
+
+Non-goals:
+
+- Does not create MapLibre marker instances, sources, or layers.
+- Does not store coordinates or manage marker lifecycle.
+- Does not replace the map legend; use `createMapLegend(...)` for map keys.
+
+Related demos:
+
+- `demos/demo.map.markers.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 
