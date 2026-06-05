@@ -23,6 +23,7 @@ const createPathPicker = await loader.get("ui.path.picker", { css: false });
 const createDeviceSelector = await loader.get("ui.device.selector", { css: false });
 const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { css: false });
 const createStatCards = await loader.get("ui.stat.cards", { css: false });
+const createMapLegend = await loader.get("ui.map.legend", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
 
@@ -54,6 +55,10 @@ if (typeof createStatCards !== "function") {
   throw new Error("Bundle-backed ui.stat.cards did not resolve to a factory function.");
 }
 
+if (typeof createMapLegend !== "function") {
+  throw new Error("Bundle-backed ui.map.legend did not resolve to a factory function.");
+}
+
 if (typeof incidentTypes !== "function") {
   throw new Error("Bundle-backed incident.types did not resolve to a factory function.");
 }
@@ -70,6 +75,7 @@ if (
   !diagnostics.loadedModules.includes("ui.device.selector") ||
   !diagnostics.loadedModules.includes("ui.device.selector.media") ||
   !diagnostics.loadedModules.includes("ui.stat.cards") ||
+  !diagnostics.loadedModules.includes("ui.map.legend") ||
   !diagnostics.loadedModules.includes("incident.types")
 ) {
   throw new Error("Loader did not record bundle-backed module requests.");

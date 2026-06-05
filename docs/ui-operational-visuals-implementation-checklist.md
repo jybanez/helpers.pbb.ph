@@ -42,17 +42,17 @@ This checklist tracks the Helper-side rollout for the SITREP icon expansion, ope
 
 ## Phase 3: `ui.map.legend`
 
-- [ ] Finalize the `createMapLegend(container, options)` contract.
-- [ ] Implement sections and legend items with title, description, icon, tone, color, swatch, marker, count, and disabled state.
-- [ ] Support compact and full display modes.
-- [ ] Support collapsible/defaultCollapsed behavior.
-- [ ] Render swatches, line styles, marker samples, icons, and counts without depending on MapLibre.
-- [ ] Add accessible text for every visual sample.
-- [ ] Add update, setSections, getState, and destroy lifecycle methods.
-- [ ] Add `demos/demo.map.legend.html`.
-- [ ] Add regression coverage for sections, items, compact mode, collapsed mode, counts, empty state, and no MapLibre global dependency.
-- [ ] Register the demo in shared navigation and reference metadata.
-- [ ] Rebuild `dist/`.
+- [x] Finalize the `createMapLegend(container, options)` contract.
+- [x] Implement sections and legend items with title, description, icon, tone, color, swatch, marker, count, and disabled state.
+- [x] Support compact and full display modes.
+- [x] Support collapsible/defaultCollapsed behavior.
+- [x] Render swatches, line styles, marker samples, icons, and counts without depending on MapLibre.
+- [x] Add accessible text for every visual sample.
+- [x] Add update, setSections, getState, and destroy lifecycle methods.
+- [x] Add `demos/demo.map.legend.html`.
+- [x] Add regression coverage for sections, items, compact mode, collapsed mode, counts, empty state, and no MapLibre global dependency.
+- [x] Register the demo in shared navigation and reference metadata.
+- [x] Rebuild `dist/`.
 
 ## Phase 4: `ui.map.markers`
 

@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.map.legend` for MapLibre-agnostic operational map legends with sections, icons, swatches, marker samples, counts, compact/collapsible modes, demos, docs, and regression coverage.
 - Added `ui.stat.cards` for operational KPI cards with shared icons, tones, trends, selection, chrome-less rendering, demos, docs, and regression coverage.
 - Expanded `ui.icons` with operational/SITREP icon categories for report sections, alerts, hazards, population groups, routes, resources, teams, maps, and data-quality cues.
 - Fixed incident type and team assignment drawer category rails so sparse category lists keep intrinsic card height and scroll normally instead of stretching cards to fill the drawer.

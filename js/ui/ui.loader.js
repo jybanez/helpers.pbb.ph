@@ -316,6 +316,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createMapControls",
   },
+  "ui.map.legend": {
+    js: "./ui.map.legend.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.map.legend.css"],
+    deps: ["ui.icons"],
+    export: "createMapLegend",
+  },
   "ui.timeline": {
     js: "./ui.timeline.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.timeline.css"],
@@ -683,6 +689,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.signal.strength",
     "ui.stat.cards",
     "ui.map.controls",
+    "ui.map.legend",
     "ui.timeline",
     "ui.activity.chart",
     "ui.timeline.scrubber",

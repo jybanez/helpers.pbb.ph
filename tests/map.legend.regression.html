@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Map Legend Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/ui/ui.map.legend.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 360px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createMapLegend } from "../js/ui/ui.map.legend.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const toggles = [];
+
+    try {
+      assert(!("maplibregl" in window), "test should not provide MapLibre globals");
+
+      const legend = createMapLegend(host, {
+        title: "SITREP Map Legend",
+        ariaLabel: "SITREP map legend",
+        collapsible: true,
+        showCounts: true,
+        onToggle(event) {
+          toggles.push(event);
+        },
+        sections: [
+          {
+            id: "alert",
+            title: "Alert Level",
+            description: "Boundary color reflects source alert level.",
+            items: [
+              { id: "normal", label: "Normal", tone: "success", icon: "alert.normal", count: 4 },
+              { id: "elevated", label: "Elevated", tone: "warning", swatch: "solid", count: 2 },
+              { id: "critical", label: "Critical", tone: "critical", swatch: "outline", count: 1 },
+            ],
+          },
+          {
+            id: "markers",
+            title: "Markers",
+            items: [
+              { id: "incident", label: "Incident", description: "Individual report point", marker: "pin", tone: "danger" },
+              { id: "cluster", label: "Cluster", marker: "cluster", tone: "warning", count: 12 },
+              { id: "route", label: "Route Issue", marker: "route", tone: "info", disabled: true },
+            ],
+          },
+        ],
+      });
+
+      let root = host.querySelector(".ui-map-legend");
+      assert(Boolean(root), "legend root should render");
+      assert(root.getAttribute("aria-label") === "SITREP map legend", "root should expose aria label");
+      assert(root.dataset.collapsible === "true", "collapsible dataset should render");
+      assert(root.getAttribute("aria-expanded") === "true", "expanded state should render");
+      assert(root.querySelector(".ui-map-legend-title")?.textContent === "SITREP Map Legend", "title should render");
+      assert(root.querySelectorAll(".ui-map-legend-section").length === 2, "sections should render");
+      assert(root.querySelectorAll(".ui-map-legend-item").length === 6, "items should render");
+      assert(root.querySelector('[data-id="normal"] [data-icon="alert.normal"]'), "icon item should render ui.icons node");
+      assert(root.querySelector('[data-id="elevated"] .ui-map-legend-swatch--solid'), "solid swatch should render");
+      assert(root.querySelector('[data-id="critical"] .ui-map-legend-swatch--outline'), "outline swatch should render");
+      assert(root.querySelector('[data-id="incident"] .ui-map-legend-marker--pin'), "pin marker should render");
+      assert(root.querySelector('[data-id="cluster"] .ui-map-legend-marker--cluster'), "cluster marker should render");
+      assert(root.querySelector('[data-id="route"]')?.classList.contains("is-disabled"), "disabled item should render disabled class");
+      assert(root.querySelector('[data-id="cluster"] .ui-map-legend-count')?.textContent === "12", "counts should render");
+      assert(root.querySelector('[data-id="incident"]')?.getAttribute("aria-label").includes("Individual report point"), "item aria label should include description");
+
+      const toggle = root.querySelector(".ui-map-legend-toggle");
+      toggle.click();
+      root = host.querySelector(".ui-map-legend");
+      assert(root.classList.contains("is-collapsed"), "toggle should collapse legend");
+      assert(root.getAttribute("aria-expanded") === "false", "collapsed aria-expanded should render");
+      assert(toggles.length === 1 && toggles[0].collapsed === true, "onToggle should fire collapsed state");
+
+      legend.update({ compact: true, defaultCollapsed: false, showCounts: false });
+      root = host.querySelector(".ui-map-legend");
+      assert(root.classList.contains("is-compact"), "compact class should render");
+      assert(!root.classList.contains("is-collapsed"), "defaultCollapsed false should expand during update");
+      assert(!root.querySelector(".ui-map-legend-count"), "showCounts false should hide counts");
+      assert(!root.querySelector(".ui-map-legend-item-description"), "compact mode should hide descriptions");
+
+      legend.setSections([]);
+      assert(host.querySelector(".ui-map-legend-empty")?.textContent === "No legend items to display.", "empty state should render");
+
+      const state = legend.getState();
+      assert(state.options.sections.length === 0, "getState should expose normalized sections");
+      assert(state.expanded === true, "getState should expose expanded state");
+
+      legend.destroy();
+      assert(host.children.length === 0, "destroy should clear host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Map legend regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

@@ -69,6 +69,7 @@ css/
     ui.virtual.list.css
     ui.scheduler.css
     ui.map.controls.css
+    ui.map.legend.css
     ui.nav.css
   incident/
     incident.css
@@ -130,6 +131,7 @@ js/
     ui.virtual.list.js
     ui.scheduler.js
     ui.map.controls.js
+    ui.map.legend.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -319,6 +321,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createStatCards(container, items, options)` operational KPI cards with shared icons, tones, trends, selection, chrome-less rendering, and update/destroy lifecycle
 - `ui.map.controls.js`
   - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
+- `ui.map.legend.js`
+  - `createMapLegend(container, options)` MapLibre-agnostic legend for alert levels, markers, line/route styles, counts, and data-quality keys
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -1600,6 +1604,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - zoom and compass/bearing controls
   - pitch presets
   - locate, fit, and layer toggles
+- `demos/demo.map.legend.html` -> dedicated map-legend playground
+  - alert, marker, route, and data-quality sections
+  - compact, collapsible, count, and empty states
+  - works without MapLibre globals
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
@@ -5186,6 +5194,84 @@ Methods:
 Related demos:
 
 - `demos/demo.map.controls.html`
+
+### `createMapLegend(container, options)` (`js/ui/ui.map.legend.js`)
+
+Purpose:
+
+- Map-engine-agnostic legend for operational map surfaces.
+- Suitable for alert levels, incident markers, source/target hubs, clusters, route states, boundaries, and data-quality keys.
+- Host apps own MapLibre/Leaflet/map rendering, layers, and marker placement.
+
+Basic usage:
+
+```js
+import { createMapLegend } from "./js/ui/ui.map.legend.js";
+
+const legend = createMapLegend(container, {
+  title: "SITREP Map Legend",
+  sections: [
+    {
+      title: "Alert Level",
+      items: [
+        { label: "Normal", tone: "success", icon: "alert.normal", count: 4 },
+        { label: "Elevated", tone: "warning", swatch: "solid", count: 2 },
+        { label: "Critical", tone: "critical", swatch: "outline", count: 1 },
+      ],
+    },
+  ],
+});
+```
+
+Section fields:
+
+- `id`: stable section id
+- `title`: visible section heading
+- `description`: optional helper text
+- `items`: legend item array
+
+Item fields:
+
+- `id`: stable item id
+- `label`: visible item label
+- `description`: optional item helper text
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `color`: optional CSS color override
+- `icon`: optional `ui.icons` id
+- `swatch`: `solid`, `outline`, `dashed`, `gradient`, `marker`, or `line`
+- `marker`: `pin`, `dot`, `cluster`, `hub`, `hotspot`, or `route`
+- `count`: optional count badge
+- `disabled`: muted visual state
+
+Options:
+
+- `title`: optional legend heading
+- `sections`: section array
+- `compact`: hides item descriptions and tightens spacing
+- `collapsible`: adds a show/hide header control
+- `defaultCollapsed`: initial collapsed state when collapsible
+- `showCounts`: controls count badges
+- `emptyText`: empty-state copy
+- `onToggle`: optional collapsed/expanded callback
+- `ariaLabel`: accessible label for the legend
+- `className`: extra root class name
+
+Methods:
+
+- `update(options)`
+- `setSections(sections)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not create map sources, layers, or markers.
+- Does not depend on MapLibre globals.
+- Does not replace chart legends inside future chart components.
+
+Related demos:
+
+- `demos/demo.map.legend.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 

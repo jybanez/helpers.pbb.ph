@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Legend Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .map-demo-surface {
+      min-height: 440px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(72, 92, 128, 0.28) 1px, transparent 1px),
+        linear-gradient(rgba(72, 92, 128, 0.22) 1px, transparent 1px),
+        radial-gradient(circle at 32% 38%, rgba(244, 179, 80, 0.22), transparent 9%),
+        radial-gradient(circle at 68% 58%, rgba(100, 181, 246, 0.2), transparent 10%),
+        #071018;
+      background-size: 72px 72px, 72px 72px, auto, auto, auto;
+      padding: 16px;
+      box-sizing: border-box;
+      display: grid;
+      align-items: start;
+      justify-items: end;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.legend"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Map Legend",
+      overview: "Framework-agnostic map legend for operational map surfaces, marker keys, line styles, and counts.",
+      useWhen: [
+        "Use <code>createMapLegend(...)</code> beside MapLibre or any app-owned map surface.",
+        "Use it for alert levels, incident markers, route states, source hubs, clusters, and data-quality keys."
+      ],
+      avoidWhen: [
+        "Do not use it to create or control map layers; the host map engine owns layer state.",
+        "Do not use it for chart legends that belong inside a chart component."
+      ],
+      description: "Map Legend renders sections of visual keys using Helper icons, tone tokens, swatches, line styles, marker samples, and optional counts. It works outside map containers and does not depend on MapLibre globals.",
+      defaultSampleCode: `const legend = createMapLegend(host, {\n  title: "SITREP Map Legend",\n  sections: [\n    {\n      title: "Alert Level",\n      items: [\n        { label: "Normal", tone: "success", icon: "alert.normal", count: 4 },\n        { label: "Elevated", tone: "warning", swatch: "solid", count: 2 },\n        { label: "Critical", tone: "critical", swatch: "outline", count: 1 },\n      ],\n    },\n  ],\n});`,
+      constructor: [
+        { factory: "<code>createMapLegend(container, options)</code>", arguments: "<code>container</code>, map-legend options", returns: "Map legend instance with update, setSections, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Optional legend heading." },
+        { option: "<code>sections</code>", default: "<code>[]</code>", description: "Legend sections containing item arrays." },
+        { option: "<code>compact</code>", default: "<code>false</code>", description: "Compact density that hides item descriptions." },
+        { option: "<code>collapsible</code>", default: "<code>false</code>", description: "Adds a show/hide header control." },
+        { option: "<code>defaultCollapsed</code>", default: "<code>false</code>", description: "Initial collapsed state when collapsible." },
+        { option: "<code>showCounts</code>", default: "<code>true</code>", description: "Controls item count badges." },
+        { option: "<code>emptyText</code>", default: "<code>\"No legend items to display.\"</code>", description: "Empty-state copy." },
+        { option: "<code>onToggle</code>", default: "<code>null</code>", description: "Callback fired with collapsed/expanded state." }
+      ],
+      propertiesText: "Root exposes <code>data-compact</code>, <code>data-collapsible</code>, and <code>data-collapsed</code>. Items expose <code>data-id</code>, <code>data-tone</code>, <code>data-swatch</code>, and <code>data-marker</code>.",
+      eventsText: "<code>onToggle(event)</code> fires when a collapsible legend is shown or hidden.",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>setSections(sections)</code>", arguments: "next section array", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options plus collapsed/expanded state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="toggleCompact" class="ui-button" type="button">Toggle Compact</button>
+        <button id="toggleCounts" class="ui-button" type="button">Toggle Counts</button>
+        <button id="toggleEmpty" class="ui-button" type="button">Toggle Empty</button>
+      </div>
+      <h1 class="ui-title">Map Legend Demo</h1>
+      <p class="muted">Legend keys for operational maps. Map rendering stays app-owned.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Map Surface Placement</h2>
+      <div class="map-demo-surface">
+        <div id="legendHost"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const legend = createMapLegend(host, {
+  title: "SITREP Map Legend",
+  collapsible: true,
+  sections: [
+    {
+      title: "Alert Level",
+      items: [
+        { label: "Normal", tone: "success", icon: "alert.normal", count: 4 },
+        { label: "Elevated", tone: "warning", swatch: "solid", count: 2 },
+        { label: "Critical", tone: "critical", swatch: "outline", count: 1 },
+      ],
+    },
+  ],
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Events</h2>
+      <pre id="eventLog">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createMapLegend = await uiLoader.get("ui.map.legend");
+
+    const sections = [
+      {
+        id: "alert",
+        title: "Alert Level",
+        description: "Boundary and marker color reflects source alert level.",
+        items: [
+          { id: "normal", label: "Normal", tone: "success", icon: "alert.normal", count: 4 },
+          { id: "elevated", label: "Elevated", tone: "warning", swatch: "solid", count: 2 },
+          { id: "critical", label: "Critical", tone: "critical", swatch: "outline", count: 1 },
+        ],
+      },
+      {
+        id: "markers",
+        title: "Markers",
+        items: [
+          { id: "incident", label: "Incident", description: "Individual incident coordinate", marker: "pin", tone: "danger" },
+          { id: "source", label: "Source Hub", marker: "hub", tone: "info", icon: "map.source-hub" },
+          { id: "cluster", label: "Cluster", marker: "cluster", tone: "warning", count: 12 },
+        ],
+      },
+      {
+        id: "routes",
+        title: "Routes",
+        items: [
+          { id: "clear", label: "Clear", marker: "route", tone: "success" },
+          { id: "limited", label: "Limited", marker: "route", tone: "warning" },
+          { id: "blocked", label: "Blocked", marker: "route", tone: "danger" },
+        ],
+      },
+      {
+        id: "quality",
+        title: "Data Quality",
+        items: [
+          { id: "verified", label: "Verified", icon: "quality.verified", tone: "success" },
+          { id: "partial", label: "Partial", icon: "quality.partial", tone: "info" },
+          { id: "stale", label: "Stale", icon: "quality.stale", tone: "warning", disabled: true },
+        ],
+      },
+    ];
+
+    let compact = false;
+    let showCounts = true;
+    let empty = false;
+    const eventLog = document.getElementById("eventLog");
+    const legend = createMapLegend(document.getElementById("legendHost"), {
+      title: "SITREP Map Legend",
+      ariaLabel: "SITREP map legend",
+      sections,
+      collapsible: true,
+      compact,
+      showCounts,
+      onToggle(event) {
+        eventLog.textContent = JSON.stringify(event, null, 2);
+      },
+    });
+
+    function refresh() {
+      legend.update({
+        sections: empty ? [] : sections,
+        compact,
+        showCounts,
+      });
+    }
+
+    document.getElementById("toggleCompact").addEventListener("click", () => {
+      compact = !compact;
+      refresh();
+    });
+    document.getElementById("toggleCounts").addEventListener("click", () => {
+      showCounts = !showCounts;
+      refresh();
+    });
+    document.getElementById("toggleEmpty").addEventListener("click", () => {
+      empty = !empty;
+      refresh();
+    });
+  </script>
+</body>
+</html>
