@@ -328,6 +328,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: ["ui.icons"],
     export: null,
   },
+  "ui.charts": {
+    js: "./ui.charts.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.charts.css"],
+    deps: [],
+    export: null,
+  },
   "ui.timeline": {
     js: "./ui.timeline.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.timeline.css"],
@@ -697,6 +703,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.map.controls",
     "ui.map.legend",
     "ui.map.markers",
+    "ui.charts",
     "ui.timeline",
     "ui.activity.chart",
     "ui.timeline.scrubber",

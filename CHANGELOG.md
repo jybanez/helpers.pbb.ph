@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.charts` for dependency-free operational bar, horizontal-bar, stacked-bar, donut, and sparkline charts with accessible summaries, selectable items, demos, docs, and regression coverage.
 - Added `ui.map.markers` for MapLibre-compatible DOM markers covering incidents, hubs, hotspots, routes, clusters, states, count badges, custom colors, demos, docs, and regression coverage.
 - Added `ui.map.legend` for MapLibre-agnostic operational map legends with sections, icons, swatches, marker samples, counts, compact/collapsible modes, demos, docs, and regression coverage.
 - Added `ui.stat.cards` for operational KPI cards with shared icons, tones, trends, selection, chrome-less rendering, demos, docs, and regression coverage.

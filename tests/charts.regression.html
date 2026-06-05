@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Charts Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.charts.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .host { width: 760px; margin-bottom: 16px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="barHost" class="host"></div>
+  <div id="horizontalHost" class="host"></div>
+  <div id="stackedHost" class="host"></div>
+  <div id="donutHost" class="host"></div>
+  <div id="sparkHost" class="host"></div>
+  <div id="emptyHost" class="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import {
+      createChart,
+      createBarChart,
+      createHorizontalBarChart,
+      createStackedBarChart,
+      createDonutChart,
+      createSparkline,
+    } from "../js/ui/ui.charts.js";
+
+    const failures = [];
+    const events = [];
+    const results = document.getElementById("results");
+
+    try {
+      assert(!("Chart" in window), "test should not depend on an external Chart global");
+      assert(typeof createChart === "function", "createChart should export");
+      assert(typeof createBarChart === "function", "createBarChart should export");
+      assert(typeof createHorizontalBarChart === "function", "createHorizontalBarChart should export");
+      assert(typeof createStackedBarChart === "function", "createStackedBarChart should export");
+      assert(typeof createDonutChart === "function", "createDonutChart should export");
+      assert(typeof createSparkline === "function", "createSparkline should export");
+
+      const bar = createChart(document.getElementById("barHost"), {
+        type: "bar",
+        title: "Incident Types",
+        description: "Current reports by incident type.",
+        ariaLabel: "Incident type chart",
+        valueLabel: "Mentions",
+        sort: "value-desc",
+        data: [
+          { id: "rescue", label: "Rescue", value: 5, tone: "info" },
+          { id: "flood", label: "Flood", value: 9, tone: "warning", secondaryLabel: "3 locations", meta: { source: "sitrep" } },
+          { id: "road", label: "Road Accident", value: 2, tone: "danger" },
+        ],
+        onSelect(item, meta) {
+          events.push({ item, meta });
+        },
+      });
+      let root = document.querySelector("#barHost .ui-chart");
+      assert(root?.dataset.type === "bar", "bar root should render type dataset");
+      assert(root.getAttribute("role") === "figure", "chart root should expose figure role");
+      assert(root.getAttribute("aria-label") === "Incident type chart", "chart root should expose aria label");
+      assert(root.querySelector(".ui-chart-title")?.textContent === "Incident Types", "title should render");
+      assert(root.querySelectorAll(".ui-chart-item").length === 3, "bar items should render");
+      assert(root.querySelector(".ui-chart-summary tbody tr td")?.textContent === "Flood", "sort value-desc should affect normalized summary order");
+      const firstBar = root.querySelector(".ui-chart-item");
+      firstBar.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      assert(events.length === 1 && events[0].item.id === "flood", "onSelect should receive clicked normalized item");
+      assert(events[0].item.meta.source === "sitrep", "onSelect should preserve item metadata");
+
+      const horizontal = createHorizontalBarChart(document.getElementById("horizontalHost"), [
+        { label: "Infrastructure Damage With A Long Label", value: 12 },
+        { label: "Power Outage", value: 4 },
+      ], { title: "Resource Demand", valueLabel: "Requested" });
+      root = document.querySelector("#horizontalHost .ui-chart");
+      assert(root?.dataset.type === "horizontal-bar", "horizontal wrapper should force type");
+      const hostRect = document.getElementById("horizontalHost").getBoundingClientRect();
+      const svgRect = root.querySelector("svg").getBoundingClientRect();
+      assert(svgRect.right <= hostRect.right + 1, "horizontal chart should stay inside host bounds");
+
+      const stacked = createStackedBarChart(document.getElementById("stackedHost"), [
+        {
+          label: "Rescue Team",
+          segments: [
+            { label: "Assigned", value: 2, tone: "neutral" },
+            { label: "En Route", value: 1, tone: "info" },
+            { label: "On Scene", value: 3, tone: "success" },
+          ],
+        },
+      ], { valueLabel: "Teams", onSelect(item) { events.push({ stacked: item }); } });
+      root = document.querySelector("#stackedHost .ui-chart");
+      assert(root?.dataset.type === "stacked-bar", "stacked wrapper should force type");
+      assert(root.querySelectorAll(".ui-chart-segment").length === 3, "stacked segments should render");
+      root.querySelector(".ui-chart-segment").click();
+      assert(events.some((event) => event.stacked?.label === "Assigned"), "stacked segment should emit onSelect");
+
+      createDonutChart(document.getElementById("donutHost"), [
+        { label: "Open", value: 7 },
+        { label: "Resolved", value: 3 },
+      ], { title: "Status Mix" });
+      root = document.querySelector("#donutHost .ui-chart");
+      assert(root?.dataset.type === "donut", "donut wrapper should force type");
+      assert(root.querySelectorAll("path.ui-chart-item").length === 2, "donut paths should render");
+      assert(root.querySelector(".ui-chart-donut-total")?.textContent === "10", "donut total should render");
+
+      const spark = createSparkline(document.getElementById("sparkHost"), [
+        { x: "2026-06-01", y: 2 },
+        { x: "2026-06-02", y: 8 },
+        { x: "2026-06-03", y: 5 },
+      ], { title: "SITREP Trend", valueLabel: "Reports" });
+      root = document.querySelector("#sparkHost .ui-chart");
+      assert(root?.dataset.type === "sparkline", "sparkline wrapper should force type");
+      assert(root.querySelector(".ui-chart-sparkline-line"), "sparkline polyline should render");
+      assert(root.querySelectorAll("circle.ui-chart-item").length === 3, "sparkline points should render");
+
+      const empty = createChart(document.getElementById("emptyHost"), { type: "bar", emptyText: "Nothing to chart." });
+      assert(document.querySelector("#emptyHost .ui-chart-state--empty")?.textContent === "Nothing to chart.", "empty state should render");
+      empty.update({ loading: true });
+      assert(document.querySelector("#emptyHost .ui-chart-state--loading"), "loading state should render");
+      empty.update({ loading: false, error: "Chart failed." });
+      assert(document.querySelector("#emptyHost .ui-chart-state--error")?.textContent === "Chart failed.", "error state should render");
+      empty.update({ error: "", data: [{ label: "Updated", value: 4 }] });
+      assert(document.querySelector("#emptyHost .ui-chart-item"), "update should render chart data");
+      empty.setData([]);
+      assert(document.querySelector("#emptyHost .ui-chart-state--empty"), "setData should update chart data");
+
+      const state = bar.getState();
+      assert(state.type === "bar" && state.data[0].id === "flood", "getState should expose normalized sorted data");
+
+      bar.destroy();
+      horizontal.destroy();
+      stacked.destroy();
+      spark.destroy();
+      empty.destroy();
+      assert(document.getElementById("barHost").children.length === 0, "destroy should clear host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Charts regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

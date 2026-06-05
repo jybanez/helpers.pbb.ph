@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charts Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+      min-width: 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    #eventLog {
+      min-height: 88px;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.charts"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Charts",
+      overview: "Dependency-free operational charts for PBB dashboards, SITREP summaries, queue health, and admin metrics.",
+      useWhen: [
+        "Use <code>createChart(...)</code> for compact operational bar, horizontal-bar, stacked-bar, donut, or sparkline visualizations.",
+        "Use convenience factories when the chart type is known and app code already owns the normalized data."
+      ],
+      avoidWhen: [
+        "Do not use it as a replacement for full analytical charting libraries with zooming, brushing, or complex axes.",
+        "Do not use charts when a table is the primary workflow surface; pair with <code>ui.grid</code> for detailed review."
+      ],
+      description: "The chart helper renders plain DOM/SVG with accessible labels and hidden data summaries. Apps keep ownership of data loading, filtering, drill-down panels, and any map or report-specific behavior.",
+      defaultSampleCode: `const chart = createChart(container, {\n  type: "horizontal-bar",\n  title: "Resource Demand",\n  valueLabel: "Requested",\n  data: [\n    { label: "Rescue Boats", value: 8 },\n    { label: "Medical Kits", value: 5 },\n  ],\n});`,
+      constructor: [
+        { factory: "<code>createChart(container, options)</code>", arguments: "container, chart options", returns: "Chart instance" },
+        { factory: "<code>createBarChart(container, data, options)</code>", arguments: "container, simple data, options", returns: "Chart instance" },
+        { factory: "<code>createHorizontalBarChart(container, data, options)</code>", arguments: "container, simple data, options", returns: "Chart instance" },
+        { factory: "<code>createStackedBarChart(container, data, options)</code>", arguments: "container, stacked data, options", returns: "Chart instance" },
+        { factory: "<code>createDonutChart(container, data, options)</code>", arguments: "container, simple data, options", returns: "Chart instance" },
+        { factory: "<code>createSparkline(container, data, options)</code>", arguments: "container, sparkline data, options", returns: "Chart instance" }
+      ],
+      options: [
+        { option: "<code>type</code>", default: "<code>\"bar\"</code>", description: "<code>bar</code>, <code>horizontal-bar</code>, <code>stacked-bar</code>, <code>donut</code>, or <code>sparkline</code>." },
+        { option: "<code>data</code>", default: "<code>[]</code>", description: "Simple, stacked, or sparkline series data depending on chart type." },
+        { option: "<code>title</code>, <code>description</code>, <code>ariaLabel</code>", default: "<code>\"\"</code>", description: "Visible and accessible chart labels." },
+        { option: "<code>valueLabel</code>", default: "<code>\"Value\"</code>", description: "Semantic label used in item accessible text and summary data." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "<code>sm</code>, <code>md</code>, or <code>lg</code>." },
+        { option: "<code>showLegend</code>, <code>showValues</code>, <code>showAxis</code>", default: "<code>true</code>", description: "Controls supporting chart labels and guides." },
+        { option: "<code>sort</code>", default: "<code>\"input\"</code>", description: "<code>input</code>, <code>value-desc</code>, <code>value-asc</code>, or <code>label</code> for simple series." },
+        { option: "<code>loading</code>, <code>error</code>, <code>emptyText</code>", default: "state defaults", description: "Standard chart state rendering." },
+        { option: "<code>formatter</code>", default: "<code>null</code>", description: "Optional value formatter callback." },
+        { option: "<code>onSelect</code>, <code>onHover</code>", default: "<code>null</code>", description: "Optional interaction callbacks. Selectable items become keyboard focusable." }
+      ],
+      propertiesText: "Use the returned instance methods instead of relying on internal state. Rendered roots expose <code>data-type</code>, <code>data-size</code>, and <code>data-tone</code>.",
+      eventsText: "<code>onSelect(item, meta)</code> and <code>onHover(item, meta)</code> receive normalized chart items or segments.",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial chart options", returns: "<code>void</code>" },
+        { method: "<code>setData(data)</code>", arguments: "replacement data array", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options/data snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">Charts Demo</h1>
+      <p class="muted">General operational charts for compact dashboards and SITREP-style summaries.</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel"><div id="barChart"></div></article>
+      <article class="panel"><div id="horizontalChart"></div></article>
+      <article class="panel"><div id="stackedChart"></div></article>
+      <article class="panel"><div id="donutChart"></div></article>
+      <article class="panel"><div id="sparklineChart"></div></article>
+      <article class="panel"><div id="emptyChart"></div></article>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Selectable Chart</h2>
+      <div id="selectChart"></div>
+      <pre id="eventLog">No events yet.</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const chart = createChart(container, {
+  type: "horizontal-bar",
+  title: "Resource Demand",
+  valueLabel: "Requested",
+  data: [
+    { label: "Rescue Boats", value: 8 },
+    { label: "Medical Kits", value: 5 },
+  ],
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const {
+      createChart,
+      createBarChart,
+      createHorizontalBarChart,
+      createStackedBarChart,
+      createDonutChart,
+      createSparkline,
+    } = await uiLoader.get("ui.charts");
+
+    createBarChart(document.getElementById("barChart"), [
+      { label: "Flood", value: 9, tone: "warning" },
+      { label: "Rescue", value: 5, tone: "info" },
+      { label: "Road Accident", value: 4, tone: "danger" },
+      { label: "Medical", value: 3, tone: "success" },
+    ], {
+      title: "Incident Types",
+      description: "Current reports by incident type.",
+      valueLabel: "Mentions",
+      sort: "value-desc",
+    });
+
+    createHorizontalBarChart(document.getElementById("horizontalChart"), [
+      { label: "Infrastructure Damage", value: 12 },
+      { label: "Water Supply Issue", value: 8 },
+      { label: "Access Road Blocked", value: 6 },
+      { label: "Power Outage", value: 4 },
+    ], {
+      title: "Resource Demand",
+      valueLabel: "Requests",
+    });
+
+    createStackedBarChart(document.getElementById("stackedChart"), [
+      { label: "Rescue", segments: [
+        { label: "Assigned", value: 2, tone: "neutral" },
+        { label: "En Route", value: 1, tone: "info" },
+        { label: "On Scene", value: 3, tone: "success" },
+      ] },
+      { label: "Medical", segments: [
+        { label: "Assigned", value: 1, tone: "neutral" },
+        { label: "En Route", value: 2, tone: "info" },
+        { label: "On Scene", value: 1, tone: "success" },
+      ] },
+    ], {
+      title: "Assignment Posture",
+      valueLabel: "Teams",
+    });
+
+    createDonutChart(document.getElementById("donutChart"), [
+      { label: "Normal", value: 8, tone: "success" },
+      { label: "Elevated", value: 4, tone: "warning" },
+      { label: "Critical", value: 1, tone: "critical" },
+    ], {
+      title: "Alert Mix",
+      valueLabel: "Reports",
+    });
+
+    createSparkline(document.getElementById("sparklineChart"), [
+      { x: "Jun 1", y: 4 },
+      { x: "Jun 2", y: 7 },
+      { x: "Jun 3", y: 5 },
+      { x: "Jun 4", y: 10 },
+      { x: "Jun 5", y: 8 },
+    ], {
+      title: "SITREP Trend",
+      valueLabel: "Reports",
+      showLegend: false,
+    });
+
+    createChart(document.getElementById("emptyChart"), {
+      type: "horizontal-bar",
+      title: "Empty State",
+      emptyText: "No records match the current filter.",
+    });
+
+    const eventLog = document.getElementById("eventLog");
+    createChart(document.getElementById("selectChart"), {
+      type: "bar",
+      title: "Selectable Resource Requests",
+      valueLabel: "Requested",
+      data: [
+        { id: "boats", label: "Boats", value: 8, tone: "info" },
+        { id: "kits", label: "Medical Kits", value: 5, tone: "success" },
+        { id: "food", label: "Food Packs", value: 13, tone: "warning" },
+      ],
+      onSelect(item, meta) {
+        eventLog.textContent = JSON.stringify({ event: "select", id: item.id, label: item.label, value: item.value, index: meta.index }, null, 2);
+      },
+      onHover(item, meta) {
+        eventLog.textContent = JSON.stringify({ event: "hover", id: item.id, label: item.label, value: item.value, index: meta.index }, null, 2);
+      },
+    });
+  </script>
+</body>
+</html>

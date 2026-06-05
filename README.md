@@ -71,6 +71,7 @@ css/
     ui.map.controls.css
     ui.map.legend.css
     ui.map.markers.css
+    ui.charts.css
     ui.nav.css
   incident/
     incident.css
@@ -134,6 +135,7 @@ js/
     ui.map.controls.js
     ui.map.legend.js
     ui.map.markers.js
+    ui.charts.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -327,6 +329,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createMapLegend(container, options)` MapLibre-agnostic legend for alert levels, markers, line/route styles, counts, and data-quality keys
 - `ui.map.markers.js`
   - `createMapMarker(options)`, `createMapClusterMarker(options)`, and `getMapMarkerClass(options)` MapLibre-compatible DOM marker factories for incidents, hubs, hotspots, routes, and clusters
+- `ui.charts.js`
+  - `createChart(container, options)` and chart-specific wrappers for dependency-free bar, horizontal-bar, stacked-bar, donut, and sparkline charts
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -1616,6 +1620,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - incidents, hubs, hotspots, routes, boundary centroids, and clusters
   - selected, active, muted, pulsing, count, and custom-color states
   - returns plain DOM elements for app-owned map engines
+- `demos/demo.charts.html` -> dedicated charts playground
+  - bar, horizontal-bar, stacked-bar, donut, and sparkline charts
+  - empty, selectable, long-label, and state examples
+  - dependency-free DOM/SVG rendering
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
@@ -5358,6 +5366,123 @@ Non-goals:
 Related demos:
 
 - `demos/demo.map.markers.html`
+
+### `createChart(container, options)` (`js/ui/ui.charts.js`)
+
+Purpose:
+
+- Dependency-free operational chart rendering for compact PBB dashboards and SITREP summaries.
+- Suitable for category comparisons, resource demand, assignment posture, status shares, and small time trends.
+- Host apps own data loading, filtering, drill-down panels, and chart placement.
+
+Basic usage:
+
+```js
+import { createChart } from "./js/ui/ui.charts.js";
+
+const chart = createChart(container, {
+  type: "horizontal-bar",
+  title: "Resource Demand",
+  valueLabel: "Requested",
+  data: [
+    { label: "Rescue Boats", value: 8, tone: "info" },
+    { label: "Medical Kits", value: 5, tone: "success" },
+  ],
+});
+```
+
+Chart types:
+
+- `bar`: vertical category comparison
+- `horizontal-bar`: category comparison with long-label handling
+- `stacked-bar`: row/segment status breakdowns
+- `donut`: small part-to-whole summary
+- `sparkline`: compact trend line
+
+Simple series fields:
+
+- `id`: optional stable id
+- `label`: visible/accessibility label
+- `value`: numeric value
+- `secondaryValue`: optional secondary numeric value
+- `secondaryLabel`: optional supporting label
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `color`: optional CSS color override
+- `icon`: optional app-owned metadata for future composition
+- `meta`: optional app-owned metadata preserved in callbacks/state
+
+Stacked series fields:
+
+- `id`: optional stable row id
+- `label`: row label
+- `segments`: segment array with `label`, `value`, `tone`, `color`, and `meta`
+- `meta`: optional app-owned row metadata
+
+Sparkline series fields:
+
+- `id`: optional stable point id
+- `x`: source x value or timestamp label
+- `y`: numeric y value
+- `label`: optional display/accessibility label
+- `tone`: optional point tone
+- `meta`: optional app-owned metadata
+
+Options:
+
+- `type`: `bar`, `horizontal-bar`, `stacked-bar`, `donut`, or `sparkline`
+- `data`: chart data array
+- `title`: visible chart heading
+- `description`: visible chart helper text
+- `ariaLabel`: accessible figure label
+- `className`: extra root class
+- `valueLabel`: semantic value label
+- `secondaryValueLabel`: optional secondary semantic label
+- `size`: `sm`, `md`, or `lg`
+- `tone`: root tone
+- `showLegend`: renders a legend for non-sparkline charts
+- `showValues`: renders visible value labels where applicable
+- `showAxis`: renders simple axes where applicable
+- `maxValue`: optional fixed scale max for bar charts
+- `sort`: `input`, `value-desc`, `value-asc`, or `label` for simple series
+- `emptyText`: empty-state copy
+- `loading`: renders loading state
+- `loadingText`: loading-state copy
+- `error`: renders error state text when non-empty
+- `formatter`: optional value formatter callback
+- `onSelect`: optional selectable item/segment callback
+- `onHover`: optional hover/focus callback
+
+Convenience factories:
+
+- `createBarChart(container, data, options)`
+- `createHorizontalBarChart(container, data, options)`
+- `createStackedBarChart(container, data, options)`
+- `createDonutChart(container, data, options)`
+- `createSparkline(container, data, options)`
+
+Methods:
+
+- `update(options)`
+- `setData(data)`
+- `getState()`
+- `destroy()`
+
+Accessibility:
+
+- The root uses figure semantics with an accessible label.
+- Rendered charts include a hidden data summary table.
+- Selectable chart items become keyboard focusable when `onSelect` is supplied.
+- Values and labels are rendered or exposed through accessible text so meaning is not color-only.
+
+Non-goals:
+
+- Does not replace large analytical charting libraries.
+- Does not implement zooming, brushing, complex axes, or 3D charts.
+- Does not own data fetching, filtering, or report drill-down behavior.
+
+Related demos:
+
+- `demos/demo.charts.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 

@@ -69,23 +69,23 @@ This checklist tracks the Helper-side rollout for the SITREP icon expansion, ope
 
 ## Phase 5: `ui.charts`
 
-- [ ] Finalize `createChart(container, options)` plus convenience factory exports.
-- [ ] Implement simple-series normalization.
-- [ ] Implement stacked-series normalization.
-- [ ] Implement sparkline-series normalization.
-- [ ] Implement vertical bar charts.
-- [ ] Implement horizontal bar charts with long-label handling.
-- [ ] Implement stacked bar charts.
-- [ ] Implement donut charts.
-- [ ] Implement sparklines.
-- [ ] Implement empty, loading, and error states if accepted into V1.
-- [ ] Implement title, description, ariaLabel, value labels, legends, axes, maxValue, sorting, formatter, onSelect, and onHover options.
-- [ ] Add keyboard-selectable bars/segments when `onSelect` is provided.
-- [ ] Add hidden or visible data summary semantics so values are not conveyed by color alone.
-- [ ] Add `demos/demo.charts.html`.
-- [ ] Add regression coverage for exports, normalization, update, destroy, selection, accessibility, long-label layout, empty state, and no external dependency.
-- [ ] Register the demo in shared navigation and reference metadata.
-- [ ] Rebuild `dist/`.
+- [x] Finalize `createChart(container, options)` plus convenience factory exports.
+- [x] Implement simple-series normalization.
+- [x] Implement stacked-series normalization.
+- [x] Implement sparkline-series normalization.
+- [x] Implement vertical bar charts.
+- [x] Implement horizontal bar charts with long-label handling.
+- [x] Implement stacked bar charts.
+- [x] Implement donut charts.
+- [x] Implement sparklines.
+- [x] Implement empty, loading, and error states if accepted into V1.
+- [x] Implement title, description, ariaLabel, value labels, legends, axes, maxValue, sorting, formatter, onSelect, and onHover options.
+- [x] Add keyboard-selectable bars/segments when `onSelect` is provided.
+- [x] Add hidden or visible data summary semantics so values are not conveyed by color alone.
+- [x] Add `demos/demo.charts.html`.
+- [x] Add regression coverage for exports, normalization, update, destroy, selection, accessibility, long-label layout, empty state, and no external dependency.
+- [x] Register the demo in shared navigation and reference metadata.
+- [x] Rebuild `dist/`.
 
 ## Release / Handoff
 

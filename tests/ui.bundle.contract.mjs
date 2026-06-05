@@ -25,6 +25,7 @@ const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { 
 const createStatCards = await loader.get("ui.stat.cards", { css: false });
 const createMapLegend = await loader.get("ui.map.legend", { css: false });
 const mapMarkers = await loader.get("ui.map.markers", { css: false });
+const charts = await loader.get("ui.charts", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
 
@@ -72,6 +73,18 @@ if (typeof mapMarkers?.getMapMarkerClass !== "function") {
   throw new Error("Bundle-backed ui.map.markers did not expose getMapMarkerClass().");
 }
 
+if (typeof charts?.createChart !== "function") {
+  throw new Error("Bundle-backed ui.charts did not expose createChart().");
+}
+
+if (typeof charts?.createBarChart !== "function") {
+  throw new Error("Bundle-backed ui.charts did not expose createBarChart().");
+}
+
+if (typeof charts?.createSparkline !== "function") {
+  throw new Error("Bundle-backed ui.charts did not expose createSparkline().");
+}
+
 if (typeof incidentTypes !== "function") {
   throw new Error("Bundle-backed incident.types did not resolve to a factory function.");
 }
@@ -90,6 +103,7 @@ if (
   !diagnostics.loadedModules.includes("ui.stat.cards") ||
   !diagnostics.loadedModules.includes("ui.map.legend") ||
   !diagnostics.loadedModules.includes("ui.map.markers") ||
+  !diagnostics.loadedModules.includes("ui.charts") ||
   !diagnostics.loadedModules.includes("incident.types")
 ) {
   throw new Error("Loader did not record bundle-backed module requests.");
