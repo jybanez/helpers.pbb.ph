@@ -259,6 +259,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.icons.js`
   - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
+  - includes operational/SITREP categories for shared report sections, hazards, population groups, routes, resources, teams, maps, alerts, and data-quality cues
 - `ui.modal.js`
   - `createModal(options)` general-purpose modal shell (content/header/footer, sizing, focus trap, backdrop/escape close)
   - `createActionModal(options)` modal wrapper with declarative header/footer actions (`headerActions[]`, `actions[]`)
@@ -2748,6 +2749,15 @@ Registry categories:
 - `time`
 - `comms`
 - `assets`
+- `sitrep`
+- `alert`
+- `hazard`
+- `population`
+- `route`
+- `resource`
+- `team`
+- `map`
+- `quality`
 
 Primary options:
 

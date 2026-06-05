@@ -44,8 +44,95 @@
     try {
       const categories = listIconCategories();
       const names = listIcons();
+      const operationalCategories = [
+        "alert",
+        "hazard",
+        "map",
+        "population",
+        "quality",
+        "resource",
+        "route",
+        "sitrep",
+        "team",
+      ];
+      const operationalNames = [
+        "sitrep.report",
+        "sitrep.summary",
+        "sitrep.situation",
+        "sitrep.gaps",
+        "sitrep.needs",
+        "sitrep.actions",
+        "sitrep.population",
+        "sitrep.damage",
+        "sitrep.source",
+        "sitrep.consolidated",
+        "alert.normal",
+        "alert.elevated",
+        "alert.critical",
+        "alert.watch",
+        "alert.escalate",
+        "hazard.flood",
+        "hazard.fire",
+        "hazard.medical",
+        "hazard.rescue",
+        "hazard.landslide",
+        "hazard.infrastructure",
+        "hazard.vehicle",
+        "hazard.public-safety",
+        "hazard.missing-person",
+        "hazard.evacuation",
+        "population.people-at-risk",
+        "population.people-helped",
+        "population.family",
+        "population.children",
+        "population.senior",
+        "population.pwd",
+        "population.pregnant",
+        "population.patient",
+        "population.displaced",
+        "population.shelter",
+        "route.clear",
+        "route.limited",
+        "route.blocked",
+        "route.caution",
+        "route.obstruction",
+        "route.bridge",
+        "route.road",
+        "resource.requested",
+        "resource.deployed",
+        "resource.shortage",
+        "resource.medical-supplies",
+        "resource.food-water",
+        "resource.rescue-equipment",
+        "resource.heavy-equipment",
+        "resource.sanitation",
+        "resource.shelter-supplies",
+        "resource.transport",
+        "team.rescue",
+        "team.medical",
+        "team.law-enforcement",
+        "team.fire",
+        "team.engineering",
+        "team.social-services",
+        "team.public-safety",
+        "team.assessment",
+        "team.command",
+        "map.boundary",
+        "map.cluster",
+        "map.hotspot",
+        "map.source-hub",
+        "map.target-hub",
+        "map.uplink",
+        "map.coverage-area",
+        "quality.verified",
+        "quality.unverified",
+        "quality.partial",
+        "quality.duplicate-risk",
+        "quality.stale",
+        "quality.redacted",
+      ];
 
-      assert(categories.length === 11, "icons registry should expose 11 categories");
+      assert(categories.length === 20, "icons registry should expose 20 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
@@ -61,6 +148,16 @@
       assert(names.includes("comms.phone"), "icons registry should include comms.phone");
       assert(names.includes("comms.notification"), "icons registry should include comms.notification");
       assert(names.includes("assets.vehicle"), "icons registry should include assets.vehicle");
+      operationalCategories.forEach((category) => {
+        assert(categories.includes(category), `icons registry should include ${category} category`);
+      });
+      operationalNames.forEach((name) => {
+        assert(names.includes(name), `icons registry should include ${name}`);
+        assert(getIconDefinition(name)?.nodes?.length > 0, `${name} should resolve to drawable nodes`);
+        const node = createIcon(name, { title: name, decorative: false });
+        assert(node.getAttribute("data-icon") === name, `${name} should render with its icon id`);
+        assert(node.getAttribute("stroke") === "currentColor", `${name} should inherit currentColor`);
+      });
 
       const closeIcon = createIcon("actions.close", { size: 18, title: "Close", decorative: false });
       host.appendChild(closeIcon);

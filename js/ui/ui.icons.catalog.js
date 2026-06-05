@@ -111,6 +111,14 @@ export const ICON_DEFINITIONS = {
     line(5, 12, 19, 12),
     polyline("13 6 19 12 13 18"),
   ]),
+  "navigation.arrow-up": icon("navigation", [
+    line(12, 19, 12, 5),
+    polyline("6 11 12 5 18 11"),
+  ]),
+  "navigation.arrow-down": icon("navigation", [
+    line(12, 5, 12, 19),
+    polyline("6 13 12 19 18 13"),
+  ]),
   "navigation.home": icon("navigation", [
     path("M3 10.5 12 4l9 6.5"),
     path("M5 9.5V20h14V9.5"),
@@ -338,12 +346,194 @@ export const ICON_DEFINITIONS = {
   ]),
 };
 
+Object.assign(ICON_DEFINITIONS, {
+  "sitrep.report": alias("sitrep", "assets.document"),
+  "sitrep.summary": alias("sitrep", "assets.clipboard"),
+  "sitrep.situation": alias("sitrep", "status.info"),
+  "sitrep.gaps": alias("sitrep", "status.warning"),
+  "sitrep.needs": alias("sitrep", "workflow.requested"),
+  "sitrep.actions": alias("sitrep", "actions.check"),
+  "sitrep.population": alias("sitrep", "people.users"),
+  "sitrep.damage": alias("sitrep", "places.home-base"),
+  "sitrep.source": alias("sitrep", "places.home-base"),
+  "sitrep.consolidated": alias("sitrep", "data.tree"),
+
+  "alert.normal": alias("alert", "status.success"),
+  "alert.elevated": alias("alert", "status.warning"),
+  "alert.critical": alias("alert", "status.error"),
+  "alert.watch": alias("alert", "time.clock"),
+  "alert.escalate": alias("alert", "navigation.arrow-up"),
+
+  "hazard.flood": icon("hazard", [
+    path("M4 15c1.8-1.4 3.2-1.4 5 0s3.2 1.4 5 0 3.2-1.4 5 0"),
+    path("M4 19c1.8-1.4 3.2-1.4 5 0s3.2 1.4 5 0 3.2-1.4 5 0"),
+    path("M7 11l5-7 5 7"),
+  ]),
+  "hazard.fire": icon("hazard", [
+    path("M12 22c4 0 7-2.8 7-6.7 0-3.1-2.3-5-4.2-7.1-.8 2.1-2.1 3.2-3.8 3.8.9-2.9-.3-5.4-2.5-7C8.2 8.5 5 10.9 5 15.3 5 19.2 8 22 12 22Z"),
+    path("M12 18c1.5 0 2.6-1 2.6-2.5 0-1.1-.7-2-1.7-2.8-.4 1-1 1.6-1.9 1.9.3-1.2-.1-2.2-.9-3-1 1.3-1.7 2.4-1.7 3.9 0 1.5 1.1 2.5 2.6 2.5Z"),
+  ]),
+  "hazard.medical": icon("hazard", [
+    rect(5, 6, 14, 13, 2),
+    path("M9 6V4h6v2"),
+    line(12, 9, 12, 16),
+    line(8.5, 12.5, 15.5, 12.5),
+  ]),
+  "hazard.rescue": icon("hazard", [
+    circle(12, 12, 8),
+    path("M12 7v10"),
+    path("M7 12h10"),
+    path("M8.5 8.5l7 7"),
+    path("M15.5 8.5l-7 7"),
+  ]),
+  "hazard.landslide": icon("hazard", [
+    path("M3 20h18"),
+    path("M5 17l5-9 4 6 2-3 3 6"),
+    circle(8, 15, 1),
+    circle(13, 18, 1),
+    circle(17, 15, 1),
+  ]),
+  "hazard.infrastructure": icon("hazard", [
+    path("M5 20V9l7-4 7 4v11"),
+    path("M9 20v-6h6v6"),
+    path("M4 12h16"),
+    path("M8 9h.1M12 8h.1M16 9h.1"),
+  ]),
+  "hazard.vehicle": alias("hazard", "assets.vehicle"),
+  "hazard.public-safety": alias("hazard", "status.warning"),
+  "hazard.missing-person": alias("hazard", "people.user"),
+  "hazard.evacuation": alias("hazard", "places.route"),
+
+  "population.people-at-risk": alias("population", "people.users"),
+  "population.people-helped": alias("population", "actions.check"),
+  "population.family": icon("population", [
+    circle(9, 8, 2.5),
+    circle(15.5, 8.5, 2),
+    circle(12, 13, 1.8),
+    path("M4.5 19a5 5 0 0 1 9 0"),
+    path("M13.5 18.5a4 4 0 0 1 6 0"),
+  ]),
+  "population.children": icon("population", [
+    circle(12, 8, 3),
+    path("M7 19a5 5 0 0 1 10 0"),
+    line(9, 13, 6, 16),
+    line(15, 13, 18, 16),
+  ]),
+  "population.senior": icon("population", [
+    circle(10, 7.5, 2.8),
+    path("M5 19a5.5 5.5 0 0 1 10 0"),
+    path("M16 12v8"),
+    path("M16 14h3"),
+  ]),
+  "population.pwd": icon("population", [
+    circle(11, 5, 1.5),
+    path("M11 8v5h4l2 5"),
+    circle(10, 17, 3),
+    path("M8 10h5"),
+  ]),
+  "population.pregnant": icon("population", [
+    circle(11, 6, 2.2),
+    path("M9 9c-1 2-1.2 6 .2 10"),
+    path("M13 9c2 2.3 2.5 7.5-.2 10"),
+    circle(13.5, 14, 2.2),
+  ]),
+  "population.patient": alias("population", "status.info"),
+  "population.displaced": alias("population", "places.route"),
+  "population.shelter": alias("population", "places.home-base"),
+
+  "route.clear": alias("route", "status.success"),
+  "route.limited": alias("route", "status.info"),
+  "route.blocked": alias("route", "status.error"),
+  "route.caution": alias("route", "status.warning"),
+  "route.obstruction": alias("route", "status.warning"),
+  "route.bridge": icon("route", [
+    path("M4 17h16"),
+    path("M6 17c1-5 3-8 6-8s5 3 6 8"),
+    line(8, 17, 8, 13),
+    line(12, 17, 12, 9),
+    line(16, 17, 16, 13),
+  ]),
+  "route.road": alias("route", "places.route"),
+
+  "resource.requested": alias("resource", "workflow.requested"),
+  "resource.deployed": alias("resource", "workflow.assigned"),
+  "resource.shortage": alias("resource", "status.warning"),
+  "resource.medical-supplies": alias("resource", "status.info"),
+  "resource.food-water": icon("resource", [
+    path("M7 4v8"),
+    path("M5 4v4a2 2 0 0 0 4 0V4"),
+    path("M7 12v8"),
+    path("M15 4c2 2 2 6 0 8v8"),
+    path("M15 4v8"),
+  ]),
+  "resource.rescue-equipment": alias("resource", "status.success"),
+  "resource.heavy-equipment": alias("resource", "assets.vehicle"),
+  "resource.sanitation": icon("resource", [
+    path("M5 8h14"),
+    path("M8 8V5h8v3"),
+    path("M7 8l1 12h8l1-12"),
+    path("M10 12h4"),
+  ]),
+  "resource.shelter-supplies": alias("resource", "places.home-base"),
+  "resource.transport": alias("resource", "assets.vehicle"),
+
+  "team.rescue": icon("team", [
+    circle(12, 12, 8),
+    path("M12 7v10"),
+    path("M7 12h10"),
+    path("M8.5 8.5l7 7"),
+    path("M15.5 8.5l-7 7"),
+  ]),
+  "team.medical": alias("team", "status.info"),
+  "team.law-enforcement": icon("team", [
+    path("M12 3l7 3v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3z"),
+    path("M9 12l2 2 4-4"),
+  ]),
+  "team.fire": alias("team", "status.warning"),
+  "team.engineering": alias("team", "actions.settings"),
+  "team.social-services": alias("team", "people.users"),
+  "team.public-safety": alias("team", "status.warning"),
+  "team.assessment": alias("team", "data.list"),
+  "team.command": alias("team", "comms.radio"),
+
+  "map.boundary": alias("map", "places.map"),
+  "map.cluster": icon("map", [
+    circle(9, 10, 3),
+    circle(15, 10, 3),
+    circle(12, 16, 3),
+  ]),
+  "map.hotspot": icon("map", [
+    circle(12, 12, 3),
+    circle(12, 12, 7),
+    circle(12, 12, 10),
+  ]),
+  "map.source-hub": alias("map", "places.home-base"),
+  "map.target-hub": alias("map", "places.pin"),
+  "map.uplink": alias("map", "navigation.arrow-up"),
+  "map.coverage-area": alias("map", "places.map"),
+
+  "quality.verified": alias("quality", "status.success"),
+  "quality.unverified": alias("quality", "status.warning"),
+  "quality.partial": alias("quality", "status.info"),
+  "quality.duplicate-risk": alias("quality", "actions.copy"),
+  "quality.stale": alias("quality", "time.history"),
+  "quality.redacted": alias("quality", "actions.hide"),
+});
+
 function icon(category, nodes) {
   return {
     category,
     viewBox: "0 0 24 24",
     nodes,
   };
+}
+
+function alias(category, sourceName) {
+  const source = ICON_DEFINITIONS[sourceName];
+  if (!source) {
+    throw new Error(`[ui.icons.catalog] Cannot alias missing icon "${sourceName}".`);
+  }
+  return icon(category, source.nodes);
 }
 
 function path(d) {

@@ -1,0 +1,97 @@
+# UI Operational Visuals Implementation Checklist
+
+This checklist tracks the Helper-side rollout for the SITREP icon expansion, operational visual primitives, and general charting support requested by Hotline Beta and Support System.
+
+## Source Proposals
+
+- [x] Review `docs/ui-icons-sitrep-expansion-proposal.md`.
+- [x] Review `docs/ui-operational-visual-primitives-proposal.md`.
+- [x] Review `docs/ui-charts-proposal.md`.
+- [x] Confirm naming conventions stay broad enough for non-SITREP PBB dashboards.
+- [x] Confirm no app-specific Hotline or Support System logic enters Helper modules.
+
+## Phase 1: SITREP / Operational Icon Expansion
+
+- [x] Audit current `ui.icons` registry for reusable existing glyphs and overlapping IDs.
+- [x] Add stable operational icon IDs for SITREP core sections.
+- [x] Add alert and severity icon IDs.
+- [x] Add incident and hazard icon IDs.
+- [x] Add population and vulnerable-group icon IDs.
+- [x] Add route and access icon IDs.
+- [x] Add resources and logistics icon IDs.
+- [x] Add team and response icon IDs.
+- [x] Add map and geography icon IDs.
+- [x] Add data quality and verification icon IDs.
+- [x] Update icon demo/catalog visibility.
+- [x] Add regression coverage for `getIconDefinition(...)`, `createIcon(...)`, category listing, and `currentColor` inheritance.
+- [x] Update README/docs with the new operational icon categories.
+- [x] Rebuild `dist/` if icon bundle output changes.
+
+## Phase 2: `ui.stat.cards`
+
+- [ ] Finalize the `createStatCards(container, items, options)` contract.
+- [ ] Implement card rendering with icon, label, value, unit, note, detail, trend, tone, and action metadata.
+- [ ] Implement `columns`, `size`, `chrome`, `selectable`, `selectedId`, `emptyText`, `formatter`, and `onSelect` options.
+- [ ] Add stable responsive grid sizing and long-label/value handling.
+- [ ] Add accessible labels and non-color-only tone communication.
+- [ ] Add update, setItems, getState, and destroy lifecycle methods.
+- [ ] Add `demos/demo.stat.cards.html`.
+- [ ] Add regression coverage for empty state, icons, tones, selection, update, destroy, and accessibility.
+- [ ] Register the demo in shared navigation and reference metadata.
+- [ ] Rebuild `dist/`.
+
+## Phase 3: `ui.map.legend`
+
+- [ ] Finalize the `createMapLegend(container, options)` contract.
+- [ ] Implement sections and legend items with title, description, icon, tone, color, swatch, marker, count, and disabled state.
+- [ ] Support compact and full display modes.
+- [ ] Support collapsible/defaultCollapsed behavior.
+- [ ] Render swatches, line styles, marker samples, icons, and counts without depending on MapLibre.
+- [ ] Add accessible text for every visual sample.
+- [ ] Add update, setSections, getState, and destroy lifecycle methods.
+- [ ] Add `demos/demo.map.legend.html`.
+- [ ] Add regression coverage for sections, items, compact mode, collapsed mode, counts, empty state, and no MapLibre global dependency.
+- [ ] Register the demo in shared navigation and reference metadata.
+- [ ] Rebuild `dist/`.
+
+## Phase 4: `ui.map.markers`
+
+- [ ] Finalize `createMapMarker(...)`, `createMapClusterMarker(...)`, and `getMapMarkerClass(...)` contracts.
+- [ ] Implement marker types: incident, source-hub, target-hub, hotspot, route, and boundary-centroid.
+- [ ] Implement marker shapes: pin, dot, hub, cluster, hotspot, and route.
+- [ ] Support icon, count badge, selected, active, muted, size, pulse, label, tone, and custom color metadata.
+- [ ] Return plain `HTMLElement` instances suitable for MapLibre markers and other app-owned map engines.
+- [ ] Add accessible labels for all marker variants.
+- [ ] Add `demos/demo.map.markers.html`.
+- [ ] Add regression coverage for marker types, shapes, states, count badges, accessibility, and no MapLibre global dependency.
+- [ ] Register the demo in shared navigation and reference metadata.
+- [ ] Rebuild `dist/`.
+
+## Phase 5: `ui.charts`
+
+- [ ] Finalize `createChart(container, options)` plus convenience factory exports.
+- [ ] Implement simple-series normalization.
+- [ ] Implement stacked-series normalization.
+- [ ] Implement sparkline-series normalization.
+- [ ] Implement vertical bar charts.
+- [ ] Implement horizontal bar charts with long-label handling.
+- [ ] Implement stacked bar charts.
+- [ ] Implement donut charts.
+- [ ] Implement sparklines.
+- [ ] Implement empty, loading, and error states if accepted into V1.
+- [ ] Implement title, description, ariaLabel, value labels, legends, axes, maxValue, sorting, formatter, onSelect, and onHover options.
+- [ ] Add keyboard-selectable bars/segments when `onSelect` is provided.
+- [ ] Add hidden or visible data summary semantics so values are not conveyed by color alone.
+- [ ] Add `demos/demo.charts.html`.
+- [ ] Add regression coverage for exports, normalization, update, destroy, selection, accessibility, long-label layout, empty state, and no external dependency.
+- [ ] Register the demo in shared navigation and reference metadata.
+- [ ] Rebuild `dist/`.
+
+## Release / Handoff
+
+- [x] Run focused regressions for each new component family.
+- [x] Run bundle contract and registry contract checks.
+- [x] Review generated `dist/` changes.
+- [x] Update `CHANGELOG.md`.
+- [x] Notify Hotline Beta and Support System in the shared chat log after official Helper changes land.
+- [ ] Tell downstream apps to refresh from the official Helpers source instead of copying individual files.
