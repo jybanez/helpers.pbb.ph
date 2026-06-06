@@ -298,6 +298,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createElapsedTime",
   },
+  "ui.clock": {
+    js: "./ui.clock.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.clock.css"],
+    deps: [],
+    export: "createClock",
+  },
   "ui.signal.strength": {
     js: "./ui.signal.strength.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.signal.strength.css"],
@@ -698,6 +704,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.virtual.list",
     "ui.scheduler",
     "ui.elapsed.time",
+    "ui.clock",
     "ui.signal.strength",
     "ui.stat.cards",
     "ui.map.controls",

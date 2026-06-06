@@ -22,6 +22,7 @@ const createFormModal = await loader.get("ui.form.modal", { css: false });
 const createPathPicker = await loader.get("ui.path.picker", { css: false });
 const createDeviceSelector = await loader.get("ui.device.selector", { css: false });
 const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { css: false });
+const createClock = await loader.get("ui.clock", { css: false });
 const createStatCards = await loader.get("ui.stat.cards", { css: false });
 const createMapLegend = await loader.get("ui.map.legend", { css: false });
 const mapMarkers = await loader.get("ui.map.markers", { css: false });
@@ -51,6 +52,10 @@ if (typeof createDeviceSelector !== "function") {
 
 if (typeof createMediaDeviceAdapter !== "function") {
   throw new Error("Bundle-backed ui.device.selector.media did not resolve to a factory function.");
+}
+
+if (typeof createClock !== "function") {
+  throw new Error("Bundle-backed ui.clock did not resolve to a factory function.");
 }
 
 if (typeof createStatCards !== "function") {
@@ -100,6 +105,7 @@ if (
   !diagnostics.loadedModules.includes("ui.path.picker") ||
   !diagnostics.loadedModules.includes("ui.device.selector") ||
   !diagnostics.loadedModules.includes("ui.device.selector.media") ||
+  !diagnostics.loadedModules.includes("ui.clock") ||
   !diagnostics.loadedModules.includes("ui.stat.cards") ||
   !diagnostics.loadedModules.includes("ui.map.legend") ||
   !diagnostics.loadedModules.includes("ui.map.markers") ||

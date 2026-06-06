@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clock Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .toolbar,
+    .clock-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .operator-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      width: max-content;
+      max-width: 100%;
+      border: 1px solid #263146;
+      background: #08101c;
+      padding: 12px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.clock", "ui.elapsed.time"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Clock",
+      overview: "Current-time display with label, HH:MM:SS AM/PM time, date row, and shared one-second ticker.",
+      useWhen: [
+        "Use <code>createClock(...)</code> for operator headers, status strips, dashboards, and workspace chrome that need a live wall clock.",
+        "Use it when many current-time or elapsed-time instances should share one timer source."
+      ],
+      avoidWhen: [
+        "Do not use it for elapsed durations; use <code>createElapsedTime(...)</code> for incident age or assignment status age.",
+        "Do not use it as a scheduler or timeout mechanism; it is a display component."
+      ],
+      description: "Clock renders a compact current-time block and subscribes to the same shared one-second ticker used by Elapsed Time. Apps can customize label, timezone, date/time formatting, chrome, size, and tone.",
+      defaultSampleCode: `const clock = createClock(container, {\n  label: "Alert: Normal",\n  variant: "warn",\n  timezone: "Asia/Manila",\n});`,
+      constructor: [
+        { factory: "<code>createClock(container, options)</code>", arguments: "<code>container</code>, clock options", returns: "Clock instance with update, pause, resume, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>label</code>", default: "<code>\"\"</code>", description: "Optional label shown above the time." },
+        { option: "<code>showLabel</code>", default: "<code>true</code>", description: "Controls whether the label row renders." },
+        { option: "<code>showDate</code>", default: "<code>true</code>", description: "Controls whether the date row renders." },
+        { option: "<code>showSeconds</code>", default: "<code>true</code>", description: "Shows seconds in the time row." },
+        { option: "<code>hour12</code>", default: "<code>true</code>", description: "Uses AM/PM time by default." },
+        { option: "<code>timezone</code>", default: "browser timezone", description: "Optional IANA timezone such as <code>Asia/Manila</code>." },
+        { option: "<code>dateFormat</code>", default: "<code>\"short\"</code>", description: "<code>short</code>, <code>medium</code>, <code>long</code>, or <code>none</code>." },
+        { option: "<code>timeFormatter</code>, <code>dateFormatter</code>", default: "<code>null</code>", description: "Optional formatter callbacks for app-specific text." },
+        { option: "<code>running</code>", default: "<code>true</code>", description: "Subscribes the component to the shared ticker." },
+        { option: "<code>variant</code>", default: "<code>\"neutral\"</code>", description: "<code>neutral</code>, <code>info</code>, <code>success</code>, <code>warn</code>, <code>danger</code>, or <code>critical</code>." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "<code>sm</code>, <code>md</code>, or <code>lg</code>." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set <code>false</code> when the host shell owns background/border styling." }
+      ],
+      propertiesText: "The root exposes <code>data-running</code>, <code>data-variant</code>, <code>data-size</code>, and <code>data-timestamp</code>. Use <code>getState()</code> for supported runtime reads.",
+      eventsText: "No events are emitted. Clock updates are display-only and use the shared ticker internally.",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial clock options", returns: "<code>void</code>" },
+        { method: "<code>pause()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>resume()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>getState(nowMs?)</code>", arguments: "optional current timestamp", returns: "State snapshot with timestamp, date, timeText, dateText, and running" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">Clock Demo</h1>
+      <p class="muted">Reusable wall-clock display for operator headers and dense dashboards. Clock and Elapsed Time share one ticker.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Operator Header Clock</h2>
+      <div class="operator-strip">
+        <div id="hotlineClock"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Variants</h2>
+      <div class="clock-row">
+        <div id="neutralClock"></div>
+        <div id="infoClock"></div>
+        <div id="successClock"></div>
+        <div id="dangerClock"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Shared Ticker With Elapsed Time</h2>
+      <div class="clock-row">
+        <div id="sharedClock"></div>
+        <div id="elapsedHost"></div>
+      </div>
+      <p class="muted">Both instances subscribe to one module-level one-second ticker.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const clock = createClock(container, {
+  label: "Alert: Normal",
+  variant: "warn",
+  timezone: "Asia/Manila",
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createClock = await uiLoader.get("ui.clock");
+    const createElapsedTime = await uiLoader.get("ui.elapsed.time");
+
+    createClock(document.getElementById("hotlineClock"), {
+      label: "Alert: Normal",
+      variant: "warn",
+      timezone: "Asia/Manila",
+    });
+    createClock(document.getElementById("neutralClock"), { label: "Local", variant: "neutral" });
+    createClock(document.getElementById("infoClock"), { label: "Dispatch", variant: "info", timezone: "Asia/Manila" });
+    createClock(document.getElementById("successClock"), { label: "Normal", variant: "success", size: "sm" });
+    createClock(document.getElementById("dangerClock"), { label: "Critical", variant: "critical", size: "lg" });
+    createClock(document.getElementById("sharedClock"), { label: "Wall Clock", variant: "info" });
+    createElapsedTime(document.getElementById("elapsedHost"), {
+      startTime: Date.now() - 3675000,
+      label: "Incident Active",
+      showLabel: true,
+      variant: "warn",
+    });
+  </script>
+</body>
+</html>

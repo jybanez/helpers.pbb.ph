@@ -38,6 +38,7 @@ css/
     ui.toggle.css
     ui.datepicker.css
     ui.elapsed.time.css
+    ui.clock.css
     ui.signal.strength.css
     ui.stat.cards.css
     ui.device.selector.css
@@ -103,6 +104,7 @@ js/
     ui.toggle.group.js
     ui.datepicker.js
     ui.elapsed.time.js
+    ui.clock.js
     ui.signal.strength.js
     ui.stat.cards.js
     ui.device.selector.js
@@ -319,6 +321,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
 - `ui.elapsed.time.js`
   - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
+- `ui.clock.js`
+  - `createClock(container, options)` compact wall-clock display with label, HH:MM:SS AM/PM time, date row, chrome-less mode, and the shared one-second ticker used by elapsed-time instances
 - `ui.signal.strength.js`
   - `createSignalStrength(container, options)` transport-agnostic 0-4 bar signal indicator with stable compact text, tone variants, bars-only mode, and update/destroy lifecycle
 - `ui.stat.cards.js`
@@ -435,6 +439,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.toggle.css` toggle button + toggle group styles
 - `ui.datepicker.css` datepicker styles
 - `ui.elapsed.time.css` elapsed-duration readout styles
+- `ui.clock.css` wall-clock display styles
 - `ui.signal.strength.css` signal-strength status indicator styles
 - `ui.device.selector.css` adapter-driven device selector styles
 - `ui.path.picker.css` local file/folder path picker styles
@@ -524,7 +529,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -604,6 +609,7 @@ node tests/form.modal.presets.regression.mjs
 | `ui.empty.state` | `createEmptyState` | Yes | Removes dashed empty-state frame so the host layout owns the presentation shell. |
 | `ui.scheduler` | `createScheduler` | Yes | Removes outer scheduler shell; month/week layout and interactions remain intact. |
 | `ui.elapsed.time` | `createElapsedTime` | Yes | Removes the elapsed-time pill border/background/padding so host cards can own the visual shell. |
+| `ui.clock` | `createClock` | Yes | Removes the clock border/background/padding so host chrome can own the visual shell. |
 | `ui.timeline` | `createTimeline` | No | No distinct outer shell today; no-op `chrome` flags are intentionally avoided. |
 | `ui.stepper` | `createStepper` | No | Styling is item-level, not wrapper-shell-level. |
 | `ui.skeleton` | `createSkeleton` | No | Visuals are internal placeholder blocks; there is no meaningful outer shell to disable. |
@@ -1600,6 +1606,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - active incident duration readouts
   - team assignment status-duration readouts
   - dense dashboard sample using one shared ticker
+- `demos/demo.clock.html` -> dedicated clock playground
+  - operator header wall-clock display
+  - label, HH:MM:SS AM/PM time, and date row
+  - shared ticker with elapsed-time instances
 - `demos/demo.signal.strength.html` -> dedicated signal-strength playground
   - stable navbar/header placement
   - all signal levels and tones
@@ -4943,6 +4953,67 @@ Methods:
 Related demos:
 
 - `demos/demo.elapsed.time.html`
+
+### `createClock(container, options)` (`js/ui/ui.clock.js`)
+
+Purpose:
+
+- Compact current-time display for operator headers, status strips, dashboards, and workspace chrome.
+- Renders an optional label above the time and an optional date row below the time.
+- Shares the same module-level one-second ticker used by `createElapsedTime(...)`, so mixed dashboards do not create one interval per component.
+
+Basic usage:
+
+```js
+import { createClock } from "./js/ui/ui.clock.js";
+
+const clock = createClock(container, {
+  label: "Alert: Normal",
+  variant: "warn",
+  timezone: "Asia/Manila",
+});
+```
+
+Default display:
+
+- Time row uses `HH:MM:SS AM/PM` through `Intl.DateTimeFormat`.
+- Date row uses a compact uppercase weekday/month/day/year format.
+- Numerals are tabular so header layouts stay stable as seconds change.
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `label` | `string` | `""` | no | Optional label above the time. |
+| `showLabel` | `boolean` | `true` | no | Controls label row visibility. |
+| `showDate` | `boolean` | `true` | no | Controls date row visibility. |
+| `showSeconds` | `boolean` | `true` | no | Controls seconds in the time row. |
+| `hour12` | `boolean` | `true` | no | Uses AM/PM time by default. |
+| `timezone` | `string` | `""` | no | Optional IANA timezone such as `Asia/Manila`; empty uses browser timezone. |
+| `locale` | `string` | `"en-US"` | no | Locale used by the default time/date formatter. |
+| `dateFormat` | `"short" \| "medium" \| "long" \| "none"` | `"short"` | no | Date row format. |
+| `timeFormatter` | `function` | `null` | no | Optional custom time formatter `(date, options) => string`. |
+| `dateFormatter` | `function` | `null` | no | Optional custom date formatter `(date, options) => string`. |
+| `running` | `boolean` | `true` | no | Subscribes the component to the shared ticker. |
+| `variant` | `"neutral" \| "info" \| "success" \| "warn" \| "danger" \| "critical"` | `"neutral"` | no | Visual tone. |
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` | no | Visual size. |
+| `ariaLabel` | `string` | `"Current time"` | no | Accessible label prefix. |
+| `ariaLive` | `"off" \| "polite" \| "assertive"` | `"off"` | no | Defaults off to avoid noisy screen-reader updates every second. |
+| `chrome` | `boolean` | `true` | no | Removes border/background/padding when `false`. |
+
+Methods:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `update(options)` | partial options | `void` | Updates display options and rerenders. |
+| `pause()` | none | `void` | Unsubscribes from the shared ticker and freezes the current display. |
+| `resume()` | none | `void` | Subscribes again to the shared ticker. |
+| `getState(nowMs?)` | optional timestamp | `object` | Returns `{ timestamp, date, timeText, dateText, running }`. |
+| `destroy()` | none | `void` | Removes DOM and unsubscribes from the shared ticker. |
+
+Related demos:
+
+- `demos/demo.clock.html`
 
 ### `createSignalStrength(container, options)` (`js/ui/ui.signal.strength.js`)
 

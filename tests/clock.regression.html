@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clock Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.clock.css">
+  <link rel="stylesheet" href="../css/ui/ui.elapsed.time.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="clock"></div>
+  <div id="elapsed"></div>
+  <div id="chromeLess"></div>
+  <pre id="results">Running...</pre>
+
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    const nativeSetInterval = window.setInterval.bind(window);
+    const nativeClearInterval = window.clearInterval.bind(window);
+    let intervalStarts = 0;
+    let intervalClears = 0;
+    window.setInterval = function patchedSetInterval(...args) {
+      intervalStarts += 1;
+      return nativeSetInterval(...args);
+    };
+    window.clearInterval = function patchedClearInterval(...args) {
+      intervalClears += 1;
+      return nativeClearInterval(...args);
+    };
+
+    const { createClock } = await import("../js/ui/ui.clock.js");
+    const { createElapsedTime } = await import("../js/ui/ui.elapsed.time.js");
+    const { getTimeTickerState } = await import("../js/ui/ui.time.ticker.js");
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    const fixed = Date.UTC(2026, 5, 6, 5, 34, 28);
+    const clock = createClock(document.getElementById("clock"), {
+      label: "Alert: Normal",
+      variant: "warn",
+      timezone: "UTC",
+      timeFormatter() {
+        return "01:34:28 PM";
+      },
+      dateFormatter() {
+        return "SAT, JUN 06, 2026";
+      },
+    });
+    const elapsed = createElapsedTime(document.getElementById("elapsed"), {
+      startTime: fixed - 65000,
+    });
+    const chromeLess = createClock(document.getElementById("chromeLess"), {
+      label: "Local",
+      chrome: false,
+      showSeconds: false,
+      showDate: false,
+      running: false,
+      timeFormatter() {
+        return "01:34 PM";
+      },
+    });
+
+    const clockNode = document.querySelector("#clock .ui-clock");
+    assert(Boolean(clockNode), "clock root should render");
+    assert(clockNode.getAttribute("role") === "timer", "clock should expose timer role");
+    assert(clockNode.classList.contains("ui-clock--warn"), "warning variant should normalize to warn class");
+    assert(clockNode.querySelector(".ui-clock-label")?.textContent === "Alert: Normal", "label should render");
+    assert(clockNode.querySelector(".ui-clock-time")?.textContent === "01:34:28 PM", "time should render from formatter");
+    assert(clockNode.querySelector(".ui-clock-date")?.textContent === "SAT, JUN 06, 2026", "date should render from formatter");
+    assert(clock.getState(fixed).timeText === "01:34:28 PM", "getState should expose formatted time");
+    assert(clock.getState(fixed).dateText === "SAT, JUN 06, 2026", "getState should expose formatted date");
+    assert(clockNode.getAttribute("aria-label").includes("Alert: Normal"), "aria label should include configured label");
+
+    const chromeLessNode = document.querySelector("#chromeLess .ui-clock");
+    assert(chromeLessNode.classList.contains("is-chrome-less"), "chrome:false should render chrome-less class");
+    assert(!chromeLessNode.querySelector(".ui-clock-date"), "showDate:false should hide date row");
+    assert(chromeLessNode.dataset.running === "false", "running false should update dataset");
+
+    assert(intervalStarts === 1, `expected one shared ticker for clock + elapsed, got ${intervalStarts}`);
+    assert(getTimeTickerState().activeCount === 2, `expected two active ticker subscribers, got ${getTimeTickerState().activeCount}`);
+
+    clock.pause();
+    assert(clock.getState().running === false, "pause should stop clock");
+    assert(getTimeTickerState().activeCount === 1, "paused clock should unsubscribe from ticker");
+    clock.resume();
+    assert(clock.getState().running === true, "resume should restart clock");
+    assert(intervalStarts === 1, "resume should reuse existing elapsed ticker interval");
+
+    clock.update({
+      label: "Alert: Elevated",
+      variant: "critical",
+      size: "lg",
+      timeFormatter() {
+        return "02:00:00 PM";
+      },
+    });
+    const updated = document.querySelector("#clock .ui-clock");
+    assert(updated.classList.contains("ui-clock--lg"), "update should apply size");
+    assert(updated.classList.contains("ui-clock--critical"), "update should apply variant");
+    assert(updated.querySelector(".ui-clock-label")?.textContent === "Alert: Elevated", "update should apply label");
+    assert(updated.querySelector(".ui-clock-time")?.textContent === "02:00:00 PM", "update should apply formatter");
+
+    clock.destroy();
+    elapsed.destroy();
+    chromeLess.destroy();
+    assert(intervalClears === 1, `expected shared ticker cleanup after destroy, got ${intervalClears}`);
+    assert(document.getElementById("clock").children.length === 0, "destroy should clear clock host");
+
+    window.setInterval = nativeSetInterval;
+    window.clearInterval = nativeClearInterval;
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
+import { setTimeTickSubscription } from "./ui.time.ticker.js";
 
 const DEFAULT_OPTIONS = {
   startTime: null,
@@ -21,9 +22,6 @@ const DEFAULT_OPTIONS = {
   className: "",
   chrome: true,
 };
-
-const ACTIVE_INSTANCES = new Set();
-let tickerId = null;
 
 export function createElapsedTime(container, options = {}) {
   let currentOptions = normalizeOptions(options);
@@ -341,19 +339,5 @@ function buildClassName(options) {
 }
 
 function syncTicker(render, active) {
-  if (active) {
-    ACTIVE_INSTANCES.add(render);
-  } else {
-    ACTIVE_INSTANCES.delete(render);
-  }
-
-  if (ACTIVE_INSTANCES.size > 0 && !tickerId) {
-    tickerId = window.setInterval(() => {
-      const nowMs = Date.now();
-      ACTIVE_INSTANCES.forEach((render) => render(nowMs));
-    }, 1000);
-  } else if (ACTIVE_INSTANCES.size === 0 && tickerId) {
-    window.clearInterval(tickerId);
-    tickerId = null;
-  }
+  setTimeTickSubscription(render, active);
 }
