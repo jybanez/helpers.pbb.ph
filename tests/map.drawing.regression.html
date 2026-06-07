@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Map Drawing Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.map.drawing.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host, #external { margin-bottom: 16px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <div id="external"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createMapDrawingTools } from "../js/ui/ui.map.drawing.js";
+
+    const failures = [];
+    const events = [];
+    const results = document.getElementById("results");
+
+    try {
+      assert(!("maplibregl" in window), "test should not provide MapLibre globals");
+      assert(typeof createMapDrawingTools === "function", "createMapDrawingTools should export");
+
+      const adapter = createMockAdapter();
+      const tools = createMapDrawingTools(document.getElementById("host"), {
+        modes: ["select", "point", "line", "polygon", "rectangle", "circle"],
+        actions: ["finish", "cancel", "undo", "redo", "delete", "clear"],
+        activeMode: "select",
+        adapter,
+        measurement: { distanceMeters: 1260 },
+        onModeChange(mode) { events.push({ type: "mode", mode }); },
+        onAction(action) { events.push({ type: "action", action }); },
+        onCreate(feature) { events.push({ type: "create", id: feature.id }); },
+        onUpdate(feature) { events.push({ type: "update", id: feature.id }); },
+        onDelete(featureId) { events.push({ type: "delete", id: featureId }); },
+        onSelect(payload) { events.push({ type: "select", id: payload.id }); },
+      });
+
+      let root = document.querySelector("#host .ui-map-drawing");
+      assert(Boolean(root), "root should render");
+      assert(root.getAttribute("role") === "toolbar", "root should expose toolbar role");
+      assert(root.dataset.activeMode === "select", "active mode dataset should render");
+      assert(root.classList.contains("ui-map-drawing--vertical"), "default orientation should be vertical");
+      assert(root.querySelectorAll(".ui-map-drawing-mode").length === 6, "mode buttons should render");
+      assert(root.querySelectorAll(".ui-map-drawing-action").length === 6, "action buttons should render");
+      assert(root.querySelector("[data-mode='select']")?.getAttribute("aria-pressed") === "true", "active mode should set aria-pressed");
+      assert(root.querySelector(".ui-map-drawing-measurement")?.textContent === "Distance 1.26 km", "measurement should format distance");
+      assert(root.querySelector("[data-action='redo']")?.disabled === true, "adapter capabilities should disable unavailable action");
+
+      root.querySelector("[data-mode='polygon']").click();
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(adapter.modeCalls.includes("polygon"), "mode button should call adapter.setMode");
+      assert(root.dataset.activeMode === "polygon", "mode click should update active state");
+      assert(events.some((event) => event.type === "mode" && event.mode === "polygon"), "mode callback should fire");
+
+      root.querySelector("[data-action='undo']").click();
+      assert(adapter.actionCalls.includes("undo"), "undo action should call adapter");
+      assert(events.some((event) => event.type === "action" && event.action === "undo"), "action callback should fire");
+
+      adapter.emit("create", feature("draw-1", "Point"));
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(root.dataset.featureCount === "1", "create event should update feature count");
+      assert(events.some((event) => event.type === "create" && event.id === "draw-1"), "create event should call callback");
+
+      adapter.emit("update", feature("draw-1", "LineString"));
+      assert(events.some((event) => event.type === "update" && event.id === "draw-1"), "update event should call callback");
+
+      adapter.emit("select", { id: "draw-1" });
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(root.dataset.selectedFeatureId === "draw-1", "select event should update selected feature id");
+      assert(events.some((event) => event.type === "select" && event.id === "draw-1"), "select callback should fire");
+
+      adapter.emit("measure", { areaSquareMeters: 34000 });
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(root.querySelector(".ui-map-drawing-measurement")?.textContent === "Area 34,000 sq m", "measure event should update measurement");
+
+      adapter.emit("delete", { id: "draw-1" });
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(root.dataset.featureCount === "0", "delete event should remove feature");
+      assert(events.some((event) => event.type === "delete" && event.id === "draw-1"), "delete callback should fire");
+
+      tools.setFeatures([feature("draw-2", "Polygon")]);
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(adapter.features.length === 1 && adapter.features[0].id === "draw-2", "setFeatures should pass features to adapter");
+      assert(root.dataset.featureCount === "1", "setFeatures should update feature count");
+
+      tools.update({ orientation: "horizontal", placement: "external", chrome: false, labels: "always", busy: true });
+      root = document.querySelector("#host .ui-map-drawing");
+      assert(root.classList.contains("ui-map-drawing--horizontal"), "update should apply horizontal orientation");
+      assert(root.classList.contains("ui-map-drawing--external"), "update should apply placement");
+      assert(root.classList.contains("is-chrome-less"), "chrome:false should render chrome-less class");
+      assert(root.dataset.busy === "true", "busy should update dataset");
+      assert(root.querySelector("[data-mode='point']")?.disabled === true, "busy should disable buttons");
+
+      const state = tools.getState();
+      assert(state.activeMode === "polygon", "getState should expose active mode");
+      assert(state.features.length === 1 && state.features[0].id === "draw-2", "getState should expose features");
+      assert(state.measurement.areaSquareMeters === 34000, "getState should expose measurement");
+
+      const external = createMapDrawingTools(document.getElementById("external"), {
+        modes: ["select"],
+        actions: [],
+        orientation: "horizontal",
+        placement: "external",
+        chrome: false,
+        labels: "always",
+      });
+      assert(document.querySelector("#external .ui-map-drawing").classList.contains("is-chrome-less"), "external chrome-less instance should render");
+      external.destroy();
+
+      tools.destroy();
+      assert(document.getElementById("host").children.length === 0, "destroy should clear host");
+      const before = events.length;
+      adapter.emit("create", feature("after-destroy", "Point"));
+      assert(events.length === before, "destroy should unsubscribe adapter events");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function createMockAdapter() {
+      const listeners = new Map();
+      return {
+        modeCalls: [],
+        actionCalls: [],
+        features: [],
+        setMode(mode) {
+          this.modeCalls.push(mode);
+        },
+        setFeatures(features) {
+          this.features = features;
+        },
+        getCapabilities() {
+          return {
+            modes: ["select", "point", "line", "polygon", "rectangle", "circle"],
+            actions: { finish: true, cancel: true, undo: true, redo: false, delete: true, clear: true },
+          };
+        },
+        finish() { this.actionCalls.push("finish"); },
+        cancel() { this.actionCalls.push("cancel"); },
+        undo() { this.actionCalls.push("undo"); },
+        redo() { this.actionCalls.push("redo"); },
+        deleteSelected() { this.actionCalls.push("delete"); },
+        clear() { this.actionCalls.push("clear"); },
+        on(eventName, callback) {
+          const list = listeners.get(eventName) || [];
+          list.push(callback);
+          listeners.set(eventName, list);
+          return () => {
+            listeners.set(eventName, (listeners.get(eventName) || []).filter((item) => item !== callback));
+          };
+        },
+        emit(eventName, payload) {
+          (listeners.get(eventName) || []).forEach((callback) => callback(payload));
+        },
+      };
+    }
+
+    function feature(id, type) {
+      return {
+        type: "Feature",
+        id,
+        geometry: { type, coordinates: [] },
+        properties: { label: id },
+      };
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Map drawing regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

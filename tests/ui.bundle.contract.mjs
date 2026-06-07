@@ -26,6 +26,7 @@ const createClock = await loader.get("ui.clock", { css: false });
 const createStatCards = await loader.get("ui.stat.cards", { css: false });
 const createMapLegend = await loader.get("ui.map.legend", { css: false });
 const mapMarkers = await loader.get("ui.map.markers", { css: false });
+const createMapDrawingTools = await loader.get("ui.map.drawing", { css: false });
 const charts = await loader.get("ui.charts", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
@@ -78,6 +79,10 @@ if (typeof mapMarkers?.getMapMarkerClass !== "function") {
   throw new Error("Bundle-backed ui.map.markers did not expose getMapMarkerClass().");
 }
 
+if (typeof createMapDrawingTools !== "function") {
+  throw new Error("Bundle-backed ui.map.drawing did not resolve to a factory function.");
+}
+
 if (typeof charts?.createChart !== "function") {
   throw new Error("Bundle-backed ui.charts did not expose createChart().");
 }
@@ -109,6 +114,7 @@ if (
   !diagnostics.loadedModules.includes("ui.stat.cards") ||
   !diagnostics.loadedModules.includes("ui.map.legend") ||
   !diagnostics.loadedModules.includes("ui.map.markers") ||
+  !diagnostics.loadedModules.includes("ui.map.drawing") ||
   !diagnostics.loadedModules.includes("ui.charts") ||
   !diagnostics.loadedModules.includes("incident.types")
 ) {

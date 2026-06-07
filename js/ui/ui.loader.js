@@ -334,6 +334,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: ["ui.icons"],
     export: null,
   },
+  "ui.map.drawing": {
+    js: "./ui.map.drawing.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.map.drawing.css"],
+    deps: [],
+    export: "createMapDrawingTools",
+  },
   "ui.charts": {
     js: "./ui.charts.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.charts.css"],
@@ -710,6 +716,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.map.controls",
     "ui.map.legend",
     "ui.map.markers",
+    "ui.map.drawing",
     "ui.charts",
     "ui.timeline",
     "ui.activity.chart",

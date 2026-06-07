@@ -72,6 +72,7 @@ css/
     ui.map.controls.css
     ui.map.legend.css
     ui.map.markers.css
+    ui.map.drawing.css
     ui.charts.css
     ui.nav.css
   incident/
@@ -137,6 +138,7 @@ js/
     ui.map.controls.js
     ui.map.legend.js
     ui.map.markers.js
+    ui.map.drawing.js
     ui.charts.js
     ui.menu.js
     ui.dropdown.js
@@ -333,6 +335,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createMapLegend(container, options)` MapLibre-agnostic legend for alert levels, markers, line/route styles, counts, and data-quality keys
 - `ui.map.markers.js`
   - `createMapMarker(options)`, `createMapClusterMarker(options)`, and `getMapMarkerClass(options)` MapLibre-compatible DOM marker factories for incidents, hubs, hotspots, routes, and clusters
+- `ui.map.drawing.js`
+  - `createMapDrawingTools(container, options)` adapter-based drawing toolbar for map modes, edit actions, measurements, and GeoJSON events
 - `ui.charts.js`
   - `createChart(container, options)` and chart-specific wrappers for dependency-free bar, horizontal-bar, stacked-bar, donut, and sparkline charts
 - `ui.timeline.js`
@@ -529,7 +533,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.map.controls`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -1630,6 +1634,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - incidents, hubs, hotspots, routes, boundary centroids, and clusters
   - selected, active, muted, pulsing, count, and custom-color states
   - returns plain DOM elements for app-owned map engines
+- `demos/demo.map.drawing.html` -> dedicated map-drawing playground
+  - drawing modes, edit actions, measurements, and mock adapter events
+  - vertical map overlay and horizontal external toolbar layouts
+  - no MapLibre global dependency
 - `demos/demo.charts.html` -> dedicated charts playground
   - bar, horizontal-bar, stacked-bar, donut, and sparkline charts
   - empty, selectable, long-label, and state examples
@@ -5437,6 +5445,124 @@ Non-goals:
 Related demos:
 
 - `demos/demo.map.markers.html`
+
+### `createMapDrawingTools(container, options)` (`js/ui/ui.map.drawing.js`)
+
+Purpose:
+
+- Adapter-based drawing toolbar for operational map surfaces.
+- Suitable for point, line, polygon, rectangle, and circle drawing workflows where the app owns the map engine and geometry persistence.
+- Host apps own MapLibre/Leaflet/map rendering, spatial validation, permissions, storage, and business meaning.
+
+Basic usage:
+
+```js
+import { createMapDrawingTools } from "./js/ui/ui.map.drawing.js";
+
+const drawing = createMapDrawingTools(container, {
+  modes: ["select", "point", "line", "polygon"],
+  activeMode: "select",
+  adapter: mapDrawingAdapter,
+  onCreate(feature) {
+    saveFeature(feature);
+  },
+});
+```
+
+Modes:
+
+- `select`: select/edit existing geometry
+- `pan`: optional map navigation mode
+- `point`: place a point
+- `line`: draw a LineString
+- `polygon`: draw a Polygon
+- `rectangle`: draw a rectangular Polygon
+- `circle`: draw a radius/circle approximation
+
+Actions:
+
+- `finish`: complete current drawing
+- `cancel`: abandon current drawing
+- `undo`: undo last drawing action
+- `redo`: redo last undone action
+- `delete`: delete selected feature or vertex
+- `clear`: clear drawing set
+
+Options:
+
+- `modes`: visible mode list
+- `actions`: visible action list
+- `activeMode`: current active mode
+- `orientation`: `vertical` or `horizontal`
+- `placement`: `map` or `external`
+- `size`: `sm`, `md`, or `lg`
+- `variant`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `chrome`: set `false` when the host shell owns the frame
+- `labels`: `auto`, `always`, or `none`
+- `disabled`: disables every control
+- `busy`: disables every control and marks busy state
+- `features`: GeoJSON feature array
+- `selectedFeatureId`: selected feature id
+- `measurement`: optional `{ distanceMeters, areaSquareMeters, radiusMeters, label }`
+- `adapter`: optional drawing adapter
+- `className`: extra root class
+- `ariaLabel`: toolbar accessible label
+- `emptyText`: empty-state text when no modes/actions render
+- `onModeChange`, `onAction`, `onCreate`, `onUpdate`, `onDelete`, `onSelect`: callbacks
+
+Adapter contract:
+
+```js
+const adapter = {
+  setMode(mode) {},
+  getMode() {},
+  getFeatures() {},
+  setFeatures(features) {},
+  clear() {},
+  deleteSelected() {},
+  undo() {},
+  redo() {},
+  finish() {},
+  cancel() {},
+  getCapabilities() {
+    return {
+      modes: ["select", "point", "line", "polygon"],
+      actions: { undo: true, redo: false, delete: true, clear: true },
+    };
+  },
+  on(eventName, callback) {
+    return () => {};
+  },
+};
+```
+
+Adapter events:
+
+- `create`: new GeoJSON feature
+- `update`: updated GeoJSON feature
+- `delete`: deleted feature id or feature
+- `select`: selected feature id or feature
+- `measure`: measurement summary
+- `modechange`: current drawing mode
+
+Methods:
+
+- `setMode(mode)`
+- `setFeatures(features)`
+- `update(options)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not implement a full GIS editor.
+- Does not create MapLibre sources, layers, or draw plugin instances.
+- Does not persist geometries or enforce permissions.
+- Does not require MapLibre globals.
+
+Related demos:
+
+- `demos/demo.map.drawing.html`
 
 ### `createChart(container, options)` (`js/ui/ui.charts.js`)
 

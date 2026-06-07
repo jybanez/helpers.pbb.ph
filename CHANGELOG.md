@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.map.drawing` for adapter-based operational map drawing tools with drawing modes, edit actions, measurement display, GeoJSON feature state, mock-adapter demo coverage, docs, and regression coverage.
 - Added `ui.clock` as a reusable wall-clock display with label, `HH:MM:SS AM/PM` time, date row, timezone/formatter options, chrome-less mode, demo coverage, regression coverage, and the shared one-second ticker now also used by `ui.elapsed.time`.
 - Added `ui.charts` for dependency-free operational bar, horizontal-bar, stacked-bar, donut, and sparkline charts with accessible summaries, selectable items, demos, docs, and regression coverage.
 - Added `ui.map.markers` for MapLibre-compatible DOM markers covering incidents, hubs, hotspots, routes, clusters, states, count badges, custom colors, demos, docs, and regression coverage.

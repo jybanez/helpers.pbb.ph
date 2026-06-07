@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Drawing Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .map-demo-surface {
+      min-height: 430px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(72, 92, 128, 0.24) 1px, transparent 1px),
+        linear-gradient(rgba(72, 92, 128, 0.18) 1px, transparent 1px),
+        radial-gradient(circle at 36% 44%, rgba(244, 179, 80, 0.20), transparent 9%),
+        radial-gradient(circle at 70% 58%, rgba(100, 181, 246, 0.14), transparent 12%),
+        #071018;
+      background-size: 68px 68px, 68px 68px, auto, auto, auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .map-demo-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+    }
+    .map-demo-shape {
+      position: absolute;
+      border: 2px solid #f4b350;
+      background: rgba(244, 179, 80, 0.12);
+      pointer-events: none;
+    }
+    .map-demo-shape--polygon {
+      left: 36%;
+      top: 26%;
+      width: 210px;
+      height: 150px;
+      clip-path: polygon(8% 42%, 44% 6%, 94% 26%, 78% 88%, 22% 82%);
+    }
+    .map-demo-shape--line {
+      left: 52%;
+      top: 62%;
+      width: 230px;
+      height: 0;
+      border-width: 0;
+      border-top: 4px dashed #64b5f6;
+      transform: rotate(-18deg);
+      background: transparent;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 14px;
+      align-items: start;
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    @media (max-width: 820px) {
+      .split {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.drawing"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Map Drawing",
+      overview: "Adapter-based drawing toolbar for operational map geometry without Helper owning the map engine.",
+      useWhen: [
+        "Use <code>createMapDrawingTools(...)</code> when a map surface needs shared drawing modes and actions.",
+        "Use it with an app-owned MapLibre/drawing adapter when geometry persistence and map layers remain app-owned."
+      ],
+      avoidWhen: [
+        "Do not use it as a full GIS editor, topology validator, or persistence layer.",
+        "Do not couple app storage or MapLibre source/layer lifecycle into the Helper component."
+      ],
+      description: "Map Drawing renders mode and action controls, normalizes state and callbacks, and optionally delegates to an adapter. Without an adapter it remains a UI-only toolbar suitable for app-owned mode routing.",
+      defaultSampleCode: `const drawing = createMapDrawingTools(container, {\n  modes: [\"select\", \"point\", \"line\", \"polygon\"],\n  activeMode: \"select\",\n  adapter: mapDrawingAdapter,\n  onCreate(feature) {\n    saveFeature(feature);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createMapDrawingTools(container, options)</code>", arguments: "container, drawing options", returns: "Map drawing instance" }
+      ],
+      options: [
+        { option: "<code>modes</code>", default: "select, point, line, polygon, rectangle, circle", description: "Visible drawing modes." },
+        { option: "<code>actions</code>", default: "finish, cancel, undo, redo, delete, clear", description: "Visible drawing actions." },
+        { option: "<code>activeMode</code>", default: "<code>\"select\"</code>", description: "Current active mode." },
+        { option: "<code>adapter</code>", default: "<code>null</code>", description: "Optional map/drawing adapter with setMode, action methods, capabilities, and event subscriptions." },
+        { option: "<code>orientation</code>", default: "<code>\"vertical\"</code>", description: "<code>vertical</code> or <code>horizontal</code>." },
+        { option: "<code>placement</code>", default: "<code>\"map\"</code>", description: "<code>map</code> overlay or <code>external</code> toolbar placement." },
+        { option: "<code>labels</code>", default: "<code>\"auto\"</code>", description: "<code>auto</code>, <code>always</code>, or <code>none</code> label visibility." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set false when the host shell owns the frame." },
+        { option: "<code>measurement</code>", default: "<code>null</code>", description: "Optional distance/area/radius display." },
+        { option: "<code>disabled</code>, <code>busy</code>", default: "<code>false</code>", description: "Disables controls globally." }
+      ],
+      propertiesText: "The root exposes data-active-mode, data-orientation, data-placement, data-feature-count, and data-selected-feature-id. Use getState() for supported runtime reads.",
+      eventsText: "Callbacks include onModeChange(mode, state), onAction(action, state), onCreate(feature, state), onUpdate(feature, state), onDelete(featureId, state), and onSelect(payload, state).",
+      methods: [
+        { method: "<code>setMode(mode)</code>", arguments: "mode name", returns: "<code>void</code>" },
+        { method: "<code>setFeatures(features)</code>", arguments: "GeoJSON feature array", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized state snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">Map Drawing Demo</h1>
+      <p class="muted">Adapter-based controls for map drawing modes, edit actions, measurements, and GeoJSON events.</p>
+    </section>
+
+    <section class="panel split">
+      <div class="map-demo-surface">
+        <div class="map-demo-overlay" id="overlayTools"></div>
+        <div class="map-demo-shape map-demo-shape--polygon"></div>
+        <div class="map-demo-shape map-demo-shape--line"></div>
+      </div>
+      <div>
+        <h2 class="ui-title">Event Log</h2>
+        <pre id="eventLog">No events yet.</pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">External Toolbar</h2>
+      <div id="externalTools"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const drawing = createMapDrawingTools(container, {
+  modes: ["select", "point", "line", "polygon"],
+  activeMode: "select",
+  adapter: mapDrawingAdapter,
+  onCreate(feature) {
+    saveFeature(feature);
+  },
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createMapDrawingTools = await uiLoader.get("ui.map.drawing");
+
+    const log = document.getElementById("eventLog");
+    const adapter = createDemoAdapter();
+    const writeLog = (type, payload = {}) => {
+      log.textContent = JSON.stringify({ type, ...payload }, null, 2);
+    };
+
+    createMapDrawingTools(document.getElementById("overlayTools"), {
+      adapter,
+      activeMode: "select",
+      measurement: { distanceMeters: 1260 },
+      onModeChange(mode) { writeLog("modechange", { mode }); },
+      onAction(action) { writeLog("action", { action }); },
+      onCreate(feature) { writeLog("create", { feature }); },
+      onUpdate(feature) { writeLog("update", { feature }); },
+      onDelete(featureId) { writeLog("delete", { featureId }); },
+      onSelect(payload) { writeLog("select", payload); },
+    });
+
+    createMapDrawingTools(document.getElementById("externalTools"), {
+      adapter,
+      orientation: "horizontal",
+      placement: "external",
+      labels: "always",
+      chrome: false,
+      measurement: { areaSquareMeters: 34000 },
+      onModeChange(mode) { writeLog("external.modechange", { mode }); },
+      onAction(action) { writeLog("external.action", { action }); },
+    });
+
+    function createDemoAdapter() {
+      const listeners = new Map();
+      const emit = (eventName, payload) => {
+        (listeners.get(eventName) || []).forEach((callback) => callback(payload));
+      };
+      return {
+        setMode(mode) {
+          emit("modechange", { mode });
+        },
+        setFeatures() {},
+        getCapabilities() {
+          return {
+            modes: ["select", "point", "line", "polygon", "rectangle", "circle"],
+            actions: { finish: true, cancel: true, undo: true, redo: false, delete: true, clear: true },
+          };
+        },
+        finish() {
+          emit("create", {
+            type: "Feature",
+            id: `draw-${Date.now()}`,
+            geometry: { type: "Polygon", coordinates: [] },
+            properties: { drawingType: "polygon", label: "Search area" },
+          });
+        },
+        cancel() { emit("measure", null); },
+        undo() { emit("measure", { distanceMeters: 820 }); },
+        redo() {},
+        deleteSelected() { emit("delete", "draw-selected"); },
+        clear() { emit("delete", "all"); },
+        on(eventName, callback) {
+          const list = listeners.get(eventName) || [];
+          list.push(callback);
+          listeners.set(eventName, list);
+          return () => listeners.set(eventName, (listeners.get(eventName) || []).filter((item) => item !== callback));
+        },
+      };
+    }
+  </script>
+</body>
+</html>
