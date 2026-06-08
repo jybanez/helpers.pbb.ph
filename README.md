@@ -493,6 +493,7 @@ Application integrations should use the registry loader.
 - The source tree stays modular, but the repo now also supports an optional minified shared distribution bundle at `dist/helpers.ui.bundle.min.js` plus `dist/helpers.ui.bundle.min.css`.
 - Teams that want fewer helper requests can generate the bundle with `npm run build:ui-bundle` and then opt in at runtime with `uiLoader.setPreferBundles(true)` or `createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true })`.
 - The current bundle scope covers both `ui.*` and `incident.*` registry entries, so bundle-preferring apps do not fall back to direct source imports for incident helpers that depend on shared `ui.*` modules.
+- Default shared bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
 - The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.

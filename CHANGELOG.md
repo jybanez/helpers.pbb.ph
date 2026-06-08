@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed shared UI bundle delivery so `ui.loader.js` version-tags the generated bundle JS/CSS URLs, preventing bundle-preferring downstream apps from reusing a stale export table after helpers such as `ui.drawer` add exports like `createDrawer`.
 - Added declarative `headerActions` to `ui.drawer`, with icon-only header buttons before the close button, accessible labels/titles, busy/disabled state, update helpers, demo coverage, and regression coverage.
 - Added `createDrawer(options)` as the primary `ui.drawer` factory name, while retaining `createBottomDrawer(options)` as a compatibility alias for older integrations.
 - Added `ui.map.drawing` for adapter-based operational map drawing tools with drawing modes, edit actions, measurement display, GeoJSON feature state, mock-adapter demo coverage, docs, and regression coverage.

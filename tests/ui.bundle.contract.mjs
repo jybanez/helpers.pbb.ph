@@ -6,6 +6,7 @@ import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.j
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bundleJsPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.js");
 const bundleCssPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.css");
+const loaderSourcePath = path.join(repoRoot, "js", "ui", "ui.loader.js");
 
 if (!fs.existsSync(bundleJsPath)) {
   throw new Error("Missing dist/helpers.ui.bundle.min.js");
@@ -13,6 +14,11 @@ if (!fs.existsSync(bundleJsPath)) {
 
 if (!fs.existsSync(bundleCssPath)) {
   throw new Error("Missing dist/helpers.ui.bundle.min.css");
+}
+
+const loaderSource = fs.readFileSync(loaderSourcePath, "utf8");
+if (!loaderSource.includes("helpers.ui.bundle.min.js?v=") || !loaderSource.includes("helpers.ui.bundle.min.css?v=")) {
+  throw new Error("ui.loader.js must version-tag shared bundle JS and CSS URLs.");
 }
 
 const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });

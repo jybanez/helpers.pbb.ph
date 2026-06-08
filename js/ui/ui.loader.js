@@ -6,8 +6,9 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.84";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
-const UI_BUNDLE_JS = "../../dist/helpers.ui.bundle.min.js";
-const UI_BUNDLE_CSS = "../../dist/helpers.ui.bundle.min.css";
+const UI_BUNDLE_REV = "0.21.85";
+const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
+const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
