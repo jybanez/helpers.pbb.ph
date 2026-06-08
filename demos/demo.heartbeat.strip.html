@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heartbeat Strip Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+    }
+    .source-card,
+    .rail-card {
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .source-card h3,
+    .rail-card h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+    .rail-card {
+      max-width: 340px;
+    }
+    .rail-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 340px));
+      gap: 10px;
+      align-items: start;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.heartbeat.strip"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Heartbeat Strip",
+      overview: "Compact source/node heartbeat history strip for dense dashboards and SITREP source rails.",
+      useWhen: [
+        "Use <code>createHeartbeatStrip(...)</code> when a source, worker, process, or node has latest heartbeat state plus bucketed heartbeat history.",
+        "Use it inside cards, source rails, node lists, and status dashboards that need history without a full diagnostics panel."
+      ],
+      avoidWhen: [
+        "Do not use it to poll, ping, or calculate connectivity; host apps own heartbeat collection and thresholds.",
+        "Do not use it as a full status page or log viewer; it is a compact visual summary."
+      ],
+      description: "Heartbeat Strip renders a current status dot/label, helper-computed average uptime, optional last-seen age, and fixed-height history buckets. It is transport-agnostic and accepts already-normalized heartbeat facts from Relay, Maestro, Realtime, Support, or app-local adapters.",
+      defaultSampleCode: `const strip = createHeartbeatStrip(host, {\n  label: "Apas Source Hub",\n  status: "online",\n  ageSeconds: 42,\n  bucketCount: 48,\n  rangeLabel: "last 48 hours",\n  history: hourlyBuckets,\n});\n\nstrip.update({\n  status: "stale",\n  ageSeconds: 420,\n  history: nextHourlyBuckets,\n});`,
+      constructor: [
+        { factory: "<code>createHeartbeatStrip(container, options)</code>", arguments: "<code>container</code>, heartbeat-strip <code>options</code>", returns: "Heartbeat strip instance with update, setStatus, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>status</code>", default: "<code>\"unknown\"</code>", description: "Current status. Allowed values: <code>online</code>, <code>stale</code>, <code>offline</code>, <code>unknown</code>." },
+        { option: "<code>lastSeenAt</code>", default: "<code>\"\"</code>", description: "Last heartbeat timestamp used when <code>ageSeconds</code> is not supplied." },
+        { option: "<code>ageSeconds</code>", default: "<code>null</code>", description: "Current heartbeat age. Rendered as compact age text such as <code>42s ago</code> or <code>2h ago</code>." },
+        { option: "<code>history</code>", default: "<code>[]</code>", description: "Bucket rows. Accepts camelCase or snake_case fields: app-owned <code>status</code>, <code>expectedCount</code>/<code>expected_count</code>, <code>receivedCount</code>/<code>received_count</code>, and <code>bucketStartedAt</code>/<code>bucket_started_at</code>." },
+        { option: "<code>bucketCount</code>", default: "<code>48</code>", description: "Number of rendered buckets. Missing leading buckets are filled as <code>unknown</code>. A bucket may represent any app-owned interval such as 5 minutes, 30 minutes, 1 hour, or 1 day." },
+        { option: "<code>hours</code>", default: "<code>null</code>", description: "Compatibility shortcut for hourly data. Used as <code>bucketCount</code> when <code>bucketCount</code> is omitted, and used in generated range text." },
+        { option: "<code>rangeLabel</code>", default: "<code>\"\"</code>", description: "Human range copy such as <code>last 48 hours</code>, <code>last 24 five-minute buckets</code>, or <code>last 7 days</code>." },
+        { option: "<code>label</code>", default: "<code>\"Heartbeat\"</code>", description: "Domain label used for generated accessible summary." },
+        { option: "<code>labels</code>", default: "<code>{}</code>", description: "Optional text overrides for current statuses, bucket statuses under <code>labels.buckets</code>, or age text under <code>labels.age</code>." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set false when the host card owns the outer border, background, and padding." },
+        { option: "<code>compact</code>", default: "<code>true</code>", description: "Compact rendering for dense cards. Set false for a slightly taller regular strip." },
+        { option: "<code>showStatus</code>", default: "<code>true</code>", description: "Shows or hides the current status label." },
+        { option: "<code>showAge</code>", default: "<code>true</code>", description: "Shows or hides the last-seen age text." },
+        { option: "<code>showAverage</code>", default: "<code>true</code>", description: "Shows or hides the helper-computed aggregate uptime for all buckets with <code>expectedCount &gt; 0</code>." },
+        { option: "<code>bucketTone</code>", default: "<code>\"uptime\"</code>", description: "Bucket coloring mode. <code>uptime</code> maps each bucket's received/expected percentage from red to green; <code>status</code> leaves coloring to status classes." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"\"</code>", description: "Explicit accessible summary. Generated from status, age, and bucket counts when omitted." },
+        { option: "<code>ariaLive</code>", default: "<code>\"off\"</code>", description: "Live region behavior. Allowed values: <code>off</code>, <code>polite</code>, <code>assertive</code>." },
+        { option: "<code>palette</code>", default: "<code>{}</code>", description: "Optional color overrides for <code>ok</code>, <code>partial</code>, <code>missed</code>, <code>unknown</code>, <code>online</code>, <code>stale</code>, and <code>offline</code>." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name on the root." }
+      ],
+      propertiesText: "The root exposes <code>data-status</code>, <code>data-hours</code>, <code>data-bucket-count</code>, and <code>data-average-uptime</code>. Each bucket exposes normalized status, count, and computed uptime data attributes for inspection.",
+      eventsText: "No events are emitted. Host apps own polling, websocket data, thresholds, and command handling.",
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>setStatus(status)</code>", arguments: "status string", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="cycleState" class="ui-button" type="button">Cycle Rail State</button>
+        <button id="toggleAge" class="ui-button" type="button">Toggle Age</button>
+      </div>
+      <h1 class="ui-title">Heartbeat Strip Demo</h1>
+      <p class="muted">Compact heartbeat status and hourly history for source rails, worker lists, node health, and realtime process panels.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Source Rail Cards</h2>
+      <div class="rail-card-grid">
+        <article class="rail-card">
+          <h3>Apas Source Hub</h3>
+          <p class="muted">12 expected heartbeats per hour.</p>
+          <div id="railStrip"></div>
+        </article>
+        <article class="rail-card">
+          <h3>High Volume Source Hub</h3>
+          <p class="muted">60 expected heartbeats per hour; varied received counts.</p>
+          <div id="railStripHigh"></div>
+        </article>
+      </div>
+      <p class="muted">Bucket color represents received / expected heartbeat percentage: red is 0%, amber is partial, green is 100%.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">States</h2>
+      <div class="source-grid" id="stateGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const strip = createHeartbeatStrip(host, {
+  label: "Apas Source Hub",
+  status: "online",
+  ageSeconds: 42,
+  history: hourlyBuckets,
+  bucketCount: 48,
+  rangeLabel: "last 48 hours",
+});
+
+strip.update({
+  status: "stale",
+  ageSeconds: 420,
+  history: nextHourlyBuckets,
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createHeartbeatStrip = await uiLoader.get("ui.heartbeat.strip");
+
+    const relaySampleHistory = [
+      { hour: 1, bucket_started_at: "2026-06-06T00:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 2, bucket_started_at: "2026-06-06T01:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 3, bucket_started_at: "2026-06-06T02:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 4, bucket_started_at: "2026-06-06T03:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 5, bucket_started_at: "2026-06-06T04:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 6, bucket_started_at: "2026-06-06T05:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 7, bucket_started_at: "2026-06-06T06:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 8, bucket_started_at: "2026-06-06T07:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 9, bucket_started_at: "2026-06-06T08:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 10, bucket_started_at: "2026-06-06T09:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 11, bucket_started_at: "2026-06-06T10:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 12, bucket_started_at: "2026-06-06T11:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 13, bucket_started_at: "2026-06-06T12:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 14, bucket_started_at: "2026-06-06T13:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 15, bucket_started_at: "2026-06-06T14:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 16, bucket_started_at: "2026-06-06T15:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 17, bucket_started_at: "2026-06-06T16:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 18, bucket_started_at: "2026-06-06T17:00:00+08:00", expected_count: 12, received_count: 8, status: "partial" },
+      { hour: 19, bucket_started_at: "2026-06-06T18:00:00+08:00", expected_count: 12, received_count: 5, status: "partial" },
+      { hour: 20, bucket_started_at: "2026-06-06T19:00:00+08:00", expected_count: 12, received_count: 9, status: "partial" },
+      { hour: 21, bucket_started_at: "2026-06-06T20:00:00+08:00", expected_count: 12, received_count: 4, status: "partial" },
+      { hour: 22, bucket_started_at: "2026-06-06T21:00:00+08:00", expected_count: 12, received_count: 7, status: "partial" },
+      { hour: 23, bucket_started_at: "2026-06-06T22:00:00+08:00", expected_count: 12, received_count: 3, status: "partial" },
+      { hour: 24, bucket_started_at: "2026-06-06T23:00:00+08:00", expected_count: 12, received_count: 6, status: "partial" },
+      { hour: 25, bucket_started_at: "2026-06-07T00:00:00+08:00", expected_count: 12, received_count: 0, status: "missed" },
+      { hour: 26, bucket_started_at: "2026-06-07T01:00:00+08:00", expected_count: 12, received_count: 0, status: "missed" },
+      { hour: 27, bucket_started_at: "2026-06-07T02:00:00+08:00", expected_count: 12, received_count: 0, status: "missed" },
+      { hour: 28, bucket_started_at: "2026-06-07T03:00:00+08:00", expected_count: 12, received_count: 0, status: "missed" },
+      { hour: 29, bucket_started_at: "2026-06-07T04:00:00+08:00", expected_count: 12, received_count: 10, status: "partial" },
+      { hour: 30, bucket_started_at: "2026-06-07T05:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 31, bucket_started_at: "2026-06-07T06:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 32, bucket_started_at: "2026-06-07T07:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 33, bucket_started_at: "2026-06-07T08:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 34, bucket_started_at: "2026-06-07T09:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 35, bucket_started_at: "2026-06-07T10:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 36, bucket_started_at: "2026-06-07T11:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 37, bucket_started_at: "2026-06-07T12:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 38, bucket_started_at: "2026-06-07T13:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 39, bucket_started_at: "2026-06-07T14:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 40, bucket_started_at: "2026-06-07T15:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 41, bucket_started_at: "2026-06-07T16:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 42, bucket_started_at: "2026-06-07T17:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 43, bucket_started_at: "2026-06-07T18:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 44, bucket_started_at: "2026-06-07T19:00:00+08:00", expected_count: 12, received_count: 10, status: "partial" },
+      { hour: 45, bucket_started_at: "2026-06-07T20:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 46, bucket_started_at: "2026-06-07T21:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+      { hour: 47, bucket_started_at: "2026-06-07T22:00:00+08:00", expected_count: 12, received_count: 12, status: "ok" },
+      { hour: 48, bucket_started_at: "2026-06-07T23:00:00+08:00", expected_count: 12, received_count: 11, status: "partial" },
+    ];
+
+    const states = [
+      { title: "Online", status: "online", ageSeconds: 42, history: relaySampleHistory },
+      { title: "Stale", status: "stale", ageSeconds: 420, history: buildHistory(48, (index) => index > 40 ? "partial" : "ok") },
+      { title: "Offline", status: "offline", ageSeconds: 9600, history: buildHistory(48, (index) => index > 34 ? "missed" : "partial") },
+      { title: "Unknown", status: "unknown", ageSeconds: null, history: [] },
+    ];
+    let stateIndex = 0;
+    let showAge = true;
+
+    const railStrip = createHeartbeatStrip(document.getElementById("railStrip"), {
+      label: "Apas Source Hub",
+      ...states[stateIndex],
+      bucketCount: 48,
+      rangeLabel: "last 48 hours",
+      chrome: false,
+    });
+    const highVolumeHistory = randomizeHistoryCounts(relaySampleHistory, 60);
+    const railStripHigh = createHeartbeatStrip(document.getElementById("railStripHigh"), {
+      label: "High Volume Source Hub",
+      status: "online",
+      ageSeconds: 130,
+      history: highVolumeHistory,
+      bucketCount: 48,
+      rangeLabel: "last 48 hours",
+      chrome: false,
+    });
+
+    states.forEach((state) => {
+      const card = document.createElement("article");
+      card.className = "source-card";
+      card.innerHTML = `<h3>${state.title}</h3><div data-role="strip"></div><p class="muted">${state.status}</p>`;
+      document.getElementById("stateGrid").appendChild(card);
+      createHeartbeatStrip(card.querySelector("[data-role='strip']"), {
+        label: `${state.title} source`,
+        ...state,
+        bucketCount: 48,
+        rangeLabel: "last 48 hours",
+        compact: true,
+      });
+    });
+
+    document.getElementById("cycleState").addEventListener("click", () => {
+      stateIndex = (stateIndex + 1) % states.length;
+      railStrip.update({ ...states[stateIndex], showAge });
+      const nextHighHistory = states[stateIndex].history === relaySampleHistory
+        ? highVolumeHistory
+        : randomizeHistoryCounts(states[stateIndex].history, 60);
+      railStripHigh.update({
+        status: states[stateIndex].status,
+        ageSeconds: states[stateIndex].ageSeconds == null ? null : states[stateIndex].ageSeconds + 88,
+        history: nextHighHistory,
+        showAge,
+      });
+    });
+
+    document.getElementById("toggleAge").addEventListener("click", () => {
+      showAge = !showAge;
+      railStrip.update({ showAge });
+      railStripHigh.update({ showAge });
+    });
+
+    function buildHistory(count, statusForIndex) {
+      const now = Date.now();
+      return Array.from({ length: count }, (_, index) => {
+        const status = statusForIndex(index);
+        const expectedCount = 4;
+        const receivedCount = status === "ok" ? 4 : status === "partial" ? 2 : 0;
+        return {
+          status,
+          expectedCount,
+          receivedCount,
+          bucketStartedAt: new Date(now - (count - index) * 60 * 60 * 1000).toISOString(),
+        };
+      });
+    }
+
+    function randomizeHistoryCounts(history, expectedCount) {
+      return history.map((bucket, index) => {
+        const originalStatus = String(bucket.status || "unknown");
+        const ratio = randomizedRatioForBucket(originalStatus, index);
+        return {
+          ...bucket,
+          expected_count: expectedCount,
+          received_count: Math.round(expectedCount * ratio),
+        };
+      });
+    }
+
+    function randomizedRatioForBucket(status, index) {
+      const seed = ((index + 1) * 37 + (index % 5) * 11) % 100;
+      if (status === "missed") {
+        return seed % 4 === 0 ? 0.05 : 0;
+      }
+      if (status === "partial") {
+        return Math.max(0.12, Math.min(0.92, (24 + seed) / 100));
+      }
+      if (status === "ok") {
+        return Math.max(0.72, Math.min(1, (76 + (seed % 25)) / 100));
+      }
+      return 0;
+    }
+  </script>
+</body>
+</html>

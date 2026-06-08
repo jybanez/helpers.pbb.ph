@@ -6,7 +6,7 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.84";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
-const UI_BUNDLE_REV = "0.21.85";
+const UI_BUNDLE_REV = "0.21.86";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 
@@ -310,6 +310,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.signal.strength.css"],
     deps: [],
     export: "createSignalStrength",
+  },
+  "ui.heartbeat.strip": {
+    js: "./ui.heartbeat.strip.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.heartbeat.strip.css"],
+    deps: [],
+    export: "createHeartbeatStrip",
   },
   "ui.stat.cards": {
     js: "./ui.stat.cards.js",
@@ -713,6 +719,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.elapsed.time",
     "ui.clock",
     "ui.signal.strength",
+    "ui.heartbeat.strip",
     "ui.stat.cards",
     "ui.map.controls",
     "ui.map.legend",

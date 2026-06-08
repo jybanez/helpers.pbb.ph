@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heartbeat Strip Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.heartbeat.strip.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 260px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createHeartbeatStrip } from "../js/ui/ui.heartbeat.strip.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+
+    try {
+      const strip = createHeartbeatStrip(host, {
+        label: "Apas Source Hub",
+        status: "online",
+        ageSeconds: 42,
+        hours: 24,
+        history: buildHistory(24, (index) => index % 6 === 0 ? "partial" : "ok"),
+        chrome: false,
+      });
+
+      let root = host.querySelector(".ui-heartbeat-strip");
+      assert(Boolean(root), "root should render");
+      assert(root.dataset.status === "online", "status dataset should render");
+      assert(root.classList.contains("ui-heartbeat-strip--chromeless"), "chrome false should apply chromeless class");
+      assert(root.dataset.hours === "24", "hours dataset should render");
+      assert(root.dataset.bucketCount === "24", "bucket count should default to hours");
+      assert(root.querySelectorAll(".ui-heartbeat-strip-bucket").length === 24, "24 buckets should render");
+      assert(root.querySelectorAll('.ui-heartbeat-strip-bucket[data-status="partial"]').length === 4, "partial buckets should render");
+      assert(root.dataset.averageUptime === "0.917", "average uptime should be computed from received/expected counts");
+      assert(root.querySelector('.ui-heartbeat-strip-bucket[data-status="partial"]').dataset.uptime === "0.5", "bucket uptime should be computed from counts");
+      assert(root.querySelector('.ui-heartbeat-strip-bucket[data-status="partial"]').getAttribute("style").includes("--ui-heartbeat-bucket-color"), "uptime bucket tone should set a computed color");
+      assert(root.querySelector(".ui-heartbeat-strip-age").textContent === "42s ago", "age text should render seconds");
+      assert(root.getAttribute("aria-label").includes("92% uptime"), "generated aria label should summarize average uptime");
+
+      strip.update({
+        status: "stale",
+        ageSeconds: 420,
+        hours: 48,
+        history: buildHistory(48, (index) => index > 40 ? "missed" : "ok"),
+        ariaLive: "polite",
+      });
+      root = host.querySelector(".ui-heartbeat-strip");
+      assert(root.dataset.status === "stale", "update should change status");
+      assert(root.dataset.hours === "48", "update should change hours");
+      assert(root.getAttribute("aria-live") === "polite", "ariaLive should update");
+      assert(root.querySelectorAll(".ui-heartbeat-strip-bucket").length === 48, "48 buckets should render");
+      assert(root.querySelectorAll('.ui-heartbeat-strip-bucket[data-status="missed"]').length === 7, "missed buckets should render");
+      assert(root.querySelector(".ui-heartbeat-strip-age").textContent === "7m ago", "age text should render minutes");
+
+      strip.update({
+        status: "offline",
+        ageSeconds: 172800,
+        hours: 72,
+        history: [],
+        showAge: false,
+        showStatus: false,
+      });
+      root = host.querySelector(".ui-heartbeat-strip");
+      assert(root.dataset.status === "offline", "offline status should render");
+      assert(root.querySelectorAll(".ui-heartbeat-strip-bucket").length === 72, "72 empty buckets should be filled");
+      assert(root.querySelectorAll('.ui-heartbeat-strip-bucket[data-status="unknown"]').length === 72, "empty history should fill as unknown");
+      assert(!root.querySelector(".ui-heartbeat-strip-age"), "showAge false should remove age node");
+      assert(!root.querySelector(".ui-heartbeat-strip-status"), "showStatus false should remove status node");
+
+      strip.update({
+        showAge: true,
+        showStatus: true,
+        status: "not-real",
+        history: [
+          { status: "ok", expected_count: 4, received_count: 4, bucket_started_at: "2026-06-08T01:00:00Z" },
+          { status: "bad-value", expectedCount: 4, receivedCount: 1, bucketStartedAt: "2026-06-08T02:00:00Z" },
+        ],
+        bucketCount: 3,
+        hours: 3,
+      });
+      root = host.querySelector(".ui-heartbeat-strip");
+      assert(root.dataset.status === "unknown", "invalid status should normalize to unknown");
+      assert(root.querySelectorAll(".ui-heartbeat-strip-bucket").length === 3, "bucketCount should control rendered buckets");
+      assert(root.querySelectorAll('.ui-heartbeat-strip-bucket[data-status="unknown"]').length === 1, "missing leading bucket should normalize to unknown");
+      assert(root.querySelectorAll('.ui-heartbeat-strip-bucket[data-status="bad-value"]').length === 1, "app-owned bucket status should be preserved");
+      assert(root.querySelector('.ui-heartbeat-strip-bucket[data-status="ok"]').dataset.receivedCount === "4", "snake_case counts should normalize");
+
+      strip.setStatus("online");
+      root = host.querySelector(".ui-heartbeat-strip");
+      assert(root.dataset.status === "online", "setStatus should update status");
+
+      const state = strip.getState();
+      assert(state.history.length === 3 && state.history[2].status === "bad-value", "getState should return normalized history copy with app-owned bucket statuses");
+      assert(state.averageUptime === 0.625, "getState should expose aggregate uptime");
+      assert(state.chrome === false, "getState should preserve chrome false");
+      state.history[0].status = "missed";
+      assert(strip.getState().history[0].status !== "missed", "getState history should not expose internal mutation");
+
+      strip.destroy();
+      assert(host.children.length === 0, "destroy should clear host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function buildHistory(count, statusForIndex) {
+      return Array.from({ length: count }, (_, index) => {
+        const status = statusForIndex(index);
+        return {
+          status,
+          expectedCount: 4,
+          receivedCount: status === "ok" ? 4 : status === "partial" ? 2 : 0,
+          bucketStartedAt: new Date(Date.UTC(2026, 5, 8, index)).toISOString(),
+        };
+      });
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Heartbeat strip regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

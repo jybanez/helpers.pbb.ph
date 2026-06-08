@@ -40,6 +40,7 @@ css/
     ui.elapsed.time.css
     ui.clock.css
     ui.signal.strength.css
+    ui.heartbeat.strip.css
     ui.stat.cards.css
     ui.device.selector.css
     ui.path.picker.css
@@ -107,6 +108,7 @@ js/
     ui.elapsed.time.js
     ui.clock.js
     ui.signal.strength.js
+    ui.heartbeat.strip.js
     ui.stat.cards.js
     ui.device.selector.js
     ui.path.picker.js
@@ -446,6 +448,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.elapsed.time.css` elapsed-duration readout styles
 - `ui.clock.css` wall-clock display styles
 - `ui.signal.strength.css` signal-strength status indicator styles
+- `ui.heartbeat.strip.css` heartbeat history strip styles
 - `ui.device.selector.css` adapter-driven device selector styles
 - `ui.path.picker.css` local file/folder path picker styles
 - `ui.timeline.css` timeline styles
@@ -535,7 +538,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -1620,6 +1623,10 @@ Open from a local server (Apache/WAMP/Nginx):
   - stable navbar/header placement
   - all signal levels and tones
   - bars-only compact mode
+- `demos/demo.heartbeat.strip.html` -> dedicated heartbeat-strip playground
+  - current source/node status and age
+  - compact 24/48/72-hour history buckets
+  - Relay/Support-style source rail card sample
 - `demos/demo.stat.cards.html` -> dedicated stat-cards playground
   - operational KPI rows
   - selectable cards, tones, trends, and chrome-less rendering
@@ -5108,6 +5115,78 @@ Non-goals:
 Related demos:
 
 - `demos/demo.signal.strength.html`
+
+### `createHeartbeatStrip(container, options)` (`js/ui/ui.heartbeat.strip.js`)
+
+Purpose:
+
+- Compact source/node heartbeat history strip for dense dashboards, source rails, worker lists, and status cards.
+- Shows current status, helper-computed average uptime, optional last-seen age, and fixed-height buckets without becoming a full diagnostics panel.
+- Host apps own heartbeat collection, freshness thresholds, polling/websocket transport, and source-specific routing.
+- Host apps own what each bucket status means and what duration each bucket represents; Helper computes uptime from `receivedCount / expectedCount`.
+
+Basic usage:
+
+```js
+import { createHeartbeatStrip } from "./js/ui/ui.heartbeat.strip.js";
+
+const strip = createHeartbeatStrip(container, {
+  label: "Apas Source Hub",
+  status: "online",
+  ageSeconds: 42,
+  bucketCount: 48,
+  rangeLabel: "last 48 hours",
+  history: hourlyBuckets,
+});
+
+strip.update({
+  status: "stale",
+  ageSeconds: 420,
+  history: nextHourlyBuckets,
+});
+```
+
+Options:
+
+- `status`: `online`, `stale`, `offline`, or `unknown`
+- `lastSeenAt`: timestamp text/date used when `ageSeconds` is not supplied
+- `ageSeconds`: current heartbeat age for compact visible age text
+- `history`: bucket rows with app-owned `status`, `expectedCount` / `expected_count`, `receivedCount` / `received_count`, and `bucketStartedAt` / `bucket_started_at`
+- `bucketCount`: rendered bucket count; defaults to `48`; each bucket can represent any app-owned interval such as 5 minutes, 30 minutes, 1 hour, or 1 day
+- `hours`: compatibility shortcut for hourly data; used as `bucketCount` when `bucketCount` is omitted
+- `rangeLabel`: human range copy such as `last 48 hours`, `last 24 five-minute buckets`, or `last 7 days`
+- `label`: domain label used for generated accessible summaries
+- `labels`: optional overrides for status, `labels.buckets`, or `labels.age`
+- `chrome`: set `false` when the host card owns the outer border, background, and padding
+- `compact`: set `false` for a slightly taller regular strip
+- `showStatus`: set `false` to hide the current status label
+- `showAge`: set `false` to hide the last-seen age text
+- `showAverage`: set `false` to hide the aggregate uptime text
+- `bucketTone`: `uptime` or `status`; `uptime` maps each bucket's percentage from red to green
+- `ariaLabel`: explicit accessible summary
+- `ariaLive`: `off`, `polite`, or `assertive`; defaults to `off`
+- `palette`: optional color overrides for status and bucket tones
+- `className`: extra root class name
+
+Methods:
+
+- `update(options)`
+- `setStatus(status)`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not call Relay, Realtime, Maestro, or any heartbeat endpoint.
+- Does not calculate online/stale/offline thresholds.
+- Does not define the semantic meaning of app-owned bucket statuses.
+- Does not decide what duration a bucket represents.
+- Does not store history.
+- Does not render full logs or diagnostics.
+
+Related demos:
+
+- `demos/demo.heartbeat.strip.html`
 
 ### `createStatCards(container, items, options)` (`js/ui/ui.stat.cards.js`)
 

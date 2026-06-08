@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.heartbeat.strip` for compact source/node connectivity history with app-owned status metadata, helper-computed average/per-bucket uptime from received/expected counts, flexible bucket counts/range labels, last-seen age text, `chrome: false`, accessible summaries, demo coverage, and regression coverage.
 - Fixed shared UI bundle delivery so `ui.loader.js` version-tags the generated bundle JS/CSS URLs, preventing bundle-preferring downstream apps from reusing a stale export table after helpers such as `ui.drawer` add exports like `createDrawer`.
 - Added declarative `headerActions` to `ui.drawer`, with icon-only header buttons before the close button, accessible labels/titles, busy/disabled state, update helpers, demo coverage, and regression coverage.
 - Added `createDrawer(options)` as the primary `ui.drawer` factory name, while retaining `createBottomDrawer(options)` as a compatibility alias for older integrations.
