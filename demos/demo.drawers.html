@@ -25,27 +25,34 @@
       title: "Drawers",
       overview: "Reusable drawer shell for bottom, top, left, and right anchored overlays with helper-composed body content.",
       useWhen: [
-        "Use <code>createBottomDrawer(...)</code> when you need anchored overlay content that is lighter than a modal.",
+        "Use <code>createDrawer(...)</code> when you need anchored overlay content that is lighter than a modal.",
         "Use it for picker trays, side panels, mobile bottom sheets, and contextual helper flows."
       ],
       avoidWhen: [
         "Do not use it for blocking workflows that require modal focus and action footers.",
         "Do not use it as a generic page-layout sidebar."
       ],
-      description: "This demo opens the same drawer shell from all four edges and composes a search field plus selectable chip actions into the drawer body.",
-      defaultSampleCode: `const drawer = createBottomDrawer({\n  title: "Demo Drawer (right)",\n  position: "right",\n  onClose() {\n    writeLog("drawer.close", { position: "right" });\n  },\n});\ndrawer.open(document.body);`,
-      constructor: [{ factory: "<code>createBottomDrawer(options)</code>", arguments: "drawer <code>options</code>", returns: "Drawer instance with refs and lifecycle methods" }],
+      description: "This demo opens the same drawer shell from all four edges, composes body content, and demonstrates declarative header actions before the close button.",
+      defaultSampleCode: `const drawer = createDrawer({\n  title: "Users",\n  position: "right",\n  headerActions: [\n    {\n      id: "refresh",\n      label: "Refresh users",\n      icon: "actions.refresh",\n      busy: false,\n      onClick(action, event, drawerApi) {\n        refreshUsers();\n      },\n    },\n  ],\n});\ndrawer.open(document.body);`,
+      constructor: [{ factory: "<code>createDrawer(options)</code>", arguments: "drawer <code>options</code>", returns: "Drawer instance with refs and lifecycle methods" }],
       options: [
         { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Drawer title." },
         { option: "<code>position</code>", default: "<code>\"bottom\"</code>", description: "Drawer anchor: top, bottom, left, or right." },
+        { option: "<code>headerActions</code>", default: "<code>[]</code>", description: "Declarative action buttons rendered before the close button. Each action supports id, label, icon, title, disabled, busy, tone, showLabel, and onClick." },
         { option: "<code>animationMs</code>", default: "<code>220</code>", description: "Open/close animation duration." },
         { option: "<code>onClose</code>", default: "<code>null</code>", description: "Callback after close." }
       ],
-      propertiesText: "The drawer exposes documented refs such as <code>body</code>, <code>panel</code>, and <code>backdrop</code> for composition work.",
-      events: [{ event: "<code>onClose</code>", arguments: "none", returns: "<code>void</code>" }],
+      propertiesText: "The drawer exposes documented refs such as <code>body</code>, <code>panel</code>, <code>backdrop</code>, <code>header</code>, <code>title</code>, <code>headerActions</code>, and <code>closeButton</code> for composition work.",
+      events: [
+        { event: "<code>onClose</code>", arguments: "none", returns: "<code>void</code>" },
+        { event: "<code>headerActions[].onClick</code>", arguments: "action, event, drawerApi", returns: "<code>void</code>" }
+      ],
       methods: [
         { method: "<code>open(parent?)</code>", arguments: "optional parent element", returns: "<code>void</code>" },
         { method: "<code>close()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>updateHeaderActions(actions)</code>", arguments: "replacement action array", returns: "<code>void</code>" },
+        { method: "<code>setHeaderActionState(id, patch)</code>", arguments: "action id and partial state", returns: "<code>boolean</code>" },
+        { method: "<code>getHeaderAction(id)</code>", arguments: "action id", returns: "Button element or <code>null</code>" },
         { method: "<code>isOpen()</code>", arguments: "none", returns: "<code>boolean</code>" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
@@ -61,7 +68,7 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Drawers Demo</h1>
-      <p class="muted">Dedicated anchored-drawer demo with composed search and chip content across all four positions.</p>
+      <p class="muted">Dedicated anchored-drawer demo with composed search, chip content, and declarative header actions.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Drawer Positions</h2>
@@ -72,12 +79,17 @@
         <button id="drawerBtnLeft" class="ui-button" type="button">Left Drawer</button>
         <button id="drawerBtnRight" class="ui-button" type="button">Right Drawer</button>
       </div>
-      <pre>const drawer = createBottomDrawer({
-  title: "Demo Drawer",
+      <pre>const drawer = createDrawer({
+  title: "Users",
   position: "right",
-  onClose() {
-    writeLog("drawer.close", { position: "right" });
-  },
+  headerActions: [{
+    id: "refresh",
+    label: "Refresh users",
+    icon: "actions.refresh",
+    onClick(action, event, drawerApi) {
+      refreshUsers();
+    },
+  }],
 });
 drawer.open(document.body);</pre>
       <pre id="log" class="log">No events yet.</pre>
@@ -86,7 +98,7 @@ drawer.open(document.body);</pre>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
-    const createBottomDrawer = await uiLoader.get("ui.drawer");
+    const createDrawer = await uiLoader.get("ui.drawer");
     const createSearchField = await uiLoader.get("ui.search");
     const createEventBag = await uiLoader.get("ui.events.createEventBag");
     const createElement = await uiLoader.get("ui.dom.createElement");
@@ -102,9 +114,31 @@ drawer.open(document.body);</pre>
       writeLog("theme.toggle", { theme: next });
     });
     function openDrawer(position) {
-      const drawer = createBottomDrawer({
+      const drawer = createDrawer({
         title: `Demo Drawer (${position})`,
         position,
+        headerActions: [
+          {
+            id: "refresh",
+            label: "Refresh drawer",
+            icon: "actions.refresh",
+            title: "Refresh drawer",
+            onClick(action, _event, drawerApi) {
+              writeLog("drawer.action.refresh", { position, actionId: action.id, apiMatches: drawerApi === drawer });
+              drawer.setHeaderActionState("refresh", { busy: true });
+              setTimeout(() => drawer.setHeaderActionState("refresh", { busy: false }), 700);
+            },
+          },
+          {
+            id: "pin",
+            label: "Pin drawer",
+            icon: "navigation.chevron-up",
+            tone: "quiet",
+            onClick(action) {
+              writeLog("drawer.action.pin", { position, actionId: action.id });
+            },
+          },
+        ],
         onClose() { writeLog("drawer.close", { position }); },
       });
       const events = createEventBag();

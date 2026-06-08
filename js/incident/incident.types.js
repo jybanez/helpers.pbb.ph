@@ -6,7 +6,7 @@ import {
 import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js";
 import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js";
 import { createEventBag } from "../ui/ui.events.js";
-import { createBottomDrawer } from "../ui/ui.drawer.js";
+import { createDrawer } from "../ui/ui.drawer.js";
 import { createElement } from "../ui/ui.dom.js";
 import { createSearchField } from "../ui/ui.search.js";
 
@@ -139,7 +139,7 @@ export function incidentTypes(container, data, options = {}) {
       return;
     }
 
-    drawerApi = createBottomDrawer({
+    drawerApi = createDrawer({
       title: currentOptions.drawerHeaderText,
       backdropClass: "hh-incident-type-drawer-backdrop",
       panelClass: "hh-incident-type-drawer",

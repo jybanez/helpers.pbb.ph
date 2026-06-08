@@ -48,9 +48,9 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.drawer": {
     js: "./ui.drawer.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS],
-    deps: [],
-    export: "createBottomDrawer",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css"],
+    deps: ["ui.icons"],
+    export: "createDrawer",
   },
   "ui.iframe.host": {
     js: "./ui.iframe.host.js?v=0.21.8",

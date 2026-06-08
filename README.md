@@ -244,7 +244,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `uiLoader.loadManyGroup(names)` loads named registry groups like `core-shell`, `forms`, `data`, `media`
   - diagnostics: `getRegistry()`, `getGroups()`, `getLoadedCss()`, `getLoadedModules()`, `getFailedCss()`, `getFailedModules()`, `getDiagnostics()`
 - `ui.drawer.js`
-  - `createBottomDrawer(options)` reusable bottom drawer shell
+  - `createDrawer(options)` reusable anchored drawer shell
+  - `createBottomDrawer(options)` compatibility alias for older integrations
 - `ui.search.js`
   - `createSearchField(options)` reusable search field with clear + `Esc`-to-clear behavior
 - `ui.password.js`
@@ -475,8 +476,8 @@ Reusable UI styles live under `css/ui`:
 
 Current usage:
 
-- `incident.types` now uses `createEventBag` and `createBottomDrawer`.
-- `incident.teams.assignments` now uses `createEventBag` and `createBottomDrawer`.
+- `incident.types` now uses `createEventBag` and `createDrawer`.
+- `incident.teams.assignments` now uses `createEventBag` and `createDrawer`.
 - `incident.types` and `incident.teams.assignments` now share `createSearchField` for drawer search UX.
 - Editor/viewer helpers now apply shared `ui-*` primitives (`ui-title`, `ui-input`, `ui-button`) alongside existing `hh-*` classes for non-breaking style migration.
 
@@ -1955,11 +1956,12 @@ Methods:
 - `update(nextData, nextOptions?)`
 - `destroy()`
 
-### `createBottomDrawer(options)` (`js/ui/ui.drawer.js`)
+### `createDrawer(options)` (`js/ui/ui.drawer.js`)
 
 Purpose:
 
 - Reusable drawer shell used by list helpers and demo UIs.
+- `createBottomDrawer(options)` remains available as a compatibility alias for older code, but new integrations should use `createDrawer(options)` because the component supports top, bottom, left, and right positions.
 
 Key options:
 
@@ -1967,24 +1969,48 @@ Key options:
 - `closeLabel`
 - `animationMs` (default `220`)
 - `position`: `"top" | "bottom" | "left" | "right"` (default `"bottom"`)
+- `headerActions`: declarative header buttons rendered before the close button:
+  - `id`
+  - `label`
+  - `icon`: Helper icon id such as `"actions.refresh"`, or a DOM node
+  - `title`
+  - `disabled`
+  - `busy`
+  - `tone`: `"default" | "primary" | "danger" | "quiet" | "ghost"`
+  - `showLabel`: render visible label text beside the icon
+  - `onClick(action, event, drawerApi)`
 - class overrides:
-  - `backdropClass`, `panelClass`, `headerClass`, `titleClass`, `closeClass`, `bodyClass`
+  - `backdropClass`, `panelClass`, `headerClass`, `titleClass`, `headerControlsClass`, `headerActionsClass`, `closeClass`, `bodyClass`
 - `onClose()`
 
 Returned refs/methods:
 
-- refs: `panel`, `body`, `header`, `title`, `closeButton`, `backdrop`
+- refs: `panel`, `body`, `header`, `title`, `headerControls`, `headerActions`, `closeButton`, `backdrop`
 - methods: `open(parent?)`, `close()`, `destroy()`, `isOpen()`
+- header action methods: `updateHeaderActions(actions)`, `setHeaderActionState(id, patch)`, `getHeaderAction(id)`
 
 Example:
 
 ```js
-import { createBottomDrawer } from "./js/ui/ui.drawer.js";
+import { createDrawer } from "./js/ui/ui.drawer.js";
 
-const drawer = createBottomDrawer({
+const drawer = createDrawer({
   title: "Select Teams",
   position: "right",
   animationMs: 260,
+  headerActions: [
+    {
+      id: "refresh",
+      label: "Refresh teams",
+      icon: "actions.refresh",
+      onClick(action, event, drawerApi) {
+        drawerApi.setHeaderActionState(action.id, { busy: true });
+        refreshTeams().finally(() => {
+          drawerApi.setHeaderActionState(action.id, { busy: false });
+        });
+      },
+    },
+  ],
   onClose() {
     console.log("drawer closed");
   },

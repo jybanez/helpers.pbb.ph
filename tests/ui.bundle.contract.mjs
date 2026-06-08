@@ -17,6 +17,7 @@ if (!fs.existsSync(bundleCssPath)) {
 
 const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
 const icons = await loader.get("ui.icons", { css: false });
+const createDrawer = await loader.get("ui.drawer", { css: false });
 const createBusyOverlay = await loader.get("ui.busy.overlay", { css: false });
 const createFormModal = await loader.get("ui.form.modal", { css: false });
 const createPathPicker = await loader.get("ui.path.picker", { css: false });
@@ -33,6 +34,10 @@ const diagnostics = loader.getDiagnostics();
 
 if (typeof icons?.createIcon !== "function") {
   throw new Error("Bundle-backed ui.icons did not expose createIcon().");
+}
+
+if (typeof createDrawer !== "function") {
+  throw new Error("Bundle-backed ui.drawer did not resolve to a factory function.");
 }
 
 if (typeof createFormModal !== "function") {
@@ -105,6 +110,7 @@ if (!diagnostics.loadedBundles.includes("ui")) {
 
 if (
   !diagnostics.loadedModules.includes("ui.icons") ||
+  !diagnostics.loadedModules.includes("ui.drawer") ||
   !diagnostics.loadedModules.includes("ui.busy.overlay") ||
   !diagnostics.loadedModules.includes("ui.form.modal") ||
   !diagnostics.loadedModules.includes("ui.path.picker") ||

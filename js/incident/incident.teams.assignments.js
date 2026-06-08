@@ -2,7 +2,7 @@ import { normalizeIncidentOptions, renderEmpty, safeArray } from "./incident.bas
 import { incidentTeamsAssignmentsEditor } from "./incident.teams.assignments.editor.js";
 import { incidentTeamsAssignmentsViewer } from "./incident.teams.assignments.viewer.js";
 import { createEventBag } from "../ui/ui.events.js";
-import { createBottomDrawer } from "../ui/ui.drawer.js";
+import { createDrawer } from "../ui/ui.drawer.js";
 import { createElement } from "../ui/ui.dom.js";
 import { createSearchField } from "../ui/ui.search.js";
 
@@ -149,7 +149,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       return;
     }
 
-    drawerApi = createBottomDrawer({
+    drawerApi = createDrawer({
       title: currentOptions.drawerHeaderText,
       backdropClass: "hh-team-drawer-backdrop",
       panelClass: "hh-team-drawer",

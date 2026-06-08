@@ -49,43 +49,42 @@
       min-height: 430px;
       border: 1px solid #2b3750;
       border-radius: 8px;
-      background:
-        linear-gradient(90deg, rgba(72, 92, 128, 0.24) 1px, transparent 1px),
-        linear-gradient(rgba(72, 92, 128, 0.18) 1px, transparent 1px),
-        radial-gradient(circle at 36% 44%, rgba(244, 179, 80, 0.20), transparent 9%),
-        radial-gradient(circle at 70% 58%, rgba(100, 181, 246, 0.14), transparent 12%),
-        #071018;
-      background-size: 68px 68px, 68px 68px, auto, auto, auto;
+      background: #071018;
       position: relative;
       overflow: hidden;
+    }
+    .map-demo-map {
+      position: absolute;
+      inset: 0;
+      min-height: 430px;
     }
     .map-demo-overlay {
       position: absolute;
       top: 12px;
       left: 12px;
+      z-index: 5;
     }
-    .map-demo-shape {
+    .map-demo-status {
       position: absolute;
-      border: 2px solid #f4b350;
-      background: rgba(244, 179, 80, 0.12);
+      right: 12px;
+      bottom: 12px;
+      z-index: 5;
+      max-width: min(360px, calc(100% - 24px));
+      border: 1px solid rgba(112, 141, 190, 0.42);
+      border-radius: 8px;
+      background: rgba(8, 14, 24, 0.88);
+      color: #d7e0f4;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 8px 10px;
       pointer-events: none;
     }
-    .map-demo-shape--polygon {
-      left: 36%;
-      top: 26%;
-      width: 210px;
-      height: 150px;
-      clip-path: polygon(8% 42%, 44% 6%, 94% 26%, 78% 88%, 22% 82%);
+    .map-demo-status strong {
+      color: #f4b350;
     }
-    .map-demo-shape--line {
-      left: 52%;
-      top: 62%;
-      width: 230px;
-      height: 0;
-      border-width: 0;
-      border-top: 4px dashed #64b5f6;
-      transform: rotate(-18deg);
-      background: transparent;
+    .map-demo-map .maplibregl-ctrl-bottom-left,
+    .map-demo-map .maplibregl-ctrl-bottom-right {
+      display: none;
     }
     .split {
       display: grid;
@@ -128,8 +127,8 @@
         "Do not use it as a full GIS editor, topology validator, or persistence layer.",
         "Do not couple app storage or MapLibre source/layer lifecycle into the Helper component."
       ],
-      description: "Map Drawing renders mode and action controls, normalizes state and callbacks, and optionally delegates to an adapter. Without an adapter it remains a UI-only toolbar suitable for app-owned mode routing.",
-      defaultSampleCode: `const drawing = createMapDrawingTools(container, {\n  modes: [\"select\", \"point\", \"line\", \"polygon\"],\n  activeMode: \"select\",\n  adapter: mapDrawingAdapter,\n  onCreate(feature) {\n    saveFeature(feature);\n  },\n});`,
+      description: "Map Drawing renders mode and action controls, normalizes state and callbacks, and delegates map/layer behavior to an adapter. This demo loads MapLibre with the same lightweight asset-loader pattern used by Hotline/Support, then wires a small app-owned drawing adapter for GeoJSON source/layer updates.",
+      defaultSampleCode: `const maplibregl = await ensureMapLibre(mapConfig);\nconst map = new maplibregl.Map({ container: mapNode, style, center, zoom });\nconst drawing = createMapDrawingTools(toolbarNode, {\n  modes: [\"select\", \"point\", \"line\", \"polygon\"],\n  activeMode: \"select\",\n  adapter: createMapLibreDrawingAdapter(map),\n  onCreate(feature) {\n    saveFeature(feature);\n  },\n});`,
       constructor: [
         { factory: "<code>createMapDrawingTools(container, options)</code>", arguments: "container, drawing options", returns: "Map drawing instance" }
       ],
@@ -137,7 +136,7 @@
         { option: "<code>modes</code>", default: "select, point, line, polygon, rectangle, circle", description: "Visible drawing modes." },
         { option: "<code>actions</code>", default: "finish, cancel, undo, redo, delete, clear", description: "Visible drawing actions." },
         { option: "<code>activeMode</code>", default: "<code>\"select\"</code>", description: "Current active mode." },
-        { option: "<code>adapter</code>", default: "<code>null</code>", description: "Optional map/drawing adapter with setMode, action methods, capabilities, and event subscriptions." },
+        { option: "<code>adapter</code>", default: "<code>null</code>", description: "Optional map/drawing adapter with setMode, action methods, capabilities, and event subscriptions. MapLibre setup, layers, and persistence remain app-owned." },
         { option: "<code>orientation</code>", default: "<code>\"vertical\"</code>", description: "<code>vertical</code> or <code>horizontal</code>." },
         { option: "<code>placement</code>", default: "<code>\"map\"</code>", description: "<code>map</code> overlay or <code>external</code> toolbar placement." },
         { option: "<code>labels</code>", default: "<code>\"auto\"</code>", description: "<code>auto</code>, <code>always</code>, or <code>none</code> label visibility." },
@@ -145,8 +144,8 @@
         { option: "<code>measurement</code>", default: "<code>null</code>", description: "Optional distance/area/radius display." },
         { option: "<code>disabled</code>, <code>busy</code>", default: "<code>false</code>", description: "Disables controls globally." }
       ],
-      propertiesText: "The root exposes data-active-mode, data-orientation, data-placement, data-feature-count, and data-selected-feature-id. Use getState() for supported runtime reads.",
-      eventsText: "Callbacks include onModeChange(mode, state), onAction(action, state), onCreate(feature, state), onUpdate(feature, state), onDelete(featureId, state), and onSelect(payload, state).",
+      propertiesText: "The root exposes data-active-mode, data-orientation, data-placement, data-feature-count, and data-selected-feature-id. Use getState() for supported runtime reads. The MapLibre adapter owns map sources/layers and pushes feature state back through adapter events.",
+      eventsText: "Callbacks include onModeChange(mode, state), onAction(action, state), onCreate(feature, state), onUpdate(feature, state), onDelete(featureId, state), onSelect(payload, state), and onMeasure(measurement, state).",
       methods: [
         { method: "<code>setMode(mode)</code>", arguments: "mode name", returns: "<code>void</code>" },
         { method: "<code>setFeatures(features)</code>", arguments: "GeoJSON feature array", returns: "<code>void</code>" },
@@ -170,9 +169,9 @@
 
     <section class="panel split">
       <div class="map-demo-surface">
+        <div class="map-demo-map" id="demoMap" aria-label="MapLibre drawing demo map"></div>
         <div class="map-demo-overlay" id="overlayTools"></div>
-        <div class="map-demo-shape map-demo-shape--polygon"></div>
-        <div class="map-demo-shape map-demo-shape--line"></div>
+        <div class="map-demo-status" id="mapStatus">Loading MapLibre assets...</div>
       </div>
       <div>
         <h2 class="ui-title">Event Log</h2>
@@ -187,10 +186,18 @@
 
     <section class="panel">
       <h2 class="ui-title">Usage</h2>
-      <pre>const drawing = createMapDrawingTools(container, {
+      <pre>const maplibregl = await ensureMapLibre(mapConfig);
+const map = new maplibregl.Map({
+  container: mapNode,
+  style,
+  center: [123.8854, 10.3157],
+  zoom: 13,
+});
+
+const drawing = createMapDrawingTools(container, {
   modes: ["select", "point", "line", "polygon"],
   activeMode: "select",
-  adapter: mapDrawingAdapter,
+  adapter: createMapLibreDrawingAdapter(map),
   onCreate(feature) {
     saveFeature(feature);
   },
@@ -204,21 +211,49 @@
     const createMapDrawingTools = await uiLoader.get("ui.map.drawing");
 
     const log = document.getElementById("eventLog");
-    const adapter = createDemoAdapter();
+    const mapNode = document.getElementById("demoMap");
+    const mapStatus = document.getElementById("mapStatus");
+    const mapConfig = {
+      assets: {
+        script: "../vendor/maplibre/maplibre-gl.js",
+        css: "../vendor/maplibre/maplibre-gl.css",
+      },
+      center: [123.8854, 10.3157],
+      zoom: 12.6,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "OpenStreetMap",
+          },
+        },
+        layers: [
+          { id: "osm", type: "raster", source: "osm", paint: { "raster-opacity": 0.88 } },
+        ],
+      },
+    };
     const writeLog = (type, payload = {}) => {
       log.textContent = JSON.stringify({ type, ...payload }, null, 2);
     };
+    const adapter = await createMapLibreDemoAdapter(mapNode, mapConfig, mapStatus).catch((error) => {
+      mapStatus.innerHTML = `<strong>Map unavailable.</strong> ${error.message}`;
+      writeLog("map.error", { message: error.message });
+      return createFallbackAdapter();
+    });
 
     createMapDrawingTools(document.getElementById("overlayTools"), {
       adapter,
       activeMode: "select",
-      measurement: { distanceMeters: 1260 },
       onModeChange(mode) { writeLog("modechange", { mode }); },
       onAction(action) { writeLog("action", { action }); },
       onCreate(feature) { writeLog("create", { feature }); },
       onUpdate(feature) { writeLog("update", { feature }); },
       onDelete(featureId) { writeLog("delete", { featureId }); },
       onSelect(payload) { writeLog("select", payload); },
+      onMeasure(measurement) { writeLog("measure", { measurement }); },
     });
 
     createMapDrawingTools(document.getElementById("externalTools"), {
@@ -227,21 +262,125 @@
       placement: "external",
       labels: "always",
       chrome: false,
-      measurement: { areaSquareMeters: 34000 },
       onModeChange(mode) { writeLog("external.modechange", { mode }); },
       onAction(action) { writeLog("external.action", { action }); },
+      onMeasure(measurement) { writeLog("external.measure", { measurement }); },
     });
 
-    function createDemoAdapter() {
+    async function createMapLibreDemoAdapter(container, config, statusNode) {
+      const maplibregl = await ensureMapLibre(config);
+      if (!maplibregl || typeof maplibregl.Map !== "function") {
+        throw new Error("MapLibre did not load from the local Hotline/Support vendor assets.");
+      }
+
+      const map = new maplibregl.Map({
+        attributionControl: false,
+        center: config.center,
+        container,
+        maxZoom: 18,
+        minZoom: 8,
+        style: config.style,
+        zoom: config.zoom,
+      });
+
+      if (typeof maplibregl.NavigationControl === "function") {
+        map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      }
+
+      await new Promise((resolve) => map.once("load", resolve));
+      map.resize();
+      statusNode.innerHTML = "<strong>Select a drawing mode.</strong> Click the map to add points; Finish commits line/polygon sketches.";
+
+      return createMapLibreDrawingAdapter(map, statusNode);
+    }
+
+    function ensureMapLibre(config) {
+      if (window.maplibregl) {
+        return Promise.resolve(window.maplibregl);
+      }
+      ensureStylesheet(config.assets.css);
+      return loadScript(config.assets.script).then(() => window.maplibregl);
+    }
+
+    function ensureStylesheet(href) {
+      if (!href || Array.from(document.styleSheets).some((sheet) => sheet.href && sheet.href.endsWith(href.replace(/^.*vendor/, "vendor")))) {
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    }
+
+    function loadScript(src) {
+      if (!src) {
+        return Promise.reject(new Error("Missing MapLibre script path."));
+      }
+      const existing = Array.from(document.scripts).find((script) => script.src && script.src.endsWith(src.replace(/^.*vendor/, "vendor")));
+      if (existing) {
+        return existing.dataset.loaded === "true"
+          ? Promise.resolve()
+          : new Promise((resolve, reject) => {
+              existing.addEventListener("load", resolve, { once: true });
+              existing.addEventListener("error", reject, { once: true });
+            });
+      }
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.addEventListener("load", () => {
+          script.dataset.loaded = "true";
+          resolve();
+        }, { once: true });
+        script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+        document.head.appendChild(script);
+      });
+    }
+
+    function createMapLibreDrawingAdapter(map, statusNode) {
       const listeners = new Map();
+      const sourceId = "helper-demo-drawings";
+      const fillLayerId = "helper-demo-drawings-fill";
+      const lineLayerId = "helper-demo-drawings-line";
+      const pointLayerId = "helper-demo-drawings-point";
+      let mode = "select";
+      let features = [];
+      let selectedId = null;
+      let draftCoordinates = [];
+
+      ensureDrawingLayers();
+      map.on("click", handleMapClick);
+
       const emit = (eventName, payload) => {
         (listeners.get(eventName) || []).forEach((callback) => callback(payload));
       };
-      return {
-        setMode(mode) {
+      const updateStatus = () => {
+        const draft = draftCoordinates.length ? ` Draft points: ${draftCoordinates.length}.` : "";
+        statusNode.innerHTML = `<strong>${mode}</strong> mode. Features: ${features.length}.${draft}`;
+      };
+      const commitFeature = (feature) => {
+        features = [...features, feature];
+        selectedId = feature.id;
+        draftCoordinates = [];
+        updateSource();
+        updateStatus();
+        emit("create", feature);
+        emit("select", { featureId: selectedId, feature });
+      };
+      const adapter = {
+        setMode(nextMode) {
+          mode = normalizeMode(nextMode);
+          selectedId = null;
+          draftCoordinates = [];
+          updateSource();
+          updateStatus();
           emit("modechange", { mode });
         },
-        setFeatures() {},
+        setFeatures(nextFeatures) {
+          features = Array.isArray(nextFeatures) ? nextFeatures : [];
+          updateSource();
+        },
         getCapabilities() {
           return {
             modes: ["select", "point", "line", "polygon", "rectangle", "circle"],
@@ -249,17 +388,216 @@
           };
         },
         finish() {
-          emit("create", {
-            type: "Feature",
-            id: `draw-${Date.now()}`,
-            geometry: { type: "Polygon", coordinates: [] },
-            properties: { drawingType: "polygon", label: "Search area" },
-          });
+          if ((mode === "line" && draftCoordinates.length >= 2) || (mode === "polygon" && draftCoordinates.length >= 3)) {
+            commitFeature(buildDraftFeature(mode, draftCoordinates));
+          }
         },
-        cancel() { emit("measure", null); },
-        undo() { emit("measure", { distanceMeters: 820 }); },
+        cancel() {
+          draftCoordinates = [];
+          updateSource();
+          updateStatus();
+          emit("measure", null);
+        },
+        undo() {
+          draftCoordinates = draftCoordinates.slice(0, -1);
+          updateSource();
+          updateStatus();
+          emit("measure", measureDraft());
+        },
         redo() {},
-        deleteSelected() { emit("delete", "draw-selected"); },
+        deleteSelected() {
+          const removed = selectedId;
+          features = features.filter((feature) => String(feature.id) !== String(selectedId));
+          selectedId = null;
+          updateSource();
+          updateStatus();
+          emit("delete", removed ?? "selected");
+        },
+        clear() {
+          features = [];
+          selectedId = null;
+          draftCoordinates = [];
+          updateSource();
+          updateStatus();
+          emit("delete", "all");
+          emit("measure", null);
+        },
+        on(eventName, callback) {
+          const list = listeners.get(eventName) || [];
+          list.push(callback);
+          listeners.set(eventName, list);
+          return () => listeners.set(eventName, (listeners.get(eventName) || []).filter((item) => item !== callback));
+        },
+      };
+      updateStatus();
+      return adapter;
+
+      function normalizeMode(nextMode) {
+        return ["select", "point", "line", "polygon", "rectangle", "circle"].includes(nextMode) ? nextMode : "select";
+      }
+
+      function handleMapClick(event) {
+        const coordinate = [event.lngLat.lng, event.lngLat.lat];
+        if (mode === "select") {
+          const hit = map.queryRenderedFeatures(event.point, { layers: [fillLayerId, lineLayerId, pointLayerId] })[0];
+          selectedId = hit?.properties?.id ?? null;
+          emit("select", { featureId: selectedId, feature: features.find((feature) => String(feature.id) === String(selectedId)) ?? null });
+          updateStatus();
+          return;
+        }
+        if (mode === "point") {
+          const id = nextId("point");
+          commitFeature({
+            type: "Feature",
+            id,
+            geometry: { type: "Point", coordinates: coordinate },
+            properties: { id, drawingType: "point", label: "Point" },
+          });
+          return;
+        }
+        if (mode === "circle") {
+          commitFeature(circleFeature(coordinate));
+          return;
+        }
+        if (mode === "rectangle") {
+          commitFeature(rectangleFeature(coordinate));
+          return;
+        }
+        if (mode === "line" || mode === "polygon") {
+          draftCoordinates = [...draftCoordinates, coordinate];
+          updateSource();
+          updateStatus();
+          emit("measure", measureDraft());
+        }
+      }
+
+      function ensureDrawingLayers() {
+        if (!map.getSource(sourceId)) {
+          map.addSource(sourceId, { type: "geojson", data: featureCollection() });
+        }
+        if (!map.getLayer(fillLayerId)) {
+          map.addLayer({
+            id: fillLayerId,
+            type: "fill",
+            source: sourceId,
+            filter: ["==", ["geometry-type"], "Polygon"],
+            paint: { "fill-color": "#f4b350", "fill-opacity": 0.22 },
+          });
+        }
+        if (!map.getLayer(lineLayerId)) {
+          map.addLayer({
+            id: lineLayerId,
+            type: "line",
+            source: sourceId,
+            paint: {
+              "line-color": ["case", ["boolean", ["get", "draft"], false], "#64b5f6", "#f4b350"],
+              "line-width": ["case", ["boolean", ["get", "draft"], false], 3, 2.5],
+            },
+          });
+        }
+        if (!map.getLayer(pointLayerId)) {
+          map.addLayer({
+            id: pointLayerId,
+            type: "circle",
+            source: sourceId,
+            filter: ["==", ["geometry-type"], "Point"],
+            paint: {
+              "circle-color": "#64b5f6",
+              "circle-radius": 5,
+              "circle-stroke-color": "#06121d",
+              "circle-stroke-width": 1.5,
+            },
+          });
+        }
+      }
+
+      function updateSource() {
+        map.getSource(sourceId)?.setData(featureCollection());
+      }
+
+      function featureCollection() {
+        const rendered = [...features];
+        if (draftCoordinates.length >= 2 && mode === "line") {
+          rendered.push({ type: "Feature", id: "draft-line", geometry: { type: "LineString", coordinates: draftCoordinates }, properties: { id: "draft-line", draft: true } });
+        }
+        if (draftCoordinates.length >= 2 && mode === "polygon") {
+          rendered.push({ type: "Feature", id: "draft-polygon", geometry: { type: "LineString", coordinates: [...draftCoordinates, draftCoordinates[0]] }, properties: { id: "draft-polygon", draft: true } });
+        }
+        return { type: "FeatureCollection", features: rendered };
+      }
+
+      function buildDraftFeature(kind, coordinates) {
+        const id = nextId(kind);
+        const geometry = kind === "polygon"
+          ? { type: "Polygon", coordinates: [[...coordinates, coordinates[0]]] }
+          : { type: "LineString", coordinates };
+        return { type: "Feature", id, geometry, properties: { id, drawingType: kind, label: kind === "polygon" ? "Search area" : "Route" } };
+      }
+
+      function rectangleFeature(center) {
+        const id = nextId("rectangle");
+        const lng = center[0];
+        const lat = center[1];
+        const dx = 0.006;
+        const dy = 0.004;
+        const ring = [[lng - dx, lat - dy], [lng + dx, lat - dy], [lng + dx, lat + dy], [lng - dx, lat + dy], [lng - dx, lat - dy]];
+        return { type: "Feature", id, geometry: { type: "Polygon", coordinates: [ring] }, properties: { id, drawingType: "rectangle", label: "Staging box" } };
+      }
+
+      function circleFeature(center) {
+        const id = nextId("circle");
+        const radius = 0.006;
+        const ring = Array.from({ length: 49 }, (_, index) => {
+          const angle = (Math.PI * 2 * index) / 48;
+          return [center[0] + Math.cos(angle) * radius, center[1] + Math.sin(angle) * radius];
+        });
+        return { type: "Feature", id, geometry: { type: "Polygon", coordinates: [ring] }, properties: { id, drawingType: "circle", label: "Operational radius" } };
+      }
+
+      function measureDraft() {
+        if (draftCoordinates.length < 2) {
+          return null;
+        }
+        const distanceMeters = draftCoordinates.slice(1).reduce((sum, coordinate, index) => sum + distance(draftCoordinates[index], coordinate), 0);
+        return mode === "polygon" && draftCoordinates.length >= 3
+          ? { distanceMeters, areaSquareMeters: polygonArea(draftCoordinates) }
+          : { distanceMeters };
+      }
+
+      function nextId(prefix) {
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      }
+
+      function distance(a, b) {
+        const metersPerDegree = 111320;
+        const x = (b[0] - a[0]) * metersPerDegree * Math.cos(((a[1] + b[1]) / 2) * Math.PI / 180);
+        const y = (b[1] - a[1]) * metersPerDegree;
+        return Math.sqrt((x * x) + (y * y));
+      }
+
+      function polygonArea(coordinates) {
+        const metersPerDegree = 111320;
+        const points = coordinates.map(([lng, lat]) => [lng * metersPerDegree * Math.cos(lat * Math.PI / 180), lat * metersPerDegree]);
+        const sum = points.reduce((total, point, index) => {
+          const next = points[(index + 1) % points.length];
+          return total + ((point[0] * next[1]) - (next[0] * point[1]));
+        }, 0);
+        return Math.abs(sum / 2);
+      }
+    }
+
+    function createFallbackAdapter() {
+      const listeners = new Map();
+      const emit = (eventName, payload) => (listeners.get(eventName) || []).forEach((callback) => callback(payload));
+      return {
+        setMode(mode) { emit("modechange", { mode }); },
+        setFeatures() {},
+        getCapabilities() { return { modes: ["select", "point", "line", "polygon", "rectangle", "circle"], actions: { finish: true, cancel: true, undo: true, redo: false, delete: true, clear: true } }; },
+        finish() { emit("create", { type: "Feature", id: "fallback", geometry: { type: "Point", coordinates: [] }, properties: {} }); },
+        cancel() { emit("measure", null); },
+        undo() {},
+        redo() {},
+        deleteSelected() { emit("delete", "selected"); },
         clear() { emit("delete", "all"); },
         on(eventName, callback) {
           const list = listeners.get(eventName) || [];

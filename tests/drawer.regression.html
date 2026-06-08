@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drawer Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+</head>
+<body>
+  <main id="host"></main>
+  <script type="module">
+    import { createBottomDrawer, createDrawer } from "../js/ui/ui.drawer.js";
+
+    const results = [];
+    const assert = (condition, message) => {
+      if (!condition) {
+        throw new Error(message);
+      }
+      results.push(message);
+    };
+
+    const host = document.getElementById("host");
+    const clicks = [];
+    assert(createBottomDrawer === createDrawer, "createBottomDrawer remains a compatibility alias for createDrawer");
+    const drawer = createDrawer({
+      title: "Users",
+      animationMs: 0,
+      headerActions: [
+        {
+          id: "refresh",
+          label: "Refresh users",
+          icon: "actions.refresh",
+          title: "Refresh users",
+          onClick(action, event, api) {
+            clicks.push({ id: action.id, apiMatches: api === drawer, eventType: event.type });
+          },
+        },
+        {
+          id: "export",
+          label: "Export users",
+          disabled: true,
+          onClick() {
+            clicks.push({ id: "export" });
+          },
+        },
+      ],
+    });
+
+    assert(drawer.header instanceof HTMLElement, "drawer still exposes header ref");
+    assert(drawer.title instanceof HTMLElement, "drawer still exposes title ref");
+    assert(drawer.closeButton instanceof HTMLElement, "drawer still exposes closeButton ref");
+    assert(drawer.headerActions instanceof HTMLElement, "drawer exposes headerActions ref");
+    assert(typeof drawer.updateHeaderActions === "function", "drawer exposes updateHeaderActions()");
+    assert(typeof drawer.setHeaderActionState === "function", "drawer exposes setHeaderActionState()");
+    assert(typeof drawer.getHeaderAction === "function", "drawer exposes getHeaderAction()");
+
+    drawer.open(host);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    const refresh = drawer.getHeaderAction("refresh");
+    const exportButton = drawer.getHeaderAction("export");
+    assert(Boolean(refresh), "refresh header action is rendered");
+    assert(Boolean(exportButton), "export header action is rendered");
+    assert(refresh.compareDocumentPosition(drawer.closeButton) & Node.DOCUMENT_POSITION_FOLLOWING, "actions render before close button");
+    assert(refresh.getAttribute("aria-label") === "Refresh users", "icon action has accessible label");
+    assert(refresh.querySelector("[data-icon='actions.refresh']"), "icon action renders Helper icon");
+    assert(exportButton.disabled, "disabled action renders disabled button");
+
+    refresh.click();
+    exportButton.click();
+    assert(clicks.length === 1 && clicks[0].id === "refresh", "enabled action invokes callback and disabled action does not");
+    assert(clicks[0].apiMatches && clicks[0].eventType === "click", "action callback receives event and drawer api");
+
+    assert(drawer.setHeaderActionState("refresh", { busy: true }) === true, "setHeaderActionState updates existing action");
+    const busyRefresh = drawer.getHeaderAction("refresh");
+    assert(busyRefresh.disabled, "busy action is disabled");
+    assert(busyRefresh.getAttribute("aria-busy") === "true", "busy action exposes aria-busy");
+    busyRefresh.click();
+    assert(clicks.length === 1, "busy action does not invoke callback");
+
+    drawer.updateHeaderActions([
+      {
+        id: "pin",
+        label: "Pin drawer",
+        icon: "navigation.chevron-up",
+        showLabel: true,
+        onClick(action) {
+          clicks.push({ id: action.id });
+        },
+      },
+    ]);
+    assert(!drawer.getHeaderAction("refresh"), "updateHeaderActions removes previous action");
+    const pin = drawer.getHeaderAction("pin");
+    assert(Boolean(pin), "updateHeaderActions renders replacement action");
+    assert(pin.textContent.includes("Pin drawer"), "showLabel renders visible label");
+    pin.click();
+    assert(clicks.at(-1).id === "pin", "replacement action invokes callback");
+
+    drawer.closeButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert(!drawer.isOpen(), "close button behavior is preserved");
+
+    document.body.dataset.status = "pass";
+    document.body.textContent = `PASS ${results.length}`;
+  </script>
+</body>
+</html>

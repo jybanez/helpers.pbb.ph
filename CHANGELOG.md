@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added declarative `headerActions` to `ui.drawer`, with icon-only header buttons before the close button, accessible labels/titles, busy/disabled state, update helpers, demo coverage, and regression coverage.
+- Added `createDrawer(options)` as the primary `ui.drawer` factory name, while retaining `createBottomDrawer(options)` as a compatibility alias for older integrations.
 - Added `ui.map.drawing` for adapter-based operational map drawing tools with drawing modes, edit actions, measurement display, GeoJSON feature state, mock-adapter demo coverage, docs, and regression coverage.
 - Added `ui.clock` as a reusable wall-clock display with label, `HH:MM:SS AM/PM` time, date row, timezone/formatter options, chrome-less mode, demo coverage, regression coverage, and the shared one-second ticker now also used by `ui.elapsed.time`.
 - Added `ui.charts` for dependency-free operational bar, horizontal-bar, stacked-bar, donut, and sparkline charts with accessible summaries, selectable items, demos, docs, and regression coverage.

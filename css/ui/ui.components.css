@@ -295,6 +295,112 @@ select.ui-input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-drawer-header > .ui-title {
+  min-width: 0;
+}
+
+.ui-drawer-header-controls,
+.ui-drawer-header-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.ui-drawer-action {
+  position: relative;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-bg-soft);
+  color: var(--ui-text);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  font: 600 12px/1 var(--ui-font);
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.ui-drawer-action:hover {
+  border-color: #5373af;
+  background: rgba(82, 113, 171, 0.12);
+}
+
+.ui-drawer-action:disabled,
+.ui-drawer-action[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.ui-drawer-action-primary {
+  border-color: #4567a5;
+  background: #213454;
+  color: #e6efff;
+}
+
+.ui-drawer-action-danger {
+  border-color: #8d3b48;
+  background: #451821;
+  color: #ffdfe5;
+}
+
+.ui-drawer-action-quiet {
+  border-color: rgba(51, 69, 99, 0.65);
+  background: rgba(13, 20, 35, 0.55);
+  color: #b9c9e7;
+}
+
+.ui-drawer-action-ghost {
+  background: transparent;
+}
+
+.ui-drawer-action-icon {
+  pointer-events: none;
+}
+
+.ui-drawer-action-label {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-drawer-action-with-label {
+  width: auto;
+  min-width: 30px;
+  padding: 0 10px;
+  grid-auto-flow: column;
+  gap: 6px;
+  border-radius: var(--ui-radius-pill);
+}
+
+.ui-drawer-action.is-busy .ui-drawer-action-icon,
+.ui-drawer-action.is-busy .ui-drawer-action-label {
+  opacity: 0.28;
+}
+
+.ui-drawer-action.is-busy::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: ui-drawer-action-spin 720ms linear infinite;
+}
+
+@keyframes ui-drawer-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ui-drawer-body {
