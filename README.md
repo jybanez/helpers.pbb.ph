@@ -2196,6 +2196,7 @@ Options:
 | `disabled` | `boolean` | `false` | Disables both buttons and the input. |
 | `readonly` | `boolean` | `false` | Prevents stepping and typed edits while keeping the control readable. |
 | `ariaLabel` | `string` | `"Number input"` | Direct aria-label for standalone usage. |
+| `describedBy` | `string` | `""` | Optional `aria-describedby` target ids for helper-hosted or externally described usage. |
 | `decrementLabel` | `string` | `"Decrease value"` | Accessible label for the decrement button. |
 | `incrementLabel` | `string` | `"Increase value"` | Accessible label for the increment button. |
 | `prefixText` | `string` | `""` | Optional text shown before the input value, such as `$`. |
@@ -3485,6 +3486,7 @@ Supported V1 item types:
 - `display`
 - `ui.select`
 - `ui.treeSelect`
+- `number-stepper` or `number_stepper`
 - `avatar`
 - `input`
 - `textarea`
@@ -3525,6 +3527,8 @@ Field properties:
 - `options`
 - `help`
 - `span`
+- `rowClassName`
+- `className` (row-item alias for `rowClassName`; modal-level `className` still belongs to the outer modal shell)
 
 `ui.select` field properties:
 
@@ -3547,6 +3551,19 @@ Field properties:
 - `selectOnTab`
 - `clearable`
 - `defaultExpanded`
+
+`number-stepper` field properties:
+
+- `min`
+- `max`
+- `step`
+- `decimals`
+- `allowEmpty`
+- `prefixText`
+- `suffixText`
+- `decrementLabel`
+- `incrementLabel`
+- `ariaLabel`
 
 `avatar` field properties:
 
@@ -3632,6 +3649,7 @@ Validation and submit behavior:
 - hosted `ui.select` menus render in a floating body-level layer so they are not clipped by modal or drawer overflow containers
 - `ui.treeSelect` hosts the existing shared tree-select helper inside the form modal instead of introducing app-local grouped picker markup
 - hosted `ui.treeSelect` menus render in the same floating body-level layer so they are not clipped by modal or drawer overflow containers
+- `number-stepper` hosts the existing shared number stepper for bounded quantities and participates in `getValues()`, `setValues(...)`, helper validation/errors, disabled/readOnly state, and invalid-field focus
 
 Example:
 

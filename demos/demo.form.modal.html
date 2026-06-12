@@ -471,6 +471,42 @@ const payload = {
           <div class="demo-stack__row demo-stack__row--live">
             <div class="demo-stack__header">
               <div>
+                <h2>Number Stepper Field</h2>
+                <p>Hosted <code>number-stepper</code> for bounded quantities inside modal forms, including validation, values, and errors.</p>
+              </div>
+              <button id="numberStepperDemoBtn" class="ui-button ui-button-primary" type="button">Open Quantity Form</button>
+            </div>
+            <div class="demo-stack__meta">
+              <span class="demo-chip">number-stepper</span>
+              <span class="demo-chip">bounded quantity</span>
+              <span class="demo-chip">numeric values</span>
+              <span class="demo-chip">request support</span>
+            </div>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-code">{
+  type: "number-stepper",
+  name: "requested_quantity",
+  label: "Requested quantity",
+  min: 1,
+  max: 20,
+  step: 1,
+  allowEmpty: true,
+  required: true,
+}
+
+// Alias also accepted:
+// { type: "number_stepper", ... }</pre>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-log" data-log-prefix="formModal.numberStepper">No Number Stepper events yet.</pre>
+          </div>
+        </article>
+
+        <article class="demo-stack">
+          <div class="demo-stack__row demo-stack__row--live">
+            <div class="demo-stack__header">
+              <div>
                 <h2>Conditional Visibility</h2>
                 <p>Dependent rows can now stay inside the shared schema with <code>visibleWhen</code> instead of forcing app-local modal row regeneration.</p>
               </div>
@@ -540,7 +576,7 @@ const payload = {
 
       <section class="panel content-section" id="description">
         <h2>Description</h2>
-        <p><code>createFormModal(...)</code> is the shared direction for modal forms in PBB projects. It keeps the layout intentionally narrow: one or two items per row, helper-owned field rendering, and a stable submit lifecycle. Presets like login, re-auth, status update, and reason-required compose over it instead of bypassing it. Hosted helper fields such as <code>ui.select</code> and <code>ui.treeSelect</code> stay within the same contract instead of introducing app-local picker systems.</p>
+        <p><code>createFormModal(...)</code> is the shared direction for modal forms in PBB projects. It keeps the layout intentionally narrow: one or two items per row, helper-owned field rendering, and a stable submit lifecycle. Presets like login, re-auth, status update, and reason-required compose over it instead of bypassing it. Hosted helper fields such as <code>ui.select</code>, <code>ui.treeSelect</code>, and <code>number-stepper</code> stay within the same contract instead of introducing app-local picker or quantity systems.</p>
       </section>
 
       <section class="panel content-section" id="constructor">
@@ -573,6 +609,9 @@ const payload = {
               <tr><td><code>mode</code></td><td><code>"create"</code></td><td>Lightweight form mode surfaced to rules and state. Allowed values: <code>create</code>, <code>edit</code>.</td></tr>
               <tr><td><code>context</code></td><td><code>null</code></td><td>Narrow top strip for acceptance-proof flows such as geodata hub add.</td></tr>
               <tr><td><code>rows</code></td><td><code>[]</code></td><td>Row-based field schema. One or two items per row; hidden-only rows do not render visible gaps.</td></tr>
+              <tr><td><code>rows[].type</code></td><td><code>""</code></td><td>Supported field/content types include <code>input</code>, <code>textarea</code>, <code>select</code>, <code>checkbox</code>, <code>ui.select</code>, <code>ui.treeSelect</code>, <code>number-stepper</code>, <code>hidden</code>, <code>display</code>, <code>text</code>, <code>alert</code>, and <code>divider</code>. Alias <code>number_stepper</code> is accepted.</td></tr>
+              <tr><td><code>rows[].className</code></td><td><code>""</code></td><td>Optional custom class added to the rendered row item. Alias for <code>rowClassName</code>; use modal-level <code>className</code> only for the outer modal shell.</td></tr>
+              <tr><td><code>number-stepper</code></td><td><code>null</code></td><td>Hosted <code>ui.number.stepper</code> field. Supports <code>min</code>, <code>max</code>, <code>step</code>, <code>decimals</code>, <code>allowEmpty</code>, <code>prefixText</code>, <code>suffixText</code>, validation/errors, focus, disabled/readOnly state, <code>getValues()</code>, and <code>setValues(...)</code>.</td></tr>
               <tr><td><code>initialValues</code></td><td><code>{}</code></td><td>Initial payload values, including hidden fields.</td></tr>
               <tr><td><code>visibleWhen</code></td><td><code>null</code></td><td>Field-level conditional visibility rule. String values mean exact match, arrays mean inclusion, and all keys must match.</td></tr>
               <tr><td><code>extraActions</code></td><td><code>[]</code></td><td>Additive footer actions rendered before helper-owned <code>Cancel</code> and <code>Submit</code>. Reserved IDs: <code>cancel</code>, <code>submit</code>.</td></tr>
@@ -1177,6 +1216,67 @@ const payload = {
       writeLog(`${source}.open`, { ok: true });
     }
 
+    function openNumberStepperModal(source = "formModal.numberStepper") {
+      const formModal = createFormModal({
+        title: "Request Support",
+        size: "sm",
+        busyMessage: "Submitting request...",
+        submitLabel: "Send Request",
+        rows: [
+          [{ type: "text", className: "demo-support-request-note", content: "Use a hosted number stepper for requested quantities instead of a native number input when plus/minus control matters." }],
+          [{
+            type: "number-stepper",
+            name: "requested_quantity",
+            label: "Requested quantity",
+            min: 1,
+            max: 20,
+            step: 1,
+            allowEmpty: true,
+            required: true,
+            suffixText: "units",
+            help: "Required. Empty value is submitted as null until the operator chooses a quantity.",
+            span: 2,
+          }],
+          [{
+            type: "number_stepper",
+            name: "staging_hours",
+            label: "Staging window",
+            value: 2,
+            min: 0,
+            max: 24,
+            step: 0.5,
+            decimals: 1,
+            suffixText: "hr",
+            span: 2,
+          }],
+        ],
+        onChange(values, ctx) {
+          writeLog(`${source}.change`, {
+            changedFieldName: ctx.changedFieldName,
+            values,
+          });
+        },
+        async onSubmit(values, ctx) {
+          writeLog(`${source}.submit.begin`, values);
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          if (values.requested_quantity > 12) {
+            ctx.setErrors({ requested_quantity: "Only 12 units are currently available." });
+            writeLog(`${source}.submit.failed`, { reason: "capacity", values });
+            return false;
+          }
+          writeLog(`${source}.submit.success`, values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, {
+        values: formModal.getValues(),
+      });
+    }
+
     function openConditionalVisibilityModal(source = "formModal.conditionalVisibility") {
       const formModal = createFormModal({
         title: "Incident Field Definition",
@@ -1292,6 +1392,7 @@ const payload = {
     document.getElementById("apiErrorsDemoBtn").addEventListener("click", () => openApiErrorMappingModal());
     document.getElementById("uplinkDemoBtn").addEventListener("click", () => openAddUplinkStyleModal());
     document.getElementById("resourceTreeDemoBtn").addEventListener("click", () => openResourceTreeStyleModal());
+    document.getElementById("numberStepperDemoBtn").addEventListener("click", () => openNumberStepperModal());
     document.getElementById("conditionalVisibilityDemoBtn").addEventListener("click", () => openConditionalVisibilityModal());
   </script>
 </body>

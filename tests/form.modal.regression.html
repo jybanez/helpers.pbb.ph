@@ -270,6 +270,7 @@
           name: "locationSummary",
           label: "Location",
           span: 2,
+          className: "test-display-row-class",
         }],
         [
           {
@@ -315,6 +316,7 @@
     assert(hubModal.getState().mode === "edit", "getState should expose current mode");
     assert(getContextStrip()?.textContent.includes("Philippines / Region VII / Cebu / Cebu City"), "context option should render top-level summary strip");
     assert(Boolean(getLocationDisplay()), "display item should render visible context text");
+    assert(Boolean(getLocationDisplay()?.closest(".ui-form-modal-field")?.classList.contains("test-display-row-class")), "row item className should alias rowClassName");
     assert(Boolean(getHiddenGeneratedName()), "hidden item should render hidden input");
     assert(hubModal.getValues().generated_name === "CEBU CITY, CEBU", "hidden item should participate in getValues");
     assert(getTokenInput() === null, "hiddenOn should omit the field in edit mode");
@@ -603,6 +605,81 @@
     resourceModal.destroy();
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove ui.treeSelect integration modal from DOM");
+
+    const numberStepperModal = createFormModal({
+      title: "Request Support",
+      submitLabel: "Submit Request",
+      rows: [
+        [{
+          type: "number-stepper",
+          name: "requested_quantity",
+          label: "Requested quantity",
+          value: null,
+          min: 1,
+          max: 12,
+          step: 1,
+          allowEmpty: true,
+          required: true,
+          help: "Quantity needed by command.",
+        }],
+        [{
+          type: "number_stepper",
+          name: "staging_hours",
+          label: "Staging hours",
+          value: 2,
+          min: 0,
+          max: 24,
+          step: 0.5,
+          decimals: 1,
+          suffixText: "hr",
+        }],
+      ],
+      async onSubmit() {
+        await wait(50);
+        return false;
+      },
+    });
+
+    numberStepperModal.open();
+    await wait(100);
+
+    const quantityField = () => document.querySelector(".ui-form-modal-field.is-number-stepper");
+    const quantityInput = () => document.querySelector('input[name="requested_quantity"]');
+    const quantityIncrement = () => quantityField()?.querySelector(".ui-number-stepper-button-increment");
+    const quantityError = () => quantityField()?.querySelector(".ui-form-modal-field-error");
+    const aliasField = () => document.querySelector('input[name="staging_hours"]')?.closest(".ui-form-modal-field");
+    const aliasInput = () => document.querySelector('input[name="staging_hours"]');
+    const submitRequestButton = () => Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /submit request/i.test(button.textContent || ""));
+
+    assert(Boolean(quantityField()?.querySelector(".ui-number-stepper")), "number-stepper field should render the shared number stepper inside form modal");
+    assert(Boolean(aliasField()?.classList.contains("is-number-stepper")), "number_stepper alias should normalize to number-stepper field class");
+    assert(numberStepperModal.getValues().requested_quantity === null, "allowEmpty number-stepper should serialize empty value as null");
+    assert(numberStepperModal.getValues().staging_hours === 2, "number_stepper alias should serialize numeric values");
+
+    submitRequestButton()?.click();
+    await wait(120);
+    assert(quantityError()?.textContent.includes("required"), "required number-stepper should render validation error");
+    assert(quantityInput()?.getAttribute("aria-invalid") === "true", "number-stepper input should receive aria-invalid on validation error");
+    assert(document.activeElement === quantityInput(), "required number-stepper validation should focus the inner input");
+
+    numberStepperModal.setValues({ requested_quantity: 4, staging_hours: 6.5 });
+    await wait(80);
+    assert(numberStepperModal.getValues().requested_quantity === 4, "setValues should update number-stepper values");
+    assert(aliasInput()?.value === "6.5", "setValues should update number_stepper alias input display");
+
+    quantityIncrement()?.click();
+    await wait(80);
+    assert(numberStepperModal.getValues().requested_quantity === 5, "number-stepper increment should update form modal values");
+    assert(quantityError()?.hidden === true, "number-stepper change should clear its field error");
+
+    numberStepperModal.setErrors({ requested_quantity: "Quantity exceeds available resources." });
+    await wait(80);
+    assert(quantityError()?.textContent.includes("exceeds available"), "setErrors should target number-stepper fields");
+    assert(quantityInput()?.getAttribute("aria-invalid") === "true", "setErrors should mark number-stepper input invalid");
+
+    numberStepperModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove number-stepper integration modal from DOM");
 
     if (failures.length) {
       document.body.dataset.status = "fail";
