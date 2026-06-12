@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.navigation.stack` with `createNavigationStack(...)` for stateful drill-in page stacks, retained previous pages, `push`/`pop`/`replace`/`goTo`/`reset` methods, lifecycle hooks, and `slide`/`fade`/`none` transitions.
 - Added hosted `number-stepper` / `number_stepper` field support to `createFormModal(...)`, composing over `ui.number.stepper` with `getValues()`, `setValues(...)`, validation/errors, focus targeting, disabled/readOnly handling, min/max/step/allowEmpty options, demo coverage, bridge whitelist support, and bundle delivery.
 - Added row-item `className` as an alias for `rowClassName` in `createFormModal(...)`, including Workspace bridge support, so custom row-item styling does not silently miss when teams use the more familiar key.
 - Added `ui.heartbeat.strip` for compact source/node connectivity history with app-owned status metadata, helper-computed average/per-bucket uptime from received/expected counts, flexible bucket counts/range labels, last-seen age text, `chrome: false`, accessible summaries, demo coverage, and regression coverage.

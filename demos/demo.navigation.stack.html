@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation Stack Demo</title>
+  <link rel='stylesheet' href='../css/demo/demo.shell.css'>
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    #stackHost { min-height: 380px; }
+    .stack-page { display: grid; gap: 12px; padding: 14px; align-content: start; }
+    .stack-page h3, .stack-page p { margin: 0; }
+    .stack-list { display: grid; gap: 8px; }
+    .stack-item { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 44px; padding: 10px 12px; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; color: inherit; text-align: left; cursor: pointer; }
+    .stack-item:hover { border-color: #4a5f86; background: #101a2b; }
+    .stack-item small { color: #9fb2d8; }
+    .stack-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .stack-toolbar-title { display: grid; gap: 2px; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+    .metric { border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; display: grid; gap: 4px; }
+    .metric strong { font-size: 18px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 160px; }
+    pre:not(.log) { color: #d7e0f4; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.navigation.stack"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Navigation Stack",
+      overview: "Stateful drill-in view stack for source lists, detail pages, and nested sublists.",
+      useWhen: [
+        "Use <code>createNavigationStack(...)</code> when users drill from a list into details and deeper sublists.",
+        "Use it when previous pages should stay mounted so scroll, filters, and loaded content are preserved until popped."
+      ],
+      avoidWhen: [
+        "Do not use it for unrelated top-level app sections; use navbar/sidebar routing instead.",
+        "Do not use it when all sibling views should remain visible at once; use tabs, splitters, or cards."
+      ],
+      description: "The navigation stack keeps a linear page stack. Pushing shows a new page, popping removes the current page and reveals the previous one, and slide/fade/none transitions are handled by the helper.",
+      defaultSampleCode: `const stack = createNavigationStack(host, {\n  transition: "slide",\n  initialPages: [{ id: "sources", title: "Sources", render: renderSources }],\n});\n\nstack.push({ id: "source:apas", title: "Apas", render: renderSourceDetail });\nstack.pop();`,
+      constructor: [{ factory: "<code>createNavigationStack(container, options)</code>", arguments: "<code>container</code>, stack <code>options</code>", returns: "Navigation-stack instance" }],
+      options: [
+        { option: "<code>initialPages</code>", default: "<code>[]</code>", description: "Initial page definitions. The last page becomes current." },
+        { option: "<code>transition</code>", default: "<code>\"slide\"</code>", description: "Page transition. Allowed values: <code>slide</code>, <code>fade</code>, <code>none</code>." },
+        { option: "<code>duration</code>", default: "<code>180</code>", description: "Transition duration in milliseconds." },
+        { option: "<code>destroyOnPop</code>", default: "<code>true</code>", description: "Destroys popped pages. Pages still in the stack remain mounted." },
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Callback for push, pop, replace, goTo, and reset changes." }
+      ],
+      propertiesText: "Use <code>getState()</code> instead of reading internals. The returned state includes current page, index, depth, and page list.",
+      events: [
+        { event: "<code>onChange</code>", arguments: "<code>({ action, currentPage, previousPage, state, api })</code>", returns: "<code>void</code>" },
+        { event: "Page lifecycle hooks", arguments: "<code>onBeforeShow</code>, <code>onShow</code>, <code>onBeforeHide</code>, <code>onHide</code>, <code>onDestroy</code>", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>push(page)</code>", arguments: "page definition", returns: "normalized page" },
+        { method: "<code>pop()</code>", arguments: "optional action options", returns: "removed page or <code>null</code>" },
+        { method: "<code>replace(page)</code>", arguments: "page definition", returns: "normalized page" },
+        { method: "<code>goTo(idOrIndex)</code>", arguments: "existing page id or index", returns: "target page or <code>null</code>" },
+        { method: "<code>reset(pages)</code>", arguments: "page definitions", returns: "state snapshot" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "state snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type='module' src='../js/demo/demo.shell.js'></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <label class="row">Transition
+          <select id="transitionSelect" class="ui-input">
+            <option value="slide">slide</option>
+            <option value="fade">fade</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+        <button id="resetBtn" class="ui-button" type="button">Reset</button>
+      </div>
+      <h1 class="ui-title">Navigation Stack Demo</h1>
+      <p class="muted">Drill into sources, source incidents, and incident details. Back/popped pages reveal the previous mounted page.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Source Drill-In</h2>
+      <div id="stackHost"></div>
+      <pre>const stack = createNavigationStack(host, {
+  transition: "slide",
+  initialPages: [{ id: "sources", title: "Sources", render: renderSources }],
+});
+
+stack.push({ id: "source:apas", title: "Apas Source Hub", render: renderSourceDetail });
+stack.push({ id: "incident:216", title: "Incident #216", render: renderIncidentDetail });
+stack.pop();</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createNavigationStack = await uiLoader.get("ui.navigation.stack");
+    const log = document.getElementById("log");
+    const sources = [
+      { id: "apas", name: "Apas Source Hub", barangay: "Apas", incidents: ["000216", "000221", "000233"] },
+      { id: "lahug", name: "Lahug Source Hub", barangay: "Lahug", incidents: ["000204", "000229"] },
+      { id: "guadalupe", name: "Guadalupe Source Hub", barangay: "Guadalupe", incidents: ["000218", "000237", "000241"] },
+    ];
+    const stack = createNavigationStack(document.getElementById("stackHost"), {
+      transition: "slide",
+      duration: 180,
+      initialPages: [buildSourcesPage()],
+      onChange(payload) {
+        writeLog(`stack.${payload.action}`, {
+          current: payload.currentPage?.id || null,
+          previous: payload.previousPage?.id || null,
+          depth: payload.state.depth,
+        });
+      },
+    });
+
+    document.getElementById("transitionSelect").addEventListener("change", (event) => {
+      stack.update({ transition: event.target.value });
+      writeLog("stack.transition", { transition: event.target.value });
+    });
+    document.getElementById("resetBtn").addEventListener("click", () => stack.reset([buildSourcesPage()]));
+
+    function buildSourcesPage() {
+      return {
+        id: "sources",
+        title: "Sources",
+        render() {
+          const root = pageShell("Sources", "Select a source hub to inspect related incidents.", false);
+          const list = root.querySelector(".stack-list");
+          sources.forEach((source) => {
+            list.appendChild(itemButton(source.name, `${source.barangay} • ${source.incidents.length} active records`, () => {
+              stack.push(buildSourcePage(source));
+            }));
+          });
+          return root;
+        },
+      };
+    }
+
+    function buildSourcePage(source) {
+      return {
+        id: `source:${source.id}`,
+        title: source.name,
+        render() {
+          const root = pageShell(source.name, `${source.barangay} source details and active incident records.`, true);
+          const metrics = document.createElement("div");
+          metrics.className = "detail-grid";
+          metrics.innerHTML = `<div class="metric"><span class="muted">Active</span><strong>${source.incidents.length}</strong></div><div class="metric"><span class="muted">Status</span><strong>Online</strong></div>`;
+          root.appendChild(metrics);
+          const list = root.querySelector(".stack-list");
+          source.incidents.forEach((incidentId) => {
+            list.appendChild(itemButton(`Incident #${incidentId}`, "Open incident detail page", () => {
+              stack.push(buildIncidentPage(source, incidentId));
+            }));
+          });
+          return root;
+        },
+      };
+    }
+
+    function buildIncidentPage(source, incidentId) {
+      return {
+        id: `incident:${incidentId}`,
+        title: `Incident #${incidentId}`,
+        render() {
+          const root = pageShell(`Incident #${incidentId}`, `Opened from ${source.name}. This page can be popped without rebuilding the source page.`, true);
+          const metrics = document.createElement("div");
+          metrics.className = "detail-grid";
+          metrics.innerHTML = `<div class="metric"><span class="muted">Priority</span><strong>Elevated</strong></div><div class="metric"><span class="muted">Teams</span><strong>2</strong></div><div class="metric"><span class="muted">Media</span><strong>Ready</strong></div>`;
+          root.appendChild(metrics);
+          return root;
+        },
+      };
+    }
+
+    function pageShell(title, subtitle, showBack) {
+      const root = document.createElement("div");
+      root.className = "stack-page";
+      root.innerHTML = `<div class="stack-toolbar"><div class="stack-toolbar-title"><h3>${title}</h3><p class="muted">${subtitle}</p></div></div><div class="stack-list"></div>`;
+      if (showBack) {
+        const button = document.createElement("button");
+        button.className = "ui-button";
+        button.type = "button";
+        button.textContent = "Back";
+        button.addEventListener("click", () => stack.pop());
+        root.querySelector(".stack-toolbar").appendChild(button);
+      }
+      return root;
+    }
+
+    function itemButton(label, detail, onClick) {
+      const button = document.createElement("button");
+      button.className = "stack-item";
+      button.type = "button";
+      button.innerHTML = `<span>${label}</span><small>${detail}</small>`;
+      button.addEventListener("click", onClick);
+      return button;
+    }
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Navigation Stack Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.navigation.stack.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 520px; height: 320px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createNavigationStack } from "../js/ui/ui.navigation.stack.js";
+
+    const failures = [];
+    const events = [];
+    const destroyed = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+
+    const stack = createNavigationStack(host, {
+      transition: "none",
+      duration: 0,
+      initialPages: [page("sources", "Sources")],
+      onChange(payload) {
+        events.push(`${payload.action}:${payload.currentPage?.id || "none"}`);
+      },
+    });
+
+    assert(stack.getState().depth === 1, "initialPages should create one page");
+    assert(stack.getState().currentPage.id === "sources", "initial current page should be sources");
+    assert(Boolean(host.querySelector('[data-page-id="sources"].is-active')), "initial page should be active");
+
+    const sourceInput = host.querySelector('[data-test-input="sources"]');
+    sourceInput.value = "retained filter";
+
+    stack.push(page("source:apas", "Apas"));
+    await wait(20);
+    assert(stack.getState().depth === 2, "push should add a page");
+    assert(stack.getState().currentPage.id === "source:apas", "push should make pushed page current");
+    assert(Boolean(host.querySelector('[data-page-id="sources"]')), "push should retain previous page DOM");
+    assert(host.querySelector('[data-test-input="sources"]')?.value === "retained filter", "retained previous page should keep input state");
+    assert(host.querySelector('[data-page-id="sources"]')?.hidden === true, "previous page should be hidden while retained");
+
+    stack.push(page("incident:216", "Incident 216"));
+    await wait(20);
+    assert(stack.getState().depth === 3, "second push should deepen stack");
+
+    const popped = stack.pop();
+    await wait(30);
+    assert(popped?.id === "incident:216", "pop should return removed page");
+    assert(stack.getState().depth === 2, "pop should remove current page");
+    assert(stack.getState().currentPage.id === "source:apas", "pop should reveal previous page");
+    assert(!host.querySelector('[data-page-id="incident:216"]'), "popped page should be destroyed by default");
+
+    stack.replace(page("source:lahug", "Lahug"));
+    await wait(30);
+    assert(stack.getState().depth === 2, "replace should keep stack depth");
+    assert(stack.getState().currentPage.id === "source:lahug", "replace should swap current page");
+    assert(destroyed.includes("source:apas"), "replace should destroy replaced page");
+
+    stack.push(page("incident:300", "Incident 300"));
+    await wait(20);
+    const went = stack.goTo("sources");
+    await wait(30);
+    assert(went?.id === "sources", "goTo should return target page");
+    assert(stack.getState().depth === 1, "goTo should remove pages above target");
+    assert(stack.getState().currentPage.id === "sources", "goTo should make target current");
+
+    stack.reset([page("root", "Root"), page("leaf", "Leaf")]);
+    await wait(20);
+    assert(stack.getState().depth === 2, "reset should rebuild pages");
+    assert(stack.getState().currentPage.id === "leaf", "reset should make last page current");
+
+    stack.update({ transition: "fade", duration: 25 });
+    assert(stack.getState().transition === "fade", "update should change transition state");
+    assert(stack.root.dataset.transition === "fade", "update should change root transition dataset");
+
+    stack.destroy();
+    assert(!host.querySelector(".ui-navigation-stack"), "destroy should remove stack DOM");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function page(id, title) {
+      return {
+        id,
+        title,
+        render() {
+          const root = document.createElement("div");
+          root.innerHTML = `<h2>${title}</h2><input data-test-input="${id}" value="${title}">`;
+          return root;
+        },
+        onDestroy(pageConfig) {
+          destroyed.push(pageConfig.id);
+        },
+      };
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

@@ -356,6 +356,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createStepper(container, steps, options)` step indicator/navigation component for multi-step workflows
 - `ui.splitter.js`
   - `createSplitter(container, options)` resizable two-pane layout primitive (horizontal/vertical)
+- `ui.navigation.stack.js`
+  - `createNavigationStack(container, options)` stateful drill-in page stack with `push`, `pop`, `replace`, `goTo`, `reset`, and slide/fade/none transitions
 - `ui.data.inspector.js`
   - `createDataInspector(container, data, options)` expandable object/JSON inspector with copy-path actions and optional chrome-less rendering
 - `ui.empty.state.js`
@@ -5933,6 +5935,87 @@ Behavior notes:
 Related demos:
 
 - `demos/demo.stepper.html`
+
+### `createNavigationStack(container, options)` (`js/ui/ui.navigation.stack.js`)
+
+Purpose:
+
+- Provide a reusable stateful drill-in stack for list -> detail -> sublist/detail workflows.
+- Keep previous pages mounted while they remain in the stack, preserving scroll, filters, loaded content, and local component state.
+- Animate page push/pop transitions without forcing apps to own view-container choreography.
+
+Factory:
+
+```js
+import { createNavigationStack } from "./js/ui/ui.navigation.stack.js";
+
+const stack = createNavigationStack(container, {
+  transition: "slide",
+  initialPages: [
+    { id: "sources", title: "Sources", render: renderSourcesPage },
+  ],
+});
+```
+
+Page shape:
+
+| Property | Type | Description |
+|---|---|---|
+| `id` | `string` | Stable page id used by `goTo(id)`. |
+| `title` | `string` | Accessible page label and state metadata. |
+| `content` | `HTMLElement \| string \| Array` | Static content appended into the page body. |
+| `render` | `({ page, api }) => HTMLElement \| string \| Array` | Factory called when the page is created. |
+| `mount` | `(host, { page, api }) => void` | Imperative mount hook when the app wants to append into the provided host. |
+| `className` | `string` | Extra class for the page root. |
+| lifecycle hooks | functions | Optional `onBeforeShow`, `onShow`, `onBeforeHide`, `onHide`, and `onDestroy`. |
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `initialPages` | `Array<page>` | `[]` | no | Initial page stack. The last page becomes current. |
+| `transition` | `"slide" \| "fade" \| "none"` | `"slide"` | no | Page transition mode. |
+| `duration` | `number` | `180` | no | Transition duration in milliseconds. |
+| `easing` | `string` | `"ease"` | no | CSS timing function used for transitions. |
+| `destroyOnPop` | `boolean` | `true` | no | Destroys popped pages. Pages still in the stack remain mounted. |
+| `className` | `string` | `""` | no | Extra class for the stack root. |
+| `ariaLabel` | `string` | `"Navigation stack"` | no | Accessible label for the stack region. |
+| `onChange` | `function` | `null` | no | Fires after stack changes. |
+
+Events / callbacks:
+
+| Callback | Payload | Returns | Description |
+|---|---|---|---|
+| `onChange` | `{ action, currentPage, previousPage, state, api }` | `void` | Fires for `push`, `pop`, `replace`, `goTo`, and `reset`. |
+| `onPush` | `(page, ctx)` | `void` | Fires after a page is pushed. |
+| `onPop` | `(page, ctx)` | `void` | Fires after a page is popped. |
+| `onReplace` | `(page, ctx)` | `void` | Fires after the current page is replaced. |
+| `onReset` | `(state, ctx)` | `void` | Fires after the stack is reset. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `push` | `page, options?` | page | Adds and shows a new top page. |
+| `pop` | `options?` | page \| `null` | Removes the current page and reveals the previous page. |
+| `replace` | `page, options?` | page | Replaces the current page. |
+| `goTo` | `idOrIndex, options?` | page \| `null` | Shows an existing page and removes pages above it. |
+| `reset` | `pages, options?` | state | Rebuilds the stack. |
+| `update` | `options` | `void` | Updates transition/root options. |
+| `getState` | none | state | Returns `currentIndex`, `currentPage`, `pages`, `depth`, and `transition`. |
+| `destroy` | none | `void` | Removes DOM and calls page cleanup hooks. |
+
+Behavior notes:
+
+- `push()` trims any forward pages after a prior `goTo(...)` before adding the new page.
+- `pop()` will not remove the root page; it returns `null` at depth 1.
+- Page DOM is created when pushed/reset and is retained while the page remains in the stack.
+- Popped/replaced pages are cleaned up after their exit animation window.
+- Use `transition: "none"` for tests, dense admin tools, or surfaces where motion would distract.
+
+Related demos:
+
+- `demos/demo.navigation.stack.html`
 
 ### `createSplitter(container, options)` (`js/ui/ui.splitter.js`)
 

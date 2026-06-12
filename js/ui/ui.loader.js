@@ -6,7 +6,7 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.84";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
-const UI_BUNDLE_REV = "0.21.87";
+const UI_BUNDLE_REV = "0.21.88";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 
@@ -401,6 +401,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     deps: [],
     export: "createSplitter",
   },
+  "ui.navigation.stack": {
+    js: "./ui.navigation.stack.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.navigation.stack.css"],
+    deps: [],
+    export: "createNavigationStack",
+  },
   "ui.data.inspector": {
     js: "./ui.data.inspector.js",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.data.inspector.css"],
@@ -748,6 +754,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.stepper",
     "ui.number.stepper",
     "ui.splitter",
+    "ui.navigation.stack",
     "ui.tabs",
     "ui.strips",
   ],
