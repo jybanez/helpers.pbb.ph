@@ -51,6 +51,7 @@
         { option: "<code>initialPages</code>", default: "<code>[]</code>", description: "Initial page definitions. The last page becomes current." },
         { option: "<code>transition</code>", default: "<code>\"slide\"</code>", description: "Page transition. Allowed values: <code>slide</code>, <code>fade</code>, <code>none</code>." },
         { option: "<code>duration</code>", default: "<code>180</code>", description: "Transition duration in milliseconds." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set <code>false</code> to remove the outer stack border/background/radius when the host owns the shell." },
         { option: "<code>destroyOnPop</code>", default: "<code>true</code>", description: "Destroys popped pages. Pages still in the stack remain mounted." },
         { option: "<code>onChange</code>", default: "<code>null</code>", description: "Callback for push, pop, replace, goTo, and reset changes." }
       ],
@@ -77,6 +78,13 @@
     <section class="panel">
       <div class="row">
         <a class="back" href="./index.html">Back to Home</a>
+      </div>
+      <h1 class="ui-title">Navigation Stack Demo</h1>
+      <p class="muted">Drill into sources, source incidents, and incident details. Back/popped pages reveal the previous mounted page.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Source Drill-In</h2>
+      <div class="row">
         <label class="row">Transition
           <select id="transitionSelect" class="ui-input">
             <option value="slide">slide</option>
@@ -84,13 +92,9 @@
             <option value="none">none</option>
           </select>
         </label>
+        <label class="row"><input id="chromeToggle" type="checkbox" checked> Chrome</label>
         <button id="resetBtn" class="ui-button" type="button">Reset</button>
       </div>
-      <h1 class="ui-title">Navigation Stack Demo</h1>
-      <p class="muted">Drill into sources, source incidents, and incident details. Back/popped pages reveal the previous mounted page.</p>
-    </section>
-    <section class="panel">
-      <h2 class="ui-title">Source Drill-In</h2>
       <div id="stackHost"></div>
       <pre>const stack = createNavigationStack(host, {
   transition: "slide",
@@ -129,6 +133,10 @@ stack.pop();</pre>
     document.getElementById("transitionSelect").addEventListener("change", (event) => {
       stack.update({ transition: event.target.value });
       writeLog("stack.transition", { transition: event.target.value });
+    });
+    document.getElementById("chromeToggle").addEventListener("change", (event) => {
+      stack.update({ chrome: event.target.checked });
+      writeLog("stack.chrome", { chrome: event.target.checked });
     });
     document.getElementById("resetBtn").addEventListener("click", () => stack.reset([buildSourcesPage()]));
 

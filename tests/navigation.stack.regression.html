@@ -36,6 +36,7 @@
 
     assert(stack.getState().depth === 1, "initialPages should create one page");
     assert(stack.getState().currentPage.id === "sources", "initial current page should be sources");
+    assert(stack.getState().chrome === true, "chrome should default to true");
     assert(Boolean(host.querySelector('[data-page-id="sources"].is-active')), "initial page should be active");
 
     const sourceInput = host.querySelector('[data-test-input="sources"]');
@@ -82,6 +83,13 @@
     stack.update({ transition: "fade", duration: 25 });
     assert(stack.getState().transition === "fade", "update should change transition state");
     assert(stack.root.dataset.transition === "fade", "update should change root transition dataset");
+
+    stack.update({ chrome: false });
+    assert(stack.getState().chrome === false, "update should set chrome false in state");
+    assert(stack.root.classList.contains("is-chrome-less"), "chrome false should add chrome-less root class");
+    stack.update({ chrome: true });
+    assert(stack.getState().chrome === true, "update should restore chrome true in state");
+    assert(!stack.root.classList.contains("is-chrome-less"), "chrome true should remove chrome-less root class");
 
     stack.destroy();
     assert(!host.querySelector(".ui-navigation-stack"), "destroy should remove stack DOM");

@@ -621,6 +621,7 @@ node tests/form.modal.presets.regression.mjs
 | `ui.scheduler` | `createScheduler` | Yes | Removes outer scheduler shell; month/week layout and interactions remain intact. |
 | `ui.elapsed.time` | `createElapsedTime` | Yes | Removes the elapsed-time pill border/background/padding so host cards can own the visual shell. |
 | `ui.clock` | `createClock` | Yes | Removes the clock border/background/padding so host chrome can own the visual shell. |
+| `ui.navigation.stack` | `createNavigationStack` | Yes | Removes the stack border/background/radius so host panels can own the visual shell. |
 | `ui.timeline` | `createTimeline` | No | No distinct outer shell today; no-op `chrome` flags are intentionally avoided. |
 | `ui.stepper` | `createStepper` | No | Styling is item-level, not wrapper-shell-level. |
 | `ui.skeleton` | `createSkeleton` | No | Visuals are internal placeholder blocks; there is no meaningful outer shell to disable. |
@@ -5977,6 +5978,7 @@ Options:
 | `transition` | `"slide" \| "fade" \| "none"` | `"slide"` | no | Page transition mode. |
 | `duration` | `number` | `180` | no | Transition duration in milliseconds. |
 | `easing` | `string` | `"ease"` | no | CSS timing function used for transitions. |
+| `chrome` | `boolean` | `true` | no | Removes the outer stack border/background/radius when `false`; page retention and transitions are unchanged. |
 | `destroyOnPop` | `boolean` | `true` | no | Destroys popped pages. Pages still in the stack remain mounted. |
 | `className` | `string` | `""` | no | Extra class for the stack root. |
 | `ariaLabel` | `string` | `"Navigation stack"` | no | Accessible label for the stack region. |
