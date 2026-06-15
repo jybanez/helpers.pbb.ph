@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.icon.grid` with `createIconGrid(...)` for draggable app/icon launcher grids, restored layout payloads, optional `autoArrange: false` spatial placement, Ctrl/Meta + Arrow keyboard reorder with plain Arrow focus navigation, empty drop slots, status dots, badges, `chrome: false`, demo coverage, docs, and regression coverage.
 - Added `chrome: false` support to `ui.navigation.stack` so host panels can own the outer visual shell while keeping page retention and transitions unchanged.
 - Added `ui.navigation.stack` with `createNavigationStack(...)` for stateful drill-in page stacks, retained previous pages, `push`/`pop`/`replace`/`goTo`/`reset` methods, lifecycle hooks, and `slide`/`fade`/`none` transitions.
 - Added hosted `number-stepper` / `number_stepper` field support to `createFormModal(...)`, composing over `ui.number.stepper` with `getValues()`, `setValues(...)`, validation/errors, focus targeting, disabled/readOnly handling, min/max/step/allowEmpty options, demo coverage, bridge whitelist support, and bundle delivery.

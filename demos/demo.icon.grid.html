@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Grid Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .landing-card {
+      max-width: 420px;
+      border: 1px solid #2c3952;
+      border-radius: 12px;
+      background: #0d1626;
+      padding: 20px;
+      display: grid;
+      gap: 24px;
+    }
+    .landing-heading {
+      border: 1px solid #2c3952;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+      display: grid;
+      gap: 6px;
+    }
+    .landing-heading span {
+      color: #8db5ff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .landing-heading strong {
+      font-size: 26px;
+      line-height: 1.1;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.icon.grid", "ui.dialog.alert"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Icon Grid",
+      overview: "Draggable app/icon launcher grid with app-owned layout persistence.",
+      useWhen: [
+        "Use <code>createIconGrid(...)</code> for launchers, app switchers, or tile grids where users can reorder icons.",
+        "Use it when the host app should save and restore positions across refreshes or per-user profiles."
+      ],
+      avoidWhen: [
+        "Do not use it for full application routing; use nav/sidebar/routing helpers for persistent sections.",
+        "Do not let Helper own persistence; store the emitted layout in localStorage, a user profile, or app settings."
+      ],
+      description: "Icon Grid renders stable app tiles, supports drag/drop and keyboard reordering, and emits a serializable layout. Host apps own where that layout is saved.",
+      defaultSampleCode: `const savedLayout = JSON.parse(localStorage.getItem("pbb.launcher.layout") || "null");\n\nconst launcher = createIconGrid(host, apps, {\n  columns: 3,\n  chrome: false,\n  autoArrange: false,\n  scrollable: true,\n  maxHeight: 360,\n  touchDragDelay: 280,\n  touchHoldTolerance: 36,\n  layout: savedLayout,\n  onLayoutChange(layout) {\n    localStorage.setItem("pbb.launcher.layout", JSON.stringify(layout));\n  },\n  onActivate(item) {\n    uiAlert(\`Opening \${item.label}\`, {\n      title: "Launcher Icon Clicked",\n      variant: "info",\n      description: item.href,\n    });\n  },\n});`,
+      constructor: [
+        { factory: "<code>createIconGrid(container, items, options)</code>", arguments: "<code>container</code>, icon-grid <code>items[]</code>, options", returns: "Icon-grid instance with update, setItems, setLayout, getLayout, getState, and destroy methods" }
+      ],
+      options: [
+        { option: "<code>columns</code>", default: "<code>\"auto\"</code>", description: "Grid columns. Allowed values: <code>auto</code>, <code>1</code> through <code>8</code>." },
+        { option: "<code>layout</code>", default: "<code>null</code>", description: "Restored layout as id array or objects with <code>id/index</code> or <code>id/row/col</code>." },
+        { option: "<code>slots</code>", default: "<code>0</code>", description: "Optional minimum slot count. Empty slots accept drops." },
+        { option: "<code>autoArrange</code>", default: "<code>true</code>", description: "Compacts icons after reordering. Set <code>false</code> for launcher-style spatial placement with preserved empty slots." },
+        { option: "<code>scrollable</code>", default: "<code>false</code>", description: "Enables vertical scrolling inside the grid when content exceeds <code>maxHeight</code>." },
+        { option: "<code>maxHeight</code>", default: "<code>\"\"</code>", description: "CSS size or pixel number used by scrollable grids." },
+        { option: "<code>touchDragDelay</code>", default: "<code>280</code>", description: "Long-press delay in milliseconds before touch reorder starts. Normal swipe scrolling remains available before the hold completes." },
+        { option: "<code>touchHoldTolerance</code>", default: "<code>36</code>", description: "Allowed finger drift in pixels while waiting for long-press reorder." },
+        { option: "<code>editable</code>", default: "<code>true</code>", description: "Enables drag/drop and keyboard reordering." },
+        { option: "<code>keyboardReorder</code>", default: "<code>true</code>", description: "Ctrl/Meta + Arrow moves a focused tile when editable. Plain Arrow keys move focus." },
+        { option: "<code>chrome</code>", default: "<code>true</code>", description: "Set false when the host card/page owns the visual shell." },
+        { option: "<code>activateOnClick</code>", default: "<code>true</code>", description: "Calls <code>onActivate</code> when a tile is clicked." },
+        { option: "<code>onLayoutChange</code>", default: "<code>null</code>", description: "Callback receiving <code>(layout, meta)</code> after drag/drop or keyboard reorder." },
+        { option: "<code>onActivate</code>", default: "<code>null</code>", description: "Callback receiving <code>(item, meta)</code> when an enabled tile is activated." }
+      ],
+      propertiesText: "Each tile exposes <code>data-id</code>, <code>data-index</code>, <code>data-tone</code>, and <code>data-status</code>. Use <code>getLayout()</code> for persistence payloads.",
+      events: [
+        { event: "<code>onLayoutChange</code>", arguments: "<code>(layout, meta)</code>", returns: "Persist the provided layout in app-owned storage." },
+        { event: "<code>onActivate</code>", arguments: "<code>(item, meta)</code>", returns: "Launch or navigate to the selected app." },
+        { event: "<code>onSelect</code>", arguments: "<code>(item, meta)</code>", returns: "Optional selection notification before activation." },
+        { event: "<code>onReorderStart</code> / <code>onReorderEnd</code>", arguments: "<code>(item, meta)</code>", returns: "Optional drag/reorder lifecycle hooks." }
+      ],
+      methods: [
+        { method: "<code>update(items, options)</code>", arguments: "next item array and optional options", returns: "<code>void</code>" },
+        { method: "<code>setItems(items)</code>", arguments: "next item array", returns: "<code>void</code>" },
+        { method: "<code>setLayout(layout)</code>", arguments: "id array or layout objects", returns: "<code>void</code>" },
+        { method: "<code>getLayout()</code>", arguments: "none", returns: "Serializable <code>{ id, index, row, col }</code> array" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Normalized items/options/layout snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="resetLayout" class="ui-button" type="button">Reset Layout</button>
+        <button id="toggleChrome" class="ui-button" type="button">Toggle Chrome</button>
+        <button id="toggleEdit" class="ui-button" type="button">Toggle Edit</button>
+      </div>
+      <h1 class="ui-title">Icon Grid Demo</h1>
+      <p class="muted">Drag icons to reorder. Arrow keys move focus; Ctrl/Meta + Arrow moves the focused tile. The emitted layout is saved by the host app.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">PBB Landing Launcher</h2>
+      <div class="landing-card">
+        <div class="landing-heading">
+          <span>Local Network</span>
+          <strong>CEBU CITY, CEBU</strong>
+          <small class="muted">pbb.ph</small>
+        </div>
+        <div id="iconGridHost"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const savedLayout = JSON.parse(localStorage.getItem("pbb.launcher.layout") || "null");
+
+const launcher = createIconGrid(host, apps, {
+  columns: 3,
+  slots: 6,
+  chrome: false,
+  autoArrange: false,
+  scrollable: true,
+  maxHeight: 360,
+  touchDragDelay: 280,
+  touchHoldTolerance: 36,
+  layout: savedLayout,
+  onLayoutChange(layout) {
+    localStorage.setItem("pbb.launcher.layout", JSON.stringify(layout));
+  },
+  onActivate(item) {
+    uiAlert(`Opening ${item.label}`, {
+      title: "Launcher Icon Clicked",
+      variant: "info",
+      description: item.href,
+    });
+  },
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Saved Layout</h2>
+      <pre id="layoutLog">No layout changes yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createIconGrid = await uiLoader.get("ui.icon.grid");
+    const uiAlert = await uiLoader.get("ui.dialog.alert");
+    const layoutKey = "helpers.demo.iconGrid.layout";
+    const layoutLog = document.getElementById("layoutLog");
+    const apps = [
+      { id: "hotline", label: "PBB Hotline", icon: "status.warning", status: "warning", tone: "danger", href: "https://hotline.pbb.ph" },
+      { id: "relay", label: "PBB Relay", icon: "data.grid", status: "online", tone: "info", href: "https://relay.pbb.ph" },
+      { id: "support", label: "PBB Support System", icon: "workflow.assigned", status: "warning", tone: "success", href: "https://support.pbb.ph" },
+      { id: "hq", label: "PBB HQ", icon: "navigation.home", status: "online", tone: "info", href: "https://hq.pbb.ph" },
+      { id: "calculator", label: "Calculator", icon: "actions.options", status: "unknown", tone: "neutral", href: "#calculator" },
+      { id: "calendar", label: "Calendar", icon: "data.grid", status: "unknown", tone: "info", href: "#calendar" },
+      { id: "solitaire", label: "Solitaire", icon: "status.success", status: "unknown", tone: "success", href: "#solitaire" },
+      { id: "notes", label: "Notes", icon: "actions.edit", status: "unknown", tone: "warning", href: "#notes" },
+      { id: "files", label: "Files", icon: "data.upload", status: "unknown", tone: "info", href: "#files" },
+      { id: "settings", label: "Settings", icon: "actions.settings", status: "unknown", tone: "neutral", href: "#settings" },
+      { id: "reports", label: "Reports", icon: "data.list", status: "unknown", tone: "info", href: "#reports" },
+      { id: "maps", label: "Maps", icon: "places.pin", status: "unknown", tone: "success", href: "#maps" },
+      { id: "messages", label: "Messages", icon: "media.audio", status: "busy", tone: "info", href: "#messages" },
+      { id: "camera", label: "Camera", icon: "media.image", status: "unknown", tone: "neutral", href: "#camera" },
+      { id: "contacts", label: "Contacts", icon: "people.users", status: "unknown", tone: "info", href: "#contacts" },
+      { id: "tasks", label: "Tasks", icon: "workflow.completed", status: "warning", tone: "warning", badge: "3", href: "#tasks" },
+    ];
+    let chrome = false;
+    let editable = true;
+    const launcher = createIconGrid(document.getElementById("iconGridHost"), apps, {
+      columns: 3,
+      slots: 18,
+      chrome,
+      editable,
+      autoArrange: false,
+      scrollable: true,
+      maxHeight: 360,
+      touchDragDelay: 280,
+      touchHoldTolerance: 36,
+      layout: readLayout(),
+      onLayoutChange(layout, meta) {
+        window.localStorage.setItem(layoutKey, JSON.stringify(layout));
+        writeLayout(layout, meta);
+      },
+      async onActivate(item) {
+        writeLayout(launcher.getLayout(), { activated: item.id });
+        await uiAlert(`Opening ${item.label}`, {
+          title: "Launcher Icon Clicked",
+          variant: "info",
+          description: item.href,
+        });
+      },
+    });
+    writeLayout(launcher.getLayout(), { restored: Boolean(readLayout()) });
+
+    document.getElementById("resetLayout").addEventListener("click", () => {
+      window.localStorage.removeItem(layoutKey);
+      launcher.setLayout([]);
+      writeLayout(launcher.getLayout(), { reset: true });
+    });
+    document.getElementById("toggleChrome").addEventListener("click", () => {
+      chrome = !chrome;
+      launcher.update(apps, { chrome, editable, autoArrange: false, scrollable: true, maxHeight: 360, touchDragDelay: 280, touchHoldTolerance: 36, layout: launcher.getLayout() });
+    });
+    document.getElementById("toggleEdit").addEventListener("click", () => {
+      editable = !editable;
+      launcher.update(apps, { chrome, editable, autoArrange: false, scrollable: true, maxHeight: 360, touchDragDelay: 280, touchHoldTolerance: 36, layout: launcher.getLayout() });
+    });
+
+    function readLayout() {
+      try {
+        return JSON.parse(window.localStorage.getItem(layoutKey) || "null");
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function writeLayout(layout, meta) {
+      layoutLog.textContent = JSON.stringify({ meta, layout }, null, 2);
+    }
+  </script>
+</body>
+</html>

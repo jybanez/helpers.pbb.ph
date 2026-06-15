@@ -6,7 +6,7 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.84";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
-const UI_BUNDLE_REV = "0.21.89";
+const UI_BUNDLE_REV = "0.21.90";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 
@@ -322,6 +322,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.stat.cards.css"],
     deps: ["ui.icons"],
     export: "createStatCards",
+  },
+  "ui.icon.grid": {
+    js: "./ui.icon.grid.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.icon.grid.css"],
+    deps: ["ui.icons"],
+    export: "createIconGrid",
   },
   "ui.map.controls": {
     js: "./ui.map.controls.js",
@@ -727,6 +733,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.signal.strength",
     "ui.heartbeat.strip",
     "ui.stat.cards",
+    "ui.icon.grid",
     "ui.map.controls",
     "ui.map.legend",
     "ui.map.markers",

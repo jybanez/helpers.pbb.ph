@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Icon Grid Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/ui/ui.icon.grid.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 360px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createIconGrid } from "../js/ui/ui.icon.grid.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const events = [];
+    const apps = [
+      { id: "hotline", label: "PBB Hotline", icon: "status.warning", status: "warning", tone: "danger", href: "/hotline" },
+      { id: "relay", label: "PBB Relay", icon: "data.grid", status: "online", tone: "info", href: "/relay" },
+      { id: "support", label: "PBB Support System", initial: "SUP", status: "offline", tone: "success", badge: "2" },
+    ];
+
+    try {
+      const grid = createIconGrid(host, apps, {
+        ariaLabel: "PBB apps",
+        columns: 3,
+        slots: 4,
+        chrome: false,
+        layout: [{ id: "relay", row: 0, col: 0 }, { id: "hotline", row: 0, col: 1 }],
+        onSelect(item, meta) {
+          events.push({ type: "select", item, meta });
+        },
+        onActivate(item, meta) {
+          events.push({ type: "activate", item, meta });
+        },
+        onLayoutChange(layout, meta) {
+          events.push({ type: "layout", layout, meta });
+        },
+        onReorderStart(item, meta) {
+          events.push({ type: "start", item, meta });
+        },
+        onReorderEnd(item, meta) {
+          events.push({ type: "end", item, meta });
+        },
+      });
+
+      let root = host.querySelector(".ui-icon-grid");
+      assert(Boolean(root), "icon grid root should render");
+      assert(root.getAttribute("aria-label") === "PBB apps", "root should expose aria label");
+      assert(root.dataset.columns === "3", "columns dataset should render");
+      assert(root.classList.contains("ui-icon-grid--columns-3"), "columns class should render");
+      assert(root.classList.contains("is-chrome-less"), "chrome false should render chrome-less class");
+      assert(root.querySelectorAll(".ui-icon-grid-tile").length === 3, "tiles should render item count");
+      assert(root.querySelectorAll(".ui-icon-grid-slot").length === 1, "extra slots should render");
+      assert(root.querySelector('[data-id="relay"]')?.dataset.index === "0", "layout should restore relay first");
+      assert(root.querySelector('[data-id="hotline"]')?.dataset.index === "1", "layout should restore hotline second");
+      assert(root.querySelector('[data-id="hotline"] [data-icon="status.warning"]'), "icon registry icon should render");
+      assert(root.querySelector('[data-id="support"] .ui-icon-grid-initial')?.textContent === "SUP", "initial fallback should render");
+      assert(root.querySelector('[data-id="support"] .ui-icon-grid-badge')?.textContent === "2", "badge should render");
+
+      root.querySelector('[data-id="relay"]').click();
+      assert(events.some((event) => event.type === "select" && event.item.id === "relay"), "click should fire onSelect");
+      assert(events.some((event) => event.type === "activate" && event.item.id === "relay"), "click should fire onActivate");
+      assert(host.querySelector('[data-id="relay"]')?.classList.contains("is-selected"), "click should select tile");
+      const contextEvent = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+      root.querySelector('[data-id="relay"]').dispatchEvent(contextEvent);
+      assert(contextEvent.defaultPrevented, "editable tiles should suppress native context menu for touch long-press reorder");
+
+      const hotline = host.querySelector('[data-id="hotline"]');
+      hotline.focus();
+      hotline.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.querySelector('[data-id="hotline"]')?.dataset.index === "1", "plain arrow key should not reorder tiles");
+      assert(document.activeElement?.dataset.id === "relay", "plain arrow key should move tile focus");
+      root.querySelector('[data-id="hotline"]').dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", ctrlKey: true, bubbles: true, cancelable: true }));
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.querySelector('[data-id="hotline"]')?.dataset.index === "0", "ctrl arrow key should move tile when keyboard reorder is enabled");
+      assert(events.some((event) => event.type === "layout" && event.meta.source === "keyboard"), "keyboard reorder should fire layout event");
+
+      const support = root.querySelector('[data-id="support"]');
+      const slot = root.querySelector(".ui-icon-grid-slot");
+      support.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: new DataTransfer() }));
+      slot.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
+      const dropTransfer = new DataTransfer();
+      dropTransfer.setData("text/plain", "support");
+      slot.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dropTransfer }));
+      support.dispatchEvent(new DragEvent("dragend", { bubbles: true }));
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.querySelector('[data-id="support"]')?.dataset.index === "2", "drop on empty slot should keep valid order and render support");
+      assert(events.some((event) => event.type === "start" && event.item.id === "support"), "drag should fire reorder start");
+      assert(events.some((event) => event.type === "end" && event.meta.source === "drag"), "drop should fire reorder end");
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      const activationCountAfterDrop = events.filter((event) => event.type === "activate").length;
+      root.querySelector('[data-id="support"]').click();
+      assert(
+        events.filter((event) => event.type === "activate").length === activationCountAfterDrop + 1,
+        "first deliberate click after drag/drop should activate",
+      );
+
+      const layout = grid.getLayout();
+      assert(layout.length === 3 && layout[0].id === "hotline", "getLayout should expose reordered layout");
+      assert(Number.isFinite(layout[0].row) && Number.isFinite(layout[0].col), "getLayout should include row/col");
+
+      grid.update(apps, { chrome: true });
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.querySelector('[data-id="hotline"]')?.dataset.index === "0", "option-only update should preserve current order");
+
+      grid.update(apps.slice(0, 2), { columns: "auto", chrome: true, editable: false, layout });
+      root = host.querySelector(".ui-icon-grid");
+      assert(!root.classList.contains("is-chrome-less"), "chrome true should remove chrome-less class");
+      assert(root.dataset.editable === "false", "editable false should update dataset");
+      assert(root.querySelector('[data-id="hotline"]')?.getAttribute("draggable") === "false", "readonly tiles should not be draggable");
+
+      grid.setLayout(["relay", "hotline"]);
+      assert(host.querySelector('[data-id="relay"]')?.dataset.index === "0", "setLayout should reorder by id array");
+
+      grid.setItems([]);
+      assert(host.querySelector(".ui-icon-grid-empty")?.textContent === "No applications available.", "empty state should render");
+
+      grid.destroy();
+      assert(host.children.length === 0, "destroy should clear host");
+
+      const spatial = createIconGrid(host, apps.slice(0, 2), {
+        columns: 4,
+        slots: 4,
+        autoArrange: false,
+        scrollable: true,
+        maxHeight: 180,
+        touchDragDelay: 260,
+        touchHoldTolerance: 40,
+        layout: [{ id: "relay", index: 0 }, { id: "hotline", index: 3 }],
+      });
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.classList.contains("is-scrollable"), "scrollable option should add scrollable class");
+      assert(root.dataset.scrollable === "true", "scrollable option should render dataset");
+      assert(root.style.getPropertyValue("--ui-icon-grid-max-height") === "180px", "numeric maxHeight should normalize to px");
+      assert(spatial.getState().options.touchDragDelay === 260, "touchDragDelay should normalize into state");
+      assert(spatial.getState().options.touchHoldTolerance === 40, "touchHoldTolerance should normalize into state");
+      assert(root.querySelector('[data-id="relay"]')?.dataset.index === "0", "spatial layout should keep first tile at index 0");
+      assert(root.querySelector('[data-id="hotline"]')?.dataset.index === "3", "spatial layout should keep tile at sparse index 3");
+      assert(root.querySelectorAll(".ui-icon-grid-slot").length === 2, "spatial layout should preserve empty slots");
+      let spatialLayout = spatial.getLayout();
+      assert(spatialLayout.length === 2 && spatialLayout[1].index === 3, "getLayout should omit empty slots but preserve indices");
+      host.querySelector('[data-id="hotline"]').focus();
+      host.querySelector('[data-id="hotline"]').dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+      spatialLayout = spatial.getLayout();
+      assert(spatialLayout.find((entry) => entry.id === "hotline")?.index === 3, "spatial plain arrow should not move tile into empty slot");
+      assert(document.activeElement?.dataset.id === "relay", "spatial plain arrow should skip empty slots and focus previous tile");
+      host.querySelector('[data-id="hotline"]').dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", ctrlKey: true, bubbles: true, cancelable: true }));
+      spatialLayout = spatial.getLayout();
+      assert(spatialLayout.find((entry) => entry.id === "hotline")?.index === 2, "spatial ctrl arrow should move into empty slot without compacting");
+      assert(host.querySelectorAll(".ui-icon-grid-slot").length === 2, "spatial move should retain empty slot count");
+      spatial.destroy();
+
+      const manyApps = Array.from({ length: 18 }, (_, index) => ({
+        id: `app-${index}`,
+        label: `App ${index + 1}`,
+        icon: "data.grid",
+        status: index % 2 ? "warning" : "online",
+      }));
+      const scrollGrid = createIconGrid(host, manyApps, {
+        columns: 3,
+        slots: 24,
+        scrollable: true,
+        maxHeight: 120,
+      });
+      root = host.querySelector(".ui-icon-grid");
+      root.scrollTop = 80;
+      const beforeLayoutScrollTop = root.scrollTop;
+      assert(beforeLayoutScrollTop > 0, "scrollable grid fixture should overflow");
+      scrollGrid.setLayout(manyApps.map((item) => item.id).reverse());
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      root = host.querySelector(".ui-icon-grid");
+      assert(root.scrollTop === beforeLayoutScrollTop, "scrollable grid should preserve scroll position across layout render");
+      scrollGrid.destroy();
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Icon grid regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

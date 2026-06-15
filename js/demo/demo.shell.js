@@ -48,6 +48,7 @@ const DEMO_GROUPS = [
       { href: "./demo.signal.strength.html", label: "Signal Strength" },
       { href: "./demo.heartbeat.strip.html", label: "Heartbeat Strip" },
       { href: "./demo.stat.cards.html", label: "Stat Cards" },
+      { href: "./demo.icon.grid.html", label: "Icon Grid" },
       { href: "./demo.map.controls.html", label: "Map Controls" },
       { href: "./demo.map.legend.html", label: "Map Legend" },
       { href: "./demo.map.markers.html", label: "Map Markers" },

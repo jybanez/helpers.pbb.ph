@@ -42,6 +42,7 @@ css/
     ui.signal.strength.css
     ui.heartbeat.strip.css
     ui.stat.cards.css
+    ui.icon.grid.css
     ui.device.selector.css
     ui.path.picker.css
     ui.timeline.css
@@ -110,6 +111,7 @@ js/
     ui.signal.strength.js
     ui.heartbeat.strip.js
     ui.stat.cards.js
+    ui.icon.grid.js
     ui.device.selector.js
     ui.path.picker.js
     ui.timeline.js
@@ -332,6 +334,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createSignalStrength(container, options)` transport-agnostic 0-4 bar signal indicator with stable compact text, tone variants, bars-only mode, and update/destroy lifecycle
 - `ui.stat.cards.js`
   - `createStatCards(container, items, options)` operational KPI cards with shared icons, tones, trends, selection, chrome-less rendering, and update/destroy lifecycle
+- `ui.icon.grid.js`
+  - `createIconGrid(container, items, options)` draggable icon/app launcher grid with keyboard reorder, chrome-less rendering, and app-owned layout persistence callbacks
 - `ui.map.controls.js`
   - `createMapControls(container, options)` MapLibre-oriented control dock for zoom, compass/bearing, pitch presets, locate, fit, and layer toggles
 - `ui.map.legend.js`
@@ -540,7 +544,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.stat.cards`, `ui.icon.grid`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -621,6 +625,7 @@ node tests/form.modal.presets.regression.mjs
 | `ui.scheduler` | `createScheduler` | Yes | Removes outer scheduler shell; month/week layout and interactions remain intact. |
 | `ui.elapsed.time` | `createElapsedTime` | Yes | Removes the elapsed-time pill border/background/padding so host cards can own the visual shell. |
 | `ui.clock` | `createClock` | Yes | Removes the clock border/background/padding so host chrome can own the visual shell. |
+| `ui.icon.grid` | `createIconGrid` | Yes | Removes the launcher grid border/background/padding so host cards or landing pages can own the shell. |
 | `ui.navigation.stack` | `createNavigationStack` | Yes | Removes the stack border/background/radius so host panels can own the visual shell. |
 | `ui.timeline` | `createTimeline` | No | No distinct outer shell today; no-op `chrome` flags are intentionally avoided. |
 | `ui.stepper` | `createStepper` | No | Styling is item-level, not wrapper-shell-level. |
@@ -5285,6 +5290,102 @@ Non-goals:
 Related demos:
 
 - `demos/demo.stat.cards.html`
+
+### `createIconGrid(container, items, options)` (`js/ui/ui.icon.grid.js`)
+
+Purpose:
+
+- Draggable app/icon launcher grid for PBB Landing, app switchers, and compact shortcut surfaces.
+- Supports stable IDs, restored layout order, optional auto-arrange, empty drop slots, drag/drop reorder, keyboard arrow reorder, status dots, badges, shared `ui.icons`, image icons, and chrome-less rendering.
+- Host apps own persistence. Store the emitted layout in localStorage, user profile settings, or app-owned backend preferences.
+
+Basic usage:
+
+```js
+import { createIconGrid } from "./js/ui/ui.icon.grid.js";
+
+const savedLayout = JSON.parse(localStorage.getItem("pbb.launcher.layout") || "null");
+
+const launcher = createIconGrid(container, [
+  { id: "hotline", label: "PBB Hotline", icon: "status.warning", href: "/hotline", status: "warning" },
+  { id: "relay", label: "PBB Relay", icon: "data.grid", href: "/relay", status: "online" },
+  { id: "support", label: "PBB Support System", image: "/img/support.png", href: "/support" },
+], {
+  columns: 3,
+  slots: 6,
+  chrome: false,
+  autoArrange: false,
+  scrollable: true,
+  maxHeight: 360,
+  touchDragDelay: 280,
+  touchHoldTolerance: 36,
+  layout: savedLayout,
+  onLayoutChange(layout) {
+    localStorage.setItem("pbb.launcher.layout", JSON.stringify(layout));
+  },
+  onActivate(item) {
+    window.location.href = item.href;
+  },
+});
+```
+
+Item fields:
+
+- `id`: stable launcher item id used in saved layouts
+- `label`: visible tile label
+- `description`: optional accessibility/tooltip detail
+- `href`: optional app-owned URL returned in activation metadata
+- `icon`: optional `ui.icons` id
+- `image` / `imageUrl`: optional bitmap icon URL
+- `initial`: optional text fallback when no icon/image is provided
+- `badge`: optional small badge text
+- `status`: `online`, `warning`, `offline`, `busy`, or `unknown`
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `disabled`: disables activation/reorder for the item
+- `meta`: app-owned metadata copy
+
+Options:
+
+- `columns`: `auto` or `1` through `8`
+- `layout`: restored layout as an id array, `{ id, index }[]`, or `{ id, row, col }[]`
+- `slots`: optional minimum slot count; empty slots accept drops
+- `autoArrange`: compacts icons after reordering when `true`; set `false` for launcher-style spatial placement with preserved empty slots
+- `scrollable`: enables vertical scrolling inside the grid when content exceeds `maxHeight`
+- `maxHeight`: CSS size or pixel number used by scrollable grids
+- `touchDragDelay`: long-press delay in milliseconds before touch reorder starts, default `280`
+- `touchHoldTolerance`: allowed finger drift in pixels while waiting for long-press reorder, default `36`
+- `editable`: enables drag/drop and modifier-key keyboard reordering, default `true`
+- `keyboardReorder`: enables Ctrl/Meta + Arrow reorder for focused tiles; plain Arrow keys move focus, default `true`
+- `chrome`: set `false` when the host card/page owns borders/background
+- `activateOnClick`: calls `onActivate` from tile click, default `true`
+- `minTileWidth`: auto-column minimum tile width in pixels
+- `iconSize`: tile icon box size in pixels
+- `emptyText`: empty-state text
+- `onLayoutChange(layout, meta)`: save the provided layout in app-owned storage
+- `onActivate(item, meta)`: launch or navigate to the app
+- `onSelect(item, meta)`: optional selection notification
+- `onReorderStart(item, meta)` / `onReorderEnd(item, meta)`: optional reorder lifecycle hooks
+- `ariaLabel`: accessible label for the grid
+- `className`: extra root class name
+
+Methods:
+
+- `update(items, options)`
+- `setItems(items)`
+- `setLayout(layout)`
+- `getLayout()` -> `{ id, index, row, col }[]`; empty slots are omitted but occupied sparse indices are preserved when `autoArrange:false`
+- `getState()`
+- `destroy()`
+
+Non-goals:
+
+- Does not persist layout itself.
+- Does not own navigation/routing; `onActivate` gives the host app the selected item.
+- Does not require app logos to be added to `ui.icons`; host apps can provide image URLs.
+
+Related demos:
+
+- `demos/demo.icon.grid.html`
 
 ### `createDeviceSelector(container, data, options)` (`js/ui/ui.device.selector.js`)
 
