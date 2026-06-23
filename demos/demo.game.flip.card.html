@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Flip Card Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar, .check-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 680px; aspect-ratio: 16 / 10; border: 1px solid #2b3750; border-radius: 8px; background: #08111f; touch-action: none; }
+    pre { margin: 0; min-height: 180px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core", "ui.game.objects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Flip Card",
+      overview: "Focused reference for createFlipCard reveal, hide, matched, hover-preview, and custom face rendering.",
+      useWhen: [
+        "Use <code>createFlipCard(...)</code> for memory cards, reveal cards, quiz choices, and matching games.",
+        "Use <code>renderFront</code> and <code>renderBack</code> when the app owns the card artwork."
+      ],
+      avoidWhen: [
+        "Do not put deck generation, scoring, or match rules inside the card object.",
+        "Do not use it for non-card physics or sprite behavior."
+      ],
+      description: "Flip Card is a reusable game object behavior. Helper owns reveal/hide/matched state and flip progress; the app owns rules and art.",
+      defaultSampleCode: `const card = createFlipCard({\n  id: "card-a",\n  x: 120,\n  y: 80,\n  frontLabel: "A",\n  flipOnHover: true,\n  onSelect(card) {\n    checkMemoryMatch(card);\n  },\n  renderFront(ctx, card) {\n    drawCardFront(ctx, card);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createFlipCard(options)</code>", arguments: "Card options", returns: "Game object with flip-card methods" }
+      ],
+      options: [
+        { option: "<code>frontLabel</code>", default: "<code>\"\"</code>", description: "Default front text when no custom renderer is supplied." },
+        { option: "<code>backLabel</code>", default: "<code>\"?\"</code>", description: "Default back text." },
+        { option: "<code>flipOnHover</code>", default: "<code>false</code>", description: "Temporarily previews the front while hovered." },
+        { option: "<code>flipDuration</code>", default: "<code>180</code>", description: "Flip animation duration in milliseconds." },
+        { option: "<code>onSelect(card, meta)</code>", default: "<code>null</code>", description: "App-owned selection hook." }
+      ],
+      propertiesText: "Flip cards expose flipProgress, revealed, matched, plus the base game object properties.",
+      events: [
+        { event: "<code>onSelect</code>", arguments: "<code>(card, meta)</code>", returns: "Runs when an unmatched card is clicked." },
+        { event: "<code>onFlip</code>", arguments: "<code>(card, state)</code>", returns: "Runs when revealed/hidden state changes." }
+      ],
+      methods: [
+        { method: "<code>card.reveal()</code>", arguments: "none", returns: "card" },
+        { method: "<code>card.hide()</code>", arguments: "none", returns: "card" },
+        { method: "<code>card.flip(force?)</code>", arguments: "optional boolean", returns: "card" },
+        { method: "<code>card.setMatched(true)</code>", arguments: "boolean", returns: "card" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="revealCard" class="ui-button ui-button-primary" type="button">Reveal</button>
+        <button id="hideCard" class="ui-button" type="button">Hide</button>
+        <button id="matchCard" class="ui-button" type="button">Set Matched</button>
+        <label class="check-row"><input id="hoverPreview" type="checkbox" checked> hover preview</label>
+      </div>
+      <h1 class="ui-title">Flip Card Demo</h1>
+      <p class="muted">Click the card or use the buttons to inspect reveal, hide, matched, and flip-progress behavior.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="680" height="425"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">Card State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameLoop } = await uiLoader.get("ui.game.core");
+    const { createFlipCard, createGameObjectLayer, createPointerInputRouter } = await uiLoader.get("ui.game.objects");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    const hoverPreview = document.getElementById("hoverPreview");
+    let layer;
+    let router;
+    let card;
+    let events = [];
+    function resetCard() {
+      router?.destroy();
+      layer = createGameObjectLayer();
+      card = createFlipCard({
+        id: "memory-card",
+        x: 260,
+        y: 112,
+        width: 160,
+        height: 210,
+        frontLabel: "A",
+        backLabel: "PBB",
+        flipOnHover: hoverPreview.checked,
+        onSelect() { log("select"); },
+        onFlip(_, state) { log(state.revealed ? "reveal" : "hide"); },
+      });
+      layer.add(card);
+      router = createPointerInputRouter(canvas, layer);
+    }
+    document.getElementById("revealCard").addEventListener("click", () => card.reveal());
+    document.getElementById("hideCard").addEventListener("click", () => card.hide());
+    document.getElementById("matchCard").addEventListener("click", () => card.setMatched(true));
+    hoverPreview.addEventListener("change", resetCard);
+    createGameLoop({
+      autoStart: true,
+      update({ delta }) { layer.update(delta); },
+      render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#08111f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        layer.render(ctx);
+        stateOutput.textContent = JSON.stringify({
+          id: card.id,
+          state: card.state,
+          revealed: card.revealed,
+          matched: card.matched,
+          hover: card.hover,
+          flipProgress: Number(card.flipProgress.toFixed(2)),
+          events,
+        }, null, 2);
+      },
+    }).start();
+    function log(name) {
+      events.unshift(name);
+      events = events.slice(0, 8);
+    }
+    resetCard();
+  </script>
+</body>
+</html>

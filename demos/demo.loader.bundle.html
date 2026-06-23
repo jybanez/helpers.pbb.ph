@@ -136,24 +136,25 @@
   <script>
     window.demoMeta = {
       title: "Loader Bundle",
-      overview: "Optional minified distribution path for the shared `ui.*` and `incident.*` helper surface. This demo shows how to generate the bundle, opt into it at runtime, and inspect loader diagnostics for loaded CSS, requested modules, and loaded bundles.",
+      overview: "Optional minified distribution path for the shared helper surface. This demo shows how to generate the general UI bundle plus the optional game bundle, opt into them at runtime, and inspect loader diagnostics.",
       useWhen: [
         "Use it when a downstream app wants fewer helper network requests while keeping the source tree modular in the upstream repo.",
         "Use it when the app already relies heavily on `ui.*` helpers such as icons, modals, selects, and device-primer flows.",
-        "Use it when the app also mounts `incident.*` helpers and wants to avoid source-mode fallback for their shared `ui.*` dependencies."
+        "Use it when the app also mounts `incident.*` helpers and wants to avoid source-mode fallback for their shared `ui.*` dependencies.",
+        "Use the game bundle when a page needs `ui.game.*` helpers without making every non-game page carry game code."
       ],
       avoidWhen: [
         "Do not treat it as a mandatory replacement for the default loader path. The modular loader remains the default contract.",
         "Do not assume bundle preference removes the need to refresh vendored helper assets. The bundle is still a generated release artifact."
       ],
-      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js` and `dist/helpers.ui.bundle.min.css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`. Current bundle scope covers both `ui.*` and `incident.*` registry entries.",
+      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js/css` and `dist/helpers.game.bundle.min.js/css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`. The general bundle covers non-game `ui.*` plus `incident.*`; the game bundle covers `ui.game.*`.",
       defaultSampleCode: `npm run build:ui-bundle\n\nconst loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {\n  preferBundles: true,\n});\n\nconst createFormModal = await loader.get(\"ui.form.modal\");`,
       constructor: [
         { factory: "<code>createUiLoader(DEFAULT_COMPONENT_REGISTRY, config)</code>", arguments: "registry and loader config", returns: "isolated loader instance" }
       ],
       options: [
-        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching `ui.*` and `incident.*` entries load through the generated bundle map instead of per-module imports." },
-        { option: "<code>bundles</code>", default: "<code>{ ui }</code>", description: "Optional bundle registry override. Current built-in bundle covers both `ui.*` and `incident.*` entries and points to `dist/helpers.ui.bundle.min.js` plus CSS." },
+        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching entries load through generated bundle maps instead of per-module imports." },
+        { option: "<code>bundles</code>", default: "<code>{ game, ui }</code>", description: "Optional bundle registry override. Built-ins point to `dist/helpers.game.bundle.min.js/css` for `ui.game.*` and `dist/helpers.ui.bundle.min.js/css` for non-game UI and incident helpers." },
         { option: "<code>debug</code>", default: "<code>false</code>", description: "Enables loader debug logging for CSS/module/bundle resolution." }
       ],
       propertiesText: "The loader is stateful. Use `getDiagnostics()` to inspect what it has loaded instead of reading internal maps directly.",
@@ -170,17 +171,17 @@
   <main class="page">
     <section class="panel">
       <h1>Loader Bundle Demo</h1>
-      <p class="muted">Dedicated reference for the optional minified `ui.*` and `incident.*` bundle path. Use this page to compare modular vs bundled loader sessions, inspect current diagnostics, and exercise a few real helper loads through the selected mode.</p>
+      <p class="muted">Dedicated reference for the optional minified helper bundle paths. Use this page to compare modular vs bundled loader sessions, inspect current diagnostics, and exercise a few real helper loads through the selected mode.</p>
       <div class="chips">
         <span class="chip">optional distribution</span>
         <span class="chip">minified JS + CSS</span>
-        <span class="chip">bundle-backed `ui.*` + `incident.*`</span>
+        <span class="chip">bundle-backed UI + game helpers</span>
       </div>
     </section>
 
     <section class="panel">
       <h2>Build And Opt-In</h2>
-      <p class="muted">The source tree stays modular. The build step just produces a minified bundle for downstream apps that want fewer helper requests.</p>
+      <p class="muted">The source tree stays modular. The build step produces a general UI bundle and an optional game bundle for downstream apps that want fewer helper requests.</p>
       <pre>npm run build:ui-bundle
 
 import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
@@ -190,6 +191,8 @@ const bundledLoader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {
 });
 
 const createFormModal = await bundledLoader.get("ui.form.modal");</pre>
+      <p class="muted">Apps that only need gaming helpers can preload the optional game bundle on that page while keeping app code unchanged:</p>
+      <pre>&lt;script type="module" src="/assets/helper/helpers.game.bundle.min.js"&gt;&lt;/script&gt;</pre>
       <p class="muted">For clean request-count comparisons in a real app, refresh the page between modular and bundled runs so previously loaded CSS/modules do not stay warm in memory.</p>
     </section>
 
@@ -205,6 +208,7 @@ const createFormModal = await bundledLoader.get("ui.form.modal");</pre>
         <button id="loadIconsBtn" class="demo-btn" type="button">Load ui.icons</button>
         <button id="loadFormModalBtn" class="demo-btn" type="button">Load ui.form.modal</button>
         <button id="loadDevicePrimerBtn" class="demo-btn" type="button">Load ui.device.primer</button>
+        <button id="loadGameObjectsBtn" class="demo-btn" type="button">Load ui.game.objects</button>
         <button id="openModalBtn" class="demo-btn" type="button">Open Sample Form Modal</button>
         <button id="refreshDiagnosticsBtn" class="demo-btn" type="button">Refresh Diagnostics</button>
       </div>
@@ -343,6 +347,27 @@ const createFormModal = await bundledLoader.get("ui.form.modal");</pre>
       refreshDiagnostics();
     }
 
+    async function loadGameObjects() {
+      const loader = ensureLoader();
+      const gameObjects = await loader.get("ui.game.objects");
+      writeLog("loader.get.ui.game.objects", {
+        mode: currentMode,
+        exports: Object.keys(gameObjects).filter((key) => key.startsWith("create")).sort(),
+        loadedBundles: loader.getDiagnostics().loadedBundles,
+      });
+      previewHost.replaceChildren();
+      const row = document.createElement("div");
+      row.className = "preview-row";
+      ["createGameObject", "createGameObjectLayer", "createFlipCard", "createTetromino"].forEach((name) => {
+        const pill = document.createElement("span");
+        pill.className = "chip";
+        pill.textContent = `${name}: ${typeof gameObjects[name]}`;
+        row.appendChild(pill);
+      });
+      previewHost.appendChild(row);
+      refreshDiagnostics();
+    }
+
     async function openSampleModal() {
       await loadFormModal();
       const formModal = currentCreateFormModal({
@@ -396,6 +421,9 @@ const createFormModal = await bundledLoader.get("ui.form.modal");</pre>
     });
     document.getElementById("loadDevicePrimerBtn").addEventListener("click", () => {
       loadDevicePrimer().catch((error) => writeLog("loader.get.ui.device.primer.error", { message: String(error?.message || error) }));
+    });
+    document.getElementById("loadGameObjectsBtn").addEventListener("click", () => {
+      loadGameObjects().catch((error) => writeLog("loader.get.ui.game.objects.error", { message: String(error?.message || error) }));
     });
     document.getElementById("openModalBtn").addEventListener("click", () => {
       openSampleModal().catch((error) => writeLog("formModal.open.error", { message: String(error?.message || error) }));

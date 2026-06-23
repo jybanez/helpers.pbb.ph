@@ -71,6 +71,29 @@ const DEMO_GROUPS = [
     ],
   },
   {
+    label: "Gaming",
+    items: [
+      { href: "./demo.game.session.html", label: "Game Session" },
+      { href: "./demo.game.dpad.html", label: "Game D-pad" },
+      { href: "./demo.game.joystick.html", label: "Game Joystick" },
+      { href: "./demo.game.action.button.html", label: "Game Action" },
+      { href: "./demo.game.action.group.html", label: "Game Action Group" },
+      { href: "./demo.game.audio.html", label: "Game Audio" },
+      { href: "./demo.game.state.chrome.html", label: "Game State Chrome" },
+      { href: "./demo.game.core.html", label: "Game Core" },
+    ],
+  },
+  {
+    label: "Game Objects",
+    items: [
+      { href: "./demo.game.objects.html", label: "Overview" },
+      { href: "./demo.game.object.html", label: "Game Object" },
+      { href: "./demo.game.object.layer.html", label: "Game Object Layer" },
+      { href: "./demo.game.flip.card.html", label: "Flip Card" },
+      { href: "./demo.game.tetromino.html", label: "Tetromino" },
+    ],
+  },
+  {
     label: "Communication",
     items: [
       { href: "./demo.chat.thread.html", label: "Chat Thread" },
@@ -153,6 +176,7 @@ const DOC_LINKS = [
   { href: "./playbook.html", label: "Playbook" },
 ];
 const NAV_SCROLL_STORAGE_KEY = "demo-shell.nav.scroll.v1";
+const NAV_COLLAPSED_STORAGE_KEY = "demo-shell.nav.collapsed.v1";
 
 function readNavScrollState() {
   try {
@@ -206,6 +230,43 @@ function bindNavScrollPersistence(container) {
   }, { passive: true });
 }
 
+function readNavCollapsedState() {
+  try {
+    const raw = window.localStorage.getItem(NAV_COLLAPSED_STORAGE_KEY);
+    if (raw === "true") {
+      return true;
+    }
+    if (raw === "false") {
+      return false;
+    }
+  } catch (_error) {
+    // Ignore storage failures; responsive defaults still apply.
+  }
+  return null;
+}
+
+function writeNavCollapsedState(collapsed) {
+  try {
+    window.localStorage.setItem(NAV_COLLAPSED_STORAGE_KEY, collapsed ? "true" : "false");
+  } catch (_error) {
+    // Ignore storage failures; the toggle should still work normally.
+  }
+}
+
+function isCompactNavViewport() {
+  return window.matchMedia?.("(max-width: 900px)")?.matches === true;
+}
+
+function setNavCollapsed(nav, toggle, collapsed, persist = true) {
+  nav.classList.toggle("is-collapsed", collapsed);
+  toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  toggle.setAttribute("aria-label", collapsed ? "Show demo navigation" : "Hide demo navigation");
+  toggle.title = collapsed ? "Show demo navigation" : "Hide demo navigation";
+  if (persist) {
+    writeNavCollapsedState(collapsed);
+  }
+}
+
 function buildDemoShell() {
   const nav = document.createElement("nav");
   nav.className = "demo-shell-nav";
@@ -236,8 +297,8 @@ function buildDemoShell() {
   toggle.type = "button";
   toggle.className = "demo-shell-nav__toggle";
   toggle.setAttribute("aria-expanded", "true");
-  toggle.setAttribute("aria-label", "Collapse demo navigation");
-  toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  toggle.setAttribute("aria-label", "Hide demo navigation");
+  toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>';
 
   title.append(titleGroup, toggle);
 
@@ -296,10 +357,38 @@ function buildDemoShell() {
     docs.appendChild(link);
   });
 
+  const storedCollapsed = readNavCollapsedState();
+  setNavCollapsed(nav, toggle, storedCollapsed ?? isCompactNavViewport(), false);
+
   toggle.addEventListener("click", () => {
-    const collapsed = nav.classList.toggle("is-collapsed");
-    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    toggle.setAttribute("aria-label", collapsed ? "Expand demo navigation" : "Collapse demo navigation");
+    setNavCollapsed(nav, toggle, !nav.classList.contains("is-collapsed"));
+  });
+
+  nav.addEventListener("click", (event) => {
+    if (isCompactNavViewport() && event.target?.closest?.("a")) {
+      setNavCollapsed(nav, toggle, true);
+    }
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!isCompactNavViewport() || nav.classList.contains("is-collapsed")) {
+      return;
+    }
+    if (!nav.contains(event.target)) {
+      setNavCollapsed(nav, toggle, true);
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && isCompactNavViewport() && !nav.classList.contains("is-collapsed")) {
+      setNavCollapsed(nav, toggle, true);
+      toggle.focus({ preventScroll: true });
+    }
+  });
+
+  window.matchMedia?.("(max-width: 900px)")?.addEventListener?.("change", (event) => {
+    const stored = readNavCollapsedState();
+    setNavCollapsed(nav, toggle, stored ?? event.matches, false);
   });
 
   inner.append(title, links, docs);

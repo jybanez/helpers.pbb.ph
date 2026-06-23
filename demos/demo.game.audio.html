@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Audio Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field input {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sound-board {
+      min-height: 380px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 16px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        #07101d;
+      background-size: 72px 72px;
+      overflow: hidden;
+    }
+    .tone-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 10px;
+      width: min(360px, 100%);
+    }
+    .status-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-strip span {
+      border: 1px solid #334563;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(11, 18, 32, 0.88);
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      .sound-board {
+        min-height: 320px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.audio"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Audio",
+      overview: "Focused reference for reusable game sound effects, procedural tones, unlock, mute, and volume control.",
+      useWhen: [
+        "Use <code>createGameAudio(options)</code> when a game needs one-shot effects, UI bleeps, score sounds, or short procedural feedback.",
+        "Use <code>createStarterGameSounds()</code> for the Helper starter sound pack mirrored by Kit on each local node.",
+        "Use app-owned sound URLs in <code>sounds</code> when the game has specific polished audio assets.",
+        "Use <code>tones</code> for lightweight default effects without shipping audio files."
+      ],
+      avoidWhen: [
+        "Do not embed large music or asset packs in Helper; apps should own their game-specific audio files.",
+        "Do not use this for long-running media players; use the media/audio helpers for that workflow."
+      ],
+      description: "This page isolates game audio so developers can inspect browser unlock behavior, starter sound URLs, procedural tones, muting, volume, category volume, sound registration, and controller state.",
+      defaultSampleCode: `const audio = createGameAudio({\n  masterVolume: 0.7,\n  sounds: createStarterGameSounds({\n    baseUrl: \"https://helpers.pbb.ph/current/assets/sounds/game/\",\n  }),\n});\n\nawait audio.unlock();\naudio.play(\"move\");\naudio.play(\"rotate\");\naudio.playTone(\"score\");\naudio.setMuted(true);`,
+      constructor: [
+        { factory: "<code>createGameAudio(options)</code>", arguments: "Audio options", returns: "Game audio controller" }
+      ],
+      options: [
+        { option: "<code>masterVolume</code>", default: "<code>1</code>", description: "Global output multiplier from 0 to 1." },
+        { option: "<code>muted</code>", default: "<code>false</code>", description: "Starts muted when true." },
+        { option: "<code>sounds</code>", default: "<code>{}</code>", description: "Named app-owned audio files. Entries can be a URL string or object with <code>src</code>, <code>volume</code>, <code>category</code>, and <code>pool</code>." },
+        { option: "<code>tones</code>", default: "Built-in move/select/score/error", description: "Named procedural Web Audio tones with frequency, duration, oscillator type, volume, and category." },
+        { option: "<code>categoryVolumes</code>", default: "<code>{ master, sfx, ui, music }</code>", description: "Category-level output multipliers." }
+      ],
+      propertiesText: "The returned controller exposes no DOM. It owns an internal audio context, optional media pools, procedural tones, active playback cleanup, and state reporting.",
+      events: [],
+      methods: [
+        { method: "<code>audio.unlock()</code>", arguments: "None", returns: "Promise resolving after browser audio unlock/resume attempt" },
+        { method: "<code>audio.preload(ids?)</code>", arguments: "Optional sound id or ids", returns: "Promise with loaded/failed counts" },
+        { method: "<code>audio.play(id, options?)</code>", arguments: "Sound or tone id", returns: "Audio element, tone handle, or null" },
+        { method: "<code>audio.playTone(idOrOptions, options?)</code>", arguments: "Tone id or inline tone options", returns: "Tone node handle or null" },
+        { method: "<code>audio.setMuted(muted)</code>", arguments: "Boolean", returns: "Controller" },
+        { method: "<code>audio.setMasterVolume(volume)</code>", arguments: "0..1", returns: "Controller" },
+        { method: "<code>audio.setCategoryVolume(category, volume)</code>", arguments: "Category id and 0..1", returns: "Controller" },
+        { method: "<code>audio.registerSound(id, options)</code>", arguments: "Sound id and URL/options", returns: "Controller" },
+        { method: "<code>audio.registerTone(id, options)</code>", arguments: "Tone id and options", returns: "Controller" },
+        { method: "<code>audio.stopAll()</code>", arguments: "None", returns: "<code>void</code>" },
+        { method: "<code>audio.getState()</code>", arguments: "None", returns: "Muted, volume, registered ids, and active counts" },
+        { method: "<code>audio.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
+        ,
+        { method: "<code>createStarterGameSounds(options?)</code>", arguments: "Optional baseUrl, version, names, cacheBust, volume settings", returns: "Standard sound map for Helper starter sounds" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="unlock" class="ui-button ui-button-primary" type="button">Unlock Audio</button>
+        <button id="readState" class="ui-button" type="button">Read State</button>
+        <button id="stopAll" class="ui-button" type="button">Stop All</button>
+      </div>
+      <p class="muted">Browsers require audio playback to start from a user gesture. Press Unlock Audio before testing tones on locked mobile browsers.</p>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel">
+        <label class="field">
+          Master volume
+          <input id="masterVolume" type="range" min="0" max="1" step="0.05" value="0.7">
+        </label>
+        <label class="field">
+          SFX volume
+          <input id="sfxVolume" type="range" min="0" max="1" step="0.05" value="1">
+        </label>
+        <div class="check-row">
+          <label><input id="muted" type="checkbox"> muted</label>
+        </div>
+        <label class="field">
+          Sound URL
+          <input id="soundUrl" type="text" value="https://helpers.pbb.ph/current/assets/sounds/game/rotate.wav">
+        </label>
+        <button id="registerSound" class="ui-button" type="button">Register Sound URL</button>
+        <button id="playRegistered" class="ui-button" type="button">Play Registered Sound</button>
+        <button id="readStarterMap" class="ui-button" type="button">Read Starter Map</button>
+      </aside>
+
+      <section class="panel">
+        <div class="sound-board">
+          <div class="status-strip">
+            <span id="unlockStatus">locked</span>
+            <span id="muteStatus">sound on</span>
+            <span id="volumeStatus">volume 70%</span>
+          </div>
+          <div class="tone-grid">
+            <button class="ui-button ui-button-primary" type="button" data-sound="move">Move</button>
+            <button class="ui-button ui-button-primary" type="button" data-sound="select">Select</button>
+            <button class="ui-button ui-button-primary" type="button" data-sound="rotate">Rotate</button>
+            <button class="ui-button ui-button-primary" type="button" data-sound="drop">Drop</button>
+            <button class="ui-button ui-button-primary" type="button" data-sound="score">Score</button>
+            <button class="ui-button ui-button-primary" type="button" data-sound="error">Error</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <pre id="log">Ready.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const { createGameAudio, createStarterGameSounds } = await uiLoader.get("ui.game.audio");
+
+    const log = document.getElementById("log");
+    const unlockStatus = document.getElementById("unlockStatus");
+    const muteStatus = document.getElementById("muteStatus");
+    const volumeStatus = document.getElementById("volumeStatus");
+    const masterVolume = document.getElementById("masterVolume");
+    const sfxVolume = document.getElementById("sfxVolume");
+    const muted = document.getElementById("muted");
+    const soundUrl = document.getElementById("soundUrl");
+
+    const audio = createGameAudio({
+      masterVolume: Number(masterVolume.value),
+      sounds: createStarterGameSounds(),
+      tones: {
+        drop: { frequency: 196, duration: 0.08, type: "square", volume: 0.18 },
+      },
+    });
+
+    document.getElementById("unlock").addEventListener("click", async () => {
+      const unlocked = await audio.unlock();
+      writeLog("unlock", { unlocked, state: audio.getState() });
+      renderState();
+    });
+
+    document.getElementById("readState").addEventListener("click", () => {
+      writeLog("state", audio.getState());
+      renderState();
+    });
+
+    document.getElementById("stopAll").addEventListener("click", () => {
+      audio.stopAll();
+      writeLog("stopAll", audio.getState());
+      renderState();
+    });
+
+    document.querySelectorAll("[data-sound]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const sound = button.dataset.sound;
+        audio.play(sound);
+        writeLog("play", { sound, state: audio.getState() });
+        renderState();
+      });
+    });
+
+    masterVolume.addEventListener("input", () => {
+      audio.setMasterVolume(Number(masterVolume.value));
+      renderState();
+    });
+
+    sfxVolume.addEventListener("input", () => {
+      audio.setCategoryVolume("sfx", Number(sfxVolume.value));
+      renderState();
+    });
+
+    muted.addEventListener("change", () => {
+      audio.setMuted(muted.checked);
+      writeLog("setMuted", audio.getState());
+      renderState();
+    });
+
+    document.getElementById("registerSound").addEventListener("click", () => {
+      audio.registerSound("registered", {
+        src: soundUrl.value,
+        category: "sfx",
+        volume: 0.8,
+      });
+      writeLog("registerSound", audio.getState());
+      renderState();
+    });
+
+    document.getElementById("readStarterMap").addEventListener("click", () => {
+      writeLog("starter sounds", {
+        current: createStarterGameSounds(),
+        versioned: createStarterGameSounds({ version: "0.21.102", names: ["move", "rotate", "score"], cacheBust: "v=0.21.102" }),
+      });
+    });
+
+    document.getElementById("playRegistered").addEventListener("click", () => {
+      try {
+        const result = audio.play("registered");
+        writeLog("play registered", { played: Boolean(result), state: audio.getState() });
+      } catch (error) {
+        writeLog("play registered error", { message: error.message });
+      }
+      renderState();
+    });
+
+    renderState();
+
+    function renderState() {
+      const state = audio.getState();
+      unlockStatus.textContent = state.unlocked ? "unlocked" : "locked";
+      muteStatus.textContent = state.muted ? "muted" : "sound on";
+      volumeStatus.textContent = `volume ${Math.round(state.masterVolume * 100)}%`;
+      muted.checked = state.muted;
+    }
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toLocaleTimeString()}] ${label}\n${JSON.stringify(payload, null, 2)}`;
+      log.textContent = `${line}\n\n${log.textContent}`.slice(0, 5000);
+    }
+  </script>
+</body>
+</html>

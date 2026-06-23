@@ -1,0 +1,122 @@
+.ui-game-state-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  color: var(--ui-text, #d7e0f4);
+  font: inherit;
+}
+
+.ui-game-state-chrome__overlays,
+.ui-game-state-chrome__progress {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ui-game-state-chrome__progress {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 72px 12px;
+}
+
+.ui-game-state-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  max-width: min(720px, 100%);
+  pointer-events: auto;
+}
+
+.ui-game-state-progress__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  border: 1px solid color-mix(in oklab, var(--ui-border, #2b3750) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 84%, transparent);
+  padding: 5px 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+}
+
+.ui-game-state-progress dt,
+.ui-game-state-progress dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.ui-game-state-progress dt {
+  color: var(--ui-muted, #9fb2d8);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ui-game-state-progress dd {
+  color: var(--ui-text, #d7e0f4);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ui-game-state-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(360px, calc(100vw - 32px));
+  border: 1px solid color-mix(in oklab, var(--ui-border-strong, #344769) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 88%, transparent);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+  padding: 18px;
+  pointer-events: auto;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.ui-game-state-overlay__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.ui-game-state-overlay__detail {
+  margin: 0;
+  color: var(--ui-muted, #9fb2d8);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ui-game-state-overlay__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ui-game-state-overlay__actions .ui-button {
+  min-width: 84px;
+}
+
+@media (max-width: 520px) {
+  .ui-game-state-chrome__progress {
+    justify-content: flex-start;
+    padding-right: 68px;
+  }
+
+  .ui-game-state-progress {
+    justify-content: flex-start;
+  }
+
+  .ui-game-state-progress__item {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+}

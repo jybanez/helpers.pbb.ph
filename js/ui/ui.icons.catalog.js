@@ -63,6 +63,16 @@ export const ICON_DEFINITIONS = {
     path("M21 12a9 9 0 1 1-3-6.7"),
     path("M21 3v6h-6"),
   ]),
+  "actions.rotate-left": icon("actions", [
+    path("M4 12a8 8 0 1 0 2.3-5.7"),
+    path("M4 5v5h5"),
+    path("M12 8v4l3 2"),
+  ]),
+  "actions.rotate-right": icon("actions", [
+    path("M20 12a8 8 0 1 1-2.3-5.7"),
+    path("M20 5v5h-5"),
+    path("M12 8v4l-3 2"),
+  ]),
   "actions.more-horizontal": icon("actions", [
     circle(6, 12, 1.3),
     circle(12, 12, 1.3),
@@ -281,7 +291,7 @@ export const ICON_DEFINITIONS = {
   ]),
   "time.history": icon("time", [
     path("M4 12a8 8 0 1 0 2.3-5.7"),
-    polyline("4 5v5h5"),
+    path("M4 5v5h5"),
     line(12, 8, 12, 12),
     line(12, 12, 15, 13.5),
   ]),

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Objects Regression Test</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    canvas { width: 320px; height: 240px; border: 1px solid #2b3750; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <canvas id="canvas" width="320" height="240"></canvas>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import {
+      createFlipCard,
+      createGameObject,
+      createGameObjectLayer,
+      createPointerInputRouter,
+      createTetromino,
+    } from "../js/ui/ui.game.objects.js";
+
+    const failures = [];
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+    const results = document.getElementById("results");
+
+    try {
+      let clicks = 0;
+      let enters = 0;
+      let leaves = 0;
+      const baseObject = createGameObject({
+        id: "base",
+        x: 20,
+        y: 30,
+        width: 80,
+        height: 60,
+        zIndex: 1,
+        onPointerEnter() {
+          enters += 1;
+        },
+        onPointerLeave() {
+          leaves += 1;
+        },
+        onClick() {
+          clicks += 1;
+        },
+      });
+      assert(baseObject.containsPoint({ x: 30, y: 40 }), "object should hit test inside bounds");
+      assert(!baseObject.containsPoint({ x: 5, y: 5 }), "object should reject outside bounds");
+      baseObject.setPosition(40, 50).setSize(90, 70).setState("ready").setData({ value: 1 });
+      assert(baseObject.getState().x === 40 && baseObject.getState().width === 90, "object setters should update bounds");
+      assert(baseObject.state === "ready" && baseObject.data.value === 1, "object setters should update state and data");
+
+      const topObject = createGameObject({
+        id: "top",
+        x: 50,
+        y: 60,
+        width: 80,
+        height: 60,
+        zIndex: 3,
+      });
+      const objectLayer = createGameObjectLayer({ objects: [baseObject, topObject] });
+      assert(objectLayer.findAt({ x: 60, y: 70 }) === topObject, "layer should hit topmost object by zIndex");
+      objectLayer.handlePointer({ type: "move", x: 45, y: 55 });
+      objectLayer.handlePointer({ type: "down", x: 45, y: 55 });
+      objectLayer.handlePointer({ type: "up", x: 45, y: 55 });
+      assert(enters === 1, "layer should route pointer enter");
+      assert(clicks === 1, "layer should route click lifecycle");
+      objectLayer.handlePointer({ type: "leave", x: 0, y: 0 });
+      assert(leaves === 1, "layer should route pointer leave");
+      assert(objectLayer.remove("top"), "layer should remove objects by id");
+      assert(objectLayer.getObjects().length === 1, "layer should expose remaining objects");
+
+      let selected = 0;
+      let flips = 0;
+      const card = createFlipCard({
+        id: "card-a",
+        x: 140,
+        y: 30,
+        width: 80,
+        height: 100,
+        frontLabel: "A",
+        flipOnHover: true,
+        onSelect(selectedCard) {
+          selected += selectedCard.id === "card-a" ? 1 : 0;
+        },
+        onFlip() {
+          flips += 1;
+        },
+      });
+      objectLayer.add(card);
+      objectLayer.handlePointer({ type: "move", x: 150, y: 40 });
+      card.update(0.2);
+      assert(card.flipProgress > 0, "flip card should preview on hover");
+      objectLayer.handlePointer({ type: "down", x: 150, y: 40 });
+      objectLayer.handlePointer({ type: "up", x: 150, y: 40 });
+      assert(card.revealed, "flip card should reveal on click");
+      assert(card.state === "revealed", "flip card should sync revealed state");
+      assert(selected === 1, "flip card should emit onSelect");
+      assert(flips >= 1, "flip card should emit onFlip");
+      card.hide();
+      assert(card.state === "hidden", "flip card should hide when not matched");
+      card.setMatched(true);
+      card.hide();
+      assert(card.matched && card.revealed && card.state === "matched", "matched flip card should stay revealed");
+      objectLayer.update(0.1);
+      objectLayer.render(context);
+
+      const routerLayer = createGameObjectLayer();
+      let routed = 0;
+      routerLayer.add(createGameObject({
+        id: "routed",
+        x: 0,
+        y: 0,
+        width: 320,
+        height: 240,
+        onClick() {
+          routed += 1;
+        },
+      }));
+      const router = createPointerInputRouter(canvas, routerLayer, { scaleToCanvas: false });
+      canvas.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 4, clientX: 20, clientY: 20 }));
+      canvas.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 4, clientX: 20, clientY: 20 }));
+      assert(routed === 1, "pointer input router should route canvas pointer events");
+      router.destroy();
+      canvas.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 5, clientX: 20, clientY: 20 }));
+      canvas.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 5, clientX: 20, clientY: 20 }));
+      assert(routed === 1, "pointer input router destroy should remove listeners");
+
+      let rotated = 0;
+      let moved = 0;
+      const tetromino = createTetromino({
+        id: "piece-t",
+        shape: "T",
+        row: 2,
+        column: 4,
+        cellSize: 20,
+        onMove() {
+          moved += 1;
+        },
+        onRotate() {
+          rotated += 1;
+        },
+      });
+      assert(tetromino.shape === "T", "tetromino should expose normalized shape");
+      assert(tetromino.rotation === 0, "tetromino should start at rotation zero");
+      assert(tetromino.getCells().some((cell) => cell.row === 3 && cell.column === 5), "tetromino should expose occupied board cells");
+      const preview = tetromino.getRotationPreview(1);
+      assert(preview.rotation === 1, "tetromino rotation preview should advance rotation");
+      assert(tetromino.rotation === 0, "tetromino rotation preview should not mutate piece");
+      const kickTests = tetromino.getWallKickTests(1);
+      assert(kickTests.length === 5 && kickTests.every((test) => Array.isArray(test.cells)), "tetromino should expose five SRS wall-kick candidates");
+      assert(JSON.stringify(kickTests.map((test) => [test.kick.srsX, test.kick.srsY])) === JSON.stringify([[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]), "T 0->R kicks should match SRS JLSTZ table");
+      assert(JSON.stringify(preview.cells.map((cell) => [cell.localColumn, cell.localRow]).sort()) === JSON.stringify([[1, 0], [1, 1], [1, 2], [2, 1]].sort()), "T rotation state R should match SRS cells");
+      tetromino.rotate(1, kickTests[1]);
+      assert(tetromino.rotation === 1 && rotated === 1, "tetromino rotate should accept a chosen candidate");
+      const rToTwoTests = tetromino.getWallKickTests(1);
+      assert(JSON.stringify(rToTwoTests.map((test) => [test.kick.srsX, test.kick.srsY])) === JSON.stringify([[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]), "T R->2 kicks should match SRS JLSTZ table");
+      tetromino.moveBy(1, 2);
+      assert(tetromino.column === kickTests[1].column + 1 && tetromino.row === kickTests[1].row + 2, "tetromino moveBy should update grid position");
+      assert(moved === 1, "tetromino move should emit onMove");
+      tetromino.setCellSize(22);
+      assert(tetromino.width === 88 && tetromino.height === 88, "tetromino cell size should update object bounds");
+      tetromino.render(context);
+
+      const iPiece = createTetromino({ shape: "I", row: 0, column: 3 });
+      const iTests = iPiece.getWallKickTests(1);
+      assert(JSON.stringify(iTests.map((test) => [test.kick.srsX, test.kick.srsY])) === JSON.stringify([[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]]), "I 0->R kicks should match SRS I table");
+      assert(JSON.stringify(iPiece.getRotationPreview(1).cells.map((cell) => [cell.localColumn, cell.localRow]).sort()) === JSON.stringify([[2, 0], [2, 1], [2, 2], [2, 3]].sort()), "I rotation state R should match SRS cells");
+
+      const oPiece = createTetromino({ shape: "O", row: 0, column: 3 });
+      const oTests = oPiece.getWallKickTests(1);
+      assert(oTests.length === 1 && oTests[0].kick.srsX === 0 && oTests[0].kick.srsY === 0, "O piece should not have SRS wall kicks");
+      assert(JSON.stringify(oPiece.getCells()) === JSON.stringify(oPiece.getRotationPreview(1).cells), "O rotation should keep occupied cells stable");
+
+      objectLayer.clear();
+      assert(objectLayer.getObjects().length === 0, "layer clear should remove all objects");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Game objects regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

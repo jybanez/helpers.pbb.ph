@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Core Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.game.core.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { min-height: 320px; border: 1px dashed #2b3750; }
+    #padHost { margin-top: 16px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <div id="padHost"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import {
+      createCanvasLayer,
+      createGameActionButton,
+      createGameActionButtonGroup,
+      createGameLoop,
+      createGameSession,
+      createTouchControlPad,
+      createVirtualJoystick,
+    } from "../js/ui/ui.game.core.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const padHost = document.getElementById("padHost");
+    const results = document.getElementById("results");
+
+    try {
+      const closeEvents = [];
+      const resizeEvents = [];
+      const session = createGameSession(host, {
+        title: "Regression Game",
+        ariaLabel: "Regression session",
+        width: 640,
+        height: 360,
+        background: "#07101d",
+        onClose(meta) {
+          closeEvents.push(meta);
+        },
+      });
+      session.on("resize", (meta) => resizeEvents.push(meta));
+      session.on("close", (meta) => closeEvents.push({ emitted: true, ...meta }));
+
+      assert(host.querySelector(".ui-game-session"), "session root should render");
+      assert(host.querySelector(".ui-game-session")?.getAttribute("role") === "dialog", "session should render dialog role");
+      assert(host.querySelector(".ui-game-session")?.getAttribute("aria-label") === "Regression session", "session should expose aria label");
+      assert(host.querySelector(".ui-game-close")?.textContent === "Close game", "session should render close control");
+      assert(preventedContextMenu(session.root), "session should suppress native context menus across the game surface");
+      assert(session.getState().width === 640 && session.getState().height === 360, "session state should expose dimensions");
+
+      const base = session.addLayer({ id: "base", zIndex: 1 });
+      const effects = createCanvasLayer(session, { id: "effects", zIndex: 2, smoothing: true });
+      assert(base.canvas.width === 640 && base.canvas.height === 360, "layer should inherit session dimensions");
+      assert(effects.canvas.dataset.layerId === "effects", "direct layer factory should attach to session stage");
+      assert(preventedContextMenu(base.canvas), "canvas layer should suppress native context menus on long press");
+      assert(session.getState().layerCount === 1, "session should track layers added through session.addLayer");
+      session.resize(800, 450);
+      assert(base.canvas.width === 800 && base.canvas.height === 450, "tracked layer should resize with session");
+      assert(resizeEvents.length === 1 && resizeEvents[0].width === 800, "session resize event should fire");
+      assert(session.removeLayer(base), "session should remove tracked layer");
+      assert(!host.querySelector('[data-layer-id="base"]'), "removed layer canvas should be detached");
+      effects.destroy();
+
+      let updates = 0;
+      let renders = 0;
+      const loop = createGameLoop({
+        update(meta) {
+          updates += meta.delta >= 0 ? 1 : 0;
+        },
+        render() {
+          renders += 1;
+        },
+      });
+      assert(!loop.isRunning(), "loop should start stopped by default");
+      loop.start();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      loop.stop();
+      assert(!loop.isRunning(), "loop should stop");
+      assert(updates > 0 && renders > 0, "loop should call update and render callbacks");
+
+      const directions = [];
+      const releases = [];
+      const pad = createTouchControlPad(padHost, {
+        labels: { up: "U", left: "L", right: "R", down: "D" },
+        onDirection(vector, meta) {
+          directions.push({ vector, meta });
+        },
+        onRelease(vector, meta) {
+          releases.push({ vector, meta });
+        },
+      });
+      assert(padHost.querySelectorAll(".ui-game-touch-button").length === 4, "touch pad should render four buttons");
+      assert(padHost.querySelector('[data-direction="up"] [data-icon="navigation.arrow-up"]'), "touch pad up button should render arrow icon");
+      assert(padHost.querySelector('[data-direction="left"] [data-icon="navigation.arrow-left"]'), "touch pad left button should render arrow icon");
+      assert(padHost.querySelector('[data-direction="right"] [data-icon="navigation.arrow-right"]'), "touch pad right button should render arrow icon");
+      assert(padHost.querySelector('[data-direction="down"] [data-icon="navigation.arrow-down"]'), "touch pad down button should render arrow icon");
+      assert(Object.keys(pad.buttons).length === 4, "touch pad should expose visible buttons");
+      assert(preventedContextMenu(pad.root), "touch pad should suppress native context menus on long press");
+      const right = padHost.querySelector('[data-direction="right"]');
+      right.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      right.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      assert(directions[0]?.vector.x === 1 && directions[0]?.vector.y === 0, "right button should emit right vector");
+      assert(directions[0]?.meta.phase === "press", "direction event should include phase");
+      assert(releases[0]?.meta.direction === "right", "release callback should include direction");
+      pad.setDisabled(true);
+      assert([...padHost.querySelectorAll("button")].every((button) => button.disabled), "setDisabled should disable every button");
+      pad.destroy();
+      assert(padHost.children.length === 0, "touch pad destroy should clear host");
+
+      const horizontalPad = createTouchControlPad(padHost, {
+        directions: ["left", "right"],
+        visibility: "overlay",
+      });
+      assert(horizontalPad.root.classList.contains("is-layout-horizontal"), "left/right touch pad should use horizontal layout");
+      assert(horizontalPad.root.classList.contains("is-visibility-overlay"), "touch pad should apply visibility preset class");
+      assert(padHost.querySelectorAll(".ui-game-touch-button").length === 2, "left/right touch pad should render two buttons");
+      assert(padHost.querySelector('[data-direction="left"]'), "left/right touch pad should render left button");
+      assert(padHost.querySelector('[data-direction="right"]'), "left/right touch pad should render right button");
+      assert(!padHost.querySelector('[data-direction="up"]'), "left/right touch pad should hide up button");
+      assert(!padHost.querySelector('[data-direction="down"]'), "left/right touch pad should hide down button");
+      assert(Object.keys(horizontalPad.buttons).join(",") === "left,right", "left/right touch pad should expose only visible buttons");
+      horizontalPad.destroy();
+
+      const actionEvents = [];
+      const actionButton = createGameActionButton(padHost, {
+        label: "Fire",
+        visibility: "ghost",
+        opacity: 0.6,
+        repeat: true,
+        repeatDelay: 40,
+        holdThreshold: 40,
+        onPress(meta) {
+          actionEvents.push({ type: "press", meta });
+        },
+        onRepeat(meta) {
+          actionEvents.push({ type: "repeat", meta });
+        },
+        onHold(meta) {
+          actionEvents.push({ type: "hold", meta });
+        },
+        onRelease(meta) {
+          actionEvents.push({ type: "release", meta });
+        },
+      });
+      assert(padHost.querySelector(".ui-game-action-button__button")?.textContent.trim() === "Fire", "action button should render label");
+      assert(actionButton.root.classList.contains("is-visibility-ghost"), "action button should apply visibility preset class");
+      assert(actionButton.root.style.getPropertyValue("--ui-game-control-opacity") === "0.6", "action button should apply explicit opacity override");
+      assert(preventedContextMenu(actionButton.root), "action button should suppress native context menus on long press");
+      actionButton.button.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 2 }));
+      await new Promise((resolve) => setTimeout(resolve, 95));
+      actionButton.button.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 2 }));
+      assert(actionEvents.some((event) => event.type === "press" && event.meta.phase === "press"), "action button should emit press");
+      assert(actionEvents.some((event) => event.type === "repeat" && event.meta.repeatCount > 0), "action button should emit repeat while held");
+      assert(actionEvents.some((event) => event.type === "hold"), "action button should emit hold after threshold");
+      assert(actionEvents.some((event) => event.type === "release" && event.meta.heldMs > 0), "action button should emit release with held duration");
+      assert(actionButton.getState().pressed === false, "action button should reset pressed state after release");
+      actionButton.button.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+      assert(actionButton.getState().pressed === true, "action button should press from keyboard");
+      actionButton.button.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true, cancelable: true }));
+      actionButton.setDisabled(true);
+      assert(actionButton.button.disabled, "action button setDisabled should disable button");
+      actionButton.destroy();
+      assert(padHost.children.length === 0, "action button destroy should clear host");
+
+      const groupEvents = [];
+      const actionGroup = createGameActionButtonGroup(padHost, {
+        layout: "diamond",
+        visibility: "overlay",
+        buttons: [
+          { id: "y", label: "Y" },
+          { id: "x", label: "X" },
+          { id: "b", label: "B" },
+          { id: "a", label: "A" },
+        ],
+        onPress(id, meta) {
+          groupEvents.push({ type: "press", id, meta });
+        },
+        onRelease(id, meta) {
+          groupEvents.push({ type: "release", id, meta });
+        },
+      });
+      assert(actionGroup.root.classList.contains("is-layout-diamond"), "action button group should render requested layout");
+      assert(actionGroup.root.classList.contains("is-visibility-overlay"), "action button group should apply visibility preset class");
+      assert(Object.keys(actionGroup.actions).join(",") === "y,x,b,a", "action button group should expose action instances by id");
+      assert(preventedContextMenu(actionGroup.root), "action button group should suppress native context menus on long press");
+      actionGroup.actions.a.button.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      actionGroup.actions.a.button.dispatchEvent(new KeyboardEvent("keyup", { key: "Enter", bubbles: true, cancelable: true }));
+      assert(groupEvents.some((event) => event.type === "press" && event.id === "a"), "action button group should emit grouped press with id");
+      assert(groupEvents.some((event) => event.type === "release" && event.id === "a"), "action button group should emit grouped release with id");
+      actionGroup.setDisabled(true);
+      assert(Object.values(actionGroup.actions).every((action) => action.button.disabled), "action button group setDisabled should disable child buttons");
+      actionGroup.destroy();
+      assert(padHost.children.length === 0, "action button group destroy should clear host");
+
+      const joystickMoves = [];
+      const joystick = createVirtualJoystick(padHost, {
+        radius: 60,
+        deadzone: 0,
+        visibility: "ghost",
+        onMove(value, meta) {
+          joystickMoves.push({ value, meta });
+        },
+      });
+      assert(padHost.querySelector(".ui-game-joystick"), "virtual joystick should render");
+      const joyRoot = padHost.querySelector(".ui-game-joystick");
+      assert(joyRoot.classList.contains("is-visibility-ghost"), "virtual joystick should apply visibility preset class");
+      assert(preventedContextMenu(joyRoot), "virtual joystick should suppress native context menus on long press");
+      joyRoot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+      assert(joystickMoves[0]?.value.x === 1 && joystickMoves[0]?.value.y === 0, "joystick keyboard right should emit analog vector");
+      assert(joystickMoves[0]?.meta.phase === "keyboard", "joystick keyboard event should include phase");
+      joyRoot.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true, cancelable: true }));
+      assert(joystick.getValue().force === 0, "joystick should snap back on keyup");
+      joystick.setDisabled(true);
+      assert(joyRoot.getAttribute("aria-disabled") === "true", "joystick setDisabled should update aria-disabled");
+      joystick.destroy();
+      assert(padHost.children.length === 0, "joystick destroy should clear host");
+
+      await session.close("test");
+      assert(host.children.length === 0, "session close should remove the session");
+      assert(closeEvents.some((event) => event.reason === "test"), "close should call handlers with reason");
+
+      let allowClose = false;
+      let beforeCloseCount = 0;
+      const iconSession = createGameSession(host, {
+        title: "Icon Close Game",
+        closeControl: { variant: "icon", icon: "actions.close" },
+        onBeforeClose(meta) {
+          beforeCloseCount += meta.reason === "button" ? 1 : 0;
+          return allowClose;
+        },
+      });
+      assert(host.querySelector(".ui-game-close.is-icon-only"), "session should render icon-only close control when requested");
+      assert(host.querySelector('.ui-game-close [data-icon="actions.close"]'), "session icon close should render requested ui.icon");
+      assert(host.querySelector(".ui-game-close")?.getAttribute("aria-label") === "Close game", "session icon close should keep accessible label");
+      iconSession.closeButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert(beforeCloseCount === 1, "onBeforeClose should run before button close");
+      assert(host.querySelector(".ui-game-session"), "onBeforeClose false should cancel close");
+      assert(iconSession.getState().closed === false, "cancelled close should leave state open");
+      allowClose = true;
+      const didClose = await iconSession.close("button");
+      assert(didClose === true, "close should report successful close");
+      assert(host.children.length === 0, "allowed close should remove icon session");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function preventedContextMenu(target) {
+      const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+      return target.dispatchEvent(event) === false && event.defaultPrevented;
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Game core regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

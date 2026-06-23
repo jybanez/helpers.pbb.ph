@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Tetromino Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 520px; aspect-ratio: 10 / 20; border: 1px solid #2b3750; border-radius: 8px; background: #08111f; }
+    pre { margin: 0; min-height: 240px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    select { border: 1px solid #344769; border-radius: 8px; background: #0b1220; color: #d7e0f4; padding: 8px 10px; }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core", "ui.game.objects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Tetromino",
+      overview: "Focused reference for createTetromino cells, movement, rotation previews, and wall-kick candidates.",
+      useWhen: [
+        "Use <code>createTetromino(...)</code> for Tetris-style falling pieces on a grid.",
+        "Use <code>getRotationPreview()</code> or <code>getWallKickTests()</code> so the app can validate a rotation against its board before accepting it."
+      ],
+      avoidWhen: [
+        "Do not use it as a complete Tetris engine.",
+        "Do not put scoring, gravity, line clears, lock delay, or game-over rules inside the tetromino object."
+      ],
+      description: "Tetromino is a specialized game object. Helper owns shape matrices, grid cells, movement helpers, rotation state, and candidate rotations. The app owns board validity and game rules.",
+      defaultSampleCode: `const piece = createTetromino({ shape: "T", row: 0, column: 4 });\nconst tests = piece.getWallKickTests(1);\nconst accepted = tests.find((test) => boardCanPlace(test.cells));\nif (accepted) {\n  piece.rotate(1, accepted);\n}`,
+      constructor: [
+        { factory: "<code>createTetromino(options)</code>", arguments: "Tetromino options", returns: "Game object with grid-piece helpers" }
+      ],
+      options: [
+        { option: "<code>shape</code>", default: "<code>\"T\"</code>", description: "One of I, O, T, S, Z, J, or L." },
+        { option: "<code>row</code> / <code>column</code>", default: "<code>0 / 4</code>", description: "Board position in grid cells." },
+        { option: "<code>rotation</code>", default: "<code>0</code>", description: "Rotation index from 0 to 3." },
+        { option: "<code>cellSize</code>", default: "<code>24</code>", description: "Canvas pixel size for one grid cell." }
+      ],
+      propertiesText: "Tetromino exposes shape, row, column, rotation, cellSize, and base game-object properties.",
+      events: [
+        { event: "<code>onMove</code>", arguments: "<code>(piece, state)</code>", returns: "Runs after moveTo or moveBy." },
+        { event: "<code>onRotate</code>", arguments: "<code>(piece, state)</code>", returns: "Runs after rotate accepts a candidate." }
+      ],
+      methods: [
+        { method: "<code>getCells(overrides?)</code>", arguments: "optional row/column/rotation", returns: "Occupied board cells." },
+        { method: "<code>getRotationPreview(direction)</code>", arguments: "1 or -1", returns: "Candidate state without mutation." },
+        { method: "<code>getWallKickTests(direction)</code>", arguments: "1 or -1", returns: "Candidate states for app validation." },
+        { method: "<code>rotate(direction, accepted?)</code>", arguments: "direction and optional accepted candidate", returns: "piece" },
+        { method: "<code>moveBy(columnDelta, rowDelta)</code>", arguments: "grid deltas", returns: "piece" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <select id="shapeSelect" aria-label="Tetromino shape">
+          <option>I</option><option>O</option><option selected>T</option><option>S</option><option>Z</option><option>J</option><option>L</option>
+        </select>
+        <button id="left" class="ui-button" type="button">Left</button>
+        <button id="right" class="ui-button" type="button">Right</button>
+        <button id="down" class="ui-button" type="button">Down</button>
+        <button id="rotateLeft" class="ui-button" type="button">Rotate Left</button>
+        <button id="rotateRight" class="ui-button ui-button-primary" type="button">Rotate Right</button>
+        <button id="reset" class="ui-button" type="button">Reset</button>
+      </div>
+      <h1 class="ui-title">Tetromino Demo</h1>
+      <p class="muted">The helper gives candidate cells. A real Tetris game should validate these against its board before accepting movement or rotation.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="300" height="600"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">Piece State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameLoop } = await uiLoader.get("ui.game.core");
+    const { createTetromino } = await uiLoader.get("ui.game.objects");
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    const shapeSelect = document.getElementById("shapeSelect");
+    const columns = 10;
+    const rows = 20;
+    const cellSize = 30;
+    let piece = null;
+
+    function reset() {
+      piece = createTetromino({
+        shape: shapeSelect.value,
+        row: 1,
+        column: 3,
+        cellSize,
+      });
+    }
+
+    function tryMove(columnDelta, rowDelta) {
+      const preview = piece.getMovePreview(columnDelta, rowDelta);
+      if (canPlace(preview.cells)) {
+        piece.moveBy(columnDelta, rowDelta);
+      }
+    }
+
+    function tryRotate(direction) {
+      const accepted = piece.getWallKickTests(direction).find((test) => canPlace(test.cells));
+      if (accepted) {
+        piece.rotate(direction, accepted);
+      }
+    }
+
+    function canPlace(cells) {
+      return cells.every((cell) => cell.column >= 0 && cell.column < columns && cell.row >= 0 && cell.row < rows);
+    }
+
+    document.getElementById("left").addEventListener("click", () => tryMove(-1, 0));
+    document.getElementById("right").addEventListener("click", () => tryMove(1, 0));
+    document.getElementById("down").addEventListener("click", () => tryMove(0, 1));
+    document.getElementById("rotateLeft").addEventListener("click", () => tryRotate(-1));
+    document.getElementById("rotateRight").addEventListener("click", () => tryRotate(1));
+    document.getElementById("reset").addEventListener("click", reset);
+    shapeSelect.addEventListener("change", reset);
+
+    reset();
+
+    createGameLoop({
+      autoStart: false,
+      render() {
+        draw();
+      },
+    }).start();
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#08111f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      piece.render(ctx);
+      stateOutput.textContent = JSON.stringify({
+        shape: piece.shape,
+        row: piece.row,
+        column: piece.column,
+        rotation: piece.rotation,
+        cells: piece.getCells().map(({ row, column }) => ({ row, column })),
+        nextRotationTests: piece.getWallKickTests(1).map((test) => ({
+          row: test.row,
+          column: test.column,
+          rotation: test.rotation,
+          valid: canPlace(test.cells),
+        })),
+      }, null, 2);
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = "#17233a";
+      ctx.lineWidth = 1;
+      for (let column = 0; column <= columns; column += 1) {
+        ctx.beginPath();
+        ctx.moveTo(column * cellSize, 0);
+        ctx.lineTo(column * cellSize, rows * cellSize);
+        ctx.stroke();
+      }
+      for (let row = 0; row <= rows; row += 1) {
+        ctx.beginPath();
+        ctx.moveTo(0, row * cellSize);
+        ctx.lineTo(columns * cellSize, row * cellSize);
+        ctx.stroke();
+      }
+    }
+  </script>
+</body>
+</html>

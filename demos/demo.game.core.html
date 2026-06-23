@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Core Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .demo-stage {
+      position: relative;
+      min-height: 560px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #07101d;
+      overflow: hidden;
+    }
+    .inline-session-host {
+      position: absolute;
+      inset: 0;
+    }
+    .game-overlay-controls {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      display: grid;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .game-readout {
+      min-width: 210px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: rgba(13, 21, 35, 0.88);
+      padding: 10px;
+      color: #b2c2e5;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .control-switch {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .control-switch .ui-button.is-active {
+      border-color: #8db5ff;
+      background: #213454;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Core",
+      overview: "Canvas-first game session, layer, loop, touch direction pad, and virtual joystick primitives.",
+      useWhen: [
+        "Use <code>createGameSession(...)</code> when a local app needs a fullscreen or embedded game surface.",
+        "Use <code>createTouchControlPad(...)</code> for four-way movement controls on touch devices.",
+        "Use <code>createVirtualJoystick(...)</code> for analog movement in canvas games.",
+        "Use canvas layers for gameplay while reserving Helper modals/dialogs for pause, quit, settings, and completion flows."
+      ],
+      avoidWhen: [
+        "Do not use it as a full game engine; game rules, assets, physics, and scoring remain app-owned.",
+        "Do not use canvas-only text flows for learning games when DOM or Helper forms are more accessible."
+      ],
+      description: "Game Core is intentionally small. It provides a fullscreen-capable session host, canvas layers, a requestAnimationFrame loop, a D-pad, and an analog virtual joystick.",
+      defaultSampleCode: `const session = createGameSession(host, { title: "Snake", width: 720, height: 720 });\nconst board = session.addLayer({ id: "board" });\nconst controls = document.createElement("div");\nsession.overlay.appendChild(controls);\n\ncreateVirtualJoystick(controls, {\n  deadzone: 0.12,\n  onMove(value) {\n    player.vx = value.x * speed;\n    player.vy = value.y * speed;\n  },\n});`,
+      constructor: [
+        { factory: "<code>createGameSession(container, options)</code>", arguments: "<code>container</code>, session options", returns: "Session instance with root, stage, overlay, close, resize, addLayer, removeLayer, and destroy" },
+        { factory: "<code>createTouchControlPad(container, options)</code>", arguments: "<code>container</code>, touch-pad options", returns: "Touch pad instance with setDisabled and destroy" },
+        { factory: "<code>createVirtualJoystick(container, options)</code>", arguments: "<code>container</code>, joystick options", returns: "Virtual joystick instance with getValue, setDisabled, and destroy" }
+      ],
+      options: [
+        { option: "<code>width</code> / <code>height</code>", default: "<code>1280 / 720</code>", description: "Internal game resolution used by session and canvas layers." },
+        { option: "<code>fullscreen</code>", default: "<code>true</code>", description: "Renders the session as a fixed fullscreen overlay. Set false for embedded previews." },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Allows Escape to close the game session." },
+        { option: "<code>repeat</code>", default: "<code>false</code>", description: "Touch pad option that repeatedly emits the active direction while held." },
+        { option: "<code>onDirection</code>", default: "<code>null</code>", description: "Touch pad callback receiving <code>({ x, y }, { direction, phase })</code>." },
+        { option: "<code>radius</code>", default: "<code>68</code>", description: "Virtual joystick radius in pixels." },
+        { option: "<code>deadzone</code>", default: "<code>0.12</code>", description: "Joystick force below this value emits neutral movement." },
+        { option: "<code>onMove</code>", default: "<code>null</code>", description: "Joystick callback receiving <code>({ x, y, force, angle, active }, meta)</code>." }
+      ],
+      propertiesText: "Session exposes DOM anchors <code>stage</code> and <code>overlay</code>. Canvas gameplay belongs in stage layers; Helper modals can mount from overlay or the document.",
+      events: [
+        { event: "<code>session.on(\"close\")</code>", arguments: "<code>({ reason })</code>", returns: "Fires before the session removes itself." },
+        { event: "<code>session.on(\"resize\")</code>", arguments: "<code>({ width, height })</code>", returns: "Fires after session resolution changes." },
+        { event: "<code>onDirection</code>", arguments: "<code>(vector, meta)</code>", returns: "Receives normalized D-pad movement vector and phase." },
+        { event: "<code>onMove</code>", arguments: "<code>(value, meta)</code>", returns: "Receives analog joystick movement value and phase." }
+      ],
+      methods: [
+        { method: "<code>session.addLayer(options)</code>", arguments: "layer options", returns: "Canvas layer instance" },
+        { method: "<code>session.resize(width, height)</code>", arguments: "new resolution", returns: "<code>void</code>" },
+        { method: "<code>session.close(reason)</code>", arguments: "optional reason", returns: "<code>void</code>" },
+        { method: "<code>touchPad.setDisabled(disabled)</code>", arguments: "boolean", returns: "<code>void</code>" },
+        { method: "<code>joystick.getValue()</code>", arguments: "none", returns: "Current normalized joystick value" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="openFullscreen" class="ui-button ui-button-primary" type="button">Open Fullscreen Session</button>
+        <button id="resetInline" class="ui-button" type="button">Reset Marker</button>
+      </div>
+      <h1 class="ui-title">Game Core Controls Demo</h1>
+      <p class="muted">Switch between the D-pad and virtual joystick. Use either control or keyboard arrow keys to move the marker.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Embedded Session Preview</h2>
+      <div class="demo-stage">
+        <div id="inlineSessionHost" class="inline-session-host"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const session = createGameSession(host, {
+  title: "Canvas Game",
+  fullscreen: true,
+  width: 720,
+  height: 720,
+});
+
+const layer = session.addLayer({ id: "board" });
+const controls = document.createElement("div");
+session.overlay.appendChild(controls);
+
+createVirtualJoystick(controls, {
+  deadzone: 0.12,
+  onMove(value) {
+    player.vx = value.x * speed;
+    player.vy = value.y * speed;
+  },
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const {
+      createGameLoop,
+      createGameSession,
+      createTouchControlPad,
+      createVirtualJoystick,
+    } = await uiLoader.get("ui.game.core");
+
+    const inlineHost = document.getElementById("inlineSessionHost");
+    let inlineDemo = mountInlineDemo();
+
+    document.getElementById("resetInline").addEventListener("click", () => {
+      if (!inlineDemo) {
+        inlineDemo = mountInlineDemo();
+        return;
+      }
+      inlineDemo.reset();
+    });
+
+    document.getElementById("openFullscreen").addEventListener("click", () => {
+      mountDemo(document.body, {
+        fullscreen: true,
+        title: "Fullscreen control pad demo",
+        closeLabel: "Close game",
+      });
+    });
+
+    function mountInlineDemo() {
+      return mountDemo(inlineHost, {
+        fullscreen: false,
+        title: "Embedded control pad demo",
+        closeLabel: "Close preview",
+        onClose() {
+          inlineDemo = null;
+        },
+      });
+    }
+
+    function mountDemo(host, options) {
+      const session = createGameSession(host, {
+        title: options.title,
+        ariaLabel: options.title,
+        fullscreen: options.fullscreen,
+        closeLabel: options.closeLabel || "Close preview",
+        width: 720,
+        height: 720,
+        background: "#050b14",
+        onClose: options.onClose || null,
+      });
+      const layer = session.addLayer({ id: "board", zIndex: 1 });
+      const controls = document.createElement("div");
+      controls.className = "game-overlay-controls";
+      const readout = document.createElement("div");
+      readout.className = "game-readout";
+      const switchHost = document.createElement("div");
+      switchHost.className = "control-switch";
+      const dpadButton = document.createElement("button");
+      dpadButton.className = "ui-button ui-button-quiet is-active";
+      dpadButton.type = "button";
+      dpadButton.textContent = "D-pad";
+      const joystickButton = document.createElement("button");
+      joystickButton.className = "ui-button ui-button-quiet";
+      joystickButton.type = "button";
+      joystickButton.textContent = "Joystick";
+      switchHost.append(dpadButton, joystickButton);
+      const padHost = document.createElement("div");
+      controls.append(readout, switchHost, padHost);
+      session.overlay.appendChild(controls);
+
+      const player = { x: 360, y: 360, vx: 0, vy: 0 };
+      let lastMove = "none";
+      let controlMode = "dpad";
+      let activeControl = null;
+      let pulse = 0;
+
+      mountControl();
+      dpadButton.addEventListener("click", () => setControlMode("dpad"));
+      joystickButton.addEventListener("click", () => setControlMode("joystick"));
+
+      const onKeydown = (event) => {
+        const vector = vectorForKey(event.key);
+        if (!vector) {
+          return;
+        }
+        event.preventDefault();
+        move(vector.x, vector.y, vector.direction);
+      };
+      session.root.addEventListener("keydown", onKeydown);
+      session.on("close", () => {
+        session.root.removeEventListener("keydown", onKeydown);
+        activeControl?.destroy?.();
+        loop.stop();
+      });
+
+      const loop = createGameLoop({
+        autoStart: true,
+        update({ delta }) {
+          pulse += delta;
+          if (controlMode === "joystick") {
+            player.x = clamp(player.x + player.vx * delta, 28, layer.canvas.width - 28);
+            player.y = clamp(player.y + player.vy * delta, 28, layer.canvas.height - 28);
+          }
+        },
+        render: draw,
+      });
+
+      draw();
+
+      return {
+        reset() {
+          player.x = 360;
+          player.y = 360;
+          lastMove = "reset";
+          draw();
+        },
+      };
+
+      function move(x, y, label) {
+        player.x = clamp(player.x + x * 18, 28, layer.canvas.width - 28);
+        player.y = clamp(player.y + y * 18, 28, layer.canvas.height - 28);
+        lastMove = label;
+        draw();
+      }
+
+      function setControlMode(nextMode) {
+        controlMode = nextMode;
+        player.vx = 0;
+        player.vy = 0;
+        dpadButton.classList.toggle("is-active", controlMode === "dpad");
+        joystickButton.classList.toggle("is-active", controlMode === "joystick");
+        mountControl();
+        draw();
+      }
+
+      function mountControl() {
+        activeControl?.destroy?.();
+        if (controlMode === "joystick") {
+          activeControl = createVirtualJoystick(padHost, {
+            radius: 66,
+            deadzone: 0.12,
+            onMove(value, meta) {
+              const speed = 220;
+              player.vx = value.x * speed;
+              player.vy = value.y * speed;
+              lastMove = value.force ? `joystick ${value.force.toFixed(2)}` : meta.phase;
+            },
+          });
+          return;
+        }
+        activeControl = createTouchControlPad(padHost, {
+          repeat: true,
+          repeatDelay: 90,
+          onDirection(vector, meta) {
+            move(vector.x, vector.y, meta.direction);
+          },
+        });
+      }
+
+      function draw() {
+        const ctx = layer.context;
+        ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        ctx.fillStyle = "#07101d";
+        ctx.fillRect(0, 0, layer.canvas.width, layer.canvas.height);
+        ctx.strokeStyle = "rgba(141, 181, 255, 0.14)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= layer.canvas.width; x += 48) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, layer.canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= layer.canvas.height; y += 48) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(layer.canvas.width, y);
+          ctx.stroke();
+        }
+        const radius = 22 + Math.sin(pulse * 4) * 2;
+        ctx.fillStyle = "#79a9ff";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#4fd29b";
+        ctx.fillRect(player.x - 8, player.y - 8, 16, 16);
+        readout.textContent = `x: ${Math.round(player.x)}
+y: ${Math.round(player.y)}
+last: ${lastMove}
+mode: ${controlMode}
+input: control pad, joystick, or arrow keys`;
+      }
+    }
+
+    function vectorForKey(key) {
+      if (key === "ArrowUp") return { x: 0, y: -1, direction: "up" };
+      if (key === "ArrowDown") return { x: 0, y: 1, direction: "down" };
+      if (key === "ArrowLeft") return { x: -1, y: 0, direction: "left" };
+      if (key === "ArrowRight") return { x: 1, y: 0, direction: "right" };
+      return null;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+  </script>
+</body>
+</html>

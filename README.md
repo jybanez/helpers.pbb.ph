@@ -499,10 +499,11 @@ Application integrations should use the registry loader.
 - Direct path imports are for internal library work only and should be avoided in consuming apps.
 - `uiLoader.loadManyGroup(...)` group names such as `core-shell`, `forms`, `communication`, `data`, `media`, `workflow`, and `incident` are retained as backward-compatible preload bundles.
 - Treat loader groups as runtime loading bundles, not as the public documentation taxonomy.
-- The source tree stays modular, but the repo now also supports an optional minified shared distribution bundle at `dist/helpers.ui.bundle.min.js` plus `dist/helpers.ui.bundle.min.css`.
+- The source tree stays modular, but the repo now also supports generated distribution bundles: `dist/helpers.ui.bundle.min.js/css` for non-game UI and incident helpers, plus `dist/helpers.game.bundle.min.js/css` for `ui.game.*`.
 - Teams that want fewer helper requests can generate the bundle with `npm run build:ui-bundle` and then opt in at runtime with `uiLoader.setPreferBundles(true)` or `createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true })`.
-- The current bundle scope covers both `ui.*` and `incident.*` registry entries, so bundle-preferring apps do not fall back to direct source imports for incident helpers that depend on shared `ui.*` modules.
-- Default shared bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
+- The main UI bundle covers non-game `ui.*` and `incident.*` registry entries. The game bundle covers `ui.game.*` entries so non-game pages do not carry growing game helper code.
+- Default shared and game bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
+- Game pages may optionally preload the game bundle with `<script type="module" src="/assets/helper/helpers.game.bundle.min.js"></script>`; `uiLoader` can reuse the preloaded `window.__PBB_HELPER_GAME_BUNDLE__` map when bundle preference is enabled.
 - The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.

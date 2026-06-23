@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Object Layer Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 680px; aspect-ratio: 16 / 10; border: 1px solid #2b3750; border-radius: 8px; background: #08111f; touch-action: none; }
+    pre { margin: 0; min-height: 180px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core", "ui.game.objects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Object Layer",
+      overview: "Focused reference for createGameObjectLayer update, render, z-order hit testing, and pointer routing.",
+      useWhen: [
+        "Use <code>createGameObjectLayer(...)</code> when a canvas has multiple interactive entities.",
+        "Use <code>createPointerInputRouter(...)</code> to convert canvas pointer events into object-layer hits."
+      ],
+      avoidWhen: [
+        "Do not use it for DOM control layout.",
+        "Do not put game rules into the layer; route selected objects to app-owned rules."
+      ],
+      description: "The object layer manages ordered objects and dispatches pointer phases to the topmost hit object.",
+      defaultSampleCode: `const layer = createGameObjectLayer();\nlayer.add(player);\nlayer.add(enemy);\ncreatePointerInputRouter(canvas, layer);\n\nloop.render(() => layer.render(ctx));`,
+      constructor: [
+        { factory: "<code>createGameObjectLayer(options)</code>", arguments: "Optional initial objects", returns: "Object layer" },
+        { factory: "<code>createPointerInputRouter(canvas, objectLayer)</code>", arguments: "Canvas and layer", returns: "Router with destroy" }
+      ],
+      options: [
+        { option: "<code>objects</code>", default: "<code>[]</code>", description: "Initial objects or object option records." },
+        { option: "<code>scaleToCanvas</code>", default: "<code>true</code>", description: "Router option that maps CSS pixels to canvas resolution." }
+      ],
+      propertiesText: "The layer exposes ordered objects through getObjects(). It tracks hovered and pressed targets internally.",
+      events: [
+        { event: "<code>objectLayer.handlePointer(input)</code>", arguments: "type and point", returns: "Topmost target object or null" }
+      ],
+      methods: [
+        { method: "<code>add(object)</code>", arguments: "object/options", returns: "object" },
+        { method: "<code>remove(idOrObject)</code>", arguments: "id or object", returns: "boolean" },
+        { method: "<code>findAt(point)</code>", arguments: "point", returns: "Topmost hit object or null" },
+        { method: "<code>update(delta)</code>", arguments: "seconds", returns: "layer" },
+        { method: "<code>render(ctx)</code>", arguments: "canvas context", returns: "layer" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="swapOrder" class="ui-button ui-button-primary" type="button">Swap Z-order</button>
+        <button id="resetLayer" class="ui-button" type="button">Reset</button>
+      </div>
+      <h1 class="ui-title">Game Object Layer Demo</h1>
+      <p class="muted">Click overlapping objects. The topmost object by z-index receives the click.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="680" height="425"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">Layer State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameLoop } = await uiLoader.get("ui.game.core");
+    const { createGameObject, createGameObjectLayer, createPointerInputRouter } = await uiLoader.get("ui.game.objects");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    let objectLayer;
+    let router;
+    let clickLog = [];
+    function makeObject(id, x, y, color, zIndex) {
+      return createGameObject({
+        id, x, y, width: 190, height: 130, zIndex,
+        onClick({ object }) {
+          clickLog.unshift(`${object.id} clicked`);
+          clickLog = clickLog.slice(0, 6);
+        },
+        render(ctx, object) {
+          const b = object.getBounds();
+          ctx.fillStyle = object.hover ? color.hover : color.fill;
+          ctx.strokeStyle = object.pressed ? "#ffffff" : color.stroke;
+          ctx.lineWidth = 4;
+          ctx.fillRect(b.x, b.y, b.width, b.height);
+          ctx.strokeRect(b.x, b.y, b.width, b.height);
+          ctx.fillStyle = "#d7e0f4";
+          ctx.font = "800 20px Segoe UI, sans-serif";
+          ctx.fillText(`${object.id} z:${object.zIndex}`, b.x + 18, b.y + 34);
+        },
+      });
+    }
+    function reset() {
+      router?.destroy();
+      clickLog = [];
+      objectLayer = createGameObjectLayer();
+      objectLayer.add(makeObject("blue", 190, 125, { fill: "#1b3358", hover: "#244a82", stroke: "#8db5ff" }, 1));
+      objectLayer.add(makeObject("green", 290, 185, { fill: "#1c4235", hover: "#245c49", stroke: "#54d3a5" }, 2));
+      router = createPointerInputRouter(canvas, objectLayer);
+    }
+    document.getElementById("resetLayer").addEventListener("click", reset);
+    document.getElementById("swapOrder").addEventListener("click", () => {
+      const [first, second] = objectLayer.getObjects();
+      objectLayer.clear();
+      objectLayer.add(makeObject(first.id, first.x, first.y, first.id === "blue" ? { fill: "#1b3358", hover: "#244a82", stroke: "#8db5ff" } : { fill: "#1c4235", hover: "#245c49", stroke: "#54d3a5" }, second.zIndex));
+      objectLayer.add(makeObject(second.id, second.x, second.y, second.id === "blue" ? { fill: "#1b3358", hover: "#244a82", stroke: "#8db5ff" } : { fill: "#1c4235", hover: "#245c49", stroke: "#54d3a5" }, first.zIndex));
+    });
+    createGameLoop({
+      autoStart: true,
+      update({ delta }) { objectLayer.update(delta); },
+      render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#08111f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        objectLayer.render(ctx);
+        stateOutput.textContent = JSON.stringify({
+          objects: objectLayer.getObjects().map((object) => ({ id: object.id, zIndex: object.zIndex, hover: object.hover })),
+          clickLog,
+        }, null, 2);
+      },
+    }).start();
+    reset();
+  </script>
+</body>
+</html>

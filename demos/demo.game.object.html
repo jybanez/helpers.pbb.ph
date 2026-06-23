@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Object Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 680px; aspect-ratio: 16 / 10; border: 1px solid #2b3750; border-radius: 8px; background: #08111f; touch-action: none; }
+    pre { margin: 0; min-height: 180px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.objects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Object",
+      overview: "Focused reference for createGameObject bounds, hit testing, state, and pointer lifecycle behavior.",
+      useWhen: [
+        "Use <code>createGameObject(...)</code> for custom canvas entities that need shared behavior without taking over rendering.",
+        "Use app-owned <code>render(ctx, object)</code> for the entity look."
+      ],
+      avoidWhen: [
+        "Do not use it for DOM controls or Helper modal content.",
+        "Do not put game-wide scoring or level rules into a single object."
+      ],
+      description: "A game object is the smallest reusable behavior unit for canvas games. It owns geometry, simple state, hit testing, and pointer phases.",
+      defaultSampleCode: `const token = createGameObject({\n  id: "token-1",\n  x: 80,\n  y: 80,\n  width: 96,\n  height: 72,\n  state: "ready",\n  onClick({ object }) {\n    object.setState("selected");\n  },\n  render(ctx, object) {\n    drawToken(ctx, object);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createGameObject(options)</code>", arguments: "Object options", returns: "Game object instance" }
+      ],
+      options: [
+        { option: "<code>x</code> / <code>y</code>", default: "<code>0 / 0</code>", description: "Object position in canvas coordinates." },
+        { option: "<code>width</code> / <code>height</code>", default: "<code>64 / 64</code>", description: "Bounds used by default hit testing." },
+        { option: "<code>zIndex</code>", default: "<code>0</code>", description: "Ordering metadata used by object layers." },
+        { option: "<code>hitTest(point, object)</code>", default: "<code>null</code>", description: "Optional custom hit test." },
+        { option: "<code>render(ctx, object)</code>", default: "<code>null</code>", description: "App-owned rendering hook." }
+      ],
+      propertiesText: "The object exposes id, bounds, visible, disabled, interactive, state, data, hover, and pressed.",
+      events: [
+        { event: "<code>onPointerEnter</code>", arguments: "<code>meta</code>", returns: "Runs when pointer enters." },
+        { event: "<code>onPointerDown</code>", arguments: "<code>meta</code>", returns: "Runs on press." },
+        { event: "<code>onClick</code>", arguments: "<code>meta</code>", returns: "Runs after down/up on the object." }
+      ],
+      methods: [
+        { method: "<code>object.containsPoint(point)</code>", arguments: "point", returns: "boolean" },
+        { method: "<code>object.setPosition(x, y)</code>", arguments: "numbers", returns: "object" },
+        { method: "<code>object.setState(state)</code>", arguments: "string", returns: "object" },
+        { method: "<code>object.render(ctx)</code>", arguments: "canvas context", returns: "object" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="moveObject" class="ui-button ui-button-primary" type="button">Move Object</button>
+        <button id="toggleDisabled" class="ui-button" type="button">Toggle Disabled</button>
+      </div>
+      <h1 class="ui-title">Game Object Demo</h1>
+      <p class="muted">Click the object to toggle selected state. Pointer behavior is routed manually in this focused example.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="680" height="425"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameObject } = await uiLoader.get("ui.game.objects");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    let selected = false;
+    const object = createGameObject({
+      id: "training-token",
+      x: 250,
+      y: 150,
+      width: 160,
+      height: 96,
+      state: "ready",
+      onPointerEnter() { draw(); },
+      onPointerLeave() { draw(); },
+      onClick({ object }) {
+        selected = !selected;
+        object.setState(selected ? "selected" : "ready");
+        draw();
+      },
+      render(ctx, object) {
+        const b = object.getBounds();
+        ctx.fillStyle = object.disabled ? "#1a2231" : object.state === "selected" ? "#254d3d" : object.hover ? "#24385a" : "#172033";
+        ctx.strokeStyle = object.pressed ? "#8db5ff" : object.state === "selected" ? "#54d3a5" : "#4f76b8";
+        ctx.lineWidth = 3;
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+        ctx.strokeRect(b.x, b.y, b.width, b.height);
+        ctx.fillStyle = "#d7e0f4";
+        ctx.font = "700 18px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(object.state, b.x + b.width / 2, b.y + b.height / 2);
+      },
+    });
+    document.getElementById("moveObject").addEventListener("click", () => {
+      const nextX = object.x > 300 ? 120 : 360;
+      object.setPosition(nextX, object.y);
+      draw();
+    });
+    document.getElementById("toggleDisabled").addEventListener("click", () => {
+      object.setDisabled(!object.disabled);
+      draw();
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      const point = getPoint(event);
+      const hit = object.containsPoint(point) && !object.disabled;
+      if (hit && !object.hover) object.handlePointer("enter", point);
+      if (!hit && object.hover) object.handlePointer("leave", point);
+      if (hit) object.handlePointer("move", point);
+      draw();
+    });
+    canvas.addEventListener("pointerdown", (event) => {
+      const point = getPoint(event);
+      if (object.containsPoint(point) && !object.disabled) object.handlePointer("down", point);
+      draw();
+    });
+    canvas.addEventListener("pointerup", (event) => {
+      const point = getPoint(event);
+      if (object.containsPoint(point) && !object.disabled) object.handlePointer("up", point);
+      draw();
+    });
+    canvas.addEventListener("pointerleave", () => {
+      if (object.hover) object.handlePointer("leave", { x: -1, y: -1 });
+      draw();
+    });
+    function getPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: (event.clientX - rect.left) * (canvas.width / rect.width), y: (event.clientY - rect.top) * (canvas.height / rect.height) };
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#08111f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      object.render(ctx);
+      stateOutput.textContent = JSON.stringify(object.getState(), null, 2);
+    }
+    draw();
+  </script>
+</body>
+</html>

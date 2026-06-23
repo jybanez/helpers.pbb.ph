@@ -6,6 +6,8 @@ import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.j
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bundleJsPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.js");
 const bundleCssPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.css");
+const gameBundleJsPath = path.join(repoRoot, "dist", "helpers.game.bundle.min.js");
+const gameBundleCssPath = path.join(repoRoot, "dist", "helpers.game.bundle.min.css");
 const loaderSourcePath = path.join(repoRoot, "js", "ui", "ui.loader.js");
 
 if (!fs.existsSync(bundleJsPath)) {
@@ -16,9 +18,22 @@ if (!fs.existsSync(bundleCssPath)) {
   throw new Error("Missing dist/helpers.ui.bundle.min.css");
 }
 
+if (!fs.existsSync(gameBundleJsPath)) {
+  throw new Error("Missing dist/helpers.game.bundle.min.js");
+}
+
+if (!fs.existsSync(gameBundleCssPath)) {
+  throw new Error("Missing dist/helpers.game.bundle.min.css");
+}
+
 const loaderSource = fs.readFileSync(loaderSourcePath, "utf8");
-if (!loaderSource.includes("helpers.ui.bundle.min.js?v=") || !loaderSource.includes("helpers.ui.bundle.min.css?v=")) {
-  throw new Error("ui.loader.js must version-tag shared bundle JS and CSS URLs.");
+if (
+  !loaderSource.includes("helpers.ui.bundle.min.js?v=") ||
+  !loaderSource.includes("helpers.ui.bundle.min.css?v=") ||
+  !loaderSource.includes("helpers.game.bundle.min.js?v=") ||
+  !loaderSource.includes("helpers.game.bundle.min.css?v=")
+) {
+  throw new Error("ui.loader.js must version-tag shared and game bundle JS/CSS URLs.");
 }
 
 const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
@@ -35,6 +50,10 @@ const createStatCards = await loader.get("ui.stat.cards", { css: false });
 const createMapLegend = await loader.get("ui.map.legend", { css: false });
 const mapMarkers = await loader.get("ui.map.markers", { css: false });
 const createMapDrawingTools = await loader.get("ui.map.drawing", { css: false });
+const gameCore = await loader.get("ui.game.core", { css: false });
+const gameObjects = await loader.get("ui.game.objects", { css: false });
+const gameAudio = await loader.get("ui.game.audio", { css: false });
+const gameStateChrome = await loader.get("ui.game.state.chrome", { css: false });
 const charts = await loader.get("ui.charts", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
@@ -99,6 +118,70 @@ if (typeof createMapDrawingTools !== "function") {
   throw new Error("Bundle-backed ui.map.drawing did not resolve to a factory function.");
 }
 
+if (typeof gameCore?.createGameSession !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createGameSession().");
+}
+
+if (typeof gameCore?.createCanvasLayer !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createCanvasLayer().");
+}
+
+if (typeof gameCore?.createGameLoop !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createGameLoop().");
+}
+
+if (typeof gameCore?.createGameActionButton !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createGameActionButton().");
+}
+
+if (typeof gameCore?.createGameActionButtonGroup !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createGameActionButtonGroup().");
+}
+
+if (typeof gameCore?.createTouchControlPad !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createTouchControlPad().");
+}
+
+if (typeof gameCore?.createVirtualJoystick !== "function") {
+  throw new Error("Bundle-backed ui.game.core did not expose createVirtualJoystick().");
+}
+
+if (typeof gameObjects?.createGameObject !== "function") {
+  throw new Error("Bundle-backed ui.game.objects did not expose createGameObject().");
+}
+
+if (typeof gameObjects?.createGameObjectLayer !== "function") {
+  throw new Error("Bundle-backed ui.game.objects did not expose createGameObjectLayer().");
+}
+
+if (typeof gameObjects?.createPointerInputRouter !== "function") {
+  throw new Error("Bundle-backed ui.game.objects did not expose createPointerInputRouter().");
+}
+
+if (typeof gameObjects?.createFlipCard !== "function") {
+  throw new Error("Bundle-backed ui.game.objects did not expose createFlipCard().");
+}
+
+if (typeof gameObjects?.createTetromino !== "function") {
+  throw new Error("Bundle-backed ui.game.objects did not expose createTetromino().");
+}
+
+if (typeof gameAudio?.createGameAudio !== "function") {
+  throw new Error("Bundle-backed ui.game.audio did not expose createGameAudio().");
+}
+
+if (typeof gameAudio?.createStarterGameSounds !== "function") {
+  throw new Error("Bundle-backed ui.game.audio did not expose createStarterGameSounds().");
+}
+
+if (typeof gameStateChrome?.createGameStateChrome !== "function") {
+  throw new Error("Bundle-backed ui.game.state.chrome did not expose createGameStateChrome().");
+}
+
+if (!Array.isArray(gameStateChrome?.GAME_SESSION_STATES) || !gameStateChrome.GAME_SESSION_STATES.includes("playing")) {
+  throw new Error("Bundle-backed ui.game.state.chrome did not expose GAME_SESSION_STATES.");
+}
+
 if (typeof charts?.createChart !== "function") {
   throw new Error("Bundle-backed ui.charts did not expose createChart().");
 }
@@ -119,6 +202,10 @@ if (!diagnostics.loadedBundles.includes("ui")) {
   throw new Error("Loader did not record the shared ui bundle as loaded.");
 }
 
+if (!diagnostics.loadedBundles.includes("game")) {
+  throw new Error("Loader did not record the optional game bundle as loaded.");
+}
+
 if (
   !diagnostics.loadedModules.includes("ui.icons") ||
   !diagnostics.loadedModules.includes("ui.drawer") ||
@@ -133,6 +220,10 @@ if (
   !diagnostics.loadedModules.includes("ui.map.legend") ||
   !diagnostics.loadedModules.includes("ui.map.markers") ||
   !diagnostics.loadedModules.includes("ui.map.drawing") ||
+  !diagnostics.loadedModules.includes("ui.game.core") ||
+  !diagnostics.loadedModules.includes("ui.game.objects") ||
+  !diagnostics.loadedModules.includes("ui.game.audio") ||
+  !diagnostics.loadedModules.includes("ui.game.state.chrome") ||
   !diagnostics.loadedModules.includes("ui.charts") ||
   !diagnostics.loadedModules.includes("incident.types")
 ) {
