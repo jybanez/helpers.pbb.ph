@@ -83,7 +83,7 @@ export function createGameStateChrome(session, options = {}) {
   session.overlay.appendChild(root);
 
   const removeButtonCapture = bind(session.closeButton, "click", handleControlClick, { capture: true });
-  const removeKeydown = bind(session.root, "keydown", handleKeydown);
+  const removeKeydown = bind(session.root, "keydown", handleKeydown, { capture: true });
   const removeSessionClose = typeof session.on === "function" ? session.on("close", () => destroy()) : () => {};
 
   updateControlForState();
@@ -212,11 +212,13 @@ export function createGameStateChrome(session, options = {}) {
     const pauseKeys = currentOptions.shortcuts.pause || [];
     if (pauseKeys.includes(key)) {
       event.preventDefault();
+      event.stopImmediatePropagation();
       performAction(state === "playing" ? "pause" : "resume", { source: "shortcut", key });
       return;
     }
     if (key === "Escape" && currentOptions.shortcuts.escape === "pause-or-exit") {
       event.preventDefault();
+      event.stopImmediatePropagation();
       performAction(state === "playing" ? "pause" : "exit", { source: "shortcut", key });
     }
   }
@@ -340,7 +342,7 @@ export function createGameStateChrome(session, options = {}) {
       }));
     }
 
-    const actions = normalizeActions(overlayOptions.actions, overlayOptions);
+    const actions = normalizeActions(overlayOptions.actions, overlayOptions, currentOptions.labels);
     if (actions.length) {
       const actionRow = createElement("div", { className: "ui-game-state-overlay__actions" });
       actions.forEach((action, index) => {
@@ -449,7 +451,7 @@ function normalizeAction(input) {
   return value === "playAgain" ? "restart" : value;
 }
 
-function normalizeActions(actions, overlayOptions) {
+function normalizeActions(actions, overlayOptions, labels = {}) {
   if (!Array.isArray(actions)) {
     return [];
   }
@@ -458,7 +460,7 @@ function normalizeActions(actions, overlayOptions) {
       const id = normalizeAction(action.id || action.action);
       return {
         id,
-        label: String(action.label || labelForAction(id, overlayOptions)),
+        label: String(action.label || labelForAction(id, overlayOptions, labels)),
         primary: action.primary !== false && index === 0,
         closeSession: action.closeSession !== false,
         nextState: action.nextState ? normalizeState(action.nextState, "") : "",
@@ -467,21 +469,21 @@ function normalizeActions(actions, overlayOptions) {
     const id = normalizeAction(action);
     return {
       id,
-      label: labelForAction(id, overlayOptions),
+      label: labelForAction(id, overlayOptions, labels),
       primary: index === 0,
     };
   }).filter((action) => action.id);
 }
 
-function labelForAction(action, overlayOptions = {}) {
+function labelForAction(action, overlayOptions = {}, labels = {}) {
   if (action === "restart" && overlayOptions.type === "result") {
-    return overlayOptions.restartLabel || "Play Again";
+    return overlayOptions.restartLabel || labels.playAgain || labels.restart || "Play Again";
   }
-  if (action === "resume") return "Resume";
-  if (action === "restart") return "Restart";
-  if (action === "exit") return "Exit";
-  if (action === "continue") return "Continue";
-  if (action === "pause") return "Pause";
+  if (action === "resume") return labels.resume || "Resume";
+  if (action === "restart") return labels.restart || "Restart";
+  if (action === "exit") return labels.exit || "Exit";
+  if (action === "continue") return labels.continue || "Continue";
+  if (action === "pause") return labels.pause || "Pause";
   return humanizeKey(action);
 }
 

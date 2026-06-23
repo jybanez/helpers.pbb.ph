@@ -241,6 +241,21 @@ Important methods:
 
 Standard actions are `pause`, `resume`, `restart`, `exit`, and `continue`. `playAgain` is normalized to the `restart` action and should be treated as display text.
 
+Overlay action labels use `options.labels` by default:
+
+```js
+createGameStateChrome(session, {
+  labels: {
+    resume: "Keep Playing",
+    restart: "Try Again",
+    exit: "Home",
+    continue: "Next",
+  },
+});
+```
+
+For result overlays, `overlays.result.restartLabel` remains the narrower override for the visible `restart` action label.
+
 Overlay actions can be strings or objects. Use object actions when an app wants a visible Home/Lobby action without closing the session:
 
 ```js
@@ -256,6 +271,8 @@ chrome.showPause({
 By default, `exit` closes the game session. When `closeSession: false` is set, Helper emits the `exit` action, hides the overlay, optionally moves to `nextState`, and leaves the session open.
 
 `onAction` may return `false` to suppress Helper's default action handling when the app wants to fully own the result.
+
+When state chrome shortcuts are enabled, state chrome captures handled key events before the session's default key handler. This lets `shortcuts.escape: "pause-or-exit"` pause during play without also triggering `createGameSession()` close behavior.
 
 ## Game Audio
 

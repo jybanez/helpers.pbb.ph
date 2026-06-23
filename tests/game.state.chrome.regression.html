@@ -39,6 +39,12 @@
       const chrome = createGameStateChrome(session, {
         initialState: "ready",
         shortcuts: { enabled: true, escape: "pause-or-exit" },
+        labels: {
+          resume: "Keep Playing",
+          restart: "Try Again",
+          exit: "Leave",
+          continue: "Next",
+        },
         onAction(action, context) {
           actions.push({ action, source: context.source });
         },
@@ -62,6 +68,7 @@
       assert(actions.some((entry) => entry.action === "pause" && entry.source === "context-control"), "pause control should emit pause action");
       assert(chrome.getState().state === "paused", "pause action should default to paused state");
       assert(host.querySelector(".ui-game-state-overlay.is-pause"), "paused state should render pause overlay");
+      assert(host.querySelector('[data-game-action="resume"]')?.textContent === "Keep Playing", "pause overlay should use custom resume label");
 
       const resume = host.querySelector('[data-game-action="resume"]');
       resume.click();
@@ -92,6 +99,7 @@
       chrome.setState("playing");
       session.root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
       assert(actions.some((entry) => entry.action === "pause" && entry.source === "shortcut"), "Escape shortcut should pause while playing");
+      assert(session.getState().closed === false, "state chrome Escape shortcut should not fall through to session close");
 
       chrome.setControl("close");
       session.closeButton.click();
