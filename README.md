@@ -620,7 +620,7 @@ node tests/form.modal.presets.regression.mjs
 | `ui.grid` | `createGrid` | Yes | Removes outer grid frame; table internals remain intact. |
 | `ui.tree` | `createTree` | Yes | Removes outer tree shell; node rendering and lazy loading are unchanged. |
 | `ui.tree.grid` | `createTreeGrid` | Yes | Removes outer tree-grid frame; hierarchy, resize, and virtualization remain intact. |
-| `ui.virtual.list` | `createVirtualList` | Yes | Removes outer list shell; viewport/layer behavior remains intact. |
+| `ui.virtual.list` | `createVirtualList` | Yes | Removes list and viewport shell visuals; viewport scrolling, height, and layer virtualization remain intact. |
 | `ui.data.inspector` | `createDataInspector` | Yes | Removes outer inspector shell; nested node rendering remains intact. |
 | `ui.empty.state` | `createEmptyState` | Yes | Removes dashed empty-state frame so the host layout owns the presentation shell. |
 | `ui.scheduler` | `createScheduler` | Yes | Removes outer scheduler shell; month/week layout and interactions remain intact. |
@@ -4526,6 +4526,11 @@ Options:
 | `className` | `string` | `""` | no | Extra container class. |
 | `renderItem` | `(item, index) => HTMLElement \| string` | required in practice | no | Row renderer. |
 | `onRangeChange` | `({ start, end }, state) => void` | `null` | no | Fires when visible window changes. |
+
+Chrome-less behavior:
+
+- `chrome: false` removes both the outer list shell and the viewport border/radius/background.
+- The viewport still owns overflow, position, configured height, and the virtualization layer sizing.
 
 Returned API:
 

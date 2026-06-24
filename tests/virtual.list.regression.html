@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Virtual List Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.virtual.list.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 360px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = event.message || "window error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = String(event.reason?.message || event.reason || "unhandled rejection");
+    });
+  </script>
+  <script type="module">
+    import { createVirtualList } from "../js/ui/ui.virtual.list.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const ranges = [];
+    const items = Array.from({ length: 80 }, (_, index) => ({ label: `Entry ${index + 1}` }));
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    const list = createVirtualList(host, items, {
+      ariaLabel: "Embedded chat rows",
+      chrome: false,
+      height: 180,
+      rowHeight: 30,
+      overscan: 1,
+      onRangeChange(range) {
+        ranges.push(range);
+      },
+    });
+
+    const root = host.querySelector(".ui-virtual-list");
+    const viewport = root?.querySelector(".ui-virtual-list-viewport");
+    const layer = root?.querySelector(".ui-virtual-list-layer");
+
+    assert(Boolean(root), "virtual list root should render");
+    assert(root.classList.contains("is-chrome-less"), "chrome:false should render chrome-less class");
+    assert(Boolean(viewport), "viewport should render for non-empty lists");
+    assert(Boolean(layer), "virtualization layer should render");
+
+    const viewportStyle = getComputedStyle(viewport);
+    assert(viewportStyle.borderTopWidth === "0px", `chrome-less viewport border should be removed, got ${viewportStyle.borderTopWidth}`);
+    assert(viewportStyle.borderTopLeftRadius === "0px", `chrome-less viewport radius should be removed, got ${viewportStyle.borderTopLeftRadius}`);
+    assert(viewportStyle.backgroundColor === "rgba(0, 0, 0, 0)", `chrome-less viewport background should be transparent, got ${viewportStyle.backgroundColor}`);
+    assert(viewportStyle.overflowY === "auto" || viewportStyle.overflowY === "scroll", `viewport overflow should remain scrollable, got ${viewportStyle.overflowY}`);
+    assert(viewportStyle.position === "relative", `viewport positioning should remain relative, got ${viewportStyle.position}`);
+    assert(viewport.style.height === "180px", `configured viewport height should remain inline, got ${viewport.style.height}`);
+    assert(layer.style.height === "2400px", `layer height should preserve virtualization size, got ${layer.style.height}`);
+    assert(root.querySelectorAll(".ui-virtual-list-row").length < items.length, "virtual list should render only the visible row window");
+
+    list.scrollToIndex(50);
+    assert(viewport.scrollTop === 1500, `scrollToIndex should update viewport scrollTop, got ${viewport.scrollTop}`);
+    assert(ranges.some((range) => range.start >= 49 && range.end >= 55), "scrolling should update the visible range");
+
+    list.destroy();
+    assert(host.children.length === 0, "destroy should clear host");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      results.textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+  </script>
+</body>
+</html>
