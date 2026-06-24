@@ -504,6 +504,7 @@ Application integrations should use the registry loader.
 - The main UI bundle covers non-game `ui.*` and `incident.*` registry entries. The game bundle covers `ui.game.*` entries so non-game pages do not carry growing game helper code.
 - Default shared and game bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
 - Game pages may optionally preload the game bundle with `<script type="module" src="/assets/helper/helpers.game.bundle.min.js"></script>`; `uiLoader` can reuse the preloaded `window.__PBB_HELPER_GAME_BUNDLE__` map when bundle preference is enabled.
+- Current optional game modules include `ui.game.core`, `ui.game.objects`, `ui.game.grid`, `ui.game.audio`, and `ui.game.state.chrome`.
 - The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.

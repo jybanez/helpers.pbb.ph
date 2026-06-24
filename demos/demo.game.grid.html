@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Grid Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 560px; aspect-ratio: 16 / 11; border: 1px solid #2b3750; border-radius: 8px; background: #07111f; }
+    pre { margin: 0; min-height: 330px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    .legend { display: flex; gap: 10px; flex-wrap: wrap; color: #9fb2d8; font-size: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #334765; }
+    @media (max-width: 880px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.grid"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Grid",
+      overview: "Focused reference for createGridMaze, createGridMover, and createGridPathfinder.",
+      useWhen: [
+        "Use <code>createGridMaze(...)</code> to normalize character maps or object matrices.",
+        "Use <code>createGridMover(...)</code> for grid-aligned movement with queued turns.",
+        "Use <code>createGridPathfinder(...)</code> for generic BFS paths over passable cells."
+      ],
+      avoidWhen: [
+        "Do not use it as a complete Pac-Man or tile-game engine.",
+        "Do not put scoring, enemy personalities, collectible rules, or level progression inside Helper."
+      ],
+      description: "Game Grid owns topology, coordinate conversion, deterministic cell movement, and generic pathfinding. The app owns game rules, rendering style, AI decisions, collectibles, and progression.",
+      defaultSampleCode: `const maze = createGridMaze({ map, tiles, cellSize: 24 });\nconst player = createGridMover({\n  row: 1,\n  column: 1,\n  cellSize: maze.cellSize,\n  speed: 6,\n  canEnter: (row, column) => maze.canEnter(row, column),\n});\nconst pathfinder = createGridPathfinder({\n  rows: maze.rows,\n  columns: maze.columns,\n  canEnter: (row, column) => maze.canEnter(row, column),\n});`,
+      constructor: [
+        { factory: "<code>createGridMaze(options)</code>", arguments: "map, tiles, cellSize", returns: "Normalized maze API" },
+        { factory: "<code>createGridMover(options)</code>", arguments: "row, column, speed, canEnter", returns: "Grid mover API" },
+        { factory: "<code>createGridPathfinder(options)</code>", arguments: "rows, columns, canEnter", returns: "Pathfinder API" }
+      ],
+      options: [
+        { option: "<code>map</code>", default: "<code>[]</code>", description: "Character rows or object matrix cells." },
+        { option: "<code>tiles</code>", default: "<code>{}</code>", description: "Per-symbol tile definitions." },
+        { option: "<code>cellSize</code>", default: "<code>24</code>", description: "Pixel size for coordinate conversion." },
+        { option: "<code>preTurnTolerance</code>", default: "<code>0</code>", description: "Mover tolerance in cells for touch-friendly early queued turns." },
+        { option: "<code>resolveExit</code>", default: "<code>null</code>", description: "Optional mover callback for wrap tunnels or portals." },
+        { option: "<code>diagonal</code>", default: "<code>false</code>", description: "Pathfinder uses cardinal neighbors unless explicitly enabled." }
+      ],
+      propertiesText: "Maze exposes rows, columns, cellSize, points, pointGroups, and collectibles. Mover exposes grid and pixel state through getState().",
+      methods: [
+        { method: "<code>maze.canEnter(row, column)</code>", arguments: "grid cell", returns: "boolean" },
+        { method: "<code>maze.gridToPixel(row, column)</code>", arguments: "grid cell", returns: "top-left pixel" },
+        { method: "<code>mover.queueDirection(direction)</code>", arguments: "up, down, left, right", returns: "mover" },
+        { method: "<code>mover.moveTowardCell(row, column, options?)</code>", arguments: "adjacent grid cell", returns: "boolean; stops after target unless continueAfterTarget is true" },
+        { method: "<code>mover.update(deltaSeconds)</code>", arguments: "elapsed seconds", returns: "mover state" },
+        { method: "<code>pathfinder.findPath(start, target)</code>", arguments: "cell refs", returns: "shortest path cells" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="up" class="ui-button" type="button">Up</button>
+        <button id="left" class="ui-button" type="button">Left</button>
+        <button id="down" class="ui-button" type="button">Down</button>
+        <button id="right" class="ui-button" type="button">Right</button>
+        <button id="reset" class="ui-button ui-button-primary" type="button">Reset</button>
+      </div>
+      <h1 class="ui-title">Game Grid Demo</h1>
+      <p class="muted">The canvas is only a visualization. Helper provides the normalized grid, mover state, and path cells; the game app decides how to draw and score them.</p>
+      <div class="legend" aria-label="Grid legend">
+        <span><i class="swatch" style="background:#17233a"></i>Wall</span>
+        <span><i class="swatch" style="background:#0b1220"></i>Path</span>
+        <span><i class="swatch" style="background:#58d49a"></i>Player</span>
+        <span><i class="swatch" style="background:#78a7ff"></i>Pathfinder path</span>
+        <span><i class="swatch" style="background:#ffd166"></i>Collectible</span>
+      </div>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="640" height="440"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">Grid State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGridMaze, createGridMover, createGridPathfinder } = await uiLoader.get("ui.game.grid");
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    const map = [
+      "################",
+      "#P....#........#",
+      "#.##..#.####.#G#",
+      "#..#..#....#...#",
+      "##.#.####..###.#",
+      "#....o.........#",
+      "#.######.#######",
+      "#..............#",
+      "################",
+    ];
+    const maze = createGridMaze({
+      cellSize: 40,
+      map,
+      tiles: {
+        "#": { type: "wall", enterable: false },
+        ".": { type: "path", collectible: "pellet" },
+        "o": { type: "path", collectible: { type: "power", value: 5 } },
+        "P": { type: "path", point: "playerSpawn" },
+        "G": { type: "path", point: "goal" },
+      },
+    });
+    const goal = maze.points.goal;
+    let mover = null;
+
+    function reset() {
+      const spawn = maze.points.playerSpawn || { row: 1, column: 1 };
+      mover = createGridMover({
+        row: spawn.row,
+        column: spawn.column,
+        cellSize: maze.cellSize,
+        speed: 7,
+        preTurnTolerance: 0.18,
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      draw();
+    }
+
+    const pathfinder = createGridPathfinder({
+      rows: maze.rows,
+      columns: maze.columns,
+      canEnter(row, column) {
+        return maze.canEnter(row, column);
+      },
+    });
+
+    function step(direction) {
+      mover.queueDirection(direction);
+      mover.update(1 / 7);
+      draw();
+    }
+
+    document.getElementById("up").addEventListener("click", () => step("up"));
+    document.getElementById("left").addEventListener("click", () => step("left"));
+    document.getElementById("down").addEventListener("click", () => step("down"));
+    document.getElementById("right").addEventListener("click", () => step("right"));
+    document.getElementById("reset").addEventListener("click", reset);
+
+    reset();
+
+    function draw() {
+      const state = mover.getState();
+      const path = pathfinder.findPath({ row: state.row, column: state.column }, goal);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#07111f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      maze.forEachCell((cell) => drawCell(cell));
+      path.forEach((cell, index) => {
+        if (index === 0 || index === path.length - 1) {
+          return;
+        }
+        ctx.fillStyle = "rgba(120, 167, 255, 0.35)";
+        ctx.fillRect(cell.column * maze.cellSize + 10, cell.row * maze.cellSize + 10, 20, 20);
+      });
+      drawPlayer(state);
+      stateOutput.textContent = JSON.stringify({
+        dimensions: { rows: maze.rows, columns: maze.columns, cellSize: maze.cellSize },
+        points: maze.points,
+        collectibleCount: maze.collectibles.length,
+        mover: state,
+        pathLength: path.length,
+        nextStep: path[1] || null,
+      }, null, 2);
+    }
+
+    function drawCell(cell) {
+      const x = cell.column * maze.cellSize;
+      const y = cell.row * maze.cellSize;
+      ctx.fillStyle = maze.isWall(cell.row, cell.column) ? "#17233a" : "#0b1220";
+      ctx.fillRect(x, y, maze.cellSize, maze.cellSize);
+      ctx.strokeStyle = "#1e2b43";
+      ctx.strokeRect(x + 0.5, y + 0.5, maze.cellSize - 1, maze.cellSize - 1);
+      if (cell.collectible) {
+        ctx.fillStyle = cell.collectible === "pellet" ? "#ffd166" : "#f37f9a";
+        ctx.beginPath();
+        ctx.arc(x + maze.cellSize / 2, y + maze.cellSize / 2, cell.collectible === "pellet" ? 4 : 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPlayer(state) {
+      ctx.fillStyle = "#58d49a";
+      ctx.beginPath();
+      ctx.arc(state.x, state.y, 13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  </script>
+</body>
+</html>

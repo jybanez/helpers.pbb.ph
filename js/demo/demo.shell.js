@@ -91,6 +91,7 @@ const DEMO_GROUPS = [
       { href: "./demo.game.object.layer.html", label: "Game Object Layer" },
       { href: "./demo.game.flip.card.html", label: "Flip Card" },
       { href: "./demo.game.tetromino.html", label: "Tetromino" },
+      { href: "./demo.game.grid.html", label: "Game Grid" },
     ],
   },
   {
