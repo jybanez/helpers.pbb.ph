@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Action Button Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace,
+    .readouts {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-zone {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        #07101d;
+      background-size: 72px 72px;
+      position: relative;
+      overflow: hidden;
+    }
+    .action-cluster {
+      display: grid;
+      gap: 18px;
+      justify-items: center;
+      padding: 18px;
+      border: 1px solid rgba(51, 69, 99, 0.75);
+      border-radius: 8px;
+      background: rgba(7, 16, 29, 0.78);
+    }
+    .charge-meter {
+      width: min(280px, 70vw);
+      height: 16px;
+      border: 1px solid #334563;
+      border-radius: 999px;
+      background: #0b1220;
+      overflow: hidden;
+    }
+    .charge-meter span {
+      display: block;
+      width: var(--charge, 0%);
+      height: 100%;
+      background: #79a9ff;
+      transition: width 80ms linear;
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace,
+      .readouts {
+        grid-template-columns: 1fr;
+      }
+      .action-zone {
+        min-height: 360px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Action Button",
+      overview: "Focused reference for createGameActionButton digital game action input.",
+      useWhen: [
+        "Use <code>createGameActionButton(container, options)</code> for fire, jump, boost, interact, charge, and other digital game actions.",
+        "Use <code>repeat</code> when an action should fire continuously while held.",
+        "Use <code>holdThreshold</code> when holding should trigger a charged or alternate action."
+      ],
+      avoidWhen: [
+        "Do not use plain click handlers for held game input; pointer cancel and lost capture need explicit release handling.",
+        "Do not use action buttons for directional movement; use D-pad or joystick helpers instead."
+      ],
+      description: "This page isolates the game action button so developers can inspect press, repeat, hold, release, keyboard behavior, disabled state, and methods.",
+      defaultSampleCode: `const fire = createGameActionButton(host, {\n  label: "Fire",\n  icon: "media.play",\n  repeat: true,\n  repeatDelay: 80,\n  holdThreshold: 600,\n  onPress(meta) {\n    startFire(meta);\n  },\n  onRepeat(meta) {\n    fireProjectile(meta);\n  },\n  onHold(meta) {\n    chargeShot(meta);\n  },\n  onRelease(meta) {\n    stopFire(meta);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createGameActionButton(container, options)</code>", arguments: "<code>HTMLElement</code>, action button options", returns: "Action button instance" }
+      ],
+      options: [
+        { option: "<code>label</code>", default: "<code>\"Action\"</code>", description: "Visible button text." },
+        { option: "<code>ariaLabel</code>", default: "Uses label", description: "Accessible button label." },
+        { option: "<code>icon</code>", default: "<code>\"\"</code>", description: "Optional <code>ui.icons</code> id rendered before the label." },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables press input." },
+        { option: "<code>visibility</code>", default: "<code>\"solid\"</code>", description: "Control visibility preset: <code>solid</code>, <code>overlay</code>, or <code>ghost</code>." },
+        { option: "<code>opacity</code>", default: "<code>null</code>", description: "Optional explicit control opacity override." },
+        { option: "<code>repeat</code>", default: "<code>false</code>", description: "Repeatedly emits while held." },
+        { option: "<code>repeatDelay</code>", default: "<code>120</code>", description: "Milliseconds between repeat callbacks." },
+        { option: "<code>holdThreshold</code>", default: "<code>0</code>", description: "Milliseconds before <code>onHold</code> fires. Zero disables hold." }
+      ],
+      propertiesText: "The returned instance exposes <code>root</code>, <code>button</code>, <code>getState()</code>, <code>setDisabled(disabled)</code>, and <code>destroy()</code>.",
+      events: [
+        { event: "<code>onPress</code>", arguments: "<code>(meta)</code>", returns: "First press event." },
+        { event: "<code>onRepeat</code>", arguments: "<code>(meta)</code>", returns: "Repeated held event." },
+        { event: "<code>onHold</code>", arguments: "<code>(meta)</code>", returns: "Hold threshold event." },
+        { event: "<code>onRelease</code>", arguments: "<code>(meta)</code>", returns: "Release/cancel event with held duration." }
+      ],
+      methods: [
+        { method: "<code>action.getState()</code>", arguments: "None", returns: "Current pressed, held, repeat, and disabled state" },
+        { method: "<code>action.setDisabled(disabled)</code>", arguments: "Boolean", returns: "<code>void</code>" },
+        { method: "<code>action.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="recreate" class="ui-button ui-button-primary" type="button">Recreate Action</button>
+        <button id="sampleState" class="ui-button" type="button">Read State</button>
+      </div>
+      <h1 class="ui-title">Game Action Button Demo</h1>
+      <p class="muted">Press, hold, release, or use Space/Enter while focused to inspect digital game action behavior.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2 class="ui-title">Options</h2>
+        <label class="field">
+          label
+          <input id="label" value="Fire">
+        </label>
+        <label class="field">
+          icon
+          <select id="icon">
+            <option value="">None</option>
+            <option value="media.play" selected>media.play</option>
+            <option value="media.pause">media.pause</option>
+            <option value="actions.add">actions.add</option>
+            <option value="actions.check">actions.check</option>
+            <option value="actions.refresh">actions.refresh</option>
+            <option value="actions.settings">actions.settings</option>
+            <option value="navigation.arrow-up">navigation.arrow-up</option>
+          </select>
+        </label>
+        <label class="field">
+          repeatDelay
+          <input id="repeatDelay" type="number" min="40" max="1000" step="10" value="80">
+        </label>
+        <label class="field">
+          holdThreshold
+          <input id="holdThreshold" type="number" min="0" max="10000" step="50" value="600">
+        </label>
+        <label class="field">
+          visibility
+          <select id="visibility">
+            <option value="solid">solid</option>
+            <option value="overlay" selected>overlay</option>
+            <option value="ghost">ghost</option>
+          </select>
+        </label>
+        <label class="field">
+          opacity override
+          <input id="opacity" type="number" min="0.2" max="1" step="0.05" placeholder="preset">
+        </label>
+        <div class="check-row">
+          <label><input id="repeat" type="checkbox" checked> repeat while held</label>
+          <label><input id="disabled" type="checkbox"> disabled</label>
+        </div>
+        <div class="button-row">
+          <button id="disableToggle" class="ui-button" type="button">Toggle Disabled</button>
+          <button id="destroyAction" class="ui-button" type="button">Destroy</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ui-title">Live Action</h2>
+        <div class="action-zone">
+          <div class="action-cluster">
+            <div id="actionHost"></div>
+            <div class="charge-meter"><span id="chargeFill"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="readouts">
+      <div class="panel">
+        <h2 class="ui-title">State</h2>
+        <pre id="stateOutput"></pre>
+      </div>
+      <div class="panel">
+        <h2 class="ui-title">Events</h2>
+        <pre id="eventOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameActionButton } = await uiLoader.get("ui.game.core");
+
+    const actionHost = document.getElementById("actionHost");
+    const chargeFill = document.getElementById("chargeFill");
+    const label = document.getElementById("label");
+    const icon = document.getElementById("icon");
+    const repeat = document.getElementById("repeat");
+    const disabled = document.getElementById("disabled");
+    const repeatDelay = document.getElementById("repeatDelay");
+    const holdThreshold = document.getElementById("holdThreshold");
+    const visibility = document.getElementById("visibility");
+    const opacity = document.getElementById("opacity");
+    const stateOutput = document.getElementById("stateOutput");
+    const eventOutput = document.getElementById("eventOutput");
+    const eventLog = [];
+    let action = null;
+    let sequence = 0;
+    let meterFrame = 0;
+
+    document.getElementById("recreate").addEventListener("click", recreateAction);
+    document.getElementById("sampleState").addEventListener("click", () => {
+      logEvent("getState", action?.getState() || {});
+      renderState();
+    });
+    document.getElementById("destroyAction").addEventListener("click", () => {
+      action?.destroy();
+      action = null;
+      logEvent("destroy", {});
+      renderState();
+    });
+    document.getElementById("disableToggle").addEventListener("click", () => {
+      disabled.checked = !disabled.checked;
+      applyDisabled();
+    });
+    [label, icon, repeat, repeatDelay, holdThreshold, visibility, opacity].forEach((control) => control.addEventListener("change", recreateAction));
+    disabled.addEventListener("change", applyDisabled);
+
+    recreateAction();
+    animateMeter();
+
+    function recreateAction() {
+      action?.destroy();
+      action = createGameActionButton(actionHost, {
+        label: label.value || "Action",
+        icon: icon.value,
+        visibility: visibility.value,
+        opacity: opacity.value === "" ? null : Number(opacity.value),
+        repeat: repeat.checked,
+        disabled: disabled.checked,
+        repeatDelay: Number(repeatDelay.value) || 80,
+        holdThreshold: Number(holdThreshold.value) || 0,
+        buttonClassName: "ui-button-primary",
+        onPress(meta) {
+          logEvent("onPress", meta);
+          renderState();
+        },
+        onRepeat(meta) {
+          logEvent("onRepeat", meta);
+          renderState();
+        },
+        onHold(meta) {
+          logEvent("onHold", meta);
+          renderState();
+        },
+        onRelease(meta) {
+          logEvent("onRelease", meta);
+          renderState();
+        },
+      });
+      logEvent("create", {
+        label: label.value || "Action",
+        icon: icon.value,
+        visibility: visibility.value,
+        opacity: opacity.value || null,
+        repeat: repeat.checked,
+        repeatDelay: Number(repeatDelay.value) || 80,
+        holdThreshold: Number(holdThreshold.value) || 0,
+      });
+      renderState();
+    }
+
+    function applyDisabled() {
+      action?.setDisabled(disabled.checked);
+      logEvent("setDisabled", { disabled: disabled.checked });
+      renderState();
+    }
+
+    function renderState() {
+      const state = action?.getState() || { disabled: true, pressed: false, repeatCount: 0, heldMs: 0, holdFired: false };
+      stateOutput.textContent = JSON.stringify(state, null, 2);
+    }
+
+    function animateMeter() {
+      const state = action?.getState();
+      const threshold = Number(holdThreshold.value) || 0;
+      const percent = state?.pressed && threshold > 0 ? Math.min(100, Math.round((state.heldMs / threshold) * 100)) : 0;
+      chargeFill.style.setProperty("--charge", `${percent}%`);
+      meterFrame = requestAnimationFrame(animateMeter);
+    }
+
+    function logEvent(name, payload) {
+      eventLog.unshift({ seq: ++sequence, name, payload });
+      eventOutput.textContent = eventLog
+        .slice(0, 14)
+        .map((entry) => `#${entry.seq} ${entry.name} ${JSON.stringify(entry.payload)}`)
+        .join("\n");
+    }
+
+    window.addEventListener("pagehide", () => cancelAnimationFrame(meterFrame), { once: true });
+  </script>
+</body>
+</html>

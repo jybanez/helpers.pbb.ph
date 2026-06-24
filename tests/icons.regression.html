@@ -137,6 +137,8 @@
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
       assert(names.includes("actions.options"), "icons registry should include actions.options");
+      assert(names.includes("actions.rotate-left"), "icons registry should include actions.rotate-left");
+      assert(names.includes("actions.rotate-right"), "icons registry should include actions.rotate-right");
       assert(names.includes("media.video"), "icons registry should include media.video");
       assert(names.includes("media.microphone"), "icons registry should include media.microphone");
       assert(names.includes("people.user"), "icons registry should include people.user");
@@ -168,9 +170,13 @@
 
       const viewIcon = createIcon("actions.view");
       const hideIcon = createIcon("actions.hide");
-      host.append(viewIcon, hideIcon);
+      const rotateLeftIcon = createIcon("actions.rotate-left");
+      const rotateRightIcon = createIcon("actions.rotate-right");
+      host.append(viewIcon, hideIcon, rotateLeftIcon, rotateRightIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
+      assert(rotateLeftIcon.querySelector('path[d="M4 5v5h5"]'), "actions.rotate-left should render a valid left rotation arrowhead path");
+      assert(rotateRightIcon.querySelector('path[d="M20 5v5h-5"]'), "actions.rotate-right should render a valid right rotation arrowhead path");
 
       const decorative = createIcon("status.info");
       assert(decorative.getAttribute("aria-hidden") === "true", "decorative icons should be aria-hidden by default");

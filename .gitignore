@@ -2,3 +2,5 @@ pbb.ph.crt
 pbb.ph.key
 .codex/
 tmp-*
+config/agent-chat.local.json
+pbb-chat-token.local.json

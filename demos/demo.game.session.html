@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Session Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .form-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field.is-wide {
+      grid-column: 1 / -1;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-stage {
+      position: relative;
+      min-height: 560px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #07101d;
+      overflow: hidden;
+    }
+    #sessionHost {
+      position: absolute;
+      inset: 0;
+    }
+    .session-overlay-panel {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      min-width: 230px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: rgba(13, 21, 35, 0.9);
+      color: #d7e0f4;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .readouts {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    pre {
+      margin: 0;
+      min-height: 148px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace,
+      .readouts {
+        grid-template-columns: 1fr;
+      }
+      .demo-stage {
+        min-height: 420px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Session",
+      overview: "Focused reference for the createGameSession host used by canvas-first games.",
+      useWhen: [
+        "Use <code>createGameSession(container, options)</code> to open a fullscreen game overlay or embedded preview with a stable canvas stage.",
+        "Use <code>session.stage</code> for canvas layers and <code>session.overlay</code> for game HUD controls, pause dialogs, and close affordances.",
+        "Use <code>session.on(\"close\")</code> and <code>session.on(\"resize\")</code> to coordinate game loop cleanup and resolution changes."
+      ],
+      avoidWhen: [
+        "Do not use it as the game engine; rules, collisions, assets, scoring, and persistence remain game-owned.",
+        "Do not mount long-form form workflows directly on canvas when Helper modals or DOM controls are more accessible."
+      ],
+      description: "This page isolates the session object so developers can inspect options, DOM anchors, events, state, and lifecycle methods without the D-pad or joystick demos in the way.",
+      defaultSampleCode: `const session = createGameSession(host, {\n  title: "Citizen Game",\n  ariaLabel: "Citizen Game",\n  fullscreen: true,\n  width: 1280,\n  height: 720,\n  closeOnEscape: true,\n  closeControl: { variant: "icon", icon: "actions.close" },\n  background: "#050b14",\n  async onBeforeClose({ reason }) {\n    return reason !== "button" || await confirmExit();\n  },\n  onClose({ reason }) {\n    loop.stop();\n  },\n});\n\nconst layer = session.addLayer({ id: "gameplay", zIndex: 1 });\nsession.on("resize", ({ width, height }) => resizeWorld(width, height));`,
+      constructor: [
+        { factory: "<code>createGameSession(container, options)</code>", arguments: "<code>HTMLElement</code>, session options", returns: "Session instance" }
+      ],
+      options: [
+        { option: "<code>title</code>", default: "<code>\"Game\"</code>", description: "Human-readable game name used by defaults and demo labels." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"Game session\"</code>", description: "Accessible label for the session root." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Optional class added to the session root." },
+        { option: "<code>fullscreen</code>", default: "<code>true</code>", description: "When true, renders as a fixed fullscreen overlay. When false, fills the supplied host." },
+        { option: "<code>closeLabel</code>", default: "<code>\"Close game\"</code>", description: "Visible text for text close controls and accessible label for icon close controls." },
+        { option: "<code>closeControl</code>", default: "<code>null</code>", description: "Optional close control display settings. Use <code>{ variant: \"icon\", icon: \"actions.close\" }</code> for an icon-only close button." },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Closes the session from Escape keydown when enabled." },
+        { option: "<code>width</code> / <code>height</code>", default: "<code>1280 / 720</code>", description: "Internal resolution exposed through state and applied to canvas layers." },
+        { option: "<code>background</code>", default: "<code>\"#050b14\"</code>", description: "Session stage background color." },
+        { option: "<code>autoFocus</code>", default: "<code>true</code>", description: "Focuses the session root on the next animation frame." },
+        { option: "<code>onBeforeClose</code>", default: "<code>null</code>", description: "Optional confirmation hook. Return <code>false</code> or a promise resolving to <code>false</code> to cancel close." },
+        { option: "<code>onClose</code>", default: "<code>null</code>", description: "Callback invoked with <code>({ reason })</code> during close." }
+      ],
+      propertiesText: "Session exposes <code>root</code>, <code>viewport</code>, <code>stage</code>, <code>overlay</code>, and <code>closeButton</code>. <code>getState()</code> returns <code>{ closed, width, height, layerCount, fullscreen }</code>.",
+      events: [
+        { event: "<code>session.on(\"close\")</code>", arguments: "<code>({ reason })</code>", returns: "Fires before the session removes itself and clears listeners." },
+        { event: "<code>session.on(\"closecancel\")</code>", arguments: "<code>({ reason })</code>", returns: "Fires when <code>onBeforeClose</code> cancels the close request." },
+        { event: "<code>session.on(\"resize\")</code>", arguments: "<code>({ width, height })</code>", returns: "Fires after dimensions and managed canvas layers resize." },
+        { event: "<code>onClose</code>", arguments: "<code>({ reason })</code>", returns: "Option callback for game-owned cleanup." }
+      ],
+      methods: [
+        { method: "<code>session.addLayer(options)</code>", arguments: "Layer options", returns: "Canvas layer instance" },
+        { method: "<code>session.removeLayer(idOrLayer)</code>", arguments: "Layer id or layer object", returns: "<code>true</code> when removed" },
+        { method: "<code>session.resize(width, height)</code>", arguments: "Width and height", returns: "<code>void</code>" },
+        { method: "<code>session.close(reason)</code>", arguments: "Optional reason", returns: "<code>void</code>" },
+        { method: "<code>session.destroy()</code>", arguments: "None", returns: "<code>void</code>" },
+        { method: "<code>session.getState()</code>", arguments: "None", returns: "Current lifecycle and resolution state" },
+        { method: "<code>session.on(event, handler)</code>", arguments: "Event name and handler", returns: "Unsubscribe function" },
+        { method: "<code>session.off(event, handler)</code>", arguments: "Event name and handler", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="createEmbedded" class="ui-button ui-button-primary" type="button">Create Embedded Session</button>
+        <button id="openFullscreen" class="ui-button" type="button">Open Fullscreen Session</button>
+      </div>
+      <h1 class="ui-title">Game Session Demo</h1>
+      <p class="muted">Change options, create a session, call methods, and watch state and events update.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2 class="ui-title">Options</h2>
+        <div class="form-grid">
+          <label class="field is-wide">
+            Title
+            <input id="optionTitle" value="Citizen Canvas Session">
+          </label>
+          <label class="field">
+            Width
+            <input id="optionWidth" type="number" min="160" max="3840" step="10" value="960">
+          </label>
+          <label class="field">
+            Height
+            <input id="optionHeight" type="number" min="120" max="2160" step="10" value="540">
+          </label>
+          <label class="field is-wide">
+            Background
+            <select id="optionBackground">
+              <option value="#050b14">Night board</option>
+              <option value="#102018">Field green</option>
+              <option value="#1f1631">Arcade violet</option>
+              <option value="#221a12">Warm terrain</option>
+            </select>
+          </label>
+        </div>
+        <div class="check-row">
+          <label><input id="optionCloseOnEscape" type="checkbox" checked> closeOnEscape</label>
+          <label><input id="optionAutoFocus" type="checkbox" checked> autoFocus</label>
+          <label><input id="optionIconClose" type="checkbox"> icon close</label>
+          <label><input id="optionConfirmClose" type="checkbox"> cancel button close once</label>
+        </div>
+        <div class="button-row">
+          <button id="resizeWide" class="ui-button" type="button">Resize 16:9</button>
+          <button id="resizeSquare" class="ui-button" type="button">Resize Square</button>
+          <button id="addLayer" class="ui-button" type="button">Add Layer</button>
+          <button id="removeLayer" class="ui-button" type="button">Remove Layer</button>
+          <button id="closeSession" class="ui-button" type="button">Close</button>
+          <button id="destroySession" class="ui-button" type="button">Destroy</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ui-title">Embedded Session Host</h2>
+        <div class="demo-stage">
+          <div id="sessionHost"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="readouts">
+      <div class="panel">
+        <h2 class="ui-title">State</h2>
+        <pre id="stateOutput"></pre>
+      </div>
+      <div class="panel">
+        <h2 class="ui-title">Events</h2>
+        <pre id="eventOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameSession } = await uiLoader.get("ui.game.core");
+
+    const host = document.getElementById("sessionHost");
+    const stateOutput = document.getElementById("stateOutput");
+    const eventOutput = document.getElementById("eventOutput");
+    const optionTitle = document.getElementById("optionTitle");
+    const optionWidth = document.getElementById("optionWidth");
+    const optionHeight = document.getElementById("optionHeight");
+    const optionBackground = document.getElementById("optionBackground");
+    const optionCloseOnEscape = document.getElementById("optionCloseOnEscape");
+    const optionAutoFocus = document.getElementById("optionAutoFocus");
+    const optionIconClose = document.getElementById("optionIconClose");
+    const optionConfirmClose = document.getElementById("optionConfirmClose");
+    let session = null;
+    let layers = [];
+    let sequence = 0;
+    let closeCancelArmed = true;
+    const eventLog = [];
+
+    document.getElementById("createEmbedded").addEventListener("click", () => createSession({ fullscreen: false }));
+    document.getElementById("openFullscreen").addEventListener("click", () => createSession({ fullscreen: true, container: document.body }));
+    document.getElementById("resizeWide").addEventListener("click", () => resizeSession(1280, 720));
+    document.getElementById("resizeSquare").addEventListener("click", () => resizeSession(720, 720));
+    document.getElementById("addLayer").addEventListener("click", addLayer);
+    document.getElementById("removeLayer").addEventListener("click", removeLayer);
+    document.getElementById("closeSession").addEventListener("click", () => {
+      void session?.close("demo-button");
+    });
+    document.getElementById("destroySession").addEventListener("click", destroySession);
+
+    createSession({ fullscreen: false });
+
+    function readOptions(overrides = {}) {
+      return {
+        title: optionTitle.value || "Game Session",
+        ariaLabel: optionTitle.value || "Game Session",
+        fullscreen: overrides.fullscreen === true,
+        closeLabel: "Close game",
+        closeControl: optionIconClose.checked ? { variant: "icon", icon: "actions.close" } : null,
+        closeOnEscape: optionCloseOnEscape.checked,
+        autoFocus: optionAutoFocus.checked,
+        width: Number(optionWidth.value) || 960,
+        height: Number(optionHeight.value) || 540,
+        background: optionBackground.value,
+        onBeforeClose({ reason }) {
+          if (optionConfirmClose.checked && reason === "button" && closeCancelArmed) {
+            closeCancelArmed = false;
+            logEvent("onBeforeClose", { reason, result: false });
+            return false;
+          }
+          logEvent("onBeforeClose", { reason, result: true });
+          return true;
+        },
+        onClose({ reason }) {
+          logEvent("onClose", { reason });
+        },
+      };
+    }
+
+    function createSession({ fullscreen, container = host } = {}) {
+      destroySession(false);
+      closeCancelArmed = true;
+      session = createGameSession(container, readOptions({ fullscreen }));
+      layers = [];
+      logEvent("create", session.getState());
+      session.on("resize", (payload) => {
+        logEvent("resize", payload);
+        drawLayers();
+        renderState();
+      });
+      session.on("close", (payload) => {
+        logEvent("close", payload);
+        layers = [];
+        session = null;
+        renderState();
+      });
+      session.on("closecancel", (payload) => {
+        logEvent("closecancel", payload);
+        renderState();
+      });
+      mountHud();
+      addLayer();
+      renderState();
+    }
+
+    function mountHud() {
+      if (!session) {
+        return;
+      }
+      const hud = document.createElement("div");
+      hud.className = "session-overlay-panel";
+      hud.textContent = "overlay\nsession.overlay\nHUD and dialogs mount here";
+      session.overlay.appendChild(hud);
+    }
+
+    function addLayer() {
+      if (!session) {
+        logEvent("addLayer skipped", { reason: "no active session" });
+        return;
+      }
+      const layer = session.addLayer({
+        id: `demo-layer-${layers.length + 1}`,
+        zIndex: layers.length + 1,
+        alpha: true,
+      });
+      layers.push(layer);
+      logEvent("addLayer", { id: layer.id });
+      drawLayers();
+      renderState();
+    }
+
+    function removeLayer() {
+      if (!session || !layers.length) {
+        logEvent("removeLayer skipped", { reason: "no removable layer" });
+        return;
+      }
+      const layer = layers.pop();
+      const removed = session.removeLayer(layer);
+      logEvent("removeLayer", { id: layer.id, removed });
+      drawLayers();
+      renderState();
+    }
+
+    function resizeSession(width, height) {
+      if (!session) {
+        logEvent("resize skipped", { reason: "no active session" });
+        return;
+      }
+      optionWidth.value = String(width);
+      optionHeight.value = String(height);
+      session.resize(width, height);
+    }
+
+    function destroySession(emit = true) {
+      if (!session) {
+        renderState();
+        return;
+      }
+      const state = session.getState();
+      session.destroy();
+      session = null;
+      layers = [];
+      if (emit) {
+        logEvent("destroy", state);
+      }
+      renderState();
+    }
+
+    function drawLayers() {
+      layers.forEach((layer, index) => {
+        const { canvas, context } = layer;
+        if (!context) {
+          return;
+        }
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = index % 2 === 0 ? "rgba(141, 181, 255, 0.24)" : "rgba(84, 211, 165, 0.24)";
+        context.strokeStyle = index % 2 === 0 ? "#8db5ff" : "#54d3a5";
+        context.lineWidth = 3;
+        const inset = 36 + index * 30;
+        context.fillRect(inset, inset, canvas.width - inset * 2, canvas.height - inset * 2);
+        context.strokeRect(inset, inset, canvas.width - inset * 2, canvas.height - inset * 2);
+        context.fillStyle = "#d7e0f4";
+        context.font = "700 28px Segoe UI, sans-serif";
+        context.fillText(layer.id, inset + 18, inset + 42);
+      });
+    }
+
+    function renderState() {
+      const state = session?.getState?.() || { closed: true, layerCount: 0 };
+      stateOutput.textContent = JSON.stringify({
+        ...state,
+        hasRoot: Boolean(session?.root),
+        hasStage: Boolean(session?.stage),
+        hasOverlay: Boolean(session?.overlay),
+      }, null, 2);
+    }
+
+    function logEvent(name, payload) {
+      eventLog.unshift({
+        seq: ++sequence,
+        name,
+        payload,
+      });
+      eventOutput.textContent = eventLog
+        .slice(0, 12)
+        .map((entry) => `#${entry.seq} ${entry.name} ${JSON.stringify(entry.payload)}`)
+        .join("\n");
+    }
+  </script>
+</body>
+</html>

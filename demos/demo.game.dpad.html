@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game D-pad Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace,
+    .readouts {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pad-zone {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        #07101d;
+      background-size: 72px 72px;
+      position: relative;
+      overflow: hidden;
+    }
+    .marker {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #79a9ff;
+      box-shadow: 0 0 0 5px rgba(121, 169, 255, 0.14);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #padHost {
+      position: relative;
+      z-index: 1;
+      padding: 16px;
+      border: 1px solid rgba(51, 69, 99, 0.75);
+      border-radius: 8px;
+      background: rgba(7, 16, 29, 0.74);
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace,
+      .readouts {
+        grid-template-columns: 1fr;
+      }
+      .pad-zone {
+        min-height: 360px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game D-pad",
+      overview: "Focused reference for createTouchControlPad directional input.",
+      useWhen: [
+        "Use <code>createTouchControlPad(container, options)</code> for four-way movement on touch devices.",
+        "Use <code>directions: [\"left\", \"right\"]</code> for games like Breakout that only need horizontal movement.",
+        "Use <code>repeat</code> for grid movement, menu navigation, and arcade controls that should continue while held.",
+        "Use custom <code>labels</code> for localized accessibility text while keeping the default arrow icons."
+      ],
+      avoidWhen: [
+        "Do not use a D-pad for analog movement where direction strength matters.",
+        "Do not rely on canvas-only controls without keyboard alternatives for desktop users."
+      ],
+      description: "This page isolates the touch D-pad so developers can inspect repeat timing, disabled state, direction vectors, phases, labels, and methods.",
+      defaultSampleCode: `const pad = createTouchControlPad(host, {\n  repeat: true,\n  repeatDelay: 90,\n  onDirection(vector, meta) {\n    player.x += vector.x;\n    player.y += vector.y;\n  },\n  onPress(direction, vector) {\n    highlight(direction);\n  },\n  onRelease(direction) {\n    clearHighlight(direction);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createTouchControlPad(container, options)</code>", arguments: "<code>HTMLElement</code>, touch pad options", returns: "Touch pad instance" }
+      ],
+      options: [
+        { option: "<code>ariaLabel</code>", default: "<code>\"Game movement controls\"</code>", description: "Accessible label for the control group." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Optional class added to the root element." },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables all direction buttons." },
+        { option: "<code>visibility</code>", default: "<code>\"solid\"</code>", description: "Control visibility preset: <code>solid</code>, <code>overlay</code>, or <code>ghost</code>." },
+        { option: "<code>opacity</code>", default: "<code>null</code>", description: "Optional explicit control opacity override." },
+        { option: "<code>directions</code>", default: "<code>[\"up\", \"left\", \"right\", \"down\"]</code>", description: "Visible directions. Accepts an array or a visibility map such as <code>{ up: false, down: false }</code>." },
+        { option: "<code>repeat</code>", default: "<code>false</code>", description: "Repeatedly emits the active direction while held." },
+        { option: "<code>repeatDelay</code>", default: "<code>120</code>", description: "Milliseconds between repeated direction events." },
+        { option: "<code>labels</code>", default: "Up, Left, Right, Down", description: "Accessible labels for each direction button." },
+        { option: "<code>icons</code>", default: "<code>navigation.arrow-*</code>", description: "Icon ids rendered inside the direction buttons." },
+        { option: "<code>onDirection</code>", default: "<code>null</code>", description: "Receives <code>(vector, meta)</code> with direction and phase." },
+        { option: "<code>onPress</code>", default: "<code>null</code>", description: "Receives <code>(direction, vector)</code> on pointer down." },
+        { option: "<code>onRelease</code>", default: "<code>null</code>", description: "Receives <code>(direction)</code> when released." }
+      ],
+      propertiesText: "The returned instance exposes <code>root</code>, <code>buttons</code>, <code>setDisabled(disabled)</code>, and <code>destroy()</code>.",
+      events: [
+        { event: "<code>onDirection</code>", arguments: "<code>(vector, { direction, phase })</code>", returns: "Normalized movement vector." },
+        { event: "<code>onPress</code>", arguments: "<code>(direction, vector)</code>", returns: "Pointer press notification." },
+        { event: "<code>onRelease</code>", arguments: "<code>(direction)</code>", returns: "Pointer release notification." }
+      ],
+      methods: [
+        { method: "<code>pad.setDisabled(disabled)</code>", arguments: "Boolean", returns: "<code>void</code>" },
+        { method: "<code>pad.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="recreate" class="ui-button ui-button-primary" type="button">Recreate D-pad</button>
+        <button id="resetMarker" class="ui-button" type="button">Reset Marker</button>
+      </div>
+      <h1 class="ui-title">Game D-pad Demo</h1>
+      <p class="muted">Hold or tap directions to inspect vectors, phases, repeat behavior, and disabled state.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2 class="ui-title">Options</h2>
+        <label class="field">
+          repeatDelay
+          <input id="repeatDelay" type="number" min="40" max="1000" step="10" value="90">
+        </label>
+        <label class="field">
+          visibility
+          <select id="visibility">
+            <option value="solid">solid</option>
+            <option value="overlay" selected>overlay</option>
+            <option value="ghost">ghost</option>
+          </select>
+        </label>
+        <label class="field">
+          opacity override
+          <input id="opacity" type="number" min="0.2" max="1" step="0.05" placeholder="preset">
+        </label>
+        <div class="check-row">
+          <label><input id="repeat" type="checkbox" checked> repeat</label>
+          <label><input id="disabled" type="checkbox"> disabled</label>
+          <label><input id="textFallback" type="checkbox"> text fallback instead of icons</label>
+        </div>
+        <div class="check-row">
+          <label><input class="direction-option" type="checkbox" value="up" checked> show up</label>
+          <label><input class="direction-option" type="checkbox" value="left" checked> show left</label>
+          <label><input class="direction-option" type="checkbox" value="right" checked> show right</label>
+          <label><input class="direction-option" type="checkbox" value="down" checked> show down</label>
+        </div>
+        <div class="button-row">
+          <button id="disableToggle" class="ui-button" type="button">Toggle Disabled</button>
+          <button id="destroyPad" class="ui-button" type="button">Destroy</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ui-title">Live Control</h2>
+        <div class="pad-zone" id="padZone">
+          <div id="marker" class="marker"></div>
+          <div id="padHost"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="readouts">
+      <div class="panel">
+        <h2 class="ui-title">State</h2>
+        <pre id="stateOutput"></pre>
+      </div>
+      <div class="panel">
+        <h2 class="ui-title">Events</h2>
+        <pre id="eventOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createTouchControlPad } = await uiLoader.get("ui.game.core");
+
+    const padHost = document.getElementById("padHost");
+    const marker = document.getElementById("marker");
+    const repeat = document.getElementById("repeat");
+    const disabled = document.getElementById("disabled");
+    const repeatDelay = document.getElementById("repeatDelay");
+    const visibility = document.getElementById("visibility");
+    const opacity = document.getElementById("opacity");
+    const textFallback = document.getElementById("textFallback");
+    const stateOutput = document.getElementById("stateOutput");
+    const eventOutput = document.getElementById("eventOutput");
+    const directionOptions = [...document.querySelectorAll(".direction-option")];
+    const state = { x: 50, y: 50, direction: "none", phase: "idle", disabled: false };
+    const eventLog = [];
+    let pad = null;
+    let sequence = 0;
+
+    document.getElementById("recreate").addEventListener("click", recreatePad);
+    document.getElementById("resetMarker").addEventListener("click", resetMarker);
+    document.getElementById("destroyPad").addEventListener("click", () => {
+      pad?.destroy();
+      pad = null;
+      logEvent("destroy", {});
+      render();
+    });
+    document.getElementById("disableToggle").addEventListener("click", () => {
+      disabled.checked = !disabled.checked;
+      applyDisabled();
+    });
+    disabled.addEventListener("change", applyDisabled);
+    repeat.addEventListener("change", recreatePad);
+    repeatDelay.addEventListener("change", recreatePad);
+    visibility.addEventListener("change", recreatePad);
+    opacity.addEventListener("change", recreatePad);
+    textFallback.addEventListener("change", recreatePad);
+    directionOptions.forEach((option) => option.addEventListener("change", recreatePad));
+
+    recreatePad();
+    render();
+
+    function recreatePad() {
+      pad?.destroy();
+      pad = createTouchControlPad(padHost, {
+        repeat: repeat.checked,
+        disabled: disabled.checked,
+        visibility: visibility.value,
+        opacity: opacity.value === "" ? null : Number(opacity.value),
+        directions: selectedDirections(),
+        repeatDelay: Number(repeatDelay.value) || 90,
+        icons: textFallback.checked ? { up: "", left: "", right: "", down: "" } : undefined,
+        onDirection(vector, meta) {
+          state.direction = meta.direction;
+          state.phase = meta.phase;
+          state.x = clamp(state.x + vector.x * 6, 5, 95);
+          state.y = clamp(state.y + vector.y * 6, 5, 95);
+          logEvent("onDirection", { vector, meta });
+          render();
+        },
+        onPress(direction, vector) {
+          logEvent("onPress", { direction, vector });
+        },
+        onRelease(direction) {
+          state.phase = "release";
+          logEvent("onRelease", { direction });
+          render();
+        },
+      });
+      state.disabled = disabled.checked;
+      logEvent("create", { directions: selectedDirections(), visibility: visibility.value, opacity: opacity.value || null, repeat: repeat.checked, repeatDelay: Number(repeatDelay.value) || 90 });
+      render();
+    }
+
+    function applyDisabled() {
+      state.disabled = disabled.checked;
+      pad?.setDisabled(disabled.checked);
+      logEvent("setDisabled", { disabled: disabled.checked });
+      render();
+    }
+
+    function resetMarker() {
+      state.x = 50;
+      state.y = 50;
+      state.direction = "none";
+      state.phase = "idle";
+      logEvent("reset", {});
+      render();
+    }
+
+    function render() {
+      marker.style.left = `${state.x}%`;
+      marker.style.top = `${state.y}%`;
+      stateOutput.textContent = JSON.stringify({
+        ...state,
+        hasPad: Boolean(pad),
+        buttonCount: pad ? Object.keys(pad.buttons).length : 0,
+        directions: selectedDirections(),
+        visibility: visibility.value,
+        opacity: opacity.value || null,
+        repeat: repeat.checked,
+        repeatDelay: Number(repeatDelay.value) || 90,
+      }, null, 2);
+    }
+
+    function selectedDirections() {
+      const selected = directionOptions.filter((option) => option.checked).map((option) => option.value);
+      return selected.length ? selected : ["up", "left", "right", "down"];
+    }
+
+    function logEvent(name, payload) {
+      eventLog.unshift({ seq: ++sequence, name, payload });
+      eventOutput.textContent = eventLog
+        .slice(0, 14)
+        .map((entry) => `#${entry.seq} ${entry.name} ${JSON.stringify(entry.payload)}`)
+        .join("\n");
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+  </script>
+</body>
+</html>

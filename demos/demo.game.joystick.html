@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Joystick Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace,
+    .readouts {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .joystick-zone {
+      min-height: 420px;
+      display: grid;
+      grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: center;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        #07101d;
+      background-size: 72px 72px;
+      padding: 28px;
+      overflow: hidden;
+    }
+    .joystick-host {
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      border: 1px solid rgba(51, 69, 99, 0.75);
+      border-radius: 8px;
+      background: rgba(7, 16, 29, 0.74);
+    }
+    .vector-stage {
+      position: relative;
+      min-height: 320px;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: rgba(11, 18, 32, 0.76);
+      overflow: hidden;
+    }
+    .vector-axis-x,
+    .vector-axis-y {
+      position: absolute;
+      background: rgba(141, 181, 255, 0.2);
+    }
+    .vector-axis-x {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+    }
+    .vector-axis-y {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+    }
+    .marker {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #54d3a5;
+      box-shadow: 0 0 0 6px rgba(84, 211, 165, 0.14);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace,
+      .readouts,
+      .joystick-zone {
+        grid-template-columns: 1fr;
+      }
+      .joystick-zone {
+        min-height: 520px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Joystick",
+      overview: "Focused reference for createVirtualJoystick analog movement input.",
+      useWhen: [
+        "Use <code>createVirtualJoystick(container, options)</code> for analog movement where force and angle matter.",
+        "Use <code>deadzone</code> to prevent accidental drift near the center.",
+        "Use <code>snapBack</code> when the control should return to neutral after release."
+      ],
+      avoidWhen: [
+        "Do not use joystick input for strict grid games where a D-pad is clearer.",
+        "Do not treat joystick values as pixels directly; scale them through game-owned movement rules."
+      ],
+      description: "This page isolates the virtual joystick so developers can inspect normalized x/y values, force, angle, phases, disabled state, and methods.",
+      defaultSampleCode: `const joystick = createVirtualJoystick(host, {\n  radius: 68,\n  deadzone: 0.12,\n  snapBack: true,\n  onMove(value, meta) {\n    player.vx = value.x * maxSpeed;\n    player.vy = value.y * maxSpeed;\n  },\n  onEnd(value) {\n    player.vx = 0;\n    player.vy = 0;\n  },\n});`,
+      constructor: [
+        { factory: "<code>createVirtualJoystick(container, options)</code>", arguments: "<code>HTMLElement</code>, joystick options", returns: "Virtual joystick instance" }
+      ],
+      options: [
+        { option: "<code>ariaLabel</code>", default: "<code>\"Virtual joystick\"</code>", description: "Accessible label for the control." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Optional class added to the root element." },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables pointer input." },
+        { option: "<code>visibility</code>", default: "<code>\"solid\"</code>", description: "Control visibility preset: <code>solid</code>, <code>overlay</code>, or <code>ghost</code>." },
+        { option: "<code>opacity</code>", default: "<code>null</code>", description: "Optional explicit control opacity override." },
+        { option: "<code>radius</code>", default: "<code>68</code>", description: "Joystick radius in CSS pixels." },
+        { option: "<code>deadzone</code>", default: "<code>0.12</code>", description: "Minimum normalized force before movement is emitted." },
+        { option: "<code>snapBack</code>", default: "<code>true</code>", description: "Returns the thumb and value to neutral on release." },
+        { option: "<code>onMove</code>", default: "<code>null</code>", description: "Receives normalized <code>{ x, y, force, angle, active }</code> values." },
+        { option: "<code>onStart</code>", default: "<code>null</code>", description: "Receives the first active value on pointer down." },
+        { option: "<code>onEnd</code>", default: "<code>null</code>", description: "Receives the final value on pointer release/cancel." }
+      ],
+      propertiesText: "The returned instance exposes <code>root</code>, <code>thumb</code>, <code>getValue()</code>, <code>setDisabled(disabled)</code>, and <code>destroy()</code>.",
+      events: [
+        { event: "<code>onStart</code>", arguments: "<code>(value, meta)</code>", returns: "First active joystick value." },
+        { event: "<code>onMove</code>", arguments: "<code>(value, meta)</code>", returns: "Current normalized joystick value." },
+        { event: "<code>onEnd</code>", arguments: "<code>(value, meta)</code>", returns: "Final release value." }
+      ],
+      methods: [
+        { method: "<code>joystick.getValue()</code>", arguments: "None", returns: "Current normalized joystick value" },
+        { method: "<code>joystick.setDisabled(disabled)</code>", arguments: "Boolean", returns: "<code>void</code>" },
+        { method: "<code>joystick.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="recreate" class="ui-button ui-button-primary" type="button">Recreate Joystick</button>
+        <button id="sampleValue" class="ui-button" type="button">Read Value</button>
+      </div>
+      <h1 class="ui-title">Game Joystick Demo</h1>
+      <p class="muted">Drag the joystick to inspect normalized vector, force, angle, phases, and snap-back behavior.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2 class="ui-title">Options</h2>
+        <label class="field">
+          radius
+          <input id="radius" type="number" min="36" max="160" step="2" value="68">
+        </label>
+        <label class="field">
+          deadzone
+          <input id="deadzone" type="number" min="0" max="0.8" step="0.01" value="0.12">
+        </label>
+        <label class="field">
+          visibility
+          <select id="visibility">
+            <option value="solid">solid</option>
+            <option value="overlay" selected>overlay</option>
+            <option value="ghost">ghost</option>
+          </select>
+        </label>
+        <label class="field">
+          opacity override
+          <input id="opacity" type="number" min="0.2" max="1" step="0.05" placeholder="preset">
+        </label>
+        <div class="check-row">
+          <label><input id="snapBack" type="checkbox" checked> snapBack</label>
+          <label><input id="disabled" type="checkbox"> disabled</label>
+        </div>
+        <div class="button-row">
+          <button id="disableToggle" class="ui-button" type="button">Toggle Disabled</button>
+          <button id="destroyJoystick" class="ui-button" type="button">Destroy</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ui-title">Live Control</h2>
+        <div class="joystick-zone">
+          <div id="joystickHost" class="joystick-host"></div>
+          <div class="vector-stage">
+            <div class="vector-axis-x"></div>
+            <div class="vector-axis-y"></div>
+            <div id="marker" class="marker"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="readouts">
+      <div class="panel">
+        <h2 class="ui-title">Value</h2>
+        <pre id="stateOutput"></pre>
+      </div>
+      <div class="panel">
+        <h2 class="ui-title">Events</h2>
+        <pre id="eventOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createVirtualJoystick } = await uiLoader.get("ui.game.core");
+
+    const joystickHost = document.getElementById("joystickHost");
+    const marker = document.getElementById("marker");
+    const radius = document.getElementById("radius");
+    const deadzone = document.getElementById("deadzone");
+    const snapBack = document.getElementById("snapBack");
+    const disabled = document.getElementById("disabled");
+    const visibility = document.getElementById("visibility");
+    const opacity = document.getElementById("opacity");
+    const stateOutput = document.getElementById("stateOutput");
+    const eventOutput = document.getElementById("eventOutput");
+    const neutralValue = { x: 0, y: 0, force: 0, angle: 0, active: false };
+    const eventLog = [];
+    let joystick = null;
+    let currentValue = { ...neutralValue };
+    let sequence = 0;
+
+    document.getElementById("recreate").addEventListener("click", recreateJoystick);
+    document.getElementById("sampleValue").addEventListener("click", () => {
+      const value = joystick?.getValue() || neutralValue;
+      logEvent("getValue", roundValue(value));
+      renderValue(value);
+    });
+    document.getElementById("destroyJoystick").addEventListener("click", () => {
+      joystick?.destroy();
+      joystick = null;
+      currentValue = { ...neutralValue };
+      logEvent("destroy", {});
+      renderValue(currentValue);
+    });
+    document.getElementById("disableToggle").addEventListener("click", () => {
+      disabled.checked = !disabled.checked;
+      applyDisabled();
+    });
+    disabled.addEventListener("change", applyDisabled);
+    radius.addEventListener("change", recreateJoystick);
+    deadzone.addEventListener("change", recreateJoystick);
+    visibility.addEventListener("change", recreateJoystick);
+    opacity.addEventListener("change", recreateJoystick);
+    snapBack.addEventListener("change", recreateJoystick);
+
+    recreateJoystick();
+
+    function recreateJoystick() {
+      joystick?.destroy();
+      joystick = createVirtualJoystick(joystickHost, {
+        radius: Number(radius.value) || 68,
+        deadzone: Number(deadzone.value) || 0,
+        visibility: visibility.value,
+        opacity: opacity.value === "" ? null : Number(opacity.value),
+        snapBack: snapBack.checked,
+        disabled: disabled.checked,
+        onStart(value, meta) {
+          currentValue = value;
+          logEvent("onStart", { value: roundValue(value), meta });
+          renderValue(value);
+        },
+        onMove(value, meta) {
+          currentValue = value;
+          logEvent("onMove", { value: roundValue(value), meta });
+          renderValue(value);
+        },
+        onEnd(value, meta) {
+          currentValue = value;
+          logEvent("onEnd", { value: roundValue(value), meta });
+          renderValue(value);
+        },
+      });
+      currentValue = joystick.getValue();
+      logEvent("create", {
+        radius: Number(radius.value) || 68,
+        deadzone: Number(deadzone.value) || 0,
+        visibility: visibility.value,
+        opacity: opacity.value || null,
+        snapBack: snapBack.checked,
+      });
+      renderValue(currentValue);
+    }
+
+    function applyDisabled() {
+      joystick?.setDisabled(disabled.checked);
+      logEvent("setDisabled", { disabled: disabled.checked });
+      renderValue(joystick?.getValue() || neutralValue);
+    }
+
+    function renderValue(value) {
+      const next = roundValue(value);
+      marker.style.left = `${50 + next.x * 42}%`;
+      marker.style.top = `${50 + next.y * 42}%`;
+      stateOutput.textContent = JSON.stringify({
+        ...next,
+        hasJoystick: Boolean(joystick),
+        disabled: disabled.checked,
+        radius: Number(radius.value) || 68,
+        deadzone: Number(deadzone.value) || 0,
+        visibility: visibility.value,
+        opacity: opacity.value || null,
+        snapBack: snapBack.checked,
+      }, null, 2);
+    }
+
+    function logEvent(name, payload) {
+      eventLog.unshift({ seq: ++sequence, name, payload });
+      eventOutput.textContent = eventLog
+        .slice(0, 14)
+        .map((entry) => `#${entry.seq} ${entry.name} ${JSON.stringify(entry.payload)}`)
+        .join("\n");
+    }
+
+    function roundValue(value) {
+      return {
+        x: round(value.x),
+        y: round(value.y),
+        force: round(value.force),
+        angle: round(value.angle),
+        active: Boolean(value.active),
+      };
+    }
+
+    function round(value) {
+      return Math.round(Number(value || 0) * 1000) / 1000;
+    }
+  </script>
+</body>
+</html>

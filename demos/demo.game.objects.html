@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Objects Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      align-items: start;
+    }
+    .canvas-wrap {
+      display: grid;
+      place-items: center;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #07101d;
+      padding: 14px;
+      min-height: 470px;
+      overflow: hidden;
+    }
+    canvas {
+      width: min(100%, 760px);
+      aspect-ratio: 4 / 3;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #08111f;
+      touch-action: none;
+    }
+    pre {
+      margin: 0;
+      min-height: 240px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    .check-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core", "ui.game.objects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Objects",
+      overview: "Canvas object layer, pointer router, and reusable flip-card behavior for game-specific rendering and rules.",
+      useWhen: [
+        "Use <code>createGameObjectLayer(...)</code> when a canvas game needs z-ordered objects with shared update, render, and pointer routing.",
+        "Use <code>createGameObject(...)</code> for custom entities that need bounds, hit testing, hover, press, click, and state helpers.",
+        "Use <code>createFlipCard(...)</code> as the first higher-level object for memory, matching, quiz, or reveal-card games."
+      ],
+      avoidWhen: [
+        "Do not put scoring, level progression, or matching rules inside Helper objects; those remain app-owned.",
+        "Do not use this as a physics engine or sprite engine. It is a behavior base for canvas entities."
+      ],
+      description: "Game Objects sits above Game Core. It gives apps reusable object behavior while leaving canvas art and game rules in the client app.",
+      defaultSampleCode: `const objectLayer = createGameObjectLayer();\nconst card = createFlipCard({\n  id: "card-a",\n  x: 80,\n  y: 80,\n  frontLabel: "A",\n  onSelect(card) {\n    revealAndCheckMatch(card);\n  },\n  renderFront(ctx, card) {\n    drawMyCardFace(ctx, card);\n  },\n});\n\nobjectLayer.add(card);\ncreatePointerInputRouter(canvas, objectLayer);`,
+      constructor: [
+        { factory: "<code>createGameObject(options)</code>", arguments: "object options", returns: "Canvas game object" },
+        { factory: "<code>createGameObjectLayer(options)</code>", arguments: "optional initial objects", returns: "Object layer with add, remove, update, render, and pointer routing" },
+        { factory: "<code>createPointerInputRouter(canvas, objectLayer)</code>", arguments: "canvas element and object layer", returns: "Router with destroy" },
+        { factory: "<code>createFlipCard(options)</code>", arguments: "card options", returns: "Game object with flip, reveal, hide, and setMatched" }
+      ],
+      options: [
+        { option: "<code>x</code> / <code>y</code>", default: "<code>0 / 0</code>", description: "Object position in canvas coordinates." },
+        { option: "<code>width</code> / <code>height</code>", default: "<code>64 / 64</code>", description: "Object bounds used by default hit testing and rendering." },
+        { option: "<code>zIndex</code>", default: "<code>0</code>", description: "Layer render and hit-test order." },
+        { option: "<code>hitTest</code>", default: "<code>null</code>", description: "Optional custom point test for non-rectangular objects." },
+        { option: "<code>flipOnHover</code>", default: "<code>false</code>", description: "Flip-card behavior that previews the front while hovered." },
+        { option: "<code>renderFront</code> / <code>renderBack</code>", default: "<code>null</code>", description: "App-owned drawing hooks for flip-card faces." }
+      ],
+      propertiesText: "Objects expose bounds, visible/disabled/interactive state, hover/pressed state, and object-specific properties such as flipProgress, revealed, and matched.",
+      events: [
+        { event: "<code>onPointerEnter</code>", arguments: "<code>meta</code>", returns: "Fires when routed pointer enters the object." },
+        { event: "<code>onPointerLeave</code>", arguments: "<code>meta</code>", returns: "Fires when routed pointer leaves the object." },
+        { event: "<code>onClick</code>", arguments: "<code>meta</code>", returns: "Fires after pointer down/up on the same routed object." },
+        { event: "<code>onSelect</code>", arguments: "<code>(card, meta)</code>", returns: "Flip-card selection hook for app-owned game rules." }
+      ],
+      methods: [
+        { method: "<code>objectLayer.add(object)</code>", arguments: "game object or options", returns: "Added object" },
+        { method: "<code>objectLayer.handlePointer(input)</code>", arguments: "type and point", returns: "Target object or null" },
+        { method: "<code>card.reveal()</code>", arguments: "none", returns: "card" },
+        { method: "<code>card.hide()</code>", arguments: "none", returns: "card" },
+        { method: "<code>card.setMatched(true)</code>", arguments: "boolean", returns: "card" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="resetGame" class="ui-button ui-button-primary" type="button">Reset Cards</button>
+        <button id="shuffleGame" class="ui-button" type="button">Shuffle Labels</button>
+      </div>
+      <h1 class="ui-title">Game Objects Demo</h1>
+      <p class="muted">Helper owns reusable object behavior. This demo keeps memory matching rules and card drawing in the app code.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <div class="button-row">
+          <label class="check-row"><input id="hoverPreview" type="checkbox" checked> flip preview on hover</label>
+          <label class="check-row"><input id="customFaces" type="checkbox" checked> app-rendered card faces</label>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="760" height="570" aria-label="Memory game object canvas"></canvas>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <h2 class="ui-title">State</h2>
+        <pre id="stateOutput">Loading...</pre>
+      </aside>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const objectLayer = createGameObjectLayer();
+const card = createFlipCard({
+  id: "card-1",
+  x: 80,
+  y: 80,
+  frontLabel: "A",
+  onSelect(card) {
+    revealAndCheckMatch(card);
+  },
+  renderFront(ctx, card) {
+    drawCardArt(ctx, card);
+  },
+});
+
+objectLayer.add(card);
+createPointerInputRouter(canvas, objectLayer);</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameLoop } = await uiLoader.get("ui.game.core");
+    const {
+      createFlipCard,
+      createGameObjectLayer,
+      createPointerInputRouter,
+    } = await uiLoader.get("ui.game.objects");
+
+    const canvas = document.getElementById("gameCanvas");
+    const context = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    const hoverPreview = document.getElementById("hoverPreview");
+    const customFaces = document.getElementById("customFaces");
+
+    let objectLayer = null;
+    let router = null;
+    let cards = [];
+    let selected = [];
+    let moves = 0;
+    let matches = 0;
+    let eventLines = [];
+    const labels = ["A", "A", "B", "B"];
+
+    const loop = createGameLoop({
+      autoStart: true,
+      update({ delta }) {
+        objectLayer?.update(delta);
+      },
+      render() {
+        draw();
+      },
+    });
+    loop.start();
+
+    document.getElementById("resetGame").addEventListener("click", () => resetBoard(labels));
+    document.getElementById("shuffleGame").addEventListener("click", () => resetBoard(shuffle(labels.slice())));
+    hoverPreview.addEventListener("change", () => resetBoard(cards.map((card) => card.data.label)));
+    customFaces.addEventListener("change", () => resetBoard(cards.map((card) => card.data.label)));
+
+    resetBoard(labels);
+
+    function resetBoard(nextLabels) {
+      router?.destroy();
+      objectLayer = createGameObjectLayer();
+      cards = [];
+      selected = [];
+      moves = 0;
+      matches = 0;
+      eventLines = [];
+      const positions = [
+        { x: 180, y: 130 },
+        { x: 325, y: 130 },
+        { x: 180, y: 310 },
+        { x: 325, y: 310 },
+      ];
+      nextLabels.forEach((label, index) => {
+        const card = createFlipCard({
+          id: `card-${index + 1}`,
+          x: positions[index].x,
+          y: positions[index].y,
+          width: 112,
+          height: 146,
+          frontLabel: label,
+          backLabel: "PBB",
+          flipOnHover: hoverPreview.checked,
+          data: { label },
+          onSelect(selectedCard) {
+            handleSelect(selectedCard);
+          },
+          renderFront: customFaces.checked ? renderFront : null,
+          renderBack: customFaces.checked ? renderBack : null,
+        });
+        cards.push(card);
+        objectLayer.add(card);
+      });
+      router = createPointerInputRouter(canvas, objectLayer);
+      logEvent("reset", { labels: nextLabels.join("") });
+      renderState();
+    }
+
+    function handleSelect(card) {
+      if (card.matched || selected.includes(card)) {
+        return;
+      }
+      selected.push(card);
+      logEvent("select", { id: card.id, label: card.data.label });
+      if (selected.length !== 2) {
+        renderState();
+        return;
+      }
+      moves += 1;
+      const [first, second] = selected;
+      if (first.data.label === second.data.label) {
+        first.setMatched(true);
+        second.setMatched(true);
+        selected = [];
+        matches += 1;
+        logEvent("match", { label: first.data.label });
+      } else {
+        logEvent("miss", { first: first.data.label, second: second.data.label });
+        setTimeout(() => {
+          first.hide();
+          second.hide();
+          selected = [];
+          renderState();
+        }, 620);
+      }
+      renderState();
+    }
+
+    function draw() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#08111f";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      drawBoardFrame();
+      objectLayer?.render(context);
+      renderState();
+    }
+
+    function drawBoardFrame() {
+      context.save();
+      context.strokeStyle = "#263146";
+      context.lineWidth = 2;
+      context.strokeRect(132, 86, 354, 402);
+      context.fillStyle = "#9fb2d8";
+      context.font = "700 16px Segoe UI, sans-serif";
+      context.fillText("Memory object layer", 132, 64);
+      context.font = "12px Segoe UI, sans-serif";
+      context.fillText("Moves " + moves + "   Matches " + matches + "/2", 132, 520);
+      context.restore();
+    }
+
+    function renderFront(ctx, card) {
+      drawRoundedCard(ctx, card.width, card.height, "#e9f1ff", "#54d3a5");
+      ctx.fillStyle = "#07101d";
+      ctx.font = "800 42px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(card.data.label, card.width / 2, card.height / 2);
+    }
+
+    function renderBack(ctx, card) {
+      drawRoundedCard(ctx, card.width, card.height, "#132033", card.hover ? "#8db5ff" : "#4f76b8");
+      ctx.fillStyle = "#d7e0f4";
+      ctx.font = "800 20px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PBB", card.width / 2, card.height / 2);
+    }
+
+    function drawRoundedCard(ctx, width, height, fill, stroke) {
+      const radius = 14;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(width - radius, 0);
+      ctx.quadraticCurveTo(width, 0, width, radius);
+      ctx.lineTo(width, height - radius);
+      ctx.quadraticCurveTo(width, height, width - radius, height);
+      ctx.lineTo(radius, height);
+      ctx.quadraticCurveTo(0, height, 0, height - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 3;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function logEvent(name, payload) {
+      eventLines.unshift(`${name} ${JSON.stringify(payload)}`);
+      eventLines = eventLines.slice(0, 8);
+    }
+
+    function renderState() {
+      stateOutput.textContent = JSON.stringify({
+        moves,
+        matches,
+        selected: selected.map((card) => card.id),
+        cards: cards.map((card) => ({
+          id: card.id,
+          label: card.data.label,
+          state: card.state,
+          hover: card.hover,
+          flipProgress: Number(card.flipProgress.toFixed(2)),
+        })),
+        events: eventLines,
+      }, null, 2);
+    }
+
+    function shuffle(values) {
+      for (let index = values.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
+      }
+      return values;
+    }
+  </script>
+</body>
+</html>

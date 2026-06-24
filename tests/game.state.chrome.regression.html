@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game State Chrome Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/ui/ui.game.core.css">
+  <link rel="stylesheet" href="../css/ui/ui.game.state.chrome.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #host { width: 760px; height: 430px; border: 1px dashed #2b3750; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createGameSession } from "../js/ui/ui.game.core.js";
+    import { createGameStateChrome, GAME_SESSION_STATES } from "../js/ui/ui.game.state.chrome.js";
+
+    const failures = [];
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+
+    try {
+      const actions = [];
+      const states = [];
+      const session = createGameSession(host, {
+        title: "Chrome Test",
+        fullscreen: false,
+        closeControl: { variant: "icon", icon: "actions.close" },
+      });
+      const chrome = createGameStateChrome(session, {
+        initialState: "ready",
+        shortcuts: { enabled: true, escape: "pause-or-exit" },
+        labels: {
+          resume: "Keep Playing",
+          restart: "Try Again",
+          exit: "Leave",
+          continue: "Next",
+        },
+        onAction(action, context) {
+          actions.push({ action, source: context.source });
+        },
+        onStateChange(next, previous) {
+          states.push({ next, previous });
+        },
+      });
+
+      assert(GAME_SESSION_STATES.includes("playing"), "state export should include playing");
+      assert(chrome.getState().state === "ready", "chrome should initialize to ready");
+      assert(session.closeButton.dataset.gameControl === "close", "ready state should use close control");
+
+      chrome.updateProgress({ score: 10, level: 2, objective: "Clear test" });
+      assert(host.querySelector(".ui-game-state-progress"), "progress display should render when metadata exists");
+      assert(host.textContent.includes("Score") && host.textContent.includes("10"), "progress should display score");
+
+      chrome.setState("playing", { source: "test" });
+      assert(chrome.getState().state === "playing", "setState should update to playing");
+      assert(session.closeButton.dataset.gameControl === "pause", "playing state should switch control to pause");
+      session.closeButton.click();
+      assert(actions.some((entry) => entry.action === "pause" && entry.source === "context-control"), "pause control should emit pause action");
+      assert(chrome.getState().state === "paused", "pause action should default to paused state");
+      assert(host.querySelector(".ui-game-state-overlay.is-pause"), "paused state should render pause overlay");
+      assert(host.querySelector('[data-game-action="resume"]')?.textContent === "Keep Playing", "pause overlay should use custom resume label");
+
+      const resume = host.querySelector('[data-game-action="resume"]');
+      resume.click();
+      assert(actions.some((entry) => entry.action === "resume"), "resume overlay action should emit");
+      assert(chrome.getState().state === "playing", "resume action should default to playing state");
+      assert(!host.querySelector(".ui-game-state-overlay"), "resume action should hide overlay");
+
+      chrome.showResult({ state: "gameOver", title: "Game Over", detail: "Score 10" });
+      assert(host.querySelector(".ui-game-state-overlay.is-result"), "showResult should render result overlay");
+      assert(host.querySelector('[data-game-action="restart"]')?.textContent === "Play Again", "result restart should display Play Again");
+
+      chrome.showMilestone({ type: "levelComplete", title: "Level Complete", actions: ["continue", "restart", "exit"] });
+      assert(host.querySelector(".ui-game-state-overlay.is-milestone"), "showMilestone should render milestone overlay");
+      assert(host.querySelector('[data-game-action="continue"]'), "milestone should render continue action");
+
+      chrome.showPause({
+        actions: [
+          "resume",
+          { id: "exit", label: "Home", nextState: "ready", closeSession: false },
+        ],
+      });
+      host.querySelector('[data-game-action="exit"]').click();
+      assert(actions.some((entry) => entry.action === "exit" && entry.source === "pause-overlay"), "custom home exit should emit exit action");
+      assert(chrome.getState().state === "ready", "custom home exit should move to ready state");
+      assert(session.getState().closed === false, "custom home exit should not close the session");
+      assert(!host.querySelector(".ui-game-state-overlay"), "custom home exit should hide overlay");
+
+      chrome.setState("playing");
+      session.root.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      assert(actions.some((entry) => entry.action === "pause" && entry.source === "shortcut"), "Escape shortcut should pause while playing");
+      assert(session.getState().closed === false, "state chrome Escape shortcut should not fall through to session close");
+
+      chrome.setControl("close");
+      session.closeButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert(actions.some((entry) => entry.action === "exit" && entry.source === "context-control"), "close control should emit exit action");
+      assert(session.getState().closed === true, "exit default should close the session");
+      assert(chrome.getState().destroyed === true, "chrome should destroy on session close");
+
+      if (failures.length) {
+        throw new Error(failures.join("\\n"));
+      }
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\\n${error?.stack || error}`;
+      console.error(error);
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

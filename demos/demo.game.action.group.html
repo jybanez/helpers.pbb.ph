@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Action Group Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .toolbar,
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .workspace,
+    .readouts {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #b2c2e5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field select,
+    .field input {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #334563;
+      border-radius: 8px;
+      background: #0b1220;
+      color: #d7e0f4;
+      padding: 7px 9px;
+      font: inherit;
+      font-weight: 500;
+    }
+    .check-row {
+      display: grid;
+      gap: 8px;
+      color: #b2c2e5;
+      font-size: 13px;
+    }
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .group-zone {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(141, 181, 255, 0.08) 1px, transparent 1px),
+        #07101d;
+      background-size: 72px 72px;
+      overflow: hidden;
+    }
+    .group-cluster {
+      padding: 22px;
+      border: 1px solid rgba(51, 69, 99, 0.75);
+      border-radius: 8px;
+      background: rgba(7, 16, 29, 0.78);
+    }
+    pre {
+      margin: 0;
+      min-height: 160px;
+      max-height: 260px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow: auto;
+    }
+    @media (max-width: 860px) {
+      .workspace,
+      .readouts {
+        grid-template-columns: 1fr;
+      }
+      .group-zone {
+        min-height: 360px;
+      }
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.core"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Action Group",
+      overview: "Focused reference for grouped game action buttons such as AB and ABXY clusters.",
+      useWhen: [
+        "Use <code>createGameActionButtonGroup(container, options)</code> for face-button clusters, abilities, weapons, and grouped actions.",
+        "Use <code>layout: \"diamond\"</code> for console-style ABXY controls.",
+        "Use group-level callbacks when a game wants one action router receiving <code>(id, meta)</code>."
+      ],
+      avoidWhen: [
+        "Do not use action groups for movement; use D-pad or joystick helpers.",
+        "Do not use grouped ordinary click buttons when actions need held/repeat/cancel-safe behavior."
+      ],
+      description: "This page isolates action button groups so developers can compare layouts and inspect grouped press/release state.",
+      defaultSampleCode: `const group = createGameActionButtonGroup(host, {\n  layout: "diamond",\n  buttons: [\n    { id: "y", label: "Y" },\n    { id: "x", label: "X" },\n    { id: "b", label: "B" },\n    { id: "a", label: "A" },\n  ],\n  onPress(id, meta) {\n    actions.start(id, meta);\n  },\n  onRelease(id, meta) {\n    actions.stop(id, meta);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createGameActionButtonGroup(container, options)</code>", arguments: "<code>HTMLElement</code>, action group options", returns: "Action button group instance" }
+      ],
+      options: [
+        { option: "<code>layout</code>", default: "<code>\"cluster\"</code>", description: "One of <code>row</code>, <code>column</code>, <code>grid</code>, <code>diamond</code>, or <code>cluster</code>." },
+        { option: "<code>buttons</code>", default: "A/B", description: "Array of action button configs. Each item should provide an <code>id</code> and <code>label</code>." },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables all child action buttons." },
+        { option: "<code>visibility</code>", default: "<code>\"solid\"</code>", description: "Control visibility preset: <code>solid</code>, <code>overlay</code>, or <code>ghost</code>." },
+        { option: "<code>opacity</code>", default: "<code>null</code>", description: "Optional explicit control opacity override." },
+        { option: "<code>onPress</code>", default: "<code>null</code>", description: "Receives <code>(id, meta)</code> for any child press." },
+        { option: "<code>onRelease</code>", default: "<code>null</code>", description: "Receives <code>(id, meta)</code> for any child release." }
+      ],
+      propertiesText: "The returned instance exposes <code>root</code>, <code>actions</code>, <code>getState()</code>, <code>setDisabled(disabled)</code>, and <code>destroy()</code>.",
+      events: [
+        { event: "<code>onPress</code>", arguments: "<code>(id, meta)</code>", returns: "Grouped child press." },
+        { event: "<code>onRepeat</code>", arguments: "<code>(id, meta)</code>", returns: "Grouped child repeat." },
+        { event: "<code>onHold</code>", arguments: "<code>(id, meta)</code>", returns: "Grouped child hold." },
+        { event: "<code>onRelease</code>", arguments: "<code>(id, meta)</code>", returns: "Grouped child release." }
+      ],
+      methods: [
+        { method: "<code>group.getState()</code>", arguments: "None", returns: "Child states keyed by action id" },
+        { method: "<code>group.setDisabled(disabled)</code>", arguments: "Boolean", returns: "<code>void</code>" },
+        { method: "<code>group.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="recreate" class="ui-button ui-button-primary" type="button">Recreate Group</button>
+        <button id="sampleState" class="ui-button" type="button">Read State</button>
+      </div>
+      <h1 class="ui-title">Game Action Group Demo</h1>
+      <p class="muted">Press any button to inspect grouped action routing and child button state.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2 class="ui-title">Options</h2>
+        <label class="field">
+          layout
+          <select id="layout">
+            <option value="diamond" selected>diamond</option>
+            <option value="cluster">cluster</option>
+            <option value="grid">grid</option>
+            <option value="row">row</option>
+            <option value="column">column</option>
+          </select>
+        </label>
+        <label class="field">
+          preset
+          <select id="preset">
+            <option value="abxy" selected>ABXY</option>
+            <option value="ab">A/B</option>
+            <option value="abilities">Abilities</option>
+          </select>
+        </label>
+        <label class="field">
+          visibility
+          <select id="visibility">
+            <option value="solid">solid</option>
+            <option value="overlay" selected>overlay</option>
+            <option value="ghost">ghost</option>
+          </select>
+        </label>
+        <label class="field">
+          opacity override
+          <input id="opacity" type="number" min="0.2" max="1" step="0.05" placeholder="preset">
+        </label>
+        <div class="check-row">
+          <label><input id="repeat" type="checkbox"> repeat child buttons</label>
+          <label><input id="disabled" type="checkbox"> disabled</label>
+        </div>
+        <div class="button-row">
+          <button id="disableToggle" class="ui-button" type="button">Toggle Disabled</button>
+          <button id="destroyGroup" class="ui-button" type="button">Destroy</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ui-title">Live Group</h2>
+        <div class="group-zone">
+          <div class="group-cluster" id="groupHost"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="readouts">
+      <div class="panel">
+        <h2 class="ui-title">State</h2>
+        <pre id="stateOutput"></pre>
+      </div>
+      <div class="panel">
+        <h2 class="ui-title">Events</h2>
+        <pre id="eventOutput"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameActionButtonGroup } = await uiLoader.get("ui.game.core");
+
+    const groupHost = document.getElementById("groupHost");
+    const layout = document.getElementById("layout");
+    const preset = document.getElementById("preset");
+    const repeat = document.getElementById("repeat");
+    const disabled = document.getElementById("disabled");
+    const visibility = document.getElementById("visibility");
+    const opacity = document.getElementById("opacity");
+    const stateOutput = document.getElementById("stateOutput");
+    const eventOutput = document.getElementById("eventOutput");
+    const eventLog = [];
+    let group = null;
+    let sequence = 0;
+
+    document.getElementById("recreate").addEventListener("click", recreateGroup);
+    document.getElementById("sampleState").addEventListener("click", () => {
+      logEvent("getState", group?.getState() || {});
+      renderState();
+    });
+    document.getElementById("destroyGroup").addEventListener("click", () => {
+      group?.destroy();
+      group = null;
+      logEvent("destroy", {});
+      renderState();
+    });
+    document.getElementById("disableToggle").addEventListener("click", () => {
+      disabled.checked = !disabled.checked;
+      applyDisabled();
+    });
+    [layout, preset, repeat, visibility, opacity].forEach((control) => control.addEventListener("change", recreateGroup));
+    disabled.addEventListener("change", applyDisabled);
+
+    recreateGroup();
+
+    function recreateGroup() {
+      group?.destroy();
+      group = createGameActionButtonGroup(groupHost, {
+        layout: layout.value,
+        visibility: visibility.value,
+        opacity: opacity.value === "" ? null : Number(opacity.value),
+        disabled: disabled.checked,
+        buttons: buildButtons(),
+        onPress(id, meta) {
+          logEvent("onPress", { id, meta });
+          renderState();
+        },
+        onRepeat(id, meta) {
+          logEvent("onRepeat", { id, meta });
+          renderState();
+        },
+        onRelease(id, meta) {
+          logEvent("onRelease", { id, meta });
+          renderState();
+        },
+      });
+      logEvent("create", { layout: layout.value, preset: preset.value, visibility: visibility.value, opacity: opacity.value || null });
+      renderState();
+    }
+
+    function buildButtons() {
+      const common = {
+        repeat: repeat.checked,
+        repeatDelay: 100,
+      };
+      if (preset.value === "ab") {
+        return [
+          { ...common, id: "b", label: "B" },
+          { ...common, id: "a", label: "A", buttonClassName: "ui-button-primary" },
+        ];
+      }
+      if (preset.value === "abilities") {
+        return [
+          { ...common, id: "dash", label: "Dash" },
+          { ...common, id: "jump", label: "Jump", buttonClassName: "ui-button-primary" },
+          { ...common, id: "shield", label: "Shield" },
+          { ...common, id: "fire", label: "Fire", buttonClassName: "ui-button-primary" },
+        ];
+      }
+      return [
+        { ...common, id: "y", label: "Y", icon: "actions.settings" },
+        { ...common, id: "x", label: "X", icon: "actions.close" },
+        { ...common, id: "b", label: "B", icon: "actions.refresh" },
+        { ...common, id: "a", label: "A", icon: "actions.check", buttonClassName: "ui-button-primary" },
+      ];
+    }
+
+    function applyDisabled() {
+      group?.setDisabled(disabled.checked);
+      logEvent("setDisabled", { disabled: disabled.checked });
+      renderState();
+    }
+
+    function renderState() {
+      stateOutput.textContent = JSON.stringify(group?.getState() || { disabled: true, buttons: {} }, null, 2);
+    }
+
+    function logEvent(name, payload) {
+      eventLog.unshift({ seq: ++sequence, name, payload });
+      eventOutput.textContent = eventLog
+        .slice(0, 14)
+        .map((entry) => `#${entry.seq} ${entry.name} ${JSON.stringify(entry.payload)}`)
+        .join("\n");
+    }
+  </script>
+</body>
+</html>

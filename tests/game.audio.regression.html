@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Audio Regression Test</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { STARTER_GAME_SOUND_NAMES, createGameAudio, createStarterGameSounds } from "../js/ui/ui.game.audio.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    class FakeAudioParam {
+      constructor(value = 0) {
+        this.value = value;
+        this.events = [];
+      }
+      setValueAtTime(value, time) {
+        this.value = value;
+        this.events.push({ type: "set", value, time });
+      }
+      exponentialRampToValueAtTime(value, time) {
+        this.value = value;
+        this.events.push({ type: "ramp", value, time });
+      }
+    }
+
+    class FakeNode extends EventTarget {
+      constructor() {
+        super();
+        this.connections = [];
+        this.started = false;
+        this.stopped = false;
+      }
+      connect(target) {
+        this.connections.push(target);
+        return target;
+      }
+    }
+
+    class FakeOscillator extends FakeNode {
+      constructor() {
+        super();
+        this.type = "sine";
+        this.frequency = new FakeAudioParam(440);
+      }
+      start() {
+        this.started = true;
+      }
+      stop() {
+        this.stopped = true;
+        this.dispatchEvent(new Event("ended"));
+      }
+    }
+
+    class FakeGain extends FakeNode {
+      constructor() {
+        super();
+        this.gain = new FakeAudioParam(1);
+      }
+    }
+
+    class FakeAudioContext {
+      constructor() {
+        this.state = "suspended";
+        this.currentTime = 1;
+        this.destination = new FakeNode();
+        this.oscillators = [];
+        this.gains = [];
+      }
+      async resume() {
+        this.state = "running";
+      }
+      createOscillator() {
+        const oscillator = new FakeOscillator();
+        this.oscillators.push(oscillator);
+        return oscillator;
+      }
+      createGain() {
+        const gain = new FakeGain();
+        this.gains.push(gain);
+        return gain;
+      }
+    }
+
+    window.AudioContext = FakeAudioContext;
+    window.webkitAudioContext = FakeAudioContext;
+
+    try {
+      const audio = createGameAudio({
+        masterVolume: 0.5,
+        tones: {
+          rotate: { frequency: [330, 440], duration: 0.03, type: "triangle", volume: 0.4, category: "sfx" },
+        },
+      });
+
+      const starterSounds = createStarterGameSounds();
+      assert(STARTER_GAME_SOUND_NAMES.includes("rotate"), "starter sound names should include rotate");
+      assert(starterSounds.move.src === "https://helpers.pbb.ph/current/assets/sounds/game/move.wav", "starter sounds should default to current local helper host path");
+      assert(starterSounds.rotate.category === "sfx", "starter sounds should default to sfx category");
+      assert(Object.keys(starterSounds).length === STARTER_GAME_SOUND_NAMES.length, "starter sounds should include the standard sound set");
+      const versionedSounds = createStarterGameSounds({ version: "0.21.102", names: ["move", "score"], cacheBust: "v=0.21.102" });
+      assert(versionedSounds.move.src === "https://helpers.pbb.ph/releases/0.21.102/assets/sounds/game/move.wav?v=0.21.102", "versioned starter sounds should use release path and cache bust");
+      assert(Object.keys(versionedSounds).join(",") === "move,score", "starter sound names option should restrict returned sounds");
+      const customBase = createStarterGameSounds("/assets/sounds/game");
+      assert(customBase.pause.src === "/assets/sounds/game/pause.wav", "string starter sound option should be treated as baseUrl");
+
+      assert(audio.getState().toneIds.includes("rotate"), "custom tone should register");
+      assert(audio.getState().toneIds.includes("move"), "default tones should remain available");
+      assert(audio.getState().masterVolume === 0.5, "master volume should normalize");
+      assert(await audio.unlock() === true, "unlock should resume fake AudioContext");
+      assert(audio.getState().unlocked === true, "unlock state should be exposed");
+
+      const tone = audio.playTone("rotate");
+      assert(tone?.nodes?.length === 2, "array frequency tone should create one oscillator per note");
+      assert(tone.nodes.every((node) => node.type === "triangle"), "tone should use configured oscillator type");
+
+      audio.setCategoryVolume("sfx", 0.25);
+      audio.setMasterVolume(0.8);
+      assert(audio.getState().categoryVolumes.sfx === 0.25, "category volume should update");
+      assert(audio.getState().masterVolume === 0.8, "master volume should update");
+
+      audio.registerTone("drop", { frequency: 220, duration: 0.02, type: "square" });
+      assert(audio.getState().toneIds.includes("drop"), "registerTone should add tones after construction");
+      assert(audio.play("drop")?.nodes?.length === 1, "play should route tone-only ids to playTone");
+
+      audio.setMuted(true);
+      assert(audio.playTone("rotate") === null, "muted audio should not create tone nodes");
+      audio.setMuted(false);
+      audio.stopAll();
+      assert(audio.getState().activeToneCount === 0, "stopAll should clear active tone nodes");
+
+      audio.destroy();
+      assert(audio.getState().destroyed === true, "destroy should mark controller destroyed");
+      let threw = false;
+      try {
+        audio.playTone("rotate");
+      } catch (_error) {
+        threw = true;
+      }
+      assert(threw, "destroyed controller should reject playback");
+    } catch (error) {
+      failures.push(error?.message || String(error));
+    }
+
+    finish();
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Game audio regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>
