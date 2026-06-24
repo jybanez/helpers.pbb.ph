@@ -6,9 +6,9 @@ const UI_AUDIO_REV = "0.21.60";
 const UI_ICONS_REV = "0.21.84";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
-const UI_GAME_REV = "0.21.105";
+const UI_GAME_REV = "0.21.110";
 const UI_BUNDLE_REV = "0.21.101";
-const UI_GAME_BUNDLE_REV = "0.21.100";
+const UI_GAME_BUNDLE_REV = "0.21.105";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 const UI_GAME_BUNDLE_JS = `../../dist/helpers.game.bundle.min.js?v=${UI_GAME_BUNDLE_REV}`;
@@ -342,6 +342,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.game.objects": {
     js: `./ui.game.objects.js?v=${UI_GAME_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS],
+    deps: [],
+    export: null,
+  },
+  "ui.game.grid": {
+    js: `./ui.game.grid.js?v=${UI_GAME_REV}`,
+    css: [],
     deps: [],
     export: null,
   },
@@ -785,6 +791,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
   games: [
     "ui.game.core",
     "ui.game.objects",
+    "ui.game.grid",
     "ui.game.audio",
     "ui.game.state.chrome",
   ],

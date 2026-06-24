@@ -69,6 +69,18 @@ Exports:
 Related loader key:
 
 ```text
+ui.game.grid
+```
+
+Exports:
+
+- `createGridMaze(options)`
+- `createGridMover(options)`
+- `createGridPathfinder(options)`
+
+Related loader key:
+
+```text
 ui.game.state.chrome
 ```
 
@@ -418,6 +430,83 @@ const accepted = piece.getWallKickTests(1).find((test) => boardCanPlace(test.cel
 if (accepted) {
   piece.rotate(1, accepted);
 }
+```
+
+## Game Grid
+
+`ui.game.grid` is a non-rendering module for tile-based canvas games. It provides shared topology, cell movement, and pathfinding primitives without becoming a Pac-Man, maze, RPG, or board-game engine.
+
+Use `createGridMaze` for:
+
+- character maps and object matrices
+- normalized cell data
+- wall/path/enterable queries
+- named point extraction, such as spawns and targets
+- collectible metadata preservation
+- grid-to-pixel and pixel-to-grid conversion
+
+Use `createGridMover` for:
+
+- deterministic cell-aligned movement
+- `direction` and `queuedDirection`
+- cardinal movement
+- cells-per-second speed
+- optional `preTurnTolerance` in cells for touch-friendly early queued turns
+- scripted adjacent-cell movement through `moveTowardCell(row, column, options?)`, which stops after the explicit target by default
+- app-provided `canEnter(row, column, context?)`
+- app-provided `resolveExit(next, context?)` for wrap tunnels or portals
+
+Use `createGridPathfinder` for:
+
+- generic shortest paths over passable cells
+- cardinal BFS by default
+- optional diagonal neighbors when explicitly enabled
+- per-call `canEnter` or `getNeighbors` overrides
+
+The game still owns:
+
+- scoring, lives, level progression, and win/loss state
+- enemy personalities, target selection, chase/scatter/frightened rules, and difficulty
+- collectible meaning, rewards, respawns, and persistence
+- canvas art, animation, and sound timing
+
+Example:
+
+```js
+const maze = createGridMaze({
+  cellSize: 24,
+  map: [
+    "#####",
+    "#P..#",
+    "#.#G#",
+    "#o..#",
+    "#####",
+  ],
+  tiles: {
+    "#": { type: "wall", enterable: false },
+    ".": { type: "path", collectible: "pellet" },
+    "o": { type: "path", collectible: { type: "power", value: 5 } },
+    "P": { type: "path", point: "playerSpawn" },
+    "G": { type: "path", point: "goal" },
+  },
+});
+
+const player = createGridMover({
+  row: maze.points.playerSpawn.row,
+  column: maze.points.playerSpawn.column,
+  cellSize: maze.cellSize,
+  speed: 6,
+  preTurnTolerance: 0.18,
+  canEnter: (row, column) => maze.canEnter(row, column),
+});
+
+const pathfinder = createGridPathfinder({
+  rows: maze.rows,
+  columns: maze.columns,
+  canEnter: (row, column) => maze.canEnter(row, column),
+});
+
+const path = pathfinder.findPath(player.getState(), maze.points.goal);
 ```
 
 ## Virtual Joystick

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Grid Regression Test</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import {
+      createGridMaze,
+      createGridMover,
+      createGridPathfinder,
+    } from "../js/ui/ui.game.grid.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    try {
+      const maze = createGridMaze({
+        cellSize: 20,
+        map: [
+          "#####",
+          "#P..#",
+          "#.#G#",
+          "#o..#",
+          "#####",
+        ],
+        tiles: {
+          "#": { type: "wall", enterable: false },
+          ".": { type: "path", collectible: "pellet" },
+          "o": { type: "path", collectible: { type: "power", value: 5 } },
+          "P": { type: "path", point: "playerSpawn" },
+          "G": { type: "path", points: ["enemySpawn", "patrolPoint"] },
+        },
+      });
+
+      assert(maze.rows === 5 && maze.columns === 5, "maze should expose dimensions");
+      assert(maze.cellSize === 20, "maze should expose cell size");
+      assert(maze.isWall(0, 0), "wall tile should be a wall");
+      assert(!maze.isWall(1, 1), "spawn tile should not be a wall");
+      assert(maze.isPath(1, 2), "path tile should be a path");
+      assert(!maze.canEnter(2, 2), "canEnter should reject walls");
+      assert(maze.canEnter(3, 1), "canEnter should accept path collectibles");
+      assert(maze.gridToPixel(2, 3).x === 60 && maze.gridToPixel(2, 3).y === 40, "gridToPixel should return top-left pixel");
+      assert(maze.pixelToGrid(79, 41).row === 2 && maze.pixelToGrid(79, 41).column === 3, "pixelToGrid should floor to grid cell");
+      assert(maze.cellCenter(1, 1).x === 30 && maze.cellCenter(1, 1).y === 30, "cellCenter should return center pixel");
+      assert(maze.points.playerSpawn.row === 1 && maze.points.playerSpawn.column === 1, "point metadata should expose first named point");
+      assert(maze.getPoints("enemySpawn")[0].column === 3, "getPoints should expose point arrays");
+      assert(maze.getPoints("patrolPoint")[0].row === 2, "multiple point metadata names should be indexed");
+      assert(maze.collectibles.length === 6, "maze should expose collectible metadata");
+      assert(maze.collectibles.some((item) => item.type === "power" && item.value === 5), "object collectible metadata should be preserved");
+
+      let visited = 0;
+      maze.forEachCell((cell) => {
+        if (cell) {
+          visited += 1;
+        }
+      });
+      assert(visited === 25, "forEachCell should visit every normalized cell");
+      const objectMaze = createGridMaze({
+        cellSize: 10,
+        map: [
+          [{ type: "wall", enterable: false }, { type: "path", point: "entry" }],
+          [{ type: "path", collectible: "coin" }, { type: "path" }],
+        ],
+      });
+      assert(objectMaze.isWall(0, 0), "object matrix wall should normalize");
+      assert(objectMaze.points.entry.column === 1, "object matrix point should normalize");
+      assert(objectMaze.collectibles[0].type === "coin", "object matrix collectible should normalize");
+
+      const partialMover = createGridMover({
+        row: 1,
+        column: 1,
+        cellSize: 20,
+        speed: 2,
+        direction: "right",
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      partialMover.update(0.25);
+      assert(partialMover.getState().row === 1 && partialMover.getState().column === 1, "partial mover should not commit before reaching target cell");
+      assert(partialMover.getState().x === 40 && partialMover.getState().y === 30, "partial mover should advance by remaining pixel distance");
+      partialMover.update(0.25);
+      assert(partialMover.getState().row === 1 && partialMover.getState().column === 2, "partial mover should commit after cumulative updates reach target");
+      assert(partialMover.getState().x === 50 && partialMover.getState().y === 30, "partial mover should land exactly on target center");
+
+      const preTurnMover = createGridMover({
+        row: 1,
+        column: 1,
+        cellSize: 20,
+        speed: 2,
+        direction: "right",
+        preTurnTolerance: 0.3,
+        canEnter(row, column) {
+          return row >= 0 && column >= 0 && row < 4 && column < 4;
+        },
+      });
+      preTurnMover.update(0.4);
+      preTurnMover.queueDirection("down");
+      preTurnMover.update(0.01);
+      assert(preTurnMover.getState().row === 1 && preTurnMover.getState().column === 2, "pre-turn tolerance should commit to the turn cell before exact center");
+      assert(preTurnMover.getState().movingDirection === "down", "pre-turn tolerance should immediately apply the queued turn");
+      assert(preTurnMover.getState().target?.row === 2 && preTurnMover.getState().target?.column === 2, "pre-turn tolerance should target the queued direction cell");
+      assert(preTurnMover.getState().preTurnTolerance === 0.3, "mover state should expose pre-turn tolerance");
+
+      const scriptedMover = createGridMover({
+        row: 1,
+        column: 1,
+        cellSize: 20,
+        speed: 2,
+        direction: "left",
+        queuedDirection: "up",
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      assert(scriptedMover.moveTowardCell(1, 2), "moveTowardCell should accept an adjacent enterable cell");
+      assert(scriptedMover.getState().direction === "right", "moveTowardCell should force direction toward the target cell");
+      assert(scriptedMover.getState().queuedDirection === "", "moveTowardCell should clear queued direction");
+      assert(scriptedMover.getState().target?.row === 1 && scriptedMover.getState().target?.column === 2, "moveTowardCell should set the explicit target cell");
+      scriptedMover.update(1);
+      assert(scriptedMover.getState().row === 1 && scriptedMover.getState().column === 2, "moveTowardCell target should commit through update");
+      assert(scriptedMover.getState().direction === "", "moveTowardCell should stop after the explicit target by default");
+      assert(!scriptedMover.getState().target, "moveTowardCell should clear target after explicit stop");
+      assert(!scriptedMover.moveTowardCell(3, 3), "moveTowardCell should reject non-adjacent cells");
+      assert(!scriptedMover.moveTowardCell(2, 2), "moveTowardCell should reject blocked adjacent cells");
+
+      const continuousScriptedMover = createGridMover({
+        row: 1,
+        column: 1,
+        cellSize: 20,
+        speed: 2,
+        direction: "left",
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      assert(continuousScriptedMover.moveTowardCell(1, 2, { continueAfterTarget: true }), "moveTowardCell should allow opt-in continuous movement");
+      continuousScriptedMover.update(1);
+      assert(continuousScriptedMover.getState().row === 1 && continuousScriptedMover.getState().column === 3, "moveTowardCell continuous option should spend leftover movement time");
+
+      const mover = createGridMover({
+        row: 1,
+        column: 1,
+        cellSize: 20,
+        speed: 2,
+        direction: "right",
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      mover.update(0.5);
+      assert(mover.getState().row === 1 && mover.getState().column === 2, "mover should advance one cell at configured speed");
+      mover.queueDirection("down");
+      mover.update(0.5);
+      assert(mover.getState().row === 1 && mover.getState().column === 3, "queued blocked turn should keep current direction when possible");
+      mover.queueDirection("down");
+      mover.update(0.5);
+      assert(mover.getState().row === 2 && mover.getState().column === 3, "queued legal turn should apply at a cell center");
+      mover.setDirection("left");
+      mover.update(0.5);
+      assert(mover.getState().row === 2 && mover.getState().column === 3, "mover should reject movement into a wall");
+
+      const wrapMover = createGridMover({
+        row: 1,
+        column: 3,
+        cellSize: 20,
+        speed: 4,
+        direction: "right",
+        canEnter(row, column) {
+          return row === 1 && column >= 1 && column <= 3;
+        },
+        resolveExit(next) {
+          return next.row === 1 && next.column === 4 ? { row: 1, column: 1 } : next;
+        },
+      });
+      wrapMover.update(0.125);
+      assert(wrapMover.getState().row === 1 && wrapMover.getState().column === 3, "partial wrap movement should not commit before one grid step");
+      assert(wrapMover.getState().x === 80 && wrapMover.getState().y === 30, "partial wrap movement should travel toward the raw exit cell");
+      wrapMover.update(0.125);
+      assert(wrapMover.getState().row === 1 && wrapMover.getState().column === 1, "resolveExit should support wrap tunnels");
+      assert(wrapMover.getState().x === 30 && wrapMover.getState().y === 30, "resolveExit should land on the resolved wrapped cell");
+
+      assert(maze.setTile(1, 2, "#"), "setTile should update an in-bounds cell");
+      assert(maze.isWall(1, 2), "setTile should rebuild wall state");
+
+      const pathfinder = createGridPathfinder({
+        rows: maze.rows,
+        columns: maze.columns,
+        canEnter(row, column) {
+          return maze.canEnter(row, column);
+        },
+      });
+      const path = pathfinder.findPath({ row: 1, column: 1 }, { row: 3, column: 3 });
+      assert(path.length === 5, `pathfinder should find shortest cardinal path, got ${path.length}`);
+      assert(path[0].row === 1 && path[0].column === 1, "path should include start");
+      assert(path[path.length - 1].row === 3 && path[path.length - 1].column === 3, "path should include target");
+      const step = pathfinder.nextStep({ row: 1, column: 1 }, { row: 3, column: 3 });
+      assert(step.row === 2 && step.column === 1, "nextStep should return the next shortest-path cell");
+      const distances = pathfinder.distanceMap({ row: 3, column: 3 });
+      assert(distances.get("1:1") === 4, "distanceMap should expose BFS distances");
+      assert(pathfinder.findPath({ row: 0, column: 0 }, { row: 3, column: 3 }).length === 0, "pathfinder should reject blocked starts");
+      const noPath = createGridPathfinder({ rows: 2, columns: 2, canEnter: (row, column) => row === 0 && column === 0 });
+      assert(noPath.findPath({ row: 0, column: 0 }, { row: 1, column: 1 }).length === 0, "pathfinder should return empty path when unreachable");
+      const diagonal = createGridPathfinder({ rows: 2, columns: 2, diagonal: true });
+      assert(diagonal.findPath({ row: 0, column: 0 }, { row: 1, column: 1 }).length === 2, "diagonal option should allow diagonal paths");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Game grid regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>
