@@ -2879,6 +2879,12 @@ const closeIcon = createIcon("actions.close", {
 button.prepend(closeIcon);
 ```
 
+Action audio icons:
+
+- Use `actions.volume` for sound on / unmuted controls.
+- Use `actions.volume-muted` for muted controls.
+- `actions.sound-on` and `actions.sound-off` are aliases for teams that prefer sound-toggle wording.
+
 Related demos:
 
 - `demos/demo.icons.html`
