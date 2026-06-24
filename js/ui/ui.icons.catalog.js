@@ -63,6 +63,16 @@ export const ICON_DEFINITIONS = {
     path("M21 12a9 9 0 1 1-3-6.7"),
     path("M21 3v6h-6"),
   ]),
+  "actions.volume": icon("actions", [
+    path("M4 10v4h4l5 4V6l-5 4H4z"),
+    path("M16 9a4 4 0 0 1 0 6"),
+    path("M18.5 6.5a7 7 0 0 1 0 11"),
+  ]),
+  "actions.volume-muted": icon("actions", [
+    path("M4 10v4h4l5 4V6l-5 4H4z"),
+    line(16, 9, 21, 14),
+    line(21, 9, 16, 14),
+  ]),
   "actions.rotate-left": icon("actions", [
     path("M4 12a8 8 0 1 0 2.3-5.7"),
     path("M4 5v5h5"),
@@ -357,6 +367,9 @@ export const ICON_DEFINITIONS = {
 };
 
 Object.assign(ICON_DEFINITIONS, {
+  "actions.sound-on": alias("actions", "actions.volume"),
+  "actions.sound-off": alias("actions", "actions.volume-muted"),
+
   "sitrep.report": alias("sitrep", "assets.document"),
   "sitrep.summary": alias("sitrep", "assets.clipboard"),
   "sitrep.situation": alias("sitrep", "status.info"),
