@@ -348,7 +348,12 @@ export function createNavbar(container, data = {}, options = {}) {
         list = createElement("div", { className: "ui-navbar-items" });
       }
       const btn = createElement("button", {
-        className: `ui-navbar-item${String(item?.id) === String(currentOptions.activeId) ? " is-active" : ""}`,
+        className: [
+          "ui-button",
+          "ui-navbar-item",
+          String(item?.id) === String(currentOptions.activeId) ? "is-active" : "",
+          item?.className || "",
+        ].filter(Boolean).join(" "),
         attrs: {
           type: "button",
           ...(item?.disabled ? { disabled: "disabled" } : {}),
@@ -382,7 +387,11 @@ export function createNavbar(container, data = {}, options = {}) {
         actions = createElement("div", { className: "ui-navbar-actions" });
       }
       const btn = createElement("button", {
-        className: "ui-button ui-navbar-action",
+        className: [
+          "ui-button",
+          "ui-navbar-action",
+          action?.className || "",
+        ].filter(Boolean).join(" "),
         attrs: { type: "button", ...(action?.disabled ? { disabled: "disabled" } : {}) },
       });
       appendIconLabel(btn, action);
