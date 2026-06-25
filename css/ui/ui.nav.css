@@ -140,6 +140,15 @@
   background: #12213a;
 }
 
+.ui-navbar-item.ui-button-borderless,
+.ui-navbar-item.ui-button-borderless:hover,
+.ui-navbar-item.ui-button-borderless:focus-visible,
+.ui-navbar-item.ui-button-borderless.is-active {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
 .ui-navbar-actions {
   display: flex;
   gap: 8px;

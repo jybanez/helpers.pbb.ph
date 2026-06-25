@@ -69,6 +69,7 @@
           status.textContent = "Syncing 3 calls";
           return status;
         },
+        activeId: "dashboard",
         items: [
           { id: "dashboard", label: "Dashboard", className: "ui-button-borderless test-dashboard-nav" },
           {
@@ -127,6 +128,9 @@
       assert(navButtons[0].classList.contains("ui-button"), "navbar items should include the shared ui-button base class");
       assert(navButtons[0].classList.contains("ui-button-borderless"), "navbar items should accept shared button utility classes through item.className");
       assert(navButtons[0].classList.contains("test-dashboard-nav"), "navbar items should preserve app-provided className");
+      assert(navButtons[0].classList.contains("is-active"), "borderless navbar item test should cover the active state");
+      assert(isTransparentColor(getComputedStyle(navButtons[0]).borderTopColor), "borderless navbar items should keep a transparent border color");
+      assert(isTransparentColor(getComputedStyle(navButtons[0]).backgroundColor), "borderless active navbar items should keep a transparent background");
 
       navButtons[0].click();
       assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "plain primary items should still navigate");
@@ -305,6 +309,11 @@
       if (!condition) {
         throw new Error(message);
       }
+    }
+
+    function isTransparentColor(value) {
+      const color = String(value || "").replace(/\s+/g, "").toLowerCase();
+      return color === "transparent" || color === "rgba(0,0,0,0)";
     }
 
     function hasCssRule(selectorText) {
