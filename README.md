@@ -1354,6 +1354,11 @@ Methods:
   - The status region renders once, stays visible beside the mobile hamburger, and is not copied into the hamburger menu.
 - Mobile-collapse helpers:
   - `mobileCollapse` (default `true`) keeps the brand visible on narrow screens and moves the rest into a hamburger menu.
+  - `mobileLayout` (default `"auto"`) controls the narrow-screen layout:
+    - `"auto"` preserves legacy behavior: `mobileCollapse: true` resolves to `"collapse"` and `mobileCollapse: false` resolves to `"stack"`.
+    - `"collapse"` keeps the brand/status visible and moves content, items, and actions into the hamburger menu.
+    - `"stack"` keeps items/actions inline but uses the existing stacked mobile rows.
+    - `"scroll"` keeps the navbar in one row with horizontal overflow for compact app chrome.
   - `contentStartMobile`
   - `contentCenterMobile`
   - `contentEndMobile`
@@ -1512,7 +1517,7 @@ createNavbar(document.getElementById("navbarHost"), {}, {
   brandText: "Hotline UI",
   brandSubtitle: "Build app-DWv_LvMM",
   brandMedia: "<svg viewBox='0 0 24 24'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z'/></svg>",
-  mobileCollapse: true,
+  mobileLayout: "collapse",
   statusContentLabel: "System status",
   statusContent() {
     const status = document.createElement("span");
