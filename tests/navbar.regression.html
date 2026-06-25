@@ -70,7 +70,7 @@
           return status;
         },
         items: [
-          { id: "dashboard", label: "Dashboard" },
+          { id: "dashboard", label: "Dashboard", className: "ui-button-borderless test-dashboard-nav" },
           {
             id: "apps",
             label: "Apps",
@@ -84,6 +84,7 @@
           {
             id: "profile",
             label: "Profile",
+            className: "ui-button-borderless test-profile-action",
             menuItems: [
               { id: "logout", label: "Logout" },
             ],
@@ -123,6 +124,9 @@
 
       const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
       assert(navButtons.length === 2, "navbar should render 2 primary items");
+      assert(navButtons[0].classList.contains("ui-button"), "navbar items should include the shared ui-button base class");
+      assert(navButtons[0].classList.contains("ui-button-borderless"), "navbar items should accept shared button utility classes through item.className");
+      assert(navButtons[0].classList.contains("test-dashboard-nav"), "navbar items should preserve app-provided className");
 
       navButtons[0].click();
       assert(events.some((event) => event.type === "navigate" && event.id === "dashboard"), "plain primary items should still navigate");
@@ -140,6 +144,8 @@
       assert(events.filter((event) => event.type === "navigate" && event.id === "apps").length === 0, "menu-backed primary item should not also emit onNavigate");
 
       const actionButton = host.querySelector(".ui-navbar-action");
+      assert(actionButton.classList.contains("ui-button-borderless"), "navbar actions should accept shared button utility classes through action.className");
+      assert(actionButton.classList.contains("test-profile-action"), "navbar actions should preserve app-provided className");
       actionButton.click();
       await wait(50);
       const logoutMenuButton = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Logout"));
