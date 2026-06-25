@@ -1,6 +1,8 @@
 pbb.ph.crt
 pbb.ph.key
-.codex/
+.codex/*
+!.codex/skills/
+!.codex/skills/**
 tmp-*
 config/agent-chat.local.json
 pbb-chat-token.local.json
