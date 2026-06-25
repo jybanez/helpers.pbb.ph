@@ -20,6 +20,7 @@ const DEFAULT_OPTIONS = {
   statusContentLabel: "Status",
   sticky: false,
   mobileCollapse: true,
+  mobileLayout: "auto",
   activeId: "",
   iconPosition: "start", // start | end
   iconOnly: false,
@@ -38,6 +39,7 @@ const MOBILE_TOGGLE_ICON = `
 `;
 
 const MOBILE_COLLAPSE_QUERY = "(max-width: 720px)";
+const MOBILE_LAYOUTS = new Set(["auto", "collapse", "stack", "scroll"]);
 
 export function createNavbar(container, data = {}, options = {}) {
   const events = createEventBag();
@@ -298,10 +300,12 @@ export function createNavbar(container, data = {}, options = {}) {
     events.clear();
     clearNode(container);
 
+    const mobileLayout = resolveMobileLayout();
     const root = createElement("nav", {
       className: `ui-navbar ${currentOptions.className || ""}`.trim(),
       attrs: { role: "navigation", "aria-label": currentOptions.ariaLabel },
     });
+    root.classList.add(`is-mobile-layout-${mobileLayout}`);
     if (currentOptions.sticky) {
       root.classList.add("is-sticky");
     }
@@ -416,7 +420,7 @@ export function createNavbar(container, data = {}, options = {}) {
     const statusContent = renderStatusContent();
 
     let mobileToggle = null;
-    const mobileMenuItems = Boolean(currentOptions.mobileCollapse) ? buildMobileMenuItems() : [];
+    const mobileMenuItems = mobileLayout === "collapse" ? buildMobileMenuItems() : [];
     if (mobileMenuItems.length) {
       mobileToggle = createElement("button", {
         className: "ui-button ui-navbar-mobile-toggle",
@@ -535,7 +539,16 @@ export function createNavbar(container, data = {}, options = {}) {
   function getState() {
     return {
       options: { ...currentOptions },
+      mobileLayout: resolveMobileLayout(),
     };
+  }
+
+  function resolveMobileLayout() {
+    const requested = String(currentOptions.mobileLayout || "auto").trim().toLowerCase();
+    if (requested !== "auto" && MOBILE_LAYOUTS.has(requested)) {
+      return requested;
+    }
+    return Boolean(currentOptions.mobileCollapse) ? "collapse" : "stack";
   }
 
   render();

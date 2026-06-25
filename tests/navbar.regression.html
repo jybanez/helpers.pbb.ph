@@ -240,6 +240,21 @@
       navbar.update({}, {});
       await wait(20);
 
+      navbar.update({}, { mobileCollapse: false, mobileLayout: "auto" });
+      await wait(10);
+      let root = host.querySelector(".ui-navbar");
+      assert(navbar.getState().mobileLayout === "stack", "mobileCollapse:false should retain the legacy stacked mobile layout by default");
+      assert(root?.classList.contains("is-mobile-layout-stack"), "legacy non-collapsing navbar should expose the stack layout class");
+      assert(!host.querySelector(".ui-navbar-mobile-toggle"), "stack mobile layout should not render a hamburger toggle");
+
+      navbar.update({}, { mobileLayout: "scroll" });
+      await wait(10);
+      root = host.querySelector(".ui-navbar");
+      assert(navbar.getState().mobileLayout === "scroll", "explicit mobileLayout:scroll should resolve to the scroll layout");
+      assert(root?.classList.contains("is-mobile-layout-scroll"), "scroll mobile layout should expose the scroll layout class");
+      assert(!host.querySelector(".ui-navbar-mobile-toggle"), "scroll mobile layout should not render a hamburger toggle");
+      assert(hasCssRule(".ui-navbar.is-mobile-layout-scroll"), "scroll mobile layout should have helper-owned CSS");
+
       navbar.update({}, { brandSubtitle: "", contentCenter: null });
       await wait(10);
       assert(!host.querySelector(".ui-navbar-brand-subtitle"), "brand subtitle should not render after clearing");
@@ -252,7 +267,7 @@
       assert(!host.querySelector(".ui-navbar-actions"), "actions wrapper should not render when there are no actions");
       assert(!host.querySelector(".ui-navbar-end"), "end region should collapse when it has no end content or actions");
       assert(!host.querySelector(".ui-navbar-status"), "persistent status content should clear after update");
-      const root = host.querySelector(".ui-navbar");
+      root = host.querySelector(".ui-navbar");
       assert(root && !root.classList.contains("has-items"), "root should drop has-items class when items are cleared");
       assert(root && !root.classList.contains("has-actions"), "root should drop has-actions class when actions are cleared");
       assert(root && !root.classList.contains("has-status"), "root should drop has-status class when status content is cleared");
@@ -284,6 +299,25 @@
       if (!condition) {
         throw new Error(message);
       }
+    }
+
+    function hasCssRule(selectorText) {
+      return Array.from(document.styleSheets).some((sheet) => {
+        try {
+          return ruleListHasSelector(sheet.cssRules, selectorText);
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    function ruleListHasSelector(rules, selectorText) {
+      return Array.from(rules || []).some((rule) => {
+        if (String(rule.selectorText || "").includes(selectorText)) {
+          return true;
+        }
+        return ruleListHasSelector(rule.cssRules, selectorText);
+      });
     }
 
     function finish() {

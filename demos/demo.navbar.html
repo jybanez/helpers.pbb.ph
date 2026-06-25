@@ -38,8 +38,8 @@
         "Do not use it for side navigation or breadcrumbs; use the dedicated helpers for those surfaces.",
         "Do not push page-specific layout or content rendering into the navbar helper."
       ],
-      description: "The navbar helper owns brand, primary items, right-side actions, a single persistent status region, and additive slots. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, persistent non-menu content through <code>statusContent</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can keep the brand and status visible while collapsing content, items, and actions into a viewport-aware hamburger menu whose mobile ordering is content first, then items, then actions, with menu-backed entries grouped under their parent label.",
-      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileCollapse: true,\n  statusContentLabel: \"System status\",\n  statusContent: () => {\n    const status = document.createElement(\"span\");\n    status.className = \"demo-nav-status\";\n    status.innerHTML = '<span class=\"demo-nav-status-dot\"></span>Syncing 3 calls';\n    return status;\n  },\n  contentStart: \"Operations\",\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  contentEnd: \"Region 7\",\n  contentCenterMobile: { id: \"status\", label: \"Realtime Connected\", disabled: true },\n  contentEndMobile: { id: \"region\", label: \"Region 7\", disabled: true },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
+      description: "The navbar helper owns brand, primary items, right-side actions, a single persistent status region, and additive slots. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, persistent non-menu content through <code>statusContent</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can collapse content, items, and actions into a viewport-aware hamburger menu, preserve legacy stacked rows, or keep compact app chrome in one horizontally scrollable row through <code>mobileLayout</code>.",
+      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileLayout: \"collapse\",\n  statusContentLabel: \"System status\",\n  statusContent: () => {\n    const status = document.createElement(\"span\");\n    status.className = \"demo-nav-status\";\n    status.innerHTML = '<span class=\"demo-nav-status-dot\"></span>Syncing 3 calls';\n    return status;\n  },\n  contentStart: \"Operations\",\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  contentEnd: \"Region 7\",\n  contentCenterMobile: { id: \"status\", label: \"Realtime Connected\", disabled: true },\n  contentEndMobile: { id: \"region\", label: \"Region 7\", disabled: true },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
       constructor: [
         { factory: "<code>createNavbar(container, data, options)</code>", arguments: "target container, unused data object, navbar options", returns: "Navbar instance" }
       ],
@@ -55,6 +55,7 @@
         { option: "<code>statusContentLabel</code>", default: "<code>\"Status\"</code>", description: "Accessible group label for the persistent status content." },
         { option: "<code>contentStart</code>, <code>contentCenter</code>, <code>contentEnd</code>", default: "<code>null</code>", description: "Additive navbar slots for custom content. Each accepts text, DOM nodes, arrays, or a render callback." },
         { option: "<code>mobileCollapse</code>", default: "<code>true</code>", description: "On narrow screens, keep the brand visible and flatten content, items, and actions into a hamburger menu. The hamburger path activates only inside the mobile breakpoint and is suppressed again on desktop widths.", values: ["true", "false"] },
+        { option: "<code>mobileLayout</code>", default: "<code>\"auto\"</code>", description: "Narrow-screen layout mode. <code>\"auto\"</code> preserves legacy <code>mobileCollapse</code> behavior, <code>\"collapse\"</code> forces the hamburger path, <code>\"stack\"</code> keeps visible stacked rows, and <code>\"scroll\"</code> keeps the navbar in one horizontally scrollable row.", values: ["auto", "collapse", "stack", "scroll"] },
         { option: "<code>contentStartMobile</code>, <code>contentCenterMobile</code>, <code>contentEndMobile</code>", default: "<code>null</code>", description: "Optional structured hamburger-menu entries for the slot regions. When omitted, the helper falls back to the text content of the matching slot before listing items and actions. Mobile ordering is content entries first, then items, then actions, and menu-backed entries stay grouped under their parent label." },
         { option: "<code>sticky</code>", default: "<code>false</code>", description: "Adds the shared sticky class to the bar.", values: ["true", "false"] },
         { option: "<code>activeId</code>", default: "<code>\"\"</code>", description: "Marks the active primary item." },
@@ -105,12 +106,13 @@
         <button id="toggleActionIconsBtn" class="ui-button ui-button-ghost" type="button">Toggle Icon-Only Actions</button>
         <button id="toggleSubtitleBtn" class="ui-button ui-button-ghost" type="button">Toggle Brand Subtitle</button>
         <button id="toggleCustomContentBtn" class="ui-button ui-button-ghost" type="button">Toggle Custom Content</button>
+        <button id="cycleMobileLayoutBtn" class="ui-button ui-button-ghost" type="button">Mobile Layout: collapse</button>
       </div>
       <pre>const navbar = createNavbar(host, {}, {
   brandText: "Hotline UI",
   brandSubtitle: "Build app-DWv_LvMM",
   brandMedia: iconShield,
-  mobileCollapse: true,
+  mobileLayout: "collapse",
   statusContentLabel: "System status",
   statusContent: () => {
     const status = document.createElement("span");
@@ -184,6 +186,7 @@
     let actionIconOnly = false;
     let brandSubtitle = "Build app-DWv_LvMM";
     let showCustomContent = true;
+    let mobileLayout = "collapse";
     const items = [
       { id: "dashboard", label: "Dashboard", icon: iconGrid },
       {
@@ -257,6 +260,7 @@
         },
       ],
       sticky,
+      mobileLayout,
       onNavigate(item) {
         if (item && item.id && item.id !== "brand") {
           activeId = item.id;
@@ -294,6 +298,7 @@
         activeId,
         items,
         sticky,
+        mobileLayout,
         actions: [
           { id: "help", label: "Help", icon: iconHelp, iconOnly: actionIconOnly },
           {
@@ -340,6 +345,13 @@
       showCustomContent = !showCustomContent;
       sync();
       writeLog("navbar.update", { showCustomContent });
+    });
+    document.getElementById("cycleMobileLayoutBtn").addEventListener("click", () => {
+      const layouts = ["collapse", "stack", "scroll"];
+      mobileLayout = layouts[(layouts.indexOf(mobileLayout) + 1) % layouts.length];
+      document.getElementById("cycleMobileLayoutBtn").textContent = `Mobile Layout: ${mobileLayout}`;
+      sync();
+      writeLog("navbar.update", { mobileLayout });
     });
     document.getElementById("themeToggle").addEventListener("click", () => {
       const next = page.dataset.theme === "dark" ? "light" : "dark";
