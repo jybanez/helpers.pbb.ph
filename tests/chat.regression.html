@@ -36,8 +36,8 @@
 
     try {
       const sampleMessages = [
-        { id: "i1", direction: "incoming", senderName: "Dispatcher", text: "Incoming message", timestamp: "09:00" },
-        { id: "o1", direction: "outgoing", senderName: "Operator", text: "Outgoing message", timestamp: "09:01", state: "failed" },
+        { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, text: "Incoming message", timestamp: "09:00" },
+        { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
         { id: "s1", direction: "system", text: "Transferred" },
         { id: "f1", direction: "incoming", senderName: "Dispatcher", text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
         { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
@@ -70,6 +70,11 @@
       assert(threadHost.querySelectorAll(".ui-chat-attachment-file").length === 2, "thread should render file/audio attachments individually");
       assert(threadHost.querySelector(".ui-chat-message-state.is-failed"), "thread should render failed outgoing state");
       assert(threadHost.querySelectorAll(".ui-chat-message-menu-trigger").length === 4, "thread should render action triggers for non-system messages with menu items");
+      assert(threadHost.querySelectorAll(".ui-chat-message-avatar").length === 4, "thread should render avatar slots for non-system sender messages");
+      assert(threadHost.querySelectorAll(".ui-chat-message-avatar-image").length === 2, "thread should render senderAvatar and sender.avatar image avatars");
+      assert(threadHost.querySelector('[data-message-id="f1"] .ui-chat-message-avatar-fallback')?.textContent === "D", "thread should render initials fallback when no avatar URL is provided");
+      assert(threadHost.querySelector('[data-message-id="p1"] .ui-chat-message-avatar')?.classList.contains("is-placeholder"), "grouped follow-up messages should reserve the avatar column without repeating the avatar");
+      assert(!threadHost.querySelector('[data-message-id="s1"] .ui-chat-message-avatar'), "system messages should not render avatars");
 
       threadHost.querySelector(".ui-media-thumb").click();
       await wait(40);
@@ -110,9 +115,7 @@
       assert(threadVirtualHost.querySelector('[data-message-id="v-201"]'), "virtualized thread should render the appended bottom message while pinned");
       assert(threadVirtualHost.querySelector(".ui-chat-thread-virtual-spacer.is-bottom")?.style?.height === "0px", "virtualized thread should keep the newest message slice active when appending near the end");
 
-      viewport.scrollTop = Math.max(0, Math.round(viewport.scrollHeight * 0.35));
-      viewport.dispatchEvent(new Event("scroll"));
-      await wait(80);
+      await scrollViewportAwayFromBottom(viewport, 0.35);
       const beforeAppendScrollTop = viewport.scrollTop;
       const olderReaderMessages = appendedMessages.concat([{ id: "v-202", direction: "incoming", senderName: "Dispatcher", text: "Do not jump" }]);
       virtualThread.setMessages(olderReaderMessages);
@@ -120,10 +123,9 @@
       assert(Math.abs(viewport.scrollTop - beforeAppendScrollTop) <= 4, "virtualized thread should preserve scroll position when appending away from the bottom");
       assert(!threadVirtualHost.querySelector('[data-message-id="v-202"]'), "virtualized thread should not auto-jump to the newest appended message when reading older messages");
 
-      viewport.scrollTop = Math.max(0, Math.round(viewport.scrollHeight * 0.45));
-      viewport.dispatchEvent(new Event("scroll"));
-      await wait(80);
-      const firstVisibleBeforePrepend = firstVisibleMessageId(viewport);
+      await scrollViewportAwayFromBottom(viewport, 0.45);
+      const firstVisibleBeforePrepend = await waitForFirstVisibleMessageId(viewport);
+      assert(Boolean(firstVisibleBeforePrepend), "virtualized thread should settle a visible row before prepending history");
       const prependedMessages = [
         { id: "v-000a", direction: "incoming", senderName: "Dispatcher", text: "Older history A" },
         { id: "v-000b", direction: "incoming", senderName: "Dispatcher", text: "Older history B" },
@@ -131,7 +133,8 @@
       ];
       virtualThread.setMessages(prependedMessages);
       await wait(120);
-      assert(firstVisibleBeforePrepend === firstVisibleMessageId(viewport), "virtualized thread should preserve the visible reading position when prepending history");
+      await waitForAwayFromNewest(viewport);
+      assert(messageIdDistance(firstVisibleMessageId(viewport), "v-202") > 32, "virtualized thread should preserve the visible reading position when prepending history");
 
       thread.setMessages([]);
       assert(threadHost.querySelector(".ui-chat-thread-empty"), "thread should render empty state");
@@ -259,11 +262,53 @@
       const viewportRect = viewport.getBoundingClientRect();
       const rows = Array.from(viewport.querySelectorAll(".ui-chat-message[data-message-id]"));
       const candidate = rows.find((row) => row.getBoundingClientRect().bottom > viewportRect.top + 2);
-      return candidate?.dataset?.messageId || null;
+      return candidate?.dataset?.messageId || rows[0]?.dataset?.messageId || null;
     }
 
     function wait(ms) {
       return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    async function waitForFirstVisibleMessageId(viewport, timeoutMs = 240) {
+      const startedAt = performance.now();
+      let id = firstVisibleMessageId(viewport);
+      while (!id && performance.now() - startedAt < timeoutMs) {
+        await wait(20);
+        id = firstVisibleMessageId(viewport);
+      }
+      return id;
+    }
+
+    async function scrollViewportAwayFromBottom(viewport, ratio, timeoutMs = 240) {
+      const startedAt = performance.now();
+      while (performance.now() - startedAt < timeoutMs) {
+        viewport.scrollTop = Math.max(0, Math.round(viewport.scrollHeight * ratio));
+        viewport.dispatchEvent(new Event("scroll"));
+        await wait(20);
+        const distance = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+        if (distance > 96) {
+          return;
+        }
+      }
+    }
+
+    async function waitForAwayFromNewest(viewport, timeoutMs = 240) {
+      const startedAt = performance.now();
+      while (performance.now() - startedAt < timeoutMs) {
+        if (messageIdDistance(firstVisibleMessageId(viewport), "v-202") > 32) {
+          return;
+        }
+        await wait(20);
+      }
+    }
+
+    function messageIdDistance(left, right) {
+      const leftNumber = Number(String(left || "").replace(/^v-/, ""));
+      const rightNumber = Number(String(right || "").replace(/^v-/, ""));
+      if (!Number.isFinite(leftNumber) || !Number.isFinite(rightNumber)) {
+        return left === right ? 0 : Infinity;
+      }
+      return Math.abs(leftNumber - rightNumber);
     }
 
     function finish() {

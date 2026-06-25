@@ -33,7 +33,7 @@
         "Do not use it as a conversation list; it is a single-thread surface."
       ],
       description: "The thread helper owns message presentation only. Apps still own transport, upload orchestration, and conversation state beyond the provided message array.",
-      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: sampleMessages,\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
+      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    text: 'Team is en route.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
       constructor: [
         { factory: "<code>createChatThread(container, data, options)</code>", arguments: "target container, thread data, thread options", returns: "Chat thread instance" }
       ],
@@ -55,6 +55,10 @@
         { option: "<code>virtualThreshold</code>", default: '<code>120</code>', description: "Minimum message count before virtualization activates." },
         { option: "<code>virtualOverscan</code>", default: '<code>10</code>', description: "Extra messages rendered above and below the visible window." },
         { option: "<code>bottomAnchorThreshold</code>", default: '<code>48</code>', description: "Pixel threshold used to decide whether the thread is pinned near the latest message." }
+      ],
+      data: [
+        { property: "<code>message.senderAvatar</code>", description: "Optional sender avatar image URL. When omitted, Helper falls back to initials from <code>senderName</code>." },
+        { property: "<code>message.sender.avatar</code>", description: "Convenience alias for apps that keep sender metadata grouped under <code>sender</code>." }
       ],
       propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly. When virtualization is enabled, <code>getState()</code> also reports whether the virtualized path is active.",
       events: [
@@ -100,11 +104,14 @@
     const inlinePreviewA = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#15233d\"/><circle cx=\"58\" cy=\"56\" r=\"18\" fill=\"#8fd5ff\"/><path d=\"M24 138l42-42 28 28 26-34 36 48H24Z\" fill=\"#4f74b9\"/></svg>');
     const inlinePreviewB = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#101c31\"/><rect x=\"28\" y=\"34\" width=\"124\" height=\"76\" rx=\"10\" fill=\"#7198e5\" opacity=\"0.45\"/><path d=\"M30 142l34-28 24 18 28-32 34 42H30Z\" fill=\"#8fd5ff\" opacity=\"0.9\"/></svg>');
     const inlinePreviewC = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"16\" fill=\"#12213a\"/><rect x=\"24\" y=\"26\" width=\"132\" height=\"54\" rx=\"12\" fill=\"#4f74b9\" opacity=\"0.55\"/><circle cx=\"48\" cy=\"122\" r=\"16\" fill=\"#8fd5ff\"/><path d=\"M22 146l34-24 22 18 26-30 54 36H22Z\" fill=\"#7198e5\"/></svg>');
+    const avatarJane = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\"><rect width=\"96\" height=\"96\" rx=\"48\" fill=\"#23416c\"/><circle cx=\"48\" cy=\"34\" r=\"18\" fill=\"#d7e0f4\"/><path d=\"M18 88c7-24 24-36 30-36s23 12 30 36\" fill=\"#8fd5ff\"/></svg>');
+    const avatarOperator = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\"><rect width=\"96\" height=\"96\" rx=\"48\" fill=\"#382a58\"/><circle cx=\"48\" cy=\"34\" r=\"18\" fill=\"#d7e0f4\"/><path d=\"M18 88c7-24 24-36 30-36s23 12 30 36\" fill=\"#c4b5fd\"/></svg>');
     const sampleMessages = [
       {
         id: "m1",
         direction: "incoming",
         senderName: "Dispatcher Jane",
+        senderAvatar: avatarJane,
         text: "Team is en route to Lahug. Please keep the line open.",
         timestamp: "09:18",
       },
@@ -112,6 +119,7 @@
         id: "m2",
         direction: "incoming",
         senderName: "Dispatcher Jane",
+        senderAvatar: avatarJane,
         text: "Mixed media bundle from the site attached below.",
         timestamp: "09:19",
         attachments: [
@@ -126,6 +134,7 @@
         id: "m2b",
         direction: "incoming",
         senderName: "Dispatcher Jane",
+        senderAvatar: avatarJane,
         text: "Full mixed attachment packet for field review attached here.",
         timestamp: "09:20",
         attachments: [
@@ -148,6 +157,7 @@
         id: "m4",
         direction: "outgoing",
         senderName: "Operator One",
+        senderAvatar: avatarOperator,
         text: "Copy. Sharing the route packet and supporting documents now.",
         timestamp: "09:22",
         state: "delivered",
@@ -161,6 +171,7 @@
         id: "m5",
         direction: "outgoing",
         senderName: "Operator One",
+        senderAvatar: avatarOperator,
         text: "Last update failed to sync to the relay hub.",
         timestamp: "09:23",
         state: "failed",
@@ -179,6 +190,7 @@
         id: `vt-${messageNumber}`,
         direction: messageNumber % 5 === 0 ? "outgoing" : "incoming",
         senderName: messageNumber % 5 === 0 ? "Operator One" : "Dispatcher Jane",
+        senderAvatar: messageNumber % 5 === 0 ? avatarOperator : avatarJane,
         text: `Virtualized history message ${messageNumber}. Keep the route channel open and continue monitoring updates.`,
         timestamp: `10:${String(messageNumber % 60).padStart(2, "0")}`,
         state: messageNumber % 5 === 0 ? "delivered" : undefined,
