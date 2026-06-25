@@ -63,6 +63,22 @@ if (typeof icons?.createIcon !== "function") {
   throw new Error("Bundle-backed ui.icons did not expose createIcon().");
 }
 
+if (typeof icons?.listIcons !== "function") {
+  throw new Error("Bundle-backed ui.icons did not expose listIcons().");
+}
+
+const bundledIconNames = icons.listIcons();
+[
+  "actions.volume",
+  "actions.volume-muted",
+  "actions.sound-on",
+  "actions.sound-off",
+].forEach((iconName) => {
+  if (!bundledIconNames.includes(iconName)) {
+    throw new Error(`Bundle-backed ui.icons is missing ${iconName}.`);
+  }
+});
+
 if (typeof createDrawer !== "function") {
   throw new Error("Bundle-backed ui.drawer did not resolve to a factory function.");
 }
