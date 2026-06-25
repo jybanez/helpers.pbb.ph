@@ -174,15 +174,18 @@
 
       const viewIcon = createIcon("actions.view");
       const hideIcon = createIcon("actions.hide");
+      const settingsIcon = createIcon("actions.settings");
       const volumeIcon = createIcon("actions.volume");
       const mutedIcon = createIcon("actions.volume-muted");
       const soundOnIcon = createIcon("actions.sound-on");
       const soundOffIcon = createIcon("actions.sound-off");
       const rotateLeftIcon = createIcon("actions.rotate-left");
       const rotateRightIcon = createIcon("actions.rotate-right");
-      host.append(viewIcon, hideIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon);
+      host.append(viewIcon, hideIcon, settingsIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
+      assert(settingsIcon.querySelector('path[d*="h-.44"]'), "actions.settings should render a lobed gear outline path");
+      assert(!settingsIcon.querySelector('circle[r="7"]'), "actions.settings should not render the old bearing-style outer circle");
       assert(volumeIcon.querySelector('path[d="M4 10v4h4l5 4V6l-5 4H4z"]'), "actions.volume should render a speaker path");
       assert(volumeIcon.querySelector('path[d="M16 9a4 4 0 0 1 0 6"]'), "actions.volume should render a sound wave path");
       assert(mutedIcon.querySelector('line[x1="16"][y1="9"][x2="21"][y2="14"]'), "actions.volume-muted should render a mute slash");

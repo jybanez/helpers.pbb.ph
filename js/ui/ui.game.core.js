@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createIcon } from "./ui.icons.js?v=0.21.85";
+import { createIcon } from "./ui.icons.js?v=0.21.86";
 
 const DEFAULT_SESSION_OPTIONS = {
   title: "Game",
