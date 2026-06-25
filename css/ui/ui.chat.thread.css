@@ -117,6 +117,11 @@
   background: var(--ui-bg-soft, #101c31);
 }
 
+.ui-chat-message-bubble.has-menu {
+  min-width: 72px;
+  padding-right: 48px;
+}
+
 .ui-chat-message-menu-trigger {
   position: absolute;
   top: 8px;

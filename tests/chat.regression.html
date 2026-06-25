@@ -96,6 +96,29 @@
       assert(events.some((event) => event.type === "message-menu-select" && event.itemId === "copy"), "thread should emit message menu selection callback");
       assert(events.some((event) => event.type === "reply-preview-open" && event.messageId === "o1" && event.replyId === "i1"), "thread should emit reply preview open callback");
 
+      const shortThreadHost = document.createElement("div");
+      threadHost.parentNode.appendChild(shortThreadHost);
+      const shortThread = createChatThread(shortThreadHost, {
+        messages: [
+          { id: "short-1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, text: "abc", timestamp: "09:04" },
+          { id: "short-2", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, text: "aaa", timestamp: "09:05" },
+        ],
+      }, {
+        getMessageMenuItems() {
+          return [{ id: "copy", label: "Copy text" }];
+        },
+      });
+      const groupedShortRow = shortThreadHost.querySelector('[data-message-id="short-2"]');
+      const groupedShortBubble = groupedShortRow?.querySelector(".ui-chat-message-bubble");
+      const groupedShortText = groupedShortRow?.querySelector(".ui-chat-message-text");
+      const groupedShortMenu = groupedShortRow?.querySelector(".ui-chat-message-menu-trigger");
+      assert(groupedShortRow?.classList.contains("is-grouped"), "short follow-up message should be grouped");
+      assert(groupedShortRow?.querySelector(".ui-chat-message-avatar")?.classList.contains("is-placeholder"), "grouped short message should reserve the avatar column");
+      assert(groupedShortBubble?.classList.contains("has-menu"), "short grouped bubble should expose menu spacing state");
+      assert(getTextRight(groupedShortText) + 4 <= groupedShortMenu.getBoundingClientRect().left, "short grouped text should not overlap the menu trigger");
+      shortThread.destroy();
+      shortThreadHost.remove();
+
       const longMessages = Array.from({ length: 200 }, (_, index) => ({
         id: `v-${index + 1}`,
         direction: index % 5 === 0 ? "outgoing" : "incoming",
@@ -265,6 +288,17 @@
       if (!condition) {
         throw new Error(message);
       }
+    }
+
+    function getTextRight(node) {
+      if (!node?.firstChild) {
+        return node?.getBoundingClientRect?.().right || 0;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const rect = range.getBoundingClientRect();
+      range.detach();
+      return rect.right;
     }
 
     function firstVisibleMessageId(viewport) {

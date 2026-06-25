@@ -154,8 +154,10 @@ export function createChatThread(container, data = {}, options = {}) {
     }
 
     const avatar = hasSenderAvatar ? createMessageAvatar(message, grouped) : null;
-    const bubble = createElement("div", { className: "ui-chat-message-bubble" });
     const menuItems = getMessageMenuItemsFromOptions(message, currentMessages, currentOptions);
+    const bubble = createElement("div", {
+      className: `ui-chat-message-bubble${menuItems.length ? " has-menu" : ""}`,
+    });
     if (menuItems.length) {
       bubble.appendChild(createMessageMenuTrigger(message, menuItems));
     }
