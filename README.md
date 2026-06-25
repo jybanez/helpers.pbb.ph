@@ -2901,6 +2901,11 @@ Action audio icons:
 - Use `actions.volume-muted` for muted controls.
 - `actions.sound-on` and `actions.sound-off` are aliases for teams that prefer sound-toggle wording.
 
+Common state and launcher icons:
+
+- Use `actions.lock` and `actions.unlock` for locked/unlocked controls, rooms, or resources.
+- Use `media.gamepad` as the shared fallback for game launcher or game-category surfaces.
+
 Related demos:
 
 - `demos/demo.icons.html`

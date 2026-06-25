@@ -73,6 +73,9 @@ const bundledIconNames = icons.listIcons();
   "actions.volume-muted",
   "actions.sound-on",
   "actions.sound-off",
+  "actions.lock",
+  "actions.unlock",
+  "media.gamepad",
 ].forEach((iconName) => {
   if (!bundledIconNames.includes(iconName)) {
     throw new Error(`Bundle-backed ui.icons is missing ${iconName}.`);
