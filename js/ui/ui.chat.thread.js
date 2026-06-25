@@ -29,6 +29,7 @@ const DEFAULT_OPTIONS = {
   onAttachmentDownload: null,
   onMessageAction: null,
   onMessageMenuSelect: null,
+  onReplyPreviewOpen: null,
 };
 
 export function createChatThread(container, data = {}, options = {}) {
@@ -171,6 +172,11 @@ export function createChatThread(container, data = {}, options = {}) {
       }
     }
 
+    const replyTo = getMessageReplyTo(message);
+    if (shouldRenderReplyPreview(replyTo)) {
+      bubble.appendChild(createReplyPreviewNode(message, replyTo));
+    }
+
     if (message.text) {
       bubble.appendChild(createElement("div", {
         className: "ui-chat-message-text",
@@ -258,6 +264,45 @@ export function createChatThread(container, data = {}, options = {}) {
     });
     messageMenuApis.push(menuApi);
     return trigger;
+  }
+
+  function createReplyPreviewNode(message, replyTo) {
+    const senderName = getReplySenderName(replyTo);
+    const text = getReplyText(replyTo);
+    const attachmentLabel = getReplyAttachmentLabel(replyTo);
+    const isInteractive = typeof currentOptions.onReplyPreviewOpen === "function";
+    const node = createElement(isInteractive ? "button" : "div", {
+      className: "ui-chat-message-reply",
+      attrs: isInteractive ? {
+        type: "button",
+        "aria-label": `Open replied message${senderName ? ` from ${senderName}` : ""}`,
+      } : {},
+    });
+
+    if (senderName) {
+      node.appendChild(createElement("span", {
+        className: "ui-chat-message-reply-sender",
+        text: senderName,
+      }));
+    }
+    if (text) {
+      node.appendChild(createElement("span", {
+        className: "ui-chat-message-reply-text",
+        text,
+      }));
+    }
+    if (attachmentLabel) {
+      node.appendChild(createElement("span", {
+        className: "ui-chat-message-reply-attachment",
+        text: attachmentLabel,
+      }));
+    }
+
+    if (isInteractive) {
+      node.addEventListener("click", () => currentOptions.onReplyPreviewOpen(message, { ...replyTo }));
+    }
+
+    return node;
   }
 
   function createAttachmentsNode(message, attachments) {
@@ -593,6 +638,7 @@ export function createChatThread(container, data = {}, options = {}) {
   function getMessages() {
     return currentMessages.map((message) => ({
       ...message,
+      replyTo: normalizeReplyTo(message.replyTo),
       attachments: Array.isArray(message.attachments) ? message.attachments.map((item) => ({ ...item })) : [],
       meta: message.meta ? { ...message.meta } : undefined,
     }));
@@ -626,9 +672,14 @@ function normalizeMessages(messages) {
   return Array.isArray(messages) ? messages.map((message) => ({
     ...message,
     direction: normalizeDirection(message?.direction),
+    replyTo: normalizeReplyTo(message?.replyTo || message?.reply),
     attachments: Array.isArray(message?.attachments) ? message.attachments.map((item) => ({ ...item })) : [],
     meta: message?.meta ? { ...message.meta } : undefined,
   })) : [];
+}
+
+function normalizeReplyTo(replyTo) {
+  return replyTo && typeof replyTo === "object" ? { ...replyTo } : null;
 }
 
 function normalizeDirection(direction) {
@@ -665,6 +716,26 @@ function shouldRenderAvatar(message) {
 
 function getSenderAvatarUrl(message) {
   return String(message?.senderAvatar || message?.sender?.avatar || "").trim();
+}
+
+function getMessageReplyTo(message) {
+  return normalizeReplyTo(message?.replyTo || message?.reply);
+}
+
+function getReplySenderName(replyTo) {
+  return String(replyTo?.senderName || replyTo?.authorName || replyTo?.sender?.name || replyTo?.title || "").trim();
+}
+
+function getReplyText(replyTo) {
+  return String(replyTo?.text || replyTo?.preview || replyTo?.excerpt || "").trim();
+}
+
+function getReplyAttachmentLabel(replyTo) {
+  return String(replyTo?.attachmentLabel || replyTo?.attachment?.name || "").trim();
+}
+
+function shouldRenderReplyPreview(replyTo) {
+  return Boolean(replyTo && (getReplySenderName(replyTo) || getReplyText(replyTo) || getReplyAttachmentLabel(replyTo)));
 }
 
 function getInitials(name) {
@@ -717,6 +788,9 @@ function estimateMessageHeight(message) {
   let height = DEFAULT_MESSAGE_HEIGHT;
   if (message?.text) {
     height += Math.min(56, Math.ceil(String(message.text).length / 42) * 18);
+  }
+  if (shouldRenderReplyPreview(getMessageReplyTo(message))) {
+    height += 54;
   }
   const attachments = Array.isArray(message?.attachments) ? message.attachments : [];
   if (attachments.some((item) => item.kind === "image" || item.kind === "video")) {

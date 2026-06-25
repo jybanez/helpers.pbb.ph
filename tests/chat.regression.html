@@ -37,9 +37,9 @@
     try {
       const sampleMessages = [
         { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, text: "Incoming message", timestamp: "09:00" },
-        { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
+        { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview }, replyTo: { id: "i1", senderName: "Dispatcher", text: "Incoming message" }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
         { id: "s1", direction: "system", text: "Transferred" },
-        { id: "f1", direction: "incoming", senderName: "Dispatcher", text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
+        { id: "f1", direction: "incoming", senderName: "Dispatcher", reply: { id: "o1", senderName: "Operator", attachmentLabel: "route-plan.pdf" }, text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
         { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
       ];
 
@@ -62,6 +62,9 @@
         onMessageMenuSelect(message, item, meta) {
           events.push({ type: "message-menu-select", messageId: message.id, itemId: item.id, source: meta.source });
         },
+        onReplyPreviewOpen(message, replyTo) {
+          events.push({ type: "reply-preview-open", messageId: message.id, replyId: replyTo.id });
+        },
       });
 
       assert(threadHost.querySelectorAll(".ui-chat-message").length === sampleMessages.length, "thread should render all messages");
@@ -75,10 +78,15 @@
       assert(threadHost.querySelector('[data-message-id="f1"] .ui-chat-message-avatar-fallback')?.textContent === "D", "thread should render initials fallback when no avatar URL is provided");
       assert(threadHost.querySelector('[data-message-id="p1"] .ui-chat-message-avatar')?.classList.contains("is-placeholder"), "grouped follow-up messages should reserve the avatar column without repeating the avatar");
       assert(!threadHost.querySelector('[data-message-id="s1"] .ui-chat-message-avatar'), "system messages should not render avatars");
+      assert(threadHost.querySelectorAll(".ui-chat-message-reply").length === 2, "thread should render reply previews");
+      assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply-sender')?.textContent === "Dispatcher", "thread should render reply preview sender");
+      assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply-text')?.textContent.includes("Incoming message"), "thread should render reply preview text");
+      assert(threadHost.querySelector('[data-message-id="f1"] .ui-chat-message-reply-attachment')?.textContent === "route-plan.pdf", "thread should render reply alias attachment label");
 
       threadHost.querySelector(".ui-media-thumb").click();
       await wait(40);
       assert(document.querySelector(".ui-media-viewer-shell.is-open"), "thread image click should open media viewer");
+      threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply').click();
       threadHost.querySelector(".ui-chat-attachment-file-download").click();
       threadHost.querySelector(".ui-chat-message-menu-trigger").click();
       await wait(20);
@@ -86,6 +94,7 @@
       assert(events.some((event) => event.type === "attachment-open" && event.attachmentId === "im1"), "thread should emit image open callback");
       assert(events.some((event) => event.type === "attachment-download" && event.attachmentId === "fa1"), "thread should emit file download callback");
       assert(events.some((event) => event.type === "message-menu-select" && event.itemId === "copy"), "thread should emit message menu selection callback");
+      assert(events.some((event) => event.type === "reply-preview-open" && event.messageId === "o1" && event.replyId === "i1"), "thread should emit reply preview open callback");
 
       const longMessages = Array.from({ length: 200 }, (_, index) => ({
         id: `v-${index + 1}`,

@@ -11,6 +11,7 @@ It should provide a reusable thread surface for:
 - timestamps
 - delivery/read state
 - grouped message runs
+- reply previews
 - attachments
 - empty state
 
@@ -72,6 +73,7 @@ type ChatMessage = {
   senderName?: string;
   senderSubtitle?: string;
   text?: string;
+  replyTo?: ChatReplyPreview;
   timestamp?: string;
   state?: "sending" | "sent" | "delivered" | "read" | "failed";
   attachments?: ChatAttachment[];
@@ -81,6 +83,19 @@ type ChatMessage = {
   };
 };
 ```
+
+### `ChatReplyPreview`
+
+```ts
+type ChatReplyPreview = {
+  id?: string;
+  senderName?: string;
+  text?: string;
+  attachmentLabel?: string;
+};
+```
+
+`message.replyTo` is the canonical field. `message.reply` is accepted as a compatibility alias and normalized into `replyTo`.
 
 ### `ChatAttachment`
 
@@ -118,6 +133,7 @@ type ChatThreadOptions = {
   onAttachmentDownload?: (message: ChatMessage, attachment: ChatAttachment) => void;
   onMessageAction?: (message: ChatMessage, actionId: string) => void;
   onMessageMenuSelect?: (message: ChatMessage, item: MenuItem, meta: { source: string; index: number }) => void;
+  onReplyPreviewOpen?: (message: ChatMessage, replyTo: ChatReplyPreview) => void;
 };
 ```
 
@@ -142,6 +158,7 @@ type ChatThreadOptions = {
   onAttachmentDownload: null,
   onMessageAction: null,
   onMessageMenuSelect: null,
+  onReplyPreviewOpen: null,
 }
 ```
 
@@ -160,6 +177,13 @@ type ChatThreadOptions = {
 
 - show sender name for incoming messages by default
 - outgoing messages may omit repeated self-labels unless app data explicitly includes them
+
+### Reply Preview
+
+- Render `message.replyTo` inside the message bubble before the message body.
+- Render the preview only when at least one of `senderName`, `text`, or `attachmentLabel` is present.
+- Keep the preview presentation-focused; apps still own reply selection, target-message lookup, and scrolling/focus behavior.
+- When `onReplyPreviewOpen` is provided, render the preview as an interactive control and call the callback with the current message and normalized `replyTo`.
 
 ### Timestamp
 

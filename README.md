@@ -1392,12 +1392,20 @@ Methods:
   - sender names
   - sender avatars through `message.senderAvatar` or `message.sender.avatar`
   - initials fallback when a sender has no avatar URL
+  - reply previews through `message.replyTo`
   - timestamps
   - outgoing delivery/read states
   - grouped message runs
   - grouped image/video attachments through `ui.media.strip`
   - audio/file attachments as listed rows
   - helper-owned per-message action trigger when apps return menu items
+- Reply preview shape:
+  - `message.replyTo.id`
+  - `message.replyTo.senderName`
+  - `message.replyTo.text`
+  - `message.replyTo.attachmentLabel`
+- Reply preview callback:
+  - `onReplyPreviewOpen(message, replyTo)` makes the preview clickable and lets the app jump to or focus the referenced message
 - Instance methods:
   - `setMessages(messages)`
   - `getMessages()`

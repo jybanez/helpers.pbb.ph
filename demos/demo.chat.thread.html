@@ -33,7 +33,7 @@
         "Do not use it as a conversation list; it is a single-thread surface."
       ],
       description: "The thread helper owns message presentation only. Apps still own transport, upload orchestration, and conversation state beyond the provided message array.",
-      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    text: 'Team is en route.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
+      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    text: 'Team is en route.',\n  }, {\n    id: 'm2',\n    direction: 'outgoing',\n    senderName: 'Operator One',\n    replyTo: {\n      id: 'm1',\n      senderName: 'Dispatcher Jane',\n      text: 'Team is en route.',\n    },\n    text: 'Copy. Route packet follows.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onReplyPreviewOpen(message, replyTo) {\n    console.log('reply.open', message.id, replyTo.id);\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
       constructor: [
         { factory: "<code>createChatThread(container, data, options)</code>", arguments: "target container, thread data, thread options", returns: "Chat thread instance" }
       ],
@@ -54,11 +54,16 @@
         { option: "<code>enableVirtualization</code>", default: '<code>false</code>', description: "Opt-in measured-window virtualization for long message histories." },
         { option: "<code>virtualThreshold</code>", default: '<code>120</code>', description: "Minimum message count before virtualization activates." },
         { option: "<code>virtualOverscan</code>", default: '<code>10</code>', description: "Extra messages rendered above and below the visible window." },
-        { option: "<code>bottomAnchorThreshold</code>", default: '<code>48</code>', description: "Pixel threshold used to decide whether the thread is pinned near the latest message." }
+        { option: "<code>bottomAnchorThreshold</code>", default: '<code>48</code>', description: "Pixel threshold used to decide whether the thread is pinned near the latest message." },
+        { option: "<code>onReplyPreviewOpen(message, replyTo)</code>", default: '<code>null</code>', description: "Makes reply previews clickable and fires when the preview is selected." }
       ],
       data: [
         { property: "<code>message.senderAvatar</code>", description: "Optional sender avatar image URL. When omitted, Helper falls back to initials from <code>senderName</code>." },
-        { property: "<code>message.sender.avatar</code>", description: "Convenience alias for apps that keep sender metadata grouped under <code>sender</code>." }
+        { property: "<code>message.sender.avatar</code>", description: "Convenience alias for apps that keep sender metadata grouped under <code>sender</code>." },
+        { property: "<code>message.replyTo</code>", description: "Optional replied-message preview object. Helper renders it inside the message bubble before the message body." },
+        { property: "<code>message.replyTo.senderName</code>", description: "Sender label shown at the top of the reply preview." },
+        { property: "<code>message.replyTo.text</code>", description: "Short text excerpt shown in the reply preview." },
+        { property: "<code>message.replyTo.attachmentLabel</code>", description: "Optional attachment label used when the replied message was media or file-first." }
       ],
       propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly. When virtualization is enabled, <code>getState()</code> also reports whether the virtualized path is active.",
       events: [
@@ -158,6 +163,12 @@
         direction: "outgoing",
         senderName: "Operator One",
         senderAvatar: avatarOperator,
+        replyTo: {
+          id: "m2b",
+          senderName: "Dispatcher Jane",
+          text: "Full mixed attachment packet for field review attached here.",
+          attachmentLabel: "field-operations-summary-and-traffic-reroute-plan.pdf",
+        },
         text: "Copy. Sharing the route packet and supporting documents now.",
         timestamp: "09:22",
         state: "delivered",
@@ -172,6 +183,11 @@
         direction: "outgoing",
         senderName: "Operator One",
         senderAvatar: avatarOperator,
+        replyTo: {
+          id: "m4",
+          senderName: "Operator One",
+          attachmentLabel: "route-plan-for-lahug-cebu-city-response-team.pdf",
+        },
         text: "Last update failed to sync to the relay hub.",
         timestamp: "09:23",
         state: "failed",
@@ -221,6 +237,9 @@
       },
       onMessageMenuSelect(message, item, meta) {
         writeLog("thread.message.menu", { messageId: message.id, actionId: item.id, source: meta.source });
+      },
+      onReplyPreviewOpen(message, replyTo) {
+        writeLog("thread.reply.open", { messageId: message.id, replyId: replyTo.id });
       },
     });
 
