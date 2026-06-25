@@ -7,6 +7,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - GitHub Repository: `https://github.com/jybanez/helpers.pbb.ph`
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
+- Agent Working Protocol: `docs/agent-working-protocol.md`
 
 Latest documented release: `v0.21.70`
 
