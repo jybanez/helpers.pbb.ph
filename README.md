@@ -1390,6 +1390,8 @@ Methods:
   - system messages
 - Supports:
   - sender names
+  - sender avatars through `message.senderAvatar` or `message.sender.avatar`
+  - initials fallback when a sender has no avatar URL
   - timestamps
   - outgoing delivery/read states
   - grouped message runs
