@@ -111,6 +111,8 @@ Stable namespaced ids:
 - `actions.delete`
 - `actions.download`
 - `actions.edit`
+- `actions.lock`
+- `actions.unlock`
 - `actions.options`
 - `actions.hide`
 - `actions.more-horizontal`
@@ -149,6 +151,7 @@ Stable namespaced ids:
 - `media.video`
 - `media.microphone`
 - `media.audio`
+- `media.gamepad`
 
 ### Data
 
