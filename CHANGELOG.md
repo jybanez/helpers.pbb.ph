@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added first-class clipboard file paste support to `ui.chat.composer`, routing accepted pasted files through `onFilesSelected(files, { source: "paste" })` while respecting `accept`, `multiple`, `disabled`, `busy`, and `showAttachmentButton`.
 - Enhanced `ui.game.state.chrome` milestones with optional tone, position, auto-dismiss duration, accessible live announcements, reduced-motion-safe animation, and dismissal callbacks for non-blocking game feedback moments.
 - Added `actions.lock`, `actions.unlock`, and `media.gamepad` to `ui.icons` for locked room/actions and game launcher fallback metadata, with bundle contract coverage.
 - Added `ui.icon.grid` with `createIconGrid(...)` for draggable app/icon launcher grids, restored layout payloads, optional `autoArrange: false` spatial placement, Ctrl/Meta + Arrow keyboard reorder with plain Arrow focus navigation, empty drop slots, status dots, badges, `chrome: false`, demo coverage, docs, and regression coverage.

@@ -7,7 +7,7 @@ const UI_ICONS_REV = "0.21.87";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.111";
-const UI_BUNDLE_REV = "0.21.104";
+const UI_BUNDLE_REV = "0.21.105";
 const UI_GAME_BUNDLE_REV = "0.21.107";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;

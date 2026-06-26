@@ -193,8 +193,8 @@
         onSend(payload) {
           events.push({ type: "composer-send", text: payload.text });
         },
-        onFilesSelected(files) {
-          events.push({ type: "composer-files", count: files.length, names: files.map((file) => file.name) });
+        onFilesSelected(files, meta) {
+          events.push({ type: "composer-files", count: files.length, names: files.map((file) => file.name), source: meta?.source });
         },
       });
 
@@ -221,13 +221,22 @@
         value: [pickedFile],
       });
       fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-      assert(events.some((event) => event.type === "composer-files" && event.names.includes("route-plan.pdf")), "composer should emit selected files");
+      assert(events.some((event) => event.type === "composer-files" && event.names.includes("route-plan.pdf") && event.source === "picker"), "composer should emit selected picker files");
+
+      const pastedImage = new File(["photo"], "clipboard.png", { type: "image/png" });
+      const pastedText = new File(["text"], "notes.txt", { type: "text/plain" });
+      const pasteEvent = dispatchPaste(input, [pastedImage, pastedText]);
+      assert(pasteEvent.defaultPrevented === true, "composer should prevent default when accepted files are pasted");
+      assert(events.some((event) => event.type === "composer-files" && event.names.includes("clipboard.png") && !event.names.includes("notes.txt") && event.source === "paste"), "composer should emit accepted pasted files with paste metadata");
 
       composer.setBusy(true);
       const busySend = composerHost.querySelector(".ui-chat-composer-send");
       const busyAttach = composerHost.querySelector(".ui-chat-composer-attach");
       const busyFileInput = composerHost.querySelector(".ui-chat-composer-file-input");
       assert(busySend.disabled === true && busyAttach.disabled === true && busyFileInput.disabled === true, "composer busy state should disable actions and file input");
+      const beforeBusyPasteCount = events.filter((event) => event.type === "composer-files").length;
+      dispatchPaste(composerHost.querySelector(".ui-chat-composer-input"), [pastedImage]);
+      assert(events.filter((event) => event.type === "composer-files").length === beforeBusyPasteCount, "composer busy state should ignore pasted files");
 
       composer.setBusy(false);
       composer.setValue("Line 1");
@@ -250,8 +259,28 @@
       assert(Boolean(noAttachControls && noAttachInput && noAttachSend), "composer without attachment button should still render controls, input, and send button");
       assert(noAttachControls.classList.contains("is-no-attachment"), "composer without attachment button should switch to the two-column layout state");
       assert(!noAttachAttach, "composer without attachment button should not render attach action");
+      const beforeNoAttachPasteCount = events.filter((event) => event.type === "composer-files").length;
+      dispatchPaste(noAttachInput, [pastedImage]);
+      assert(events.filter((event) => event.type === "composer-files").length === beforeNoAttachPasteCount, "composer without attachment button should ignore pasted files");
       noAttachComposer.destroy();
       noAttachHost.remove();
+
+      const singlePasteHost = document.createElement("div");
+      composerHost.parentNode.appendChild(singlePasteHost);
+      createChatComposer(singlePasteHost, { value: "" }, {
+        accept: "image/*",
+        multiple: false,
+        onFilesSelected(files, meta) {
+          events.push({ type: "composer-single-paste", count: files.length, names: files.map((file) => file.name), source: meta?.source });
+        },
+      });
+      const singlePasteInput = singlePasteHost.querySelector(".ui-chat-composer-input");
+      dispatchPaste(singlePasteInput, [
+        new File(["a"], "one.png", { type: "image/png" }),
+        new File(["b"], "two.png", { type: "image/png" }),
+      ]);
+      assert(events.some((event) => event.type === "composer-single-paste" && event.count === 1 && event.names[0] === "one.png" && event.source === "paste"), "composer paste should respect multiple:false");
+      singlePasteHost.remove();
 
       queue.setItems([
         { id: "img1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview, status: "uploading", progress: 42, progressLabel: "42%" },
@@ -310,6 +339,23 @@
 
     function wait(ms) {
       return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function dispatchPaste(target, files) {
+      const event = new Event("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "clipboardData", {
+        configurable: true,
+        value: {
+          items: files.map((file) => ({
+            kind: "file",
+            type: file.type,
+            getAsFile: () => file,
+          })),
+          files,
+        },
+      });
+      target.dispatchEvent(event);
+      return event;
     }
 
     async function waitForFirstVisibleMessageId(viewport, timeoutMs = 240) {
