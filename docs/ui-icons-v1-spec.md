@@ -85,6 +85,7 @@ Stable namespaced ids:
 - `time`
 - `comms`
 - `assets`
+- `community`
 
 ## Render Rules
 
@@ -206,6 +207,13 @@ Stable namespaced ids:
 - `assets.document`
 - `assets.camera`
 - `assets.clipboard`
+
+### Community
+
+- `community.badge`
+- `community.award`
+- `community.medal`
+- `community.certificate`
 
 ## Non-Goals
 
