@@ -544,6 +544,29 @@ Object.assign(ICON_DEFINITIONS, {
   "map.uplink": alias("map", "navigation.arrow-up"),
   "map.coverage-area": alias("map", "places.map"),
 
+  "community.badge": icon("community", [
+    path("M12 3l2.7 1.7 3.2-.1 1.4 2.9 2.6 1.8-.8 3.1.8 3.1-2.6 1.8-1.4 2.9-3.2-.1L12 21l-2.7-1.7-3.2.1-1.4-2.9-2.6-1.8.8-3.1-.8-3.1 2.6-1.8 1.4-2.9 3.2.1L12 3z"),
+    path("M9 12l2 2 4-4"),
+  ]),
+  "community.award": icon("community", [
+    circle(12, 8, 4),
+    path("M8.8 11.2 7 21l5-3 5 3-1.8-9.8"),
+    path("M10 8l1.4 1.4L14 6.8"),
+  ]),
+  "community.medal": icon("community", [
+    path("M8 3h8l-2 6h-4L8 3z"),
+    path("M8 3l4 6 4-6"),
+    circle(12, 15, 5),
+    path("M12 12.6l.8 1.6 1.8.3-1.3 1.2.3 1.8-1.6-.8-1.6.8.3-1.8-1.3-1.2 1.8-.3.8-1.6z"),
+  ]),
+  "community.certificate": icon("community", [
+    rect(4, 5, 16, 14, 2),
+    path("M7 9h7"),
+    path("M7 12h5"),
+    circle(16, 13, 2),
+    path("M14.8 14.7 14 18l2-1 2 1-.8-3.3"),
+  ]),
+
   "quality.verified": alias("quality", "status.success"),
   "quality.unverified": alias("quality", "status.warning"),
   "quality.partial": alias("quality", "status.info"),

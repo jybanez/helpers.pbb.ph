@@ -124,6 +124,10 @@
         "map.target-hub",
         "map.uplink",
         "map.coverage-area",
+        "community.badge",
+        "community.award",
+        "community.medal",
+        "community.certificate",
         "quality.verified",
         "quality.unverified",
         "quality.partial",
@@ -132,7 +136,7 @@
         "quality.redacted",
       ];
 
-      assert(categories.length === 20, "icons registry should expose 20 categories");
+      assert(categories.length === 21, "icons registry should expose 21 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
@@ -148,6 +152,10 @@
       assert(names.includes("media.gamepad"), "icons registry should include media.gamepad");
       assert(names.includes("media.video"), "icons registry should include media.video");
       assert(names.includes("media.microphone"), "icons registry should include media.microphone");
+      assert(names.includes("community.badge"), "icons registry should include community.badge");
+      assert(names.includes("community.award"), "icons registry should include community.award");
+      assert(names.includes("community.medal"), "icons registry should include community.medal");
+      assert(names.includes("community.certificate"), "icons registry should include community.certificate");
       assert(names.includes("people.user"), "icons registry should include people.user");
       assert(names.includes("people.profile"), "icons registry should include people.profile");
       assert(names.includes("people.account"), "icons registry should include people.account");

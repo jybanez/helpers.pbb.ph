@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `community.badge`, `community.award`, `community.medal`, and `community.certificate` to `ui.icons` for badge-management, awards, and user-recognition surfaces.
 - Added URL-based branding options to `createLoginFormModal(...)`, letting apps provide foreground media and background art while Helper owns safe markup, sizing, tone overlay, accessibility, and bridged preset transport.
 - Added first-class clipboard file paste support to `ui.chat.composer`, routing accepted pasted files through `onFilesSelected(files, { source: "paste" })` while respecting `accept`, `multiple`, `disabled`, `busy`, and `showAttachmentButton`.
 - Enhanced `ui.game.state.chrome` milestones with optional tone, position, auto-dismiss duration, accessible live announcements, reduced-motion-safe animation, and dismissal callbacks for non-blocking game feedback moments.
