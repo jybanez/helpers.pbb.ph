@@ -25,7 +25,7 @@
   <script>
     window.demoMeta = {
       title: "Login Form Modal",
-      overview: "Opinionated login wrapper over createFormModal(...) for shared auth layout, validation defaults, and field-name remapping.",
+      overview: "Opinionated login wrapper over createFormModal(...) for shared auth layout, validation defaults, field-name remapping, and helper-owned URL branding.",
       useWhen: [
         "Use <code>createLoginFormModal(...)</code> when the flow is a standard login prompt with identifier and password fields.",
         "Use it when multiple projects should keep the same login structure and submit behavior."
@@ -34,8 +34,8 @@
         "Do not use it when the auth flow needs extra project-specific fields or a multi-step sign-in sequence.",
         "Do not use it when the login UI must live inline on a page instead of inside a modal."
       ],
-      description: "This wrapper keeps the login layout fixed while still allowing identifier remapping, message overrides, and app-owned submit handling.",
-      defaultSampleCode: `const modal = createLoginFormModal({\n  fields: {\n    identifier: \"user_email\",\n    password: \"user_password\",\n  },\n  identifierKind: \"email\",\n  initialValues: {\n    user_email: \"operator@pbb.ph\",\n  },\n  async onSubmit(values, ctx) {\n    if (values.user_password !== \"correct-password\") {\n      ctx.setErrors({ user_password: \"Invalid password.\" });\n      return false;\n    }\n    return true;\n  },\n});\n\nmodal.open();`,
+      description: "This wrapper keeps the login layout fixed while still allowing identifier remapping, message overrides, URL-based branding assets, and app-owned submit handling.",
+      defaultSampleCode: `const modal = createLoginFormModal({\n  fields: {\n    identifier: \"user_email\",\n    password: \"user_password\",\n  },\n  identifierKind: \"email\",\n  mediaUrl: \"/assets/launcher/app-icon.png\",\n  mediaAlt: \"PBB Chat\",\n  backgroundImageUrl: \"/assets/seasonal/login-bg.png\",\n  backgroundImageAlt: \"\",\n  backgroundTone: \"dark\",\n  initialValues: {\n    user_email: \"operator@pbb.ph\",\n  },\n  async onSubmit(values, ctx) {\n    if (values.user_password !== \"correct-password\") {\n      ctx.setErrors({ user_password: \"Invalid password.\" });\n      return false;\n    }\n    return true;\n  },\n});\n\nmodal.open();`,
       constructor: [
         { factory: "<code>createLoginFormModal(options)</code>", arguments: "preset options object", returns: "Form-modal instance" }
       ],
@@ -46,7 +46,12 @@
         { option: "<code>identifierPlaceholder</code>", default: "component default", description: "Override for the identifier placeholder." },
         { option: "<code>identifierAutocomplete</code>", default: "component default", description: "Override for the identifier autocomplete token." },
         { option: "<code>passwordLabel</code>", default: "<code>\"Password\"</code>", description: "Password field label override." },
-        { option: "<code>passwordPlaceholder</code>", default: "component default", description: "Password field placeholder override." }
+        { option: "<code>passwordPlaceholder</code>", default: "component default", description: "Password field placeholder override." },
+        { option: "<code>mediaUrl</code>", default: '<code>""</code>', description: "Optional foreground app/logo image URL rendered by Helper." },
+        { option: "<code>mediaAlt</code>", default: '<code>""</code>', description: "Alt text for the foreground branding image." },
+        { option: "<code>backgroundImageUrl</code>", default: '<code>""</code>', description: "Optional background art URL rendered behind the branding image." },
+        { option: "<code>backgroundImageAlt</code>", default: '<code>""</code>', description: "Alt text for informative background art; leave empty for decorative backgrounds." },
+        { option: "<code>backgroundTone</code>", default: '<code>"auto"</code>', description: "Contrast overlay treatment for background art.", values: ["auto", "dark", "light", "none"] }
       ],
       propertiesText: "Preset wrappers return the same instance API as <code>createFormModal(...)</code>. They do not add stable public instance properties.",
       events: [
@@ -93,6 +98,7 @@
       </div>
       <div class="row">
         <button id="loginPresetBtn" class="ui-button ui-button-primary" type="button">Open Login Preset</button>
+        <button id="brandedLoginPresetBtn" class="ui-button ui-button-ghost" type="button">Open Branded Login</button>
       </div>
       <pre>const modal = createLoginFormModal({
   fields: {
@@ -117,6 +123,10 @@
     const createLoginFormModal = await uiLoader.get("ui.form.modal.login");
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
+    const appIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#123d59"/><path d="M30 42h68v36H62L44 94V78H30z" fill="#e9f7ff"/><circle cx="51" cy="60" r="5" fill="#3da8ff"/><circle cx="64" cy="60" r="5" fill="#3da8ff"/><circle cx="77" cy="60" r="5" fill="#3da8ff"/></svg>`;
+    const loginBgSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#155e75"/><stop offset="1" stop-color="#0f172a"/></linearGradient></defs><rect width="640" height="260" fill="url(#g)"/><path d="M0 210c88-44 147-52 230-22s169 16 244-27 122-32 166 1v98H0z" fill="#2dd4bf" fill-opacity=".28"/><circle cx="512" cy="72" r="46" fill="#93c5fd" fill-opacity=".32"/></svg>`;
+    const appIconUrl = `data:image/svg+xml;utf8,${encodeURIComponent(appIconSvg)}`;
+    const loginBgUrl = `data:image/svg+xml;utf8,${encodeURIComponent(loginBgSvg)}`;
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
@@ -154,6 +164,40 @@
       });
       modal.open();
       writeLog("preset.login.open", { ok: true });
+    });
+    document.getElementById("brandedLoginPresetBtn").addEventListener("click", () => {
+      const modal = createLoginFormModal({
+        title: "PBB Chat Login",
+        message: "Branding is supplied as URLs while Helper owns rendering and contrast.",
+        mediaUrl: appIconUrl,
+        mediaAlt: "PBB Chat",
+        backgroundImageUrl: loginBgUrl,
+        backgroundImageAlt: "",
+        backgroundTone: "dark",
+        fields: {
+          identifier: "user_email",
+          password: "user_password",
+        },
+        initialValues: {
+          user_email: "operator@pbb.ph",
+        },
+        async onSubmit(values, ctx) {
+          writeLog("preset.brandedLogin.submit.begin", values);
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          if (values.user_password !== "correct-password") {
+            ctx.setErrors({ user_password: "Invalid password." });
+            writeLog("preset.brandedLogin.submit.failed", values);
+            return false;
+          }
+          writeLog("preset.brandedLogin.submit.success", values);
+          return true;
+        },
+        onClose(meta) {
+          writeLog("preset.brandedLogin.close", meta || {});
+        },
+      });
+      modal.open();
+      writeLog("preset.brandedLogin.open", { ok: true });
     });
   </script>
 </body>

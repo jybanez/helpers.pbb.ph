@@ -40,8 +40,17 @@
     const failures = [];
     const avatarPreviewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#2d4775"/><stop offset="1" stop-color="#111827"/></linearGradient></defs><rect width="128" height="128" rx="64" fill="url(#g)"/><circle cx="64" cy="48" r="22" fill="#d7e0f4" fill-opacity="0.92"/><path d="M29 106c7-19 22-29 35-29s28 10 35 29" fill="#d7e0f4" fill-opacity="0.92"/></svg>`;
     const avatarPreviewUrl = `data:image/svg+xml;utf8,${encodeURIComponent(avatarPreviewSvg)}`;
+    const loginMediaSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="20" fill="#164e63"/><circle cx="48" cy="48" r="24" fill="#e0f2fe"/></svg>`;
+    const loginBackgroundSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160"><rect width="320" height="160" fill="#0f172a"/><path d="M0 118c64-30 104-35 151-12s88 14 169-26v80H0z" fill="#2dd4bf" fill-opacity=".35"/></svg>`;
+    const loginMediaUrl = `data:image/svg+xml;utf8,${encodeURIComponent(loginMediaSvg)}`;
+    const loginBackgroundUrl = `data:image/svg+xml;utf8,${encodeURIComponent(loginBackgroundSvg)}`;
 
     const presetLoginModal = createLoginFormModal({
+      mediaUrl: loginMediaUrl,
+      mediaAlt: "PBB Chat",
+      backgroundImageUrl: loginBackgroundUrl,
+      backgroundImageAlt: "",
+      backgroundTone: "dark",
       fields: {
         identifier: "user_email",
         password: "user_password",
@@ -65,6 +74,15 @@
     Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /login/i.test(button.textContent || "")).click();
     await wait(180);
 
+    const loginBranding = document.querySelector(".ui-form-modal-branding");
+    const loginBrandingMedia = loginBranding?.querySelector(".ui-form-modal-branding-media");
+    const loginBrandingBackground = loginBranding?.querySelector(".ui-form-modal-branding-bg");
+    assert(Boolean(loginBranding), "preset login should render URL-based branding when provided");
+    assert(loginBranding?.classList.contains("is-tone-dark"), "preset login branding should apply requested background tone");
+    assert(loginBrandingMedia?.getAttribute("src") === loginMediaUrl, "preset login branding should render foreground media URL");
+    assert(loginBrandingMedia?.getAttribute("alt") === "PBB Chat", "preset login branding should render foreground media alt text");
+    assert(loginBrandingBackground?.getAttribute("src") === loginBackgroundUrl, "preset login branding should render background image URL");
+    assert(loginBrandingBackground?.getAttribute("aria-hidden") === "true", "decorative login background should be hidden from assistive tech");
     const presetPasswordError = document.querySelector('input[name="user_password"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
     assert(presetLoginModal.getValues().user_email === "operator@pbb.ph", "preset login should preserve remapped identifier field");
     assert(presetPasswordError?.textContent.includes("Invalid password."), "preset login should render error on remapped password field");
