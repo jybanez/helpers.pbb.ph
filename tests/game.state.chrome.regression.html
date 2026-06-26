@@ -83,6 +83,30 @@
       assert(host.querySelector(".ui-game-state-overlay.is-milestone"), "showMilestone should render milestone overlay");
       assert(host.querySelector('[data-game-action="continue"]'), "milestone should render continue action");
 
+      let dismissed = null;
+      chrome.showMilestone({
+        type: "levelUp",
+        title: "Level Up",
+        detail: "Level 3",
+        actions: [],
+        autoDismiss: true,
+        duration: 20,
+        position: "top",
+        tone: "success",
+        onDismiss(context) {
+          dismissed = context;
+        },
+      });
+      const timedMilestone = host.querySelector(".ui-game-state-overlay.is-milestone");
+      assert(timedMilestone?.dataset.overlayPosition === "top", "milestone should expose requested position");
+      assert(timedMilestone?.dataset.overlayTone === "success", "milestone should expose requested tone");
+      assert(timedMilestone?.getAttribute("role") === "status", "actionless milestone should use status role");
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      assert(host.querySelector(".ui-game-state-chrome__live")?.textContent.includes("Level Up"), "milestone should announce title in live region");
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      assert(!host.querySelector(".ui-game-state-overlay.is-milestone"), "auto-dismiss milestone should hide after duration");
+      assert(dismissed?.reason === "timeout" && dismissed.overlayType === "milestone", "auto-dismiss milestone should call onDismiss with timeout context");
+
       chrome.showPause({
         actions: [
           "resume",

@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createIcon } from "./ui.icons.js?v=0.21.86";
+import { createIcon } from "./ui.icons.js?v=0.21.87";
 
 export const GAME_SESSION_STATES = Object.freeze([
   "loading",
@@ -45,6 +45,10 @@ const DEFAULT_OPTIONS = {
     },
     milestone: {
       actions: ["continue"],
+      autoDismiss: false,
+      duration: 0,
+      position: "center",
+      tone: "default",
     },
   },
   shortcuts: {
@@ -67,6 +71,8 @@ export function createGameStateChrome(session, options = {}) {
   let previousState = "";
   let progress = {};
   let overlayNode = null;
+  let overlayTimer = 0;
+  let overlayConfig = null;
   let progressNode = null;
   let destroyed = false;
   let controlMode = "";
@@ -79,7 +85,14 @@ export function createGameStateChrome(session, options = {}) {
   });
   const overlayHost = createElement("div", { className: "ui-game-state-chrome__overlays" });
   const progressHost = createElement("div", { className: "ui-game-state-chrome__progress" });
-  root.append(progressHost, overlayHost);
+  const liveRegion = createElement("div", {
+    className: "ui-game-state-chrome__live",
+    attrs: {
+      "aria-live": "polite",
+      "aria-atomic": "true",
+    },
+  });
+  root.append(progressHost, overlayHost, liveRegion);
   session.overlay.appendChild(root);
 
   const removeButtonCapture = bind(session.closeButton, "click", handleControlClick, { capture: true });
@@ -168,8 +181,25 @@ export function createGameStateChrome(session, options = {}) {
   }
 
   function hideOverlay() {
-    overlayNode?.remove();
+    dismissOverlay("manual", { notify: false });
+  }
+
+  function dismissOverlay(reason = "manual", options = {}) {
+    if (overlayTimer) {
+      window.clearTimeout(overlayTimer);
+      overlayTimer = 0;
+    }
+    const node = overlayNode;
+    const config = overlayConfig;
     overlayNode = null;
+    overlayConfig = null;
+    node?.remove();
+    if (options.notify && typeof config?.onDismiss === "function") {
+      config.onDismiss(buildContext({ reason, overlayType: config.type || "state" }));
+    }
+    if (options.notify) {
+      events.emit("overlaydismiss", buildContext({ reason, overlayType: config?.type || "state" }));
+    }
   }
 
   function setControl(mode) {
@@ -186,7 +216,7 @@ export function createGameStateChrome(session, options = {}) {
     removeButtonCapture();
     removeKeydown();
     removeSessionClose();
-    hideOverlay();
+    dismissOverlay("destroy", { notify: false });
     root.remove();
     events.clear();
   }
@@ -316,18 +346,34 @@ export function createGameStateChrome(session, options = {}) {
   }
 
   function renderOverlay(overlayOptions) {
-    hideOverlay();
+    dismissOverlay("replace", { notify: false });
     const type = String(overlayOptions.type || "state");
+    const position = normalizePosition(overlayOptions.position);
+    const tone = normalizeTone(overlayOptions.tone);
+    const isStatusMilestone = type === "milestone" && !hasActions(overlayOptions.actions);
+    const overlayAttrs = {
+      role: isStatusMilestone ? "status" : "dialog",
+      "aria-label": overlayOptions.ariaLabel || overlayOptions.title || "Game state",
+      "data-overlay-type": type,
+      "data-overlay-position": position,
+      "data-overlay-tone": tone,
+    };
+    if (!isStatusMilestone) {
+      overlayAttrs["aria-modal"] = "false";
+    }
     const panel = createElement("section", {
-      className: buildClass("ui-game-state-overlay", `is-${type}`, overlayOptions.className),
-      attrs: {
-        role: "dialog",
-        "aria-modal": "false",
-        "aria-label": overlayOptions.ariaLabel || overlayOptions.title || "Game state",
-        "data-overlay-type": type,
-      },
+      className: buildClass(
+        "ui-game-state-overlay",
+        `is-${type}`,
+        `is-position-${position}`,
+        `is-tone-${tone}`,
+        overlayOptions.className,
+      ),
+      attrs: overlayAttrs,
     });
     panel.dataset.overlayType = type;
+    panel.dataset.overlayPosition = position;
+    panel.dataset.overlayTone = tone;
 
     if (overlayOptions.title) {
       panel.appendChild(createElement("h2", {
@@ -369,6 +415,38 @@ export function createGameStateChrome(session, options = {}) {
 
     overlayHost.appendChild(panel);
     overlayNode = panel;
+    overlayConfig = overlayOptions;
+    announceOverlay(overlayOptions);
+    scheduleOverlayDismiss(overlayOptions, type);
+  }
+
+  function announceOverlay(overlayOptions) {
+    if (overlayOptions.type !== "milestone") {
+      return;
+    }
+    const message = [overlayOptions.title, overlayOptions.detail]
+      .map((part) => String(part || "").trim())
+      .filter(Boolean)
+      .join(". ");
+    liveRegion.textContent = "";
+    if (message) {
+      window.requestAnimationFrame(() => {
+        if (!destroyed) {
+          liveRegion.textContent = message;
+        }
+      });
+    }
+  }
+
+  function scheduleOverlayDismiss(overlayOptions, type) {
+    const duration = normalizeDuration(overlayOptions.duration || (overlayOptions.autoDismiss === true ? 1200 : 0));
+    const shouldAutoDismiss = overlayOptions.autoDismiss === true || duration > 0;
+    if (type !== "milestone" || !shouldAutoDismiss || duration <= 0) {
+      return;
+    }
+    overlayTimer = window.setTimeout(() => {
+      dismissOverlay("timeout", { notify: true });
+    }, duration);
   }
 
   function buildContext(context = {}, extra = {}) {
@@ -398,6 +476,25 @@ export function createGameStateChrome(session, options = {}) {
   };
 
   return api;
+}
+
+function hasActions(actions) {
+  return Array.isArray(actions) && actions.length > 0;
+}
+
+function normalizePosition(input) {
+  const value = String(input || "center").trim();
+  return ["center", "top", "top-center", "bottom", "bottom-center"].includes(value) ? value : "center";
+}
+
+function normalizeTone(input) {
+  const value = String(input || "default").trim();
+  return ["default", "success", "info", "warning", "danger"].includes(value) ? value : "default";
+}
+
+function normalizeDuration(input) {
+  const value = Number(input);
+  return Number.isFinite(value) && value > 0 ? Math.max(0, Math.round(value)) : 0;
 }
 
 function normalizeOptions(input = {}) {

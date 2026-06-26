@@ -251,6 +251,26 @@ Important methods:
 - `setControl("pause" | "close")` overrides the contextual control.
 - `destroy()` cleans up DOM and listeners.
 
+Milestone overlays support short non-blocking feedback moments without expanding lifecycle states:
+
+```js
+chrome.showMilestone({
+  type: "levelUp",
+  title: "Level Up",
+  detail: "Level 2",
+  tone: "success",
+  position: "top",
+  duration: 1200,
+  autoDismiss: true,
+  actions: [],
+  onDismiss(context) {
+    console.log(context.reason);
+  },
+});
+```
+
+Milestone `position` accepts `"center"`, `"top"`, `"top-center"`, `"bottom"`, or `"bottom-center"`. `tone` accepts `"default"`, `"success"`, `"info"`, `"warning"`, or `"danger"`. Helper owns the overlay chrome, accessible announcement, timeout cleanup, and reduced-motion-safe animation; the game owns when milestones appear and what they mean.
+
 Standard actions are `pause`, `resume`, `restart`, `exit`, and `continue`. `playAgain` is normalized to the `restart` action and should be treated as display text.
 
 Overlay action labels use `options.labels` by default:
