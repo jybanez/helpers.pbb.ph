@@ -104,8 +104,8 @@
         "Do not use it as a game engine; rules, scoring, level progression, and controller lifecycle remain app-owned.",
         "Do not put game-specific level states into the lifecycle state vocabulary; use progress or milestone metadata instead."
       ],
-      description: "This page isolates the state chrome helper so developers can inspect lifecycle states, pause/result/milestone overlays, progress metadata, actions, shortcuts, and cleanup.",
-      defaultSampleCode: `const session = createGameSession(host, {\n  closeControl: { variant: "icon", icon: "actions.close" },\n  closeOnEscape: false,\n});\n\nconst chrome = createGameStateChrome(session, {\n  initialState: "ready",\n  shortcuts: { enabled: true, escape: "pause-or-exit" },\n  overlays: {\n    pause: {\n      actions: [\n        "resume",\n        "restart",\n        { id: "exit", label: "Home", nextState: "ready", closeSession: false },\n      ],\n    },\n  },\n  onAction(action, context) {\n    if (action === "pause") controller.pause();\n    if (action === "resume") controller.resume();\n    if (action === "restart") controller.restart();\n    if (action === "exit" && context.actionConfig?.closeSession === false) showGameHome();\n  },\n});\n\nchrome.updateProgress({ score: 120, level: 2 });\nchrome.setState("playing");`,
+      description: "This page isolates the state chrome helper so developers can inspect lifecycle states, pause/result/milestone overlays, progress metadata, actions, shortcuts, timed milestone feedback, and cleanup.",
+      defaultSampleCode: `const session = createGameSession(host, {\n  closeControl: { variant: "icon", icon: "actions.close" },\n  closeOnEscape: false,\n});\n\nconst chrome = createGameStateChrome(session, {\n  initialState: "ready",\n  shortcuts: { enabled: true, escape: "pause-or-exit" },\n  overlays: {\n    pause: {\n      actions: [\n        "resume",\n        "restart",\n        { id: "exit", label: "Home", nextState: "ready", closeSession: false },\n      ],\n    },\n  },\n  onAction(action, context) {\n    if (action === "pause") controller.pause();\n    if (action === "resume") controller.resume();\n    if (action === "restart") controller.restart();\n    if (action === "exit" && context.actionConfig?.closeSession === false) showGameHome();\n  },\n});\n\nchrome.updateProgress({ score: 120, level: 2 });\nchrome.showMilestone({\n  title: "Level Up",\n  detail: "Level 2",\n  tone: "success",\n  position: "top",\n  duration: 1200,\n  autoDismiss: true,\n  actions: [],\n});\nchrome.setState("playing");`,
       constructor: [
         { factory: "<code>createGameStateChrome(session, options)</code>", arguments: "<code>createGameSession()</code> result, state chrome options", returns: "State chrome instance" }
       ],
@@ -128,7 +128,7 @@
         { method: "<code>chrome.updateProgress(data)</code>", arguments: "Progress metadata", returns: "Merged progress" },
         { method: "<code>chrome.showPause(options)</code>", arguments: "Optional overlay settings", returns: "<code>void</code>" },
         { method: "<code>chrome.showResult(options)</code>", arguments: "Result overlay settings", returns: "<code>void</code>" },
-        { method: "<code>chrome.showMilestone(options)</code>", arguments: "Milestone overlay settings", returns: "<code>void</code>" },
+        { method: "<code>chrome.showMilestone(options)</code>", arguments: "Milestone overlay settings, including <code>duration</code>, <code>tone</code>, <code>position</code>, <code>autoDismiss</code>, and <code>onDismiss</code>", returns: "<code>void</code>" },
         { method: "<code>chrome.hideOverlay()</code>", arguments: "None", returns: "<code>void</code>" },
         { method: "<code>chrome.setControl(mode)</code>", arguments: "<code>\"pause\"</code> or <code>\"close\"</code>", returns: "Current control mode" },
         { method: "<code>chrome.destroy()</code>", arguments: "None", returns: "<code>void</code>" }
@@ -218,7 +218,11 @@
         type: "levelComplete",
         title: `Level ${level} Complete`,
         detail: `Next: Level ${level + 1}`,
-        actions: ["continue", "restart", "exit"],
+        tone: "success",
+        position: "top",
+        duration: 1200,
+        autoDismiss: true,
+        actions: [],
       });
       renderReadout();
     });

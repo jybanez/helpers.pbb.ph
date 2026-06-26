@@ -14,6 +14,19 @@
   pointer-events: none;
 }
 
+.ui-game-state-chrome__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .ui-game-state-chrome__progress {
   display: flex;
   align-items: flex-start;
@@ -80,6 +93,43 @@
   transform: translate(-50%, -50%);
 }
 
+.ui-game-state-overlay.is-position-top,
+.ui-game-state-overlay.is-position-top-center {
+  top: max(72px, calc(env(safe-area-inset-top) + 56px));
+  transform: translateX(-50%);
+}
+
+.ui-game-state-overlay.is-position-bottom,
+.ui-game-state-overlay.is-position-bottom-center {
+  top: auto;
+  bottom: max(36px, calc(env(safe-area-inset-bottom) + 24px));
+  transform: translateX(-50%);
+}
+
+.ui-game-state-overlay.is-milestone {
+  animation: ui-game-milestone-pop 180ms ease-out;
+}
+
+.ui-game-state-overlay.is-tone-success {
+  border-color: color-mix(in oklab, #49c27f 70%, var(--ui-border-strong, #344769));
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 82%, rgba(73, 194, 127, 0.24));
+}
+
+.ui-game-state-overlay.is-tone-info {
+  border-color: color-mix(in oklab, #64b5f6 70%, var(--ui-border-strong, #344769));
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 82%, rgba(100, 181, 246, 0.2));
+}
+
+.ui-game-state-overlay.is-tone-warning {
+  border-color: color-mix(in oklab, #f4b350 74%, var(--ui-border-strong, #344769));
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 82%, rgba(244, 179, 80, 0.22));
+}
+
+.ui-game-state-overlay.is-tone-danger {
+  border-color: color-mix(in oklab, #ff6b6b 72%, var(--ui-border-strong, #344769));
+  background: color-mix(in oklab, var(--ui-bg-soft, #101a2d) 82%, rgba(255, 107, 107, 0.2));
+}
+
 .ui-game-state-overlay__title {
   margin: 0;
   font-size: 20px;
@@ -103,6 +153,23 @@
 
 .ui-game-state-overlay__actions .ui-button {
   min-width: 84px;
+}
+
+@keyframes ui-game-milestone-pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-game-state-overlay.is-milestone {
+    animation: none;
+  }
 }
 
 @media (max-width: 520px) {
