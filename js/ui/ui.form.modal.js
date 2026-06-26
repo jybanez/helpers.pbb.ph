@@ -206,6 +206,9 @@ export function createFormModal(options = {}) {
         className: getItemClassName("ui-form-modal-divider", item),
       });
     }
+    if (type === "branding") {
+      return renderBrandingItem(item);
+    }
     if (type === "display") {
       return renderDisplayItem(item);
     }
@@ -214,6 +217,51 @@ export function createFormModal(options = {}) {
     }
     console.warn(`[createFormModal] Unsupported item type "${type}".`);
     return null;
+  }
+
+  function renderBrandingItem(item) {
+    const mediaUrl = String(item.mediaUrl || "").trim();
+    const backgroundImageUrl = String(item.backgroundImageUrl || "").trim();
+    const backgroundImageAlt = String(item.backgroundImageAlt || "").trim();
+    const tone = normalizeBrandingTone(item.backgroundTone);
+    const wrapper = createElement("div", {
+      className: getItemClassName(`ui-form-modal-branding is-tone-${tone}`, item),
+    });
+    if (backgroundImageUrl) {
+      const backgroundAttrs = {
+        src: backgroundImageUrl,
+        alt: backgroundImageAlt,
+        loading: "lazy",
+        decoding: "async",
+      };
+      if (!backgroundImageAlt) {
+        backgroundAttrs["aria-hidden"] = "true";
+      }
+      wrapper.appendChild(createElement("img", {
+        className: "ui-form-modal-branding-bg",
+        attrs: backgroundAttrs,
+      }));
+    }
+    const content = createElement("div", { className: "ui-form-modal-branding-content" });
+    if (mediaUrl) {
+      content.appendChild(createElement("img", {
+        className: "ui-form-modal-branding-media",
+        attrs: {
+          src: mediaUrl,
+          alt: String(item.mediaAlt || ""),
+          loading: "lazy",
+          decoding: "async",
+        },
+      }));
+    }
+    if (backgroundImageAlt && !mediaUrl) {
+      content.appendChild(createElement("span", {
+        className: "ui-form-modal-branding-alt",
+        text: backgroundImageAlt,
+      }));
+    }
+    wrapper.appendChild(content);
+    return wrapper;
   }
 
   function renderDisplayItem(item) {
@@ -1319,6 +1367,14 @@ function normalizeTone(value) {
     return tone;
   }
   return "info";
+}
+
+function normalizeBrandingTone(value) {
+  const tone = String(value || "auto").trim().toLowerCase();
+  if (tone === "auto" || tone === "dark" || tone === "light" || tone === "none") {
+    return tone;
+  }
+  return "auto";
 }
 
 function normalizeSpan(value) {

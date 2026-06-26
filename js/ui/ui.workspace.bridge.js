@@ -1274,6 +1274,7 @@ const BRIDGE_FORM_SUPPORTED_TYPES = {
   hidden: ["type", "name", "value", "rowClassName", "className"],
   text: ["type", "content", "rowClassName", "className", "span"],
   alert: ["type", "content", "tone", "rowClassName", "className", "span"],
+  branding: ["type", "mediaUrl", "mediaAlt", "backgroundImageUrl", "backgroundImageAlt", "backgroundTone", "rowClassName", "className", "span"],
   divider: ["type", "rowClassName", "className", "span"],
   display: ["type", "name", "label", "value", "help", "emptyText", "span", "rowClassName", "className"],
 };

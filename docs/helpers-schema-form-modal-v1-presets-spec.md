@@ -139,6 +139,11 @@ Standard login flow for operator/admin sign-in.
 - `identifierAutocomplete`
 - `passwordLabel`
 - `passwordPlaceholder`
+- `mediaUrl`
+- `mediaAlt`
+- `backgroundImageUrl`
+- `backgroundImageAlt`
+- `backgroundTone`
 - `fields`
 - `initialValues`
 - `onSubmit(values, ctx)`
@@ -175,6 +180,8 @@ rows: [
 
 - the wrapper may support either email-style or username-style identifier labeling
 - the field name should remain configurable through `fields.identifier`
+- branding options are URL-based only; apps should pass asset URLs and alt text while Helper owns image markup, sizing, contrast treatment, and responsive layout
+- `backgroundTone` may be `"auto"`, `"dark"`, `"light"`, or `"none"`
 
 ## 2. `createReauthFormModal(...)`
 
