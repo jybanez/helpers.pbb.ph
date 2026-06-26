@@ -8,7 +8,7 @@ It should provide:
 
 - text entry
 - send trigger
-- native file-picker trigger
+- native file-picker and paste attachment trigger
 - disabled/busy state
 - optional helper text
 
@@ -24,7 +24,7 @@ It should not own:
 
 - give PBB apps a shared message-composer UI
 - keep send/attachment controls visually consistent
-- own the basic native file-pick interaction for message attachments
+- own the basic native file-pick and paste interaction for message attachments
 - compose cleanly with `ui.chat.thread`
 
 ## Non-Goals
@@ -74,7 +74,7 @@ type ChatComposerOptions = {
   submitOnEnter?: boolean;
   onChange?: (value: string) => void;
   onSend?: (payload: { text: string }) => void | Promise<void>;
-  onFilesSelected?: (files: File[], meta: { source: "picker" }) => void;
+  onFilesSelected?: (files: File[], meta: { source: "picker" | "paste" }) => void;
 };
 ```
 
@@ -120,7 +120,7 @@ type ChatComposerOptions = {
 
 - only render when `showAttachmentButton` is `true`
 - clicking opens a hidden native `<input type="file">`
-- selected files return through `onFilesSelected(files, meta)`
+- selected or pasted files return through `onFilesSelected(files, meta)`
 - V1 does not own upload UI or queue rendering by itself
 
 ### Helper text
@@ -167,6 +167,14 @@ When `busy` is `true`:
   - optional `capture`
 - the helper should return selected files as plain `File[]`
 - the helper should clear the native input value after handling selection so the same file can be re-picked later if needed
+
+### Paste attachments
+
+- when attachments are enabled, pasted clipboard file items should use the same `onFilesSelected(files, meta)` callback
+- pasted files should use `meta.source === "paste"`
+- pasted files should respect `accept`, `multiple`, `disabled`, and `busy`
+- text-only paste remains native text input behavior
+- when `showAttachmentButton` is `false`, pasted files are ignored by the helper
 
 ## Methods
 

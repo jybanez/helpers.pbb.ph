@@ -24,7 +24,7 @@
   <script>
     window.demoMeta = {
       title: "Chat Composer",
-      overview: "Shared message composer with send handling, busy state, multiline text entry, and helper-owned native file picking.",
+      overview: "Shared message composer with send handling, busy state, multiline text entry, and helper-owned native file picking or paste attachments.",
       useWhen: [
         "Use <code>createChatComposer(...)</code> for chat send surfaces, support/admin messaging inputs, and Workspace-hosted communication panes.",
         "Compose it with <code>ui.chat.thread</code> and app-owned transport logic."
@@ -33,8 +33,8 @@
         "Do not put upload transport or realtime send logic inside the helper.",
         "Do not use it as a general-purpose form textarea when the real need is message composition."
       ],
-      description: "The composer helper owns the interaction shell plus the hidden native file picker. Apps still own send lifecycle, upload orchestration, and draft persistence.",
-      defaultSampleCode: "const composer = createChatComposer(host, { value: '' }, {\n  helperText: 'Enter sends. Shift+Enter adds a new line.',\n  accept: 'image/*,video/*,.pdf,.mp3',\n  multiple: true,\n  onSend({ text }) {\n    console.log('send', text);\n  },\n  onFilesSelected(files) {\n    console.log('files', files);\n  },\n});",
+      description: "The composer helper owns the interaction shell, hidden native file picker, and clipboard file paste path. Apps still own send lifecycle, upload orchestration, and draft persistence.",
+      defaultSampleCode: "const composer = createChatComposer(host, { value: '' }, {\n  helperText: 'Enter sends. Shift+Enter adds a new line.',\n  accept: 'image/*,video/*,.pdf,.mp3',\n  multiple: true,\n  onSend({ text }) {\n    console.log('send', text);\n  },\n  onFilesSelected(files, meta) {\n    console.log(meta.source, files);\n  },\n});",
       constructor: [
         { factory: "<code>createChatComposer(container, data, options)</code>", arguments: "target container, initial data, composer options", returns: "Chat composer instance" }
       ],
@@ -46,9 +46,9 @@
         { option: "<code>busy</code>", default: '<code>false</code>', description: "Disables sending and file picking during an active submit/upload phase." },
         { option: "<code>sendLabel</code>", default: '<code>"Send"</code>', description: "Visible label for the send action." },
         { option: "<code>attachmentLabel</code>", default: '<code>"Attach"</code>', description: "Accessible label/title for the helper-owned attach action." },
-        { option: "<code>showAttachmentButton</code>", default: '<code>true</code>', description: "Shows or hides the attach action entirely." },
-        { option: "<code>accept</code>", default: '<code>""</code>', description: "Native file-input <code>accept</code> filter passed to the hidden picker." },
-        { option: "<code>multiple</code>", default: '<code>true</code>', description: "Allows multiple files to be selected in one pick operation." },
+        { option: "<code>showAttachmentButton</code>", default: '<code>true</code>', description: "Shows or hides the attach action and helper-owned paste attachment handling." },
+        { option: "<code>accept</code>", default: '<code>""</code>', description: "Native file-input <code>accept</code> filter passed to the hidden picker and pasted clipboard files." },
+        { option: "<code>multiple</code>", default: '<code>true</code>', description: "Allows multiple files to be selected or pasted in one operation." },
         { option: "<code>capture</code>", default: '<code>null</code>', description: "Optional native capture hint for camera/mic-capable environments." },
         { option: "<code>maxLength</code>", default: '<code>null</code>', description: "Optional max length constraint for the text input." },
         { option: "<code>multiline</code>", default: '<code>true</code>', description: "Uses a textarea by default; when false, uses a single-line input." },
@@ -58,7 +58,7 @@
       events: [
         { event: "<code>onChange(value)</code>", arguments: "current input string", returns: "<code>void</code>", description: "Fires on every text input change." },
         { event: "<code>onSend({ text })</code>", arguments: "plain text payload", returns: "<code>void | Promise&lt;void&gt;</code>", description: "Fires when the helper accepts a send action." },
-        { event: "<code>onFilesSelected(files, meta)</code>", arguments: "<code>File[]</code> and picker metadata", returns: "<code>void</code>", description: "Fires after the helper-owned native file picker returns selected files." }
+        { event: "<code>onFilesSelected(files, meta)</code>", arguments: "<code>File[]</code> and <code>{ source: \"picker\" | \"paste\" }</code>", returns: "<code>void</code>", description: "Fires after the helper-owned native file picker or clipboard paste returns accepted files." }
       ],
       methods: [
         { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
@@ -164,7 +164,7 @@
       onSend({ text }) {
         writeLog("composer.send", { text });
       },
-      onFilesSelected(files) {
+      onFilesSelected(files, meta) {
         const nextItems = files.map((file, index) => ({
           id: `${Date.now()}-${index}-${file.name}`,
           kind: inferKind(file),
@@ -175,7 +175,7 @@
         }));
         queueItems = queueItems.concat(nextItems);
         queue.setItems(queueItems);
-        writeLog("composer.filesSelected", { count: files.length, names: files.map((file) => file.name) });
+        writeLog("composer.filesSelected", { source: meta?.source, count: files.length, names: files.map((file) => file.name) });
       },
     });
 
