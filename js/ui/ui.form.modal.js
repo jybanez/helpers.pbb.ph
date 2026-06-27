@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS = {
   extraActionsPlacement: "end",
   submitLabel: "Submit",
   cancelLabel: "Cancel",
+  showCancelButton: true,
   submitVariant: "primary",
   submitIcon: "",
   cancelIcon: "",
@@ -1045,12 +1046,12 @@ export function createFormModal(options = {}) {
       autoBusy: false,
       actions: [
         ...extraActions,
-        {
+        ...(currentOptions.showCancelButton ? [{
           id: "cancel",
           label: currentOptions.cancelLabel,
           variant: "ghost",
           icon: currentOptions.cancelIcon || "",
-        },
+        }] : []),
         {
           id: "submit",
           label: currentOptions.submitLabel,
@@ -1247,6 +1248,7 @@ function normalizeOptions(options = {}) {
     extraActionsPlacement: normalizeExtraActionsPlacement(options.extraActionsPlacement),
     submitLabel: String(options.submitLabel || DEFAULT_OPTIONS.submitLabel),
     cancelLabel: String(options.cancelLabel || DEFAULT_OPTIONS.cancelLabel),
+    showCancelButton: options.showCancelButton !== false,
     submitVariant: normalizeSubmitVariant(options.submitVariant),
     busyMessage: String(options.busyMessage || DEFAULT_OPTIONS.busyMessage),
     manageBusyOnSubmit: options.manageBusyOnSubmit !== false,

@@ -280,6 +280,30 @@
         return result;
       }
 
+      async function runBridgeBlockingLoginForm() {
+        const result = await showWorkspaceFormModal({
+          intent: "login",
+          title: "Blocking Login",
+          ownerTitle: "Bridge Child",
+          size: "sm",
+          submitLabel: "Login",
+          showCancelButton: false,
+          showCloseButton: false,
+          closeOnBackdrop: false,
+          closeOnEscape: false,
+          initialValues: {
+            email: "user@pbb.ph",
+            password: "correct-password",
+          },
+          rows: [
+            [{ type: "input", input: "email", name: "email", label: "Email address", required: true }],
+            [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
+          ],
+        });
+        writeLog("modal.form.blockingLogin", result);
+        return result;
+      }
+
       async function runInvalidBridgeForm() {
         try {
           await showWorkspaceFormModal({
@@ -386,6 +410,7 @@
         runBridgeAccountForm,
         runBridgeChangePasswordForm,
         runBridgeGenericForm,
+        runBridgeBlockingLoginForm,
         runInvalidBridgeForm,
         runUnsupportedBridgeForm,
         runAutoActionModal,

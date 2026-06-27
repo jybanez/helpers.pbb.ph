@@ -3391,7 +3391,10 @@ const result = await showWorkspaceFormModal({
   intent: "login",
   title: "Login",
   submitLabel: "Login",
-  cancelLabel: "Cancel",
+  showCloseButton: false,
+  showCancelButton: false,
+  closeOnBackdrop: false,
+  closeOnEscape: false,
   rows: [
     [{ type: "input", input: "email", name: "email", label: "Email address", required: true }],
     [{ type: "input", input: "password", name: "password", label: "Password", required: true }],
@@ -3517,6 +3520,7 @@ Options:
 | `extraActionsPlacement` | `"start" \| "end"` | `"end"` | no | Places additive footer actions either in the same end cluster or split to the start side of the footer. |
 | `submitLabel` | `string` | `"Submit"` | no | Submit action label. |
 | `cancelLabel` | `string` | `"Cancel"` | no | Cancel action label. |
+| `showCancelButton` | `boolean` | `true` | no | Renders the helper-owned Cancel footer action. Set to `false` for blocking auth gates where dismissal is not allowed. |
 | `submitVariant` | `string` | `"primary"` | no | Submit button variant. |
 | `submitIcon` | `string` | `null` | no | Submit button icon markup. |
 | `cancelIcon` | `string` | `null` | no | Cancel button icon markup. |
@@ -3769,7 +3773,7 @@ Preset options:
 
 | Factory | Notable options |
 |---|---|
-| `createLoginFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierPlaceholder`, `identifierAutocomplete`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
+| `createLoginFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `showCancelButton`, `identifierKind`, `identifierLabel`, `identifierPlaceholder`, `identifierAutocomplete`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createReauthFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `identifierKind`, `identifierLabel`, `identifierValue`, `passwordLabel`, `passwordPlaceholder`, `fields`, `initialValues`, `onSubmit` |
 | `createStatusUpdateFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `statusOptions`, `statusLabel`, `remarksLabel`, `remarksPlaceholder`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
 | `createReasonFormModal(...)` | `title`, `message`, `submitLabel`, `busyMessage`, `reasonOptions`, `reasonLabel`, `detailsLabel`, `detailsPlaceholder`, `detailsRequiredFor`, `detailsRequiredMessage`, `confirmPhrase`, `confirmLabel`, `showNotify`, `notifyLabel`, `fields`, `initialValues`, `onSubmit` |
@@ -3788,6 +3792,15 @@ Example:
 import { createLoginFormModal } from "./js/ui/ui.form.modal.presets.js";
 
 const modal = createLoginFormModal({
+  showCloseButton: false,
+  showCancelButton: false,
+  closeOnBackdrop: false,
+  closeOnEscape: false,
+  mediaUrl: "/assets/launcher/app-icon.png",
+  mediaAlt: "PBB Chat",
+  backgroundImageUrl: "/assets/seasonal/login-bg.png",
+  backgroundImageAlt: "",
+  backgroundTone: "dark",
   fields: {
     identifier: "user_email",
     password: "user_password",

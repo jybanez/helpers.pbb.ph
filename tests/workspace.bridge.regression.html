@@ -181,6 +181,18 @@
       assert(String(unsupportedResult?.message || "").includes("Unsupported row type"), "unsupported row-type rejection should mention unsupported row type");
       assert(!document.body.querySelector(".ui-form-modal"), "unsupported row-type payload should not leave a parent form modal mounted");
       assert(!bridgeFrame.contentDocument.querySelector(".ui-form-modal"), "unsupported row-type payload should not render a child form modal");
+
+      const afterUnsupportedLogText = bridgeFrame.contentDocument.querySelector("#log")?.textContent || "";
+      bridgeFrame.contentWindow.__workspaceBridgeFixture.runBridgeBlockingLoginForm();
+      await wait(300);
+      assert(Boolean(document.body.querySelector(".ui-form-modal")), "blocking bridge login form should render in parent document");
+      const blockingBridgeFooterLabels = Array.from(document.body.querySelectorAll(".ui-action-modal-button")).map((button) => button.textContent.trim());
+      assert(!blockingBridgeFooterLabels.some((label) => /cancel/i.test(label)), "blocking bridge login form should omit the helper-owned Cancel action");
+      assert(blockingBridgeFooterLabels.some((label) => /login/i.test(label)), "blocking bridge login form should keep submit visible");
+      assert(document.body.querySelector(".ui-modal-close")?.hidden === true, "blocking bridge login form should hide the header close action");
+      Array.from(document.body.querySelectorAll(".ui-action-modal-button")).find((button) => button.textContent.includes("Login"))?.click();
+      await wait(450);
+      assert((bridgeFrame.contentDocument.querySelector("#log")?.textContent || "") !== afterUnsupportedLogText, "blocking bridge login form should still round-trip submit result back to the child iframe");
     } catch (error) {
       failures.push(`exception: ${String(error?.message || error)}`);
     }

@@ -80,6 +80,31 @@
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove login modal from DOM");
 
+    const blockingLoginModal = createFormModal({
+      title: "Blocking Login",
+      submitLabel: "Login",
+      showCloseButton: false,
+      closeOnBackdrop: false,
+      closeOnEscape: false,
+      showCancelButton: false,
+      rows: [
+        [{ type: "input", input: "email", name: "email", label: "Email", value: "operator@pbb.ph", required: true }],
+        [{ type: "input", input: "password", name: "password", label: "Password", value: "correct-password", required: true }],
+      ],
+      onSubmit() {
+        return true;
+      },
+    });
+
+    blockingLoginModal.open();
+    await wait(80);
+    const blockingFooterLabels = Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).map((button) => button.textContent.trim());
+    assert(!blockingFooterLabels.some((label) => /cancel/i.test(label)), "showCancelButton false should omit the helper-owned Cancel action");
+    assert(blockingFooterLabels.some((label) => /login/i.test(label)), "showCancelButton false should keep the submit action");
+    assert(document.querySelector(".ui-modal-close").hidden === true, "showCloseButton false should still hide the header close action");
+    blockingLoginModal.destroy();
+    await wait(80);
+
     const crudModal = createFormModal({
       title: "Create User",
       busyMessage: "Saving user...",
@@ -657,7 +682,7 @@
     assert(numberStepperModal.getValues().staging_hours === 2, "number_stepper alias should serialize numeric values");
 
     submitRequestButton()?.click();
-    await wait(120);
+    await wait(220);
     assert(quantityError()?.textContent.includes("required"), "required number-stepper should render validation error");
     assert(quantityInput()?.getAttribute("aria-invalid") === "true", "number-stepper input should receive aria-invalid on validation error");
     assert(document.activeElement === quantityInput(), "required number-stepper validation should focus the inner input");

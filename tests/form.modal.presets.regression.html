@@ -90,6 +90,29 @@
     presetLoginModal.destroy();
     await wait(80);
 
+    const blockingPresetLoginModal = createLoginFormModal({
+      showCloseButton: false,
+      closeOnBackdrop: false,
+      closeOnEscape: false,
+      showCancelButton: false,
+      initialValues: {
+        email: "operator@pbb.ph",
+        password: "correct-password",
+      },
+      onSubmit() {
+        return true;
+      },
+    });
+
+    blockingPresetLoginModal.open();
+    await wait(80);
+    const blockingPresetFooterLabels = Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).map((button) => button.textContent.trim());
+    assert(!blockingPresetFooterLabels.some((label) => /cancel/i.test(label)), "preset login should pass showCancelButton false through to createFormModal");
+    assert(blockingPresetFooterLabels.some((label) => /login/i.test(label)), "preset login should keep submit visible when Cancel is hidden");
+    assert(document.querySelector(".ui-modal-close").hidden === true, "preset login should pass showCloseButton false through to createFormModal");
+    blockingPresetLoginModal.destroy();
+    await wait(80);
+
     const presetLoginSuccessModal = createLoginFormModal({
       fields: {
         identifier: "user_email",

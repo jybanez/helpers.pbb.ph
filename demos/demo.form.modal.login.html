@@ -35,7 +35,7 @@
         "Do not use it when the login UI must live inline on a page instead of inside a modal."
       ],
       description: "This wrapper keeps the login layout fixed while still allowing identifier remapping, message overrides, URL-based branding assets, and app-owned submit handling.",
-      defaultSampleCode: `const modal = createLoginFormModal({\n  fields: {\n    identifier: \"user_email\",\n    password: \"user_password\",\n  },\n  identifierKind: \"email\",\n  mediaUrl: \"/assets/launcher/app-icon.png\",\n  mediaAlt: \"PBB Chat\",\n  backgroundImageUrl: \"/assets/seasonal/login-bg.png\",\n  backgroundImageAlt: \"\",\n  backgroundTone: \"dark\",\n  initialValues: {\n    user_email: \"operator@pbb.ph\",\n  },\n  async onSubmit(values, ctx) {\n    if (values.user_password !== \"correct-password\") {\n      ctx.setErrors({ user_password: \"Invalid password.\" });\n      return false;\n    }\n    return true;\n  },\n});\n\nmodal.open();`,
+      defaultSampleCode: `const modal = createLoginFormModal({\n  showCloseButton: false,\n  showCancelButton: false,\n  closeOnBackdrop: false,\n  closeOnEscape: false,\n  fields: {\n    identifier: \"user_email\",\n    password: \"user_password\",\n  },\n  identifierKind: \"email\",\n  mediaUrl: \"/assets/launcher/app-icon.png\",\n  mediaAlt: \"PBB Chat\",\n  backgroundImageUrl: \"/assets/seasonal/login-bg.png\",\n  backgroundImageAlt: \"\",\n  backgroundTone: \"dark\",\n  initialValues: {\n    user_email: \"operator@pbb.ph\",\n  },\n  async onSubmit(values, ctx) {\n    if (values.user_password !== \"correct-password\") {\n      ctx.setErrors({ user_password: \"Invalid password.\" });\n      return false;\n    }\n    return true;\n  },\n});\n\nmodal.open();`,
       constructor: [
         { factory: "<code>createLoginFormModal(options)</code>", arguments: "preset options object", returns: "Form-modal instance" }
       ],
@@ -47,6 +47,7 @@
         { option: "<code>identifierAutocomplete</code>", default: "component default", description: "Override for the identifier autocomplete token." },
         { option: "<code>passwordLabel</code>", default: "<code>\"Password\"</code>", description: "Password field label override." },
         { option: "<code>passwordPlaceholder</code>", default: "component default", description: "Password field placeholder override." },
+        { option: "<code>showCancelButton</code>", default: "<code>true</code>", description: "Set to <code>false</code> for blocking login gates that cannot be cancelled." },
         { option: "<code>mediaUrl</code>", default: '<code>""</code>', description: "Optional foreground app/logo image URL rendered by Helper." },
         { option: "<code>mediaAlt</code>", default: '<code>""</code>', description: "Alt text for the foreground branding image." },
         { option: "<code>backgroundImageUrl</code>", default: '<code>""</code>', description: "Optional background art URL rendered behind the branding image." },
@@ -101,6 +102,10 @@
         <button id="brandedLoginPresetBtn" class="ui-button ui-button-ghost" type="button">Open Branded Login</button>
       </div>
       <pre>const modal = createLoginFormModal({
+  showCloseButton: false,
+  showCancelButton: false,
+  closeOnBackdrop: false,
+  closeOnEscape: false,
   fields: {
     identifier: "user_email",
     password: "user_password",
