@@ -36,8 +36,8 @@
 
     try {
       const sampleMessages = [
-        { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, text: "Incoming message", timestamp: "09:00" },
-        { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview }, replyTo: { id: "i1", senderName: "Dispatcher", text: "Incoming message" }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
+        { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, senderPresence: "online", text: "Incoming message", timestamp: "09:00" },
+        { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview, presence: "online" }, replyTo: { id: "i1", senderName: "Dispatcher", text: "Incoming message" }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
         { id: "s1", direction: "system", text: "Transferred" },
         { id: "f1", direction: "incoming", senderName: "Dispatcher", reply: { id: "o1", senderName: "Operator", attachmentLabel: "route-plan.pdf" }, text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
         { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
@@ -75,8 +75,12 @@
       assert(threadHost.querySelectorAll(".ui-chat-message-menu-trigger").length === 4, "thread should render action triggers for non-system messages with menu items");
       assert(threadHost.querySelectorAll(".ui-chat-message-avatar").length === 4, "thread should render avatar slots for non-system sender messages");
       assert(threadHost.querySelectorAll(".ui-chat-message-avatar-image").length === 2, "thread should render senderAvatar and sender.avatar image avatars");
+      assert(threadHost.querySelectorAll(".ui-chat-message-avatar-presence").length === 2, "thread should render online presence dots for flat and nested sender presence");
+      assert(threadHost.querySelector('[data-message-id="i1"] .ui-chat-message-avatar')?.classList.contains("is-presence-online"), "thread should mark flat senderPresence as online");
+      assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-avatar')?.classList.contains("is-presence-online"), "thread should mark sender.presence as online");
       assert(threadHost.querySelector('[data-message-id="f1"] .ui-chat-message-avatar-fallback')?.textContent === "D", "thread should render initials fallback when no avatar URL is provided");
       assert(threadHost.querySelector('[data-message-id="p1"] .ui-chat-message-avatar')?.classList.contains("is-placeholder"), "grouped follow-up messages should reserve the avatar column without repeating the avatar");
+      assert(!threadHost.querySelector('[data-message-id="p1"] .ui-chat-message-avatar-presence'), "grouped placeholder avatars should not render presence dots");
       assert(!threadHost.querySelector('[data-message-id="s1"] .ui-chat-message-avatar'), "system messages should not render avatars");
       assert(threadHost.querySelectorAll(".ui-chat-message-reply").length === 2, "thread should render reply previews");
       assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply-sender')?.textContent === "Dispatcher", "thread should render reply preview sender");
