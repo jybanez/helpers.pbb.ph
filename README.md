@@ -1398,6 +1398,7 @@ Methods:
   - sender names
   - sender avatars through `message.senderAvatar` or `message.sender.avatar`
   - initials fallback when a sender has no avatar URL
+  - online sender presence indicators through `message.senderPresence` or `message.sender.presence`
   - reply previews through `message.replyTo`
   - timestamps
   - outgoing delivery/read states
@@ -1405,6 +1406,10 @@ Methods:
   - grouped image/video attachments through `ui.media.strip`
   - audio/file attachments as listed rows
   - helper-owned per-message action trigger when apps return menu items
+- Reusable avatar presence utilities:
+  - wrap app-owned avatars with `.ui-avatar-presence-host`
+  - add `.is-presence-online` and a child `.ui-avatar-presence-dot`
+  - V1 renders the online dot; offline/unknown states should omit the dot or use `none`
 - Reply preview shape:
   - `message.replyTo.id`
   - `message.replyTo.senderName`

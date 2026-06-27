@@ -69,6 +69,7 @@
 }
 
 .ui-chat-message-avatar {
+  position: relative;
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
@@ -82,6 +83,10 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
+}
+
+.ui-chat-message-avatar-presence {
+  z-index: 2;
 }
 
 .ui-chat-message-avatar.is-placeholder {

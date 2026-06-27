@@ -209,9 +209,17 @@ export function createChatThread(container, data = {}, options = {}) {
   function createMessageAvatar(message, grouped) {
     const senderName = String(message.senderName || "").trim();
     const avatarUrl = getSenderAvatarUrl(message);
+    const presence = normalizeSenderPresence(message);
+    const renderPresence = shouldRenderPresence(presence) && !grouped;
     const initials = getInitials(senderName);
     const avatar = createElement("span", {
-      className: `ui-chat-message-avatar${grouped ? " is-placeholder" : ""}${avatarUrl ? " has-image" : ""}`,
+      className: [
+        "ui-chat-message-avatar",
+        "ui-avatar-presence-host",
+        grouped ? "is-placeholder" : "",
+        avatarUrl ? "has-image" : "",
+        renderPresence ? `has-presence is-presence-${presence}` : "",
+      ].filter(Boolean).join(" "),
       attrs: {
         "aria-hidden": "true",
         title: grouped ? "" : senderName,
@@ -240,6 +248,14 @@ export function createChatThread(container, data = {}, options = {}) {
       className: "ui-chat-message-avatar-fallback",
       text: initials,
     }));
+    if (renderPresence) {
+      avatar.appendChild(createElement("span", {
+        className: "ui-avatar-presence-dot ui-chat-message-avatar-presence",
+        attrs: {
+          "aria-hidden": "true",
+        },
+      }));
+    }
     return avatar;
   }
 
@@ -718,6 +734,18 @@ function shouldRenderAvatar(message) {
 
 function getSenderAvatarUrl(message) {
   return String(message?.senderAvatar || message?.sender?.avatar || "").trim();
+}
+
+function normalizeSenderPresence(message) {
+  const value = String(message?.senderPresence || message?.sender?.presence || "").trim().toLowerCase();
+  if (["online", "away", "busy", "offline", "none"].includes(value)) {
+    return value;
+  }
+  return "none";
+}
+
+function shouldRenderPresence(presence) {
+  return presence === "online";
 }
 
 function getMessageReplyTo(message) {

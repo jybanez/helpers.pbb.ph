@@ -33,7 +33,7 @@
         "Do not use it as a conversation list; it is a single-thread surface."
       ],
       description: "The thread helper owns message presentation only. Apps still own transport, upload orchestration, and conversation state beyond the provided message array.",
-      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    text: 'Team is en route.',\n  }, {\n    id: 'm2',\n    direction: 'outgoing',\n    senderName: 'Operator One',\n    replyTo: {\n      id: 'm1',\n      senderName: 'Dispatcher Jane',\n      text: 'Team is en route.',\n    },\n    text: 'Copy. Route packet follows.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onReplyPreviewOpen(message, replyTo) {\n    console.log('reply.open', message.id, replyTo.id);\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
+      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    senderPresence: 'online',\n    text: 'Team is en route.',\n  }, {\n    id: 'm2',\n    direction: 'outgoing',\n    senderName: 'Operator One',\n    sender: { avatar: '/avatars/operator.jpg', presence: 'online' },\n    replyTo: {\n      id: 'm1',\n      senderName: 'Dispatcher Jane',\n      text: 'Team is en route.',\n    },\n    text: 'Copy. Route packet follows.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onReplyPreviewOpen(message, replyTo) {\n    console.log('reply.open', message.id, replyTo.id);\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
       constructor: [
         { factory: "<code>createChatThread(container, data, options)</code>", arguments: "target container, thread data, thread options", returns: "Chat thread instance" }
       ],
@@ -60,6 +60,8 @@
       data: [
         { property: "<code>message.senderAvatar</code>", description: "Optional sender avatar image URL. When omitted, Helper falls back to initials from <code>senderName</code>." },
         { property: "<code>message.sender.avatar</code>", description: "Convenience alias for apps that keep sender metadata grouped under <code>sender</code>." },
+        { property: "<code>message.senderPresence</code>", description: "Optional sender presence state. V1 renders an online indicator for <code>online</code> and hides unknown/offline states." },
+        { property: "<code>message.sender.presence</code>", description: "Convenience alias for apps that keep sender metadata grouped under <code>sender</code>." },
         { property: "<code>message.replyTo</code>", description: "Optional replied-message preview object. Helper renders it inside the message bubble before the message body." },
         { property: "<code>message.replyTo.senderName</code>", description: "Sender label shown at the top of the reply preview." },
         { property: "<code>message.replyTo.text</code>", description: "Short text excerpt shown in the reply preview." },
@@ -117,6 +119,7 @@
         direction: "incoming",
         senderName: "Dispatcher Jane",
         senderAvatar: avatarJane,
+        senderPresence: "online",
         text: "Team is en route to Lahug. Please keep the line open.",
         timestamp: "09:18",
       },
@@ -125,6 +128,7 @@
         direction: "incoming",
         senderName: "Dispatcher Jane",
         senderAvatar: avatarJane,
+        senderPresence: "online",
         text: "Mixed media bundle from the site attached below.",
         timestamp: "09:19",
         attachments: [
@@ -140,6 +144,7 @@
         direction: "incoming",
         senderName: "Dispatcher Jane",
         senderAvatar: avatarJane,
+        senderPresence: "online",
         text: "Full mixed attachment packet for field review attached here.",
         timestamp: "09:20",
         attachments: [
@@ -162,7 +167,7 @@
         id: "m4",
         direction: "outgoing",
         senderName: "Operator One",
-        senderAvatar: avatarOperator,
+        sender: { avatar: avatarOperator, presence: "online" },
         replyTo: {
           id: "m2b",
           senderName: "Dispatcher Jane",
@@ -182,7 +187,7 @@
         id: "m5",
         direction: "outgoing",
         senderName: "Operator One",
-        senderAvatar: avatarOperator,
+        sender: { avatar: avatarOperator, presence: "offline" },
         replyTo: {
           id: "m4",
           senderName: "Operator One",
@@ -206,7 +211,10 @@
         id: `vt-${messageNumber}`,
         direction: messageNumber % 5 === 0 ? "outgoing" : "incoming",
         senderName: messageNumber % 5 === 0 ? "Operator One" : "Dispatcher Jane",
-        senderAvatar: messageNumber % 5 === 0 ? avatarOperator : avatarJane,
+        sender: {
+          avatar: messageNumber % 5 === 0 ? avatarOperator : avatarJane,
+          presence: messageNumber % 7 === 0 ? "offline" : "online",
+        },
         text: `Virtualized history message ${messageNumber}. Keep the route channel open and continue monitoring updates.`,
         timestamp: `10:${String(messageNumber % 60).padStart(2, "0")}`,
         state: messageNumber % 5 === 0 ? "delivered" : undefined,
