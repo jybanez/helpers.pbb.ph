@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Input Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/ui/ui.file.input.css">
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <div id="disabledHost"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createFileInput } from "../js/ui/ui.file.input.js";
+
+    const failures = [];
+    const events = [];
+    const host = document.getElementById("host");
+    const disabledHost = document.getElementById("disabledHost");
+    const results = document.getElementById("results");
+
+    try {
+      const picker = createFileInput(host, {
+        label: "Attachments",
+        accept: "image/*,.pdf",
+        multiple: true,
+        maxFiles: 2,
+        enableDrop: true,
+        enablePaste: true,
+        onChange(files, meta) {
+          events.push({ type: "change", source: meta.source, names: files.map((file) => file.name) });
+        },
+        onError(errors, meta) {
+          events.push({ type: "error", source: meta.source, messages: errors.map((error) => error.message) });
+        },
+        onClear(meta) {
+          events.push({ type: "clear", source: meta.source });
+        },
+      });
+
+      assert(host.querySelector(".ui-file-input"), "file input should render root");
+      assert(host.querySelector(".ui-file-input-native")?.type === "file", "file input should render native file input");
+      assert(host.querySelector(".ui-file-input-body")?.getAttribute("role") === "button", "drop body should be keyboard reachable");
+
+      const pickedPdf = new File(["pdf"], "report.pdf", { type: "application/pdf" });
+      const nativeInput = host.querySelector(".ui-file-input-native");
+      Object.defineProperty(nativeInput, "files", {
+        configurable: true,
+        value: [pickedPdf],
+      });
+      nativeInput.dispatchEvent(new Event("change", { bubbles: true }));
+      assert(events.some((event) => event.type === "change" && event.source === "picker" && event.names.includes("report.pdf")), "picker source should emit selected file");
+      assert(picker.getFiles().length === 1 && picker.getFiles()[0].name === "report.pdf", "getFiles should return current selection");
+
+      const pastedImage = new File(["image"], "clipboard.png", { type: "image/png" });
+      const pastedText = new File(["text"], "notes.txt", { type: "text/plain" });
+      const pasteEvent = dispatchPaste(host.querySelector(".ui-file-input"), [pastedImage, pastedText]);
+      assert(pasteEvent.defaultPrevented === true, "accepted pasted files should prevent default paste handling");
+      assert(events.some((event) => event.type === "change" && event.source === "paste" && event.names.includes("clipboard.png") && !event.names.includes("notes.txt")), "paste source should emit accepted files only");
+      assert(events.some((event) => event.type === "error" && event.source === "paste"), "paste source should report rejected files");
+
+      const droppedImage = new File(["drop"], "dropped.jpg", { type: "image/jpeg" });
+      const droppedPdf = new File(["drop"], "dropped.pdf", { type: "application/pdf" });
+      const extraPdf = new File(["drop"], "extra.pdf", { type: "application/pdf" });
+      const dropEvent = dispatchDrop(host.querySelector(".ui-file-input-body"), [droppedImage, droppedPdf, extraPdf]);
+      assert(dropEvent.defaultPrevented === true, "drop should prevent default browser handling");
+      assert(events.some((event) => event.type === "change" && event.source === "drop" && event.names.length === 2 && event.names.includes("dropped.jpg") && event.names.includes("dropped.pdf")), "drop source should respect maxFiles and emit accepted files");
+      assert(events.some((event) => event.type === "error" && event.source === "drop" && event.messages.some((message) => message.includes("Only 2 files"))), "drop source should report maxFiles errors");
+
+      picker.clear();
+      assert(picker.getFiles().length === 0, "clear should empty selected files");
+      assert(events.some((event) => event.type === "clear"), "clear should emit onClear");
+
+      createFileInput(disabledHost, {
+        disabled: true,
+        onChange(files, meta) {
+          events.push({ type: "disabled-change", source: meta.source, count: files.length });
+        },
+      });
+      dispatchDrop(disabledHost.querySelector(".ui-file-input-body"), [droppedImage]);
+      assert(!events.some((event) => event.type === "disabled-change"), "disabled picker should ignore dropped files");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function dispatchPaste(target, files) {
+      const event = new Event("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "clipboardData", {
+        configurable: true,
+        value: {
+          items: files.map((file) => ({
+            kind: "file",
+            type: file.type,
+            getAsFile: () => file,
+          })),
+          files,
+        },
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    function dispatchDrop(target, files) {
+      const event = new Event("drop", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "dataTransfer", {
+        configurable: true,
+        value: { files },
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "File input regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>
