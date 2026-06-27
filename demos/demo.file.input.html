@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Input Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1160px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
+    .log { color: #b2c2e5; min-height: 180px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.file.input"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "File Input",
+      overview: "Small file-picker control for app-owned upload flows such as avatars, record icons, and message attachments.",
+      useWhen: [
+        "Use <code>createFileInput(...)</code> when the app only needs to collect selected, dropped, or pasted <code>File</code> objects.",
+        "Use it before an app-owned upload flow, media cropper, avatar editor, or attachment queue."
+      ],
+      avoidWhen: [
+        "Do not use it when Helper should own upload queue state, progress, retry, cancel, or chunk/resume behavior; use <code>createFileUploader(...)</code> for that.",
+        "Do not treat client-side accept filters as security validation. Server/app policy remains authoritative."
+      ],
+      description: "The helper owns the native file input shell, consistent browse button, optional preview, drag/drop and paste intake, and file filtering. The app owns what happens after files are selected.",
+      defaultSampleCode: `createFileInput(host, {\n  label: "Avatar",\n  accept: "image/*",\n  preview: "avatar",\n  multiple: false,\n  onChange(files, meta) {\n    saveAvatar(files[0], meta.source);\n  },\n});`,
+      constructor: [
+        { factory: "<code>createFileInput(container, options)</code>", arguments: "host element, file-input <code>options</code>", returns: "File-input instance" }
+      ],
+      options: [
+        { option: "<code>accept</code>", default: "<code>\"\"</code>", description: "Native accept filter, also used by paste/drop filtering." },
+        { option: "<code>multiple</code>", default: "<code>false</code>", description: "Allows more than one selected file.", values: ["true", "false"] },
+        { option: "<code>enableDrop</code>", default: "<code>true</code>", description: "Accepts dragged files on the control.", values: ["true", "false"] },
+        { option: "<code>enablePaste</code>", default: "<code>true</code>", description: "Accepts pasted files while the control is focused.", values: ["true", "false"] },
+        { option: "<code>preview</code>", default: "<code>\"none\"</code>", description: "Preview mode. Supports <code>none</code>, <code>image</code>, <code>avatar</code>, and <code>icon</code>." },
+        { option: "<code>maxFileSize</code>", default: "25 MB", description: "Client-side maximum file size before emitting an error." }
+      ],
+      propertiesText: "Returned instance exposes <code>root</code> and <code>input</code> references, but app code should prefer methods where possible.",
+      events: [
+        { event: "<code>onChange(files, meta)</code>", arguments: "selected files and source metadata", returns: "<code>void</code>" },
+        { event: "<code>onError(errors, meta)</code>", arguments: "validation errors and source metadata", returns: "<code>void</code>" },
+        { event: "<code>onClear(meta)</code>", arguments: "clear metadata", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>open()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>clear()</code>", arguments: "optional metadata", returns: "<code>void</code>" },
+        { method: "<code>getFiles()</code>", arguments: "none", returns: "selected <code>File[]</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "serializable file summary and options" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">File Input Demo</h1>
+      <p class="muted">Reusable file picker for selected, dropped, or pasted files. Upload behavior remains app-owned.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Picker Variants</h2>
+      <div class="grid">
+        <div id="avatarInput"></div>
+        <div id="badgeInput"></div>
+        <div id="attachmentInput"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Sample Code</h2>
+      <pre>const picker = createFileInput(host, {
+  label: "Message attachments",
+  accept: "image/*,video/*,audio/*,.pdf",
+  multiple: true,
+  preview: "icon",
+  onChange(files, meta) {
+    attachmentQueue.add(files, { source: meta.source });
+  }
+});</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Event Log</h2>
+      <pre id="eventLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+
+    await window.__demoLoaderReady;
+    const createFileInput = await uiLoader.get("ui.file.input");
+    const log = document.getElementById("eventLog");
+    const avatarPreview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="60" fill="#243a66"/><circle cx="60" cy="45" r="22" fill="#9ec7ff"/><path d="M24 106c7-25 25-37 36-37s29 12 36 37" fill="#d6e5ff"/></svg>');
+
+    function writeLog(type, files, meta = {}) {
+      const line = `[${new Date().toLocaleTimeString()}] ${type} ${JSON.stringify({
+        source: meta.source || "",
+        files: Array.from(files || []).map((file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        })),
+      }, null, 2)}`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n\n${log.textContent}`;
+    }
+
+    function writeErrors(type, errors, meta = {}) {
+      const line = `[${new Date().toLocaleTimeString()}] ${type} ${JSON.stringify({
+        source: meta.source || "",
+        errors: Array.from(errors || []).map((error) => error.message),
+      }, null, 2)}`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n\n${log.textContent}`;
+    }
+
+    createFileInput(document.getElementById("avatarInput"), {
+      label: "Avatar photo",
+      buttonLabel: "Change photo",
+      emptyText: "Current profile photo",
+      accept: "image/*",
+      multiple: false,
+      preview: "avatar",
+      previewUrl: avatarPreview,
+      helperText: "Select, drop, or paste one image.",
+      onChange: (files, meta) => writeLog("avatar.change", files, meta),
+      onError: (errors, meta) => writeErrors("avatar.error", errors, meta),
+    });
+
+    createFileInput(document.getElementById("badgeInput"), {
+      label: "Badge icon",
+      buttonLabel: "Choose icon",
+      emptyText: "No badge icon selected",
+      accept: ".png,.jpg,.jpeg,.webp,.svg",
+      multiple: false,
+      preview: "icon",
+      icon: "community.badge",
+      helperText: "Use for record icons or badge artwork.",
+      onChange: (files, meta) => writeLog("badge.change", files, meta),
+      onError: (errors, meta) => writeErrors("badge.error", errors, meta),
+    });
+
+    createFileInput(document.getElementById("attachmentInput"), {
+      label: "Message attachments",
+      buttonLabel: "Attach files",
+      emptyText: "No attachments selected",
+      accept: "image/*,video/*,audio/*,.pdf,.txt",
+      multiple: true,
+      maxFiles: 8,
+      preview: "icon",
+      icon: "actions.attach",
+      helperText: "Good fit before a composer attachment queue.",
+      onChange: (files, meta) => writeLog("attachments.change", files, meta),
+      onError: (errors, meta) => writeErrors("attachments.error", errors, meta),
+    });
+  </script>
+</body>
+</html>

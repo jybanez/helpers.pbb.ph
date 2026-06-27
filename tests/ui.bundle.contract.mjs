@@ -41,6 +41,7 @@ const icons = await loader.get("ui.icons", { css: false });
 const createDrawer = await loader.get("ui.drawer", { css: false });
 const createBusyOverlay = await loader.get("ui.busy.overlay", { css: false });
 const createFormModal = await loader.get("ui.form.modal", { css: false });
+const createFileInput = await loader.get("ui.file.input", { css: false });
 const createPathPicker = await loader.get("ui.path.picker", { css: false });
 const createDeviceSelector = await loader.get("ui.device.selector", { css: false });
 const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { css: false });
@@ -88,6 +89,10 @@ if (typeof createDrawer !== "function") {
 
 if (typeof createFormModal !== "function") {
   throw new Error("Bundle-backed ui.form.modal did not resolve to a factory function.");
+}
+
+if (typeof createFileInput !== "function") {
+  throw new Error("Bundle-backed ui.file.input did not resolve to a factory function.");
 }
 
 if (typeof createBusyOverlay !== "function") {
@@ -247,6 +252,7 @@ if (
   !diagnostics.loadedModules.includes("ui.drawer") ||
   !diagnostics.loadedModules.includes("ui.busy.overlay") ||
   !diagnostics.loadedModules.includes("ui.form.modal") ||
+  !diagnostics.loadedModules.includes("ui.file.input") ||
   !diagnostics.loadedModules.includes("ui.path.picker") ||
   !diagnostics.loadedModules.includes("ui.device.selector") ||
   !diagnostics.loadedModules.includes("ui.device.selector.media") ||

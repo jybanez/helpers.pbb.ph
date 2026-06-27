@@ -19,6 +19,7 @@ const DEMO_GROUPS = [
       { href: "./demo.form.modal.reason.html", label: "Reason Preset" },
       { href: "./demo.form.modal.account.html", label: "Account Preset" },
       { href: "./demo.form.modal.change.password.html", label: "Change Password Preset" },
+      { href: "./demo.file.input.html", label: "File Input" },
     ],
   },
   {
@@ -34,8 +35,8 @@ const DEMO_GROUPS = [
     items: [
       { href: "./demo.grid.html", label: "Grid" },
       { href: "./demo.datepicker.html", label: "Datepicker" },
-      { href: "./demo.file.uploader.html", label: "File Uploader" },
       { href: "./demo.path.picker.html", label: "Path Picker" },
+      { href: "./demo.file.uploader.html", label: "File Uploader" },
       { href: "./demo.tree.html", label: "Tree" },
       { href: "./demo.tree.grid.html", label: "Tree Grid" },
       { href: "./demo.hierarchy.map.html", label: "Hierarchy Map" },

@@ -59,6 +59,7 @@ css/
     ui.chat.thread.css
     ui.chat.composer.css
     ui.chat.upload.queue.css
+    ui.file.input.css
     ui.file.uploader.css
     ui.tabs.css
     ui.strips.css
@@ -128,6 +129,7 @@ js/
     ui.chat.thread.js
     ui.chat.composer.js
     ui.chat.upload.queue.js
+    ui.file.input.js
     ui.file.uploader.js
     ui.tabs.js
     ui.strips.js
@@ -377,6 +379,8 @@ Reusable shared UI utilities live under `js/ui`:
   - `createChatUploadQueue(container, data, options)` draft attachment queue with grouped image/video previews, listed audio/file rows, and visual upload progress/state before send
 - `ui.property.editor.js`
   - `createPropertyEditor(container, data, options)` inspector-style property editor with grouped sections, typed property rows, mixed/read-only states, hosted `ui.select` / `password` rows, toggle/checkbox booleans, and structured property/action callbacks
+- `ui.file.input.js`
+  - `createFileInput(container, options)` lightweight file picker for selected, dropped, or pasted `File` objects before app-owned avatar, icon, or attachment flows
 - `ui.file.uploader.js`
   - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
@@ -468,6 +472,7 @@ Reusable UI styles live under `css/ui`:
 - `ui.data.inspector.css` data inspector styles
 - `ui.empty.state.css` empty-state styles
 - `ui.skeleton.css` skeleton loading styles
+- `ui.file.input.css` file input picker styles
 - `ui.file.uploader.css` file uploader styles
 - `ui.tabs.css` tab UI styles
 - `ui.strips.css` strip/chip selector styles
@@ -545,7 +550,7 @@ Public component families:
 - Modal and feedback:
   - `ui.modal`, `ui.action.modal`, `ui.dialog`, `ui.toast`, `ui.busy.overlay`
 - Forms and input:
-  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
+  - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.file.input`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
 - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.stat.cards`, `ui.icon.grid`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
@@ -6334,6 +6339,56 @@ Behavior notes:
 Related demos:
 
 - `demos/demo.skeleton.html`
+
+### `createFileInput(container, options)` (`js/ui/ui.file.input.js`)
+
+Purpose:
+
+- Collect selected, dropped, or pasted `File` objects with Helper-owned styling and filtering while the app owns upload, crop, queue, or persistence behavior.
+
+Factory:
+
+```js
+import { createFileInput } from "./js/ui/ui.file.input.js";
+
+const picker = createFileInput(container, options);
+```
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `accept` | `string` | `""` | no | Native input accept filter, also used for paste/drop filtering. |
+| `multiple` | `boolean` | `false` | no | Allows multiple selected files. |
+| `enableDrop` | `boolean` | `true` | no | Accepts dragged files on the control. |
+| `enablePaste` | `boolean` | `true` | no | Accepts pasted files while the control is focused. |
+| `preview` | `string` | `"none"` | no | Preview mode: `none`, `image`, `avatar`, or `icon`. |
+| `previewUrl` | `string` | `""` | no | Existing preview image URL for avatar/photo controls. |
+| `maxFiles` | `number` | `20` | no | Maximum accepted file count when `multiple` is enabled. |
+| `maxFileSize` | `number` | `26214400` | no | Maximum bytes per file. |
+| `icon` | `string` | `"data.upload"` | no | Shared icon id used by the browse action and icon preview fallback. |
+| `onChange` | `(files, meta) => void` | `null` | no | Fires after selected files change. |
+| `onError` | `(errors, meta) => void` | `null` | no | Fires for rejected files. |
+| `onClear` | `(meta) => void` | `null` | no | Fires when the control is cleared. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `open` | none | `void` | Opens the native file picker. |
+| `clear` | `meta?` | `void` | Clears selected files. |
+| `getFiles` | none | `File[]` | Returns the selected `File` objects. |
+| `getState` | none | `object` | Returns serializable file summaries and current options. |
+| `update` | `options` | `void` | Updates control options and rerenders. |
+| `destroy` | none | `void` | Removes DOM and listeners. |
+
+Note:
+
+- Use `ui.file.input` for avatars, record icons, and composer attachment intake. Use `ui.file.uploader` when Helper should own upload queue, progress, retry, cancel, or chunk/resume behavior.
+
+Related demos:
+
+- `demos/demo.file.input.html`
 
 ### `createFileUploader(container, options)` (`js/ui/ui.file.uploader.js`)
 
