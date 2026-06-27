@@ -28,7 +28,7 @@ const htmlUrl = "http://localhost/hotline-helpers/tests/workspace.bridge.regress
 const { stdout, stderr } = await execFileAsync(browserPath, [
   "--headless=new",
   "--disable-gpu",
-  "--virtual-time-budget=10000",
+  "--virtual-time-budget=14000",
   "--dump-dom",
   htmlUrl,
 ], { maxBuffer: 1024 * 1024 * 4 });

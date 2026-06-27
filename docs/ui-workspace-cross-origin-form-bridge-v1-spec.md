@@ -101,7 +101,9 @@ Session-based bridged preset submits stream user interaction events back to the 
   size?: "sm" | "md" | "lg";
   submitLabel?: string;
   cancelLabel?: string;
+  showCancelButton?: boolean;
   busyMessage?: string;
+  showCloseButton?: boolean;
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
   extraActionsPlacement?: "start" | "end";

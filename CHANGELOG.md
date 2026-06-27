@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `showCancelButton: false` support to `createFormModal(...)` and bridged form modals so blocking branded login gates can hide both the header close action and helper-owned Cancel action.
 - Added online sender-presence indicators to `ui.chat.thread` via `message.senderPresence` and `message.sender.presence`, plus reusable avatar-presence CSS utility classes.
 - Added `ui.file.input` with `createFileInput(...)` for lightweight file selection, drag/drop, and paste intake before app-owned avatar, record-icon, and composer-attachment flows.
 - Added `community.badge`, `community.award`, `community.medal`, and `community.certificate` to `ui.icons` for badge-management, awards, and user-recognition surfaces.
