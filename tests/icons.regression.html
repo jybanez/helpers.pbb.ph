@@ -231,11 +231,13 @@
       assert(gamepadIcon.querySelector('line[x1="7"][y1="13"][x2="11"][y2="13"]'), "media.gamepad should render a directional control");
       assert(envelopeIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope should render a closed envelope body");
       assert(envelopeIcon.querySelector('path[d="M4.5 8l7.5 5.5L19.5 8"]'), "comms.envelope should render a closed flap");
-      assert(envelopePlusIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope-plus should render a closed envelope body");
-      assert(envelopePlusIcon.querySelector('line[x1="17"][y1="2.8"][x2="17"][y2="9.2"][stroke-width="2.8"]'), "comms.envelope-plus should render a prominent plus vertical stroke");
-      assert(envelopePlusIcon.querySelector('line[x1="13.8"][y1="6"][x2="20.2"][y2="6"][stroke-width="2.8"]'), "comms.envelope-plus should render a prominent plus horizontal stroke");
-      assert(envelopeMinusIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope-minus should render a closed envelope body");
-      assert(envelopeMinusIcon.querySelector('line[x1="13.8"][y1="6"][x2="20.2"][y2="6"][stroke-width="2.8"]'), "comms.envelope-minus should render a prominent minus stroke");
+      assert(envelopePlusIcon.querySelector('rect[x="2.5"][y="8"]'), "comms.envelope-plus should render a smaller compact envelope body");
+      assert(envelopePlusIcon.querySelector('path[d="M3.5 10l4.25 3L12 10"]'), "comms.envelope-plus should render a smaller compact flap");
+      assert(envelopePlusIcon.querySelector('line[x1="18.5"][y1="9"][x2="18.5"][y2="15"][stroke-width="5.6"]'), "comms.envelope-plus should render a double-weight detached plus vertical stroke");
+      assert(envelopePlusIcon.querySelector('line[x1="15.5"][y1="12"][x2="21.5"][y2="12"][stroke-width="5.6"]'), "comms.envelope-plus should render a double-weight detached plus horizontal stroke");
+      assert(envelopeMinusIcon.querySelector('rect[x="2.5"][y="8"]'), "comms.envelope-minus should render a smaller compact envelope body");
+      assert(envelopeMinusIcon.querySelector('path[d="M3.5 10l4.25 3L12 10"]'), "comms.envelope-minus should render a smaller compact flap");
+      assert(envelopeMinusIcon.querySelector('line[x1="15.5"][y1="12"][x2="21.5"][y2="12"][stroke-width="5.6"]'), "comms.envelope-minus should render a double-weight detached minus stroke");
       assert(envelopeOpenIcon.querySelector('path[d="M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"]'), "comms.envelope-open should render an opened envelope body");
       assert(envelopeOpenIcon.querySelector('path[d="M4.5 10.5 12 15l7.5-4.5"]'), "comms.envelope-open should render an opened flap");
       assert(userBlockedIcon.querySelector('line[x1="16"][y1="10"][x2="21"][y2="15"]'), "people.userBlocked should render a user-x slash");
