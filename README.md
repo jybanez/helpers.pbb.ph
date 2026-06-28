@@ -2917,6 +2917,8 @@ Common state and launcher icons:
 - Use `people.userBlocked` and `people.userAllowed` for direct-chat block and unblock actions.
 - Use `notifications.muted` and `notifications.unmuted` for muted/unmuted conversation notification states.
 - Use `comms.envelope` for pending message requests or closed inbox/request states.
+- Use `comms.envelope-plus` for send/create message-request actions.
+- Use `comms.envelope-minus` for cancel/remove message-request actions.
 - Use `comms.envelope-open` for opened/read request states or inbox flows.
 - Use `media.gamepad` as the shared fallback for game launcher or game-category surfaces.
 

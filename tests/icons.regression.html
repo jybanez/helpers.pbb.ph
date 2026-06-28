@@ -169,6 +169,8 @@
       assert(names.includes("time.clock"), "icons registry should include time.clock");
       assert(names.includes("comms.phone"), "icons registry should include comms.phone");
       assert(names.includes("comms.envelope"), "icons registry should include comms.envelope");
+      assert(names.includes("comms.envelope-plus"), "icons registry should include comms.envelope-plus");
+      assert(names.includes("comms.envelope-minus"), "icons registry should include comms.envelope-minus");
       assert(names.includes("comms.envelope-open"), "icons registry should include comms.envelope-open");
       assert(names.includes("comms.notification"), "icons registry should include comms.notification");
       assert(names.includes("assets.vehicle"), "icons registry should include assets.vehicle");
@@ -203,12 +205,14 @@
       const rotateRightIcon = createIcon("actions.rotate-right");
       const gamepadIcon = createIcon("media.gamepad");
       const envelopeIcon = createIcon("comms.envelope");
+      const envelopePlusIcon = createIcon("comms.envelope-plus");
+      const envelopeMinusIcon = createIcon("comms.envelope-minus");
       const envelopeOpenIcon = createIcon("comms.envelope-open");
       const userBlockedIcon = createIcon("people.userBlocked");
       const userAllowedIcon = createIcon("people.userAllowed");
       const notificationsMutedIcon = createIcon("notifications.muted");
       const notificationsUnmutedIcon = createIcon("notifications.unmuted");
-      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopeOpenIcon, userBlockedIcon, userAllowedIcon, notificationsMutedIcon, notificationsUnmutedIcon);
+      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopePlusIcon, envelopeMinusIcon, envelopeOpenIcon, userBlockedIcon, userAllowedIcon, notificationsMutedIcon, notificationsUnmutedIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
       assert(settingsIcon.querySelector('path[d*="h-.44"]'), "actions.settings should render a lobed gear outline path");
@@ -227,6 +231,11 @@
       assert(gamepadIcon.querySelector('line[x1="7"][y1="13"][x2="11"][y2="13"]'), "media.gamepad should render a directional control");
       assert(envelopeIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope should render a closed envelope body");
       assert(envelopeIcon.querySelector('path[d="M4.5 8l7.5 5.5L19.5 8"]'), "comms.envelope should render a closed flap");
+      assert(envelopePlusIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope-plus should render a closed envelope body");
+      assert(envelopePlusIcon.querySelector('line[x1="17"][y1="3.5"][x2="17"][y2="8.5"]'), "comms.envelope-plus should render a plus vertical stroke");
+      assert(envelopePlusIcon.querySelector('line[x1="14.5"][y1="6"][x2="19.5"][y2="6"]'), "comms.envelope-plus should render a plus horizontal stroke");
+      assert(envelopeMinusIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope-minus should render a closed envelope body");
+      assert(envelopeMinusIcon.querySelector('line[x1="14.5"][y1="6"][x2="19.5"][y2="6"]'), "comms.envelope-minus should render a minus stroke");
       assert(envelopeOpenIcon.querySelector('path[d="M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"]'), "comms.envelope-open should render an opened envelope body");
       assert(envelopeOpenIcon.querySelector('path[d="M4.5 10.5 12 15l7.5-4.5"]'), "comms.envelope-open should render an opened flap");
       assert(userBlockedIcon.querySelector('line[x1="16"][y1="10"][x2="21"][y2="15"]'), "people.userBlocked should render a user-x slash");
