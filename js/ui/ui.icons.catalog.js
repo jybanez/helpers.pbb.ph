@@ -339,6 +339,18 @@ export const ICON_DEFINITIONS = {
   "comms.message": icon("comms", [
     path("M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"),
   ]),
+  "comms.envelope": icon("comms", [
+    rect(3.5, 6, 17, 12, 2),
+    path("M4.5 8l7.5 5.5L19.5 8"),
+    path("M4.5 17l5.5-5"),
+    path("M19.5 17l-5.5-5"),
+  ]),
+  "comms.envelope-open": icon("comms", [
+    path("M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"),
+    path("M4.5 10.5 12 15l7.5-4.5"),
+    path("M5 19l5.5-5"),
+    path("M19 19l-5.5-5"),
+  ]),
   "comms.notification": icon("comms", [
     path("M12 5a4 4 0 0 0-4 4v2.5c0 1-.4 2-1.1 2.7L5.5 16h13l-1.4-1.8a4 4 0 0 1-1.1-2.7V9a4 4 0 0 0-4-4Z"),
     path("M10 18a2 2 0 0 0 4 0"),

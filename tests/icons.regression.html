@@ -163,6 +163,8 @@
       assert(names.includes("places.pin"), "icons registry should include places.pin");
       assert(names.includes("time.clock"), "icons registry should include time.clock");
       assert(names.includes("comms.phone"), "icons registry should include comms.phone");
+      assert(names.includes("comms.envelope"), "icons registry should include comms.envelope");
+      assert(names.includes("comms.envelope-open"), "icons registry should include comms.envelope-open");
       assert(names.includes("comms.notification"), "icons registry should include comms.notification");
       assert(names.includes("assets.vehicle"), "icons registry should include assets.vehicle");
       operationalCategories.forEach((category) => {
@@ -195,7 +197,9 @@
       const rotateLeftIcon = createIcon("actions.rotate-left");
       const rotateRightIcon = createIcon("actions.rotate-right");
       const gamepadIcon = createIcon("media.gamepad");
-      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon);
+      const envelopeIcon = createIcon("comms.envelope");
+      const envelopeOpenIcon = createIcon("comms.envelope-open");
+      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopeOpenIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
       assert(settingsIcon.querySelector('path[d*="h-.44"]'), "actions.settings should render a lobed gear outline path");
@@ -212,6 +216,10 @@
       assert(rotateRightIcon.querySelector('path[d="M20 5v5h-5"]'), "actions.rotate-right should render a valid right rotation arrowhead path");
       assert(gamepadIcon.querySelector('path[d*="4.5 4.5"]'), "media.gamepad should render a controller body");
       assert(gamepadIcon.querySelector('line[x1="7"][y1="13"][x2="11"][y2="13"]'), "media.gamepad should render a directional control");
+      assert(envelopeIcon.querySelector('rect[x="3.5"][y="6"]'), "comms.envelope should render a closed envelope body");
+      assert(envelopeIcon.querySelector('path[d="M4.5 8l7.5 5.5L19.5 8"]'), "comms.envelope should render a closed flap");
+      assert(envelopeOpenIcon.querySelector('path[d="M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"]'), "comms.envelope-open should render an opened envelope body");
+      assert(envelopeOpenIcon.querySelector('path[d="M4.5 10.5 12 15l7.5-4.5"]'), "comms.envelope-open should render an opened flap");
 
       const decorative = createIcon("status.info");
       assert(decorative.getAttribute("aria-hidden") === "true", "decorative icons should be aria-hidden by default");

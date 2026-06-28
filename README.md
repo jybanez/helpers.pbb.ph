@@ -2914,6 +2914,8 @@ Action audio icons:
 Common state and launcher icons:
 
 - Use `actions.lock` and `actions.unlock` for locked/unlocked controls, rooms, or resources.
+- Use `comms.envelope` for pending message requests or closed inbox/request states.
+- Use `comms.envelope-open` for opened/read request states or inbox flows.
 - Use `media.gamepad` as the shared fallback for game launcher or game-category surfaces.
 
 Related demos:
