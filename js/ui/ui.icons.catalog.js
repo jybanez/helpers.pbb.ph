@@ -370,15 +370,15 @@ export const ICON_DEFINITIONS = {
     path("M4.5 8l7.5 5.5L19.5 8"),
     path("M4.5 17l5.5-5"),
     path("M19.5 17l-5.5-5"),
-    line(17, 3.5, 17, 8.5),
-    line(14.5, 6, 19.5, 6),
+    actionLine(17, 2.8, 17, 9.2),
+    actionLine(13.8, 6, 20.2, 6),
   ]),
   "comms.envelope-minus": icon("comms", [
     rect(3.5, 6, 17, 12, 2),
     path("M4.5 8l7.5 5.5L19.5 8"),
     path("M4.5 17l5.5-5"),
     path("M19.5 17l-5.5-5"),
-    line(14.5, 6, 19.5, 6),
+    actionLine(13.8, 6, 20.2, 6),
   ]),
   "comms.envelope-open": icon("comms", [
     path("M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"),
@@ -644,6 +644,10 @@ function path(d) {
 
 function line(x1, y1, x2, y2) {
   return { tag: "line", attrs: { x1, y1, x2, y2 } };
+}
+
+function actionLine(x1, y1, x2, y2) {
+  return { tag: "line", attrs: { x1, y1, x2, y2, "stroke-width": 2.8 } };
 }
 
 function polyline(points) {
