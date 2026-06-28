@@ -48,6 +48,7 @@
         "alert",
         "hazard",
         "map",
+        "notifications",
         "population",
         "quality",
         "resource",
@@ -136,7 +137,7 @@
         "quality.redacted",
       ];
 
-      assert(categories.length === 21, "icons registry should expose 21 categories");
+      assert(categories.length === 22, "icons registry should expose 22 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
@@ -157,8 +158,12 @@
       assert(names.includes("community.medal"), "icons registry should include community.medal");
       assert(names.includes("community.certificate"), "icons registry should include community.certificate");
       assert(names.includes("people.user"), "icons registry should include people.user");
+      assert(names.includes("people.userBlocked"), "icons registry should include people.userBlocked");
+      assert(names.includes("people.userAllowed"), "icons registry should include people.userAllowed");
       assert(names.includes("people.profile"), "icons registry should include people.profile");
       assert(names.includes("people.account"), "icons registry should include people.account");
+      assert(names.includes("notifications.muted"), "icons registry should include notifications.muted");
+      assert(names.includes("notifications.unmuted"), "icons registry should include notifications.unmuted");
       assert(names.includes("workflow.requested"), "icons registry should include workflow.requested");
       assert(names.includes("places.pin"), "icons registry should include places.pin");
       assert(names.includes("time.clock"), "icons registry should include time.clock");
@@ -199,7 +204,11 @@
       const gamepadIcon = createIcon("media.gamepad");
       const envelopeIcon = createIcon("comms.envelope");
       const envelopeOpenIcon = createIcon("comms.envelope-open");
-      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopeOpenIcon);
+      const userBlockedIcon = createIcon("people.userBlocked");
+      const userAllowedIcon = createIcon("people.userAllowed");
+      const notificationsMutedIcon = createIcon("notifications.muted");
+      const notificationsUnmutedIcon = createIcon("notifications.unmuted");
+      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopeOpenIcon, userBlockedIcon, userAllowedIcon, notificationsMutedIcon, notificationsUnmutedIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
       assert(settingsIcon.querySelector('path[d*="h-.44"]'), "actions.settings should render a lobed gear outline path");
@@ -220,6 +229,11 @@
       assert(envelopeIcon.querySelector('path[d="M4.5 8l7.5 5.5L19.5 8"]'), "comms.envelope should render a closed flap");
       assert(envelopeOpenIcon.querySelector('path[d="M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"]'), "comms.envelope-open should render an opened envelope body");
       assert(envelopeOpenIcon.querySelector('path[d="M4.5 10.5 12 15l7.5-4.5"]'), "comms.envelope-open should render an opened flap");
+      assert(userBlockedIcon.querySelector('line[x1="16"][y1="10"][x2="21"][y2="15"]'), "people.userBlocked should render a user-x slash");
+      assert(userBlockedIcon.querySelector('line[x1="21"][y1="10"][x2="16"][y2="15"]'), "people.userBlocked should render a user-x cross stroke");
+      assert(userAllowedIcon.querySelector('polyline[points="15.5 13 18 15.5 22 10.5"]'), "people.userAllowed should render a user-check mark");
+      assert(notificationsUnmutedIcon.querySelector('path[d="M12 5a4 4 0 0 0-4 4v2.5c0 1-.4 2-1.1 2.7L5.5 16h13l-1.4-1.8a4 4 0 0 1-1.1-2.7V9a4 4 0 0 0-4-4Z"]'), "notifications.unmuted should render a bell body");
+      assert(notificationsMutedIcon.querySelector('line[x1="5"][y1="21"][x2="21"][y2="5"]'), "notifications.muted should render a bell-off slash");
 
       const decorative = createIcon("status.info");
       assert(decorative.getAttribute("aria-hidden") === "true", "decorative icons should be aria-hidden by default");

@@ -236,6 +236,17 @@ export const ICON_DEFINITIONS = {
     circle(12, 8, 3.5),
     path("M5 19a7 7 0 0 1 14 0"),
   ]),
+  "people.userBlocked": icon("people", [
+    circle(10, 8, 3.2),
+    path("M4.5 19a6 6 0 0 1 10 0"),
+    line(16, 10, 21, 15),
+    line(21, 10, 16, 15),
+  ]),
+  "people.userAllowed": icon("people", [
+    circle(10, 8, 3.2),
+    path("M4.5 19a6 6 0 0 1 10 0"),
+    polyline("15.5 13 18 15.5 22 10.5"),
+  ]),
   "people.users": icon("people", [
     circle(9, 8.5, 3),
     circle(16.5, 9.5, 2.5),
@@ -325,6 +336,15 @@ export const ICON_DEFINITIONS = {
     line(12, 13, 15, 10),
     path("M10 3h4"),
     path("M15.5 5.5 17 4"),
+  ]),
+  "notifications.unmuted": icon("notifications", [
+    path("M12 5a4 4 0 0 0-4 4v2.5c0 1-.4 2-1.1 2.7L5.5 16h13l-1.4-1.8a4 4 0 0 1-1.1-2.7V9a4 4 0 0 0-4-4Z"),
+    path("M10 18a2 2 0 0 0 4 0"),
+  ]),
+  "notifications.muted": icon("notifications", [
+    path("M12 5a4 4 0 0 0-4 4v2.5c0 1-.4 2-1.1 2.7L5.5 16h13l-1.4-1.8a4 4 0 0 1-1.1-2.7V9a4 4 0 0 0-4-4Z"),
+    path("M10 18a2 2 0 0 0 4 0"),
+    line(5, 21, 21, 5),
   ]),
   "comms.phone": icon("comms", [
     path("M8.5 5.5c.6-1 1.9-1.4 3-.8l1.7 1c1 .6 1.3 1.9.8 2.9l-.7 1.2c1.1 1.8 2.6 3.3 4.4 4.4l1.2-.7c1-.6 2.3-.2 2.9.8l1 1.7c.6 1 .2 2.4-.8 3-1 .6-2.3 1-3.7.8-2.8-.5-5.6-2-8-4.4S6.1 11.2 5.7 8.4c-.2-1.4.1-2.7.8-3.7Z"),

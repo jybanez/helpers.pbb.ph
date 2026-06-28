@@ -2914,6 +2914,8 @@ Action audio icons:
 Common state and launcher icons:
 
 - Use `actions.lock` and `actions.unlock` for locked/unlocked controls, rooms, or resources.
+- Use `people.userBlocked` and `people.userAllowed` for direct-chat block and unblock actions.
+- Use `notifications.muted` and `notifications.unmuted` for muted/unmuted conversation notification states.
 - Use `comms.envelope` for pending message requests or closed inbox/request states.
 - Use `comms.envelope-open` for opened/read request states or inbox flows.
 - Use `media.gamepad` as the shared fallback for game launcher or game-category surfaces.
