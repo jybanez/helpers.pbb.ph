@@ -365,6 +365,21 @@ export const ICON_DEFINITIONS = {
     path("M4.5 17l5.5-5"),
     path("M19.5 17l-5.5-5"),
   ]),
+  "comms.envelope-plus": icon("comms", [
+    rect(3.5, 6, 17, 12, 2),
+    path("M4.5 8l7.5 5.5L19.5 8"),
+    path("M4.5 17l5.5-5"),
+    path("M19.5 17l-5.5-5"),
+    line(17, 3.5, 17, 8.5),
+    line(14.5, 6, 19.5, 6),
+  ]),
+  "comms.envelope-minus": icon("comms", [
+    rect(3.5, 6, 17, 12, 2),
+    path("M4.5 8l7.5 5.5L19.5 8"),
+    path("M4.5 17l5.5-5"),
+    path("M19.5 17l-5.5-5"),
+    line(14.5, 6, 19.5, 6),
+  ]),
   "comms.envelope-open": icon("comms", [
     path("M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"),
     path("M4.5 10.5 12 15l7.5-4.5"),
