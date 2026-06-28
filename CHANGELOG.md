@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Revised `comms.envelope-plus` and `comms.envelope-minus` to use a smaller envelope with detached double-weight action marks for small icon-only buttons.
 - Made the `comms.envelope-plus` and `comms.envelope-minus` action marks larger and heavier so they read better in small icon-only buttons.
 - Added `comms.envelope-plus` and `comms.envelope-minus` to `ui.icons` for create/cancel message-request actions.
 - Added `people.userBlocked`, `people.userAllowed`, `notifications.muted`, and `notifications.unmuted` to `ui.icons` for direct-chat block and mute states.

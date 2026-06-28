@@ -366,19 +366,19 @@ export const ICON_DEFINITIONS = {
     path("M19.5 17l-5.5-5"),
   ]),
   "comms.envelope-plus": icon("comms", [
-    rect(3.5, 6, 17, 12, 2),
-    path("M4.5 8l7.5 5.5L19.5 8"),
-    path("M4.5 17l5.5-5"),
-    path("M19.5 17l-5.5-5"),
-    actionLine(17, 2.8, 17, 9.2),
-    actionLine(13.8, 6, 20.2, 6),
+    rect(2.5, 8, 10.5, 8, 1.3),
+    path("M3.5 10l4.25 3L12 10"),
+    path("M3.5 15l3.2-2.7"),
+    path("M12 15l-3.2-2.7"),
+    actionLine(18.5, 9, 18.5, 15),
+    actionLine(15.5, 12, 21.5, 12),
   ]),
   "comms.envelope-minus": icon("comms", [
-    rect(3.5, 6, 17, 12, 2),
-    path("M4.5 8l7.5 5.5L19.5 8"),
-    path("M4.5 17l5.5-5"),
-    path("M19.5 17l-5.5-5"),
-    actionLine(13.8, 6, 20.2, 6),
+    rect(2.5, 8, 10.5, 8, 1.3),
+    path("M3.5 10l4.25 3L12 10"),
+    path("M3.5 15l3.2-2.7"),
+    path("M12 15l-3.2-2.7"),
+    actionLine(15.5, 12, 21.5, 12),
   ]),
   "comms.envelope-open": icon("comms", [
     path("M4 10l8-5 8 5v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"),
@@ -647,7 +647,7 @@ function line(x1, y1, x2, y2) {
 }
 
 function actionLine(x1, y1, x2, y2) {
-  return { tag: "line", attrs: { x1, y1, x2, y2, "stroke-width": 2.8 } };
+  return { tag: "line", attrs: { x1, y1, x2, y2, "stroke-width": 5.6 } };
 }
 
 function polyline(points) {
