@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `people.userBlocked`, `people.userAllowed`, `notifications.muted`, and `notifications.unmuted` to `ui.icons` for direct-chat block and mute states.
 - Added `comms.envelope` and `comms.envelope-open` to `ui.icons` for message-request and inbox-style communication surfaces.
 - Added `showCancelButton: false` support to `createFormModal(...)` and bridged form modals so blocking branded login gates can hide both the header close action and helper-owned Cancel action.
 - Added online sender-presence indicators to `ui.chat.thread` via `message.senderPresence` and `message.sender.presence`, plus reusable avatar-presence CSS utility classes.
