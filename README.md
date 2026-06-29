@@ -1430,7 +1430,8 @@ Methods:
   - hidden/deleted messages render as muted placeholders instead of normal message bubbles
   - placeholder defaults are `Message hidden by moderator` and `Message deleted`
   - override the placeholder text with `message.statusLabel` or `message.placeholderLabel`
-  - placeholders suppress original text, attachments, reply previews, sender chrome, and regular message menus
+  - placeholders preserve sender avatars, initials fallback, outgoing placement, and online presence dots
+  - placeholders suppress original text, attachments, reply previews, sender labels/subtitles, reactions, and regular message menus
 - Instance methods:
   - `setMessages(messages)`
   - `getMessages()`
