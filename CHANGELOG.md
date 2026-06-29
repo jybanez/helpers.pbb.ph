@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added hidden/deleted placeholder rendering to `ui.chat.thread` via `message.status`, with muted styling and message-menu suppression for moderation states.
 - Revised `comms.envelope-plus` and `comms.envelope-minus` to use a smaller envelope with detached double-weight action marks for small icon-only buttons.
 - Made the `comms.envelope-plus` and `comms.envelope-minus` action marks larger and heavier so they read better in small icon-only buttons.
 - Added `comms.envelope-plus` and `comms.envelope-minus` to `ui.icons` for create/cancel message-request actions.

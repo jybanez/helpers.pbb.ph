@@ -41,6 +41,8 @@
         { id: "s1", direction: "system", text: "Transferred" },
         { id: "f1", direction: "incoming", senderName: "Dispatcher", reply: { id: "o1", senderName: "Operator", attachmentLabel: "route-plan.pdf" }, text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
         { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
+        { id: "h1", direction: "incoming", senderName: "Moderator", status: "hidden", text: "Do not render this text", timestamp: "09:03" },
+        { id: "d1", direction: "outgoing", senderName: "Operator", status: "deleted", statusLabel: "Removed by sender", text: "Do not render this either", timestamp: "09:04" },
       ];
 
       const thread = createChatThread(threadHost, { messages: sampleMessages }, {
@@ -69,6 +71,10 @@
 
       assert(threadHost.querySelectorAll(".ui-chat-message").length === sampleMessages.length, "thread should render all messages");
       assert(threadHost.querySelector('.ui-chat-message[data-direction="system"]'), "thread should render system message");
+      assert(threadHost.querySelector('[data-message-id="h1"][data-message-status="hidden"] .ui-chat-message-placeholder-label')?.textContent === "Message hidden by moderator", "thread should render hidden messages as moderation placeholders");
+      assert(threadHost.querySelector('[data-message-id="d1"][data-message-status="deleted"] .ui-chat-message-placeholder-label')?.textContent === "Removed by sender", "thread should render deleted messages with custom placeholder labels");
+      assert(!threadHost.querySelector('[data-message-id="h1"] .ui-chat-message-text'), "hidden message placeholder should not render original message text");
+      assert(!threadHost.querySelector('[data-message-id="d1"] .ui-chat-message-menu-trigger'), "deleted message placeholder should not render action menus");
       assert(threadHost.querySelector(".ui-media-strip"), "thread should render media strip for image/video attachments");
       assert(threadHost.querySelectorAll(".ui-chat-attachment-file").length === 2, "thread should render file/audio attachments individually");
       assert(threadHost.querySelector(".ui-chat-message-state.is-failed"), "thread should render failed outgoing state");

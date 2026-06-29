@@ -1402,6 +1402,7 @@ Methods:
   - reply previews through `message.replyTo`
   - timestamps
   - outgoing delivery/read states
+  - hidden/deleted moderation placeholders through `message.status`
   - grouped message runs
   - grouped image/video attachments through `ui.media.strip`
   - audio/file attachments as listed rows
@@ -1417,6 +1418,12 @@ Methods:
   - `message.replyTo.attachmentLabel`
 - Reply preview callback:
   - `onReplyPreviewOpen(message, replyTo)` makes the preview clickable and lets the app jump to or focus the referenced message
+- Moderation placeholders:
+  - set `message.status` to `hidden` or `deleted`
+  - hidden/deleted messages render as muted placeholders instead of normal message bubbles
+  - placeholder defaults are `Message hidden by moderator` and `Message deleted`
+  - override the placeholder text with `message.statusLabel` or `message.placeholderLabel`
+  - placeholders suppress original text, attachments, reply previews, sender chrome, and regular message menus
 - Instance methods:
   - `setMessages(messages)`
   - `getMessages()`
