@@ -68,6 +68,14 @@
   justify-content: center;
 }
 
+.ui-chat-message.is-placeholder.has-avatar {
+  justify-content: flex-start;
+}
+
+.ui-chat-message.is-placeholder.has-avatar.is-outgoing {
+  justify-content: flex-end;
+}
+
 .ui-chat-message.has-avatar .ui-chat-message-bubble {
   max-width: min(calc(100% - 44px), 620px);
 }

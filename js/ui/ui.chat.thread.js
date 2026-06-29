@@ -134,7 +134,7 @@ export function createChatThread(container, data = {}, options = {}) {
     const isPlaceholder = Boolean(moderationStatus);
     const grouped = Boolean(!isPlaceholder && currentOptions.groupAdjacentMessages && isGroupedWithPrevious(previous, message));
     const direction = normalizeDirection(message.direction);
-    const hasSenderAvatar = !isPlaceholder && shouldRenderAvatar(message);
+    const hasSenderAvatar = shouldRenderAvatar(message);
     const row = createElement("article", {
       className: [
         "ui-chat-message",
@@ -162,6 +162,7 @@ export function createChatThread(container, data = {}, options = {}) {
     }
 
     if (isPlaceholder) {
+      const avatar = hasSenderAvatar ? createMessageAvatar(message, false) : null;
       const placeholder = createElement("div", {
         className: "ui-chat-message-bubble ui-chat-message-placeholder",
         attrs: { role: "note" },
@@ -170,7 +171,13 @@ export function createChatThread(container, data = {}, options = {}) {
         className: "ui-chat-message-placeholder-label",
         text: getModerationPlaceholderLabel(message, moderationStatus),
       }));
+      if (avatar && direction !== "outgoing") {
+        row.appendChild(avatar);
+      }
       row.appendChild(placeholder);
+      if (avatar && direction === "outgoing") {
+        row.appendChild(avatar);
+      }
       return row;
     }
 
@@ -826,7 +833,6 @@ function shouldShowSenderName(message, grouped) {
 
 function shouldRenderAvatar(message) {
   return normalizeDirection(message?.direction) !== "system"
-    && !normalizeModerationStatus(message?.status)
     && Boolean(getSenderAvatarUrl(message) || String(message?.senderName || "").trim());
 }
 
