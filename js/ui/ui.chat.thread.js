@@ -127,13 +127,17 @@ export function createChatThread(container, data = {}, options = {}) {
 
   function createMessageNode(message, index) {
     const previous = currentMessages[index - 1] || null;
-    const grouped = Boolean(currentOptions.groupAdjacentMessages && isGroupedWithPrevious(previous, message));
+    const moderationStatus = normalizeModerationStatus(message?.status);
+    const isPlaceholder = Boolean(moderationStatus);
+    const grouped = Boolean(!isPlaceholder && currentOptions.groupAdjacentMessages && isGroupedWithPrevious(previous, message));
     const direction = normalizeDirection(message.direction);
-    const hasSenderAvatar = shouldRenderAvatar(message);
+    const hasSenderAvatar = !isPlaceholder && shouldRenderAvatar(message);
     const row = createElement("article", {
       className: [
         "ui-chat-message",
         `is-${direction}`,
+        isPlaceholder ? "is-placeholder" : "",
+        moderationStatus ? `is-${moderationStatus}` : "",
         grouped ? "is-grouped" : "",
         hasSenderAvatar ? "has-avatar" : "",
         message?.meta?.emphasized ? "is-emphasized" : "",
@@ -142,6 +146,7 @@ export function createChatThread(container, data = {}, options = {}) {
       attrs: {
         "data-message-id": String(message.id || ""),
         "data-direction": direction,
+        ...(moderationStatus ? { "data-message-status": moderationStatus } : {}),
       },
     });
 
@@ -150,6 +155,19 @@ export function createChatThread(container, data = {}, options = {}) {
         className: "ui-chat-message-system",
         text: String(message.text || ""),
       }));
+      return row;
+    }
+
+    if (isPlaceholder) {
+      const placeholder = createElement("div", {
+        className: "ui-chat-message-bubble ui-chat-message-placeholder",
+        attrs: { role: "note" },
+      });
+      placeholder.appendChild(createElement("span", {
+        className: "ui-chat-message-placeholder-label",
+        text: getModerationPlaceholderLabel(message, moderationStatus),
+      }));
+      row.appendChild(placeholder);
       return row;
     }
 
@@ -690,6 +708,7 @@ function normalizeMessages(messages) {
   return Array.isArray(messages) ? messages.map((message) => ({
     ...message,
     direction: normalizeDirection(message?.direction),
+    status: normalizeModerationStatus(message?.status) || message?.status,
     replyTo: normalizeReplyTo(message?.replyTo || message?.reply),
     attachments: Array.isArray(message?.attachments) ? message.attachments.map((item) => ({ ...item })) : [],
     meta: message?.meta ? { ...message.meta } : undefined,
@@ -712,6 +731,9 @@ function isGroupedWithPrevious(previous, current) {
   if (!previous || !current) {
     return false;
   }
+  if (normalizeModerationStatus(previous?.status) || normalizeModerationStatus(current?.status)) {
+    return false;
+  }
   const prevDirection = normalizeDirection(previous.direction);
   const currentDirection = normalizeDirection(current.direction);
   if (prevDirection !== currentDirection || currentDirection === "system") {
@@ -729,6 +751,7 @@ function shouldShowSenderName(message, grouped) {
 
 function shouldRenderAvatar(message) {
   return normalizeDirection(message?.direction) !== "system"
+    && !normalizeModerationStatus(message?.status)
     && Boolean(getSenderAvatarUrl(message) || String(message?.senderName || "").trim());
 }
 
@@ -778,11 +801,26 @@ function getInitials(name) {
 }
 
 function getMessageMenuItemsFromOptions(message, currentMessages, currentOptions) {
-  if (currentOptions.showMessageMenuTrigger === false || typeof currentOptions.getMessageMenuItems !== "function") {
+  if (normalizeModerationStatus(message?.status)
+    || currentOptions.showMessageMenuTrigger === false
+    || typeof currentOptions.getMessageMenuItems !== "function") {
     return [];
   }
   const items = currentOptions.getMessageMenuItems(message, { messages: currentMessages.map((item) => ({ ...item })) });
   return Array.isArray(items) ? items : [];
+}
+
+function normalizeModerationStatus(status) {
+  const value = String(status || "").trim().toLowerCase();
+  return value === "hidden" || value === "deleted" ? value : "";
+}
+
+function getModerationPlaceholderLabel(message, status) {
+  const override = String(message?.statusLabel || message?.placeholderLabel || "").trim();
+  if (override) {
+    return override;
+  }
+  return status === "deleted" ? "Message deleted" : "Message hidden by moderator";
 }
 
 function formatStateLabel(state) {
@@ -814,6 +852,9 @@ function getMessageMeasureKey(message, index) {
 function estimateMessageHeight(message) {
   if (normalizeDirection(message?.direction) === "system") {
     return DEFAULT_SYSTEM_HEIGHT;
+  }
+  if (normalizeModerationStatus(message?.status)) {
+    return 52;
   }
   let height = DEFAULT_MESSAGE_HEIGHT;
   if (message?.text) {

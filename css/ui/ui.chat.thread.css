@@ -64,6 +64,10 @@
   justify-content: center;
 }
 
+.ui-chat-message.is-placeholder {
+  justify-content: center;
+}
+
 .ui-chat-message.has-avatar .ui-chat-message-bubble {
   max-width: min(calc(100% - 44px), 620px);
 }
@@ -165,6 +169,24 @@
 
 .ui-chat-message.is-muted .ui-chat-message-bubble {
   opacity: 0.84;
+}
+
+.ui-chat-message-placeholder {
+  max-width: min(100%, 520px);
+  min-width: 0;
+  padding: 8px 12px;
+  border-style: dashed;
+  border-color: rgba(159, 178, 216, 0.34);
+  background: rgba(16, 28, 49, 0.58);
+  color: var(--ui-text-muted, #9fb2d8);
+  justify-items: center;
+  text-align: center;
+}
+
+.ui-chat-message-placeholder-label {
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.35;
 }
 
 .ui-chat-message-system {
