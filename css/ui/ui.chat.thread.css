@@ -273,6 +273,66 @@ button.ui-chat-message-reply:focus-visible {
   word-break: break-word;
 }
 
+.ui-chat-message-reactions {
+  display: grid;
+  gap: 6px;
+}
+
+.ui-chat-message-reaction-list,
+.ui-chat-message-reaction-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ui-chat-message-reaction-picker {
+  padding-top: 2px;
+  border-top: 1px solid rgba(110, 152, 219, 0.18);
+}
+
+.ui-chat-message-reaction-chip,
+.ui-chat-message-reaction-option {
+  min-width: 0;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgba(110, 152, 219, 0.45);
+  border-radius: 999px;
+  background: rgba(15, 24, 42, 0.72);
+  color: var(--ui-text, #d7e0f4);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.ui-chat-message-reaction-chip[disabled] {
+  cursor: default;
+  opacity: 0.92;
+}
+
+.ui-chat-message-reaction-chip.is-active,
+.ui-chat-message-reaction-option.is-active {
+  border-color: rgba(143, 186, 255, 0.85);
+  background: rgba(67, 97, 166, 0.34);
+  color: #f5f8ff;
+}
+
+.ui-chat-message-reaction-chip:not([disabled]):hover,
+.ui-chat-message-reaction-chip:not([disabled]):focus-visible,
+.ui-chat-message-reaction-option:hover,
+.ui-chat-message-reaction-option:focus-visible {
+  border-color: rgba(143, 186, 255, 0.85);
+  background: rgba(67, 97, 166, 0.28);
+}
+
+.ui-chat-message-reaction-count {
+  color: var(--ui-text-muted, #9fb2d8);
+  font-variant-numeric: tabular-nums;
+}
+
 .ui-chat-message-attachments {
   display: grid;
   gap: 12px;

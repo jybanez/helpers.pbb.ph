@@ -21,6 +21,8 @@ const DEFAULT_OPTIONS = {
   mediaStripOptions: {},
   getMessageMenuItems: null,
   messageMenuOptions: {},
+  allowedReactions: [],
+  showReactionPicker: true,
   enableVirtualization: false,
   virtualThreshold: 120,
   virtualOverscan: 10,
@@ -30,6 +32,7 @@ const DEFAULT_OPTIONS = {
   onMessageAction: null,
   onMessageMenuSelect: null,
   onReplyPreviewOpen: null,
+  onReactionSelect: null,
 };
 
 export function createChatThread(container, data = {}, options = {}) {
@@ -207,6 +210,11 @@ export function createChatThread(container, data = {}, options = {}) {
     const attachments = Array.isArray(message.attachments) ? message.attachments : [];
     if (attachments.length) {
       bubble.appendChild(createAttachmentsNode(message, attachments));
+    }
+
+    const reactions = createMessageReactionsNode(message);
+    if (reactions) {
+      bubble.appendChild(reactions);
     }
 
     const meta = createMessageMeta(message, direction, grouped);
@@ -410,6 +418,72 @@ export function createChatThread(container, data = {}, options = {}) {
     }
 
     return wrap;
+  }
+
+  function createMessageReactionsNode(message) {
+    const reactions = normalizeReactions(message?.reactions);
+    const allowedReactions = normalizeReactions(currentOptions.allowedReactions);
+    const canSelect = typeof currentOptions.onReactionSelect === "function";
+    const showPicker = canSelect && currentOptions.showReactionPicker !== false && allowedReactions.length > 0;
+    if (!reactions.length && !showPicker) {
+      return null;
+    }
+
+    const wrap = createElement("div", { className: "ui-chat-message-reactions" });
+    if (reactions.length) {
+      const list = createElement("div", { className: "ui-chat-message-reaction-list" });
+      reactions.forEach((reaction) => {
+        const chip = createReactionButton(message, reaction, "chip", canSelect);
+        list.appendChild(chip);
+      });
+      wrap.appendChild(list);
+    }
+    if (showPicker) {
+      const picker = createElement("div", {
+        className: "ui-chat-message-reaction-picker",
+        attrs: { "aria-label": "Add reaction" },
+      });
+      allowedReactions.forEach((reaction) => {
+        picker.appendChild(createReactionButton(message, reaction, "picker", true));
+      });
+      wrap.appendChild(picker);
+    }
+    return wrap;
+  }
+
+  function createReactionButton(message, reaction, mode, enabled) {
+    const label = reaction.label || reaction.id;
+    const countLabel = mode !== "picker" && reaction.count > 0 ? `, ${reaction.count}` : "";
+    const button = createElement("button", {
+      className: [
+        mode === "picker" ? "ui-chat-message-reaction-option" : "ui-chat-message-reaction-chip",
+        reaction.reactedByCurrentUser ? "is-active" : "",
+      ].filter(Boolean).join(" "),
+      attrs: {
+        type: "button",
+        "data-reaction-id": reaction.id,
+        title: label,
+        "aria-label": `${mode === "picker" ? "Add reaction" : "Reaction"} ${label}${countLabel}`,
+        "aria-pressed": reaction.reactedByCurrentUser ? "true" : "false",
+        disabled: enabled ? null : "disabled",
+      },
+    });
+    button.appendChild(createElement("span", {
+      className: "ui-chat-message-reaction-label",
+      text: reaction.label,
+    }));
+    if (mode !== "picker" && reaction.count > 0) {
+      button.appendChild(createElement("span", {
+        className: "ui-chat-message-reaction-count",
+        text: String(reaction.count),
+      }));
+    }
+    if (enabled) {
+      button.addEventListener("click", () => {
+        currentOptions.onReactionSelect?.(message, { ...reaction });
+      });
+    }
+    return button;
   }
 
   function createMessageMeta(message, direction, grouped) {
@@ -711,6 +785,7 @@ function normalizeMessages(messages) {
     status: normalizeModerationStatus(message?.status) || message?.status,
     replyTo: normalizeReplyTo(message?.replyTo || message?.reply),
     attachments: Array.isArray(message?.attachments) ? message.attachments.map((item) => ({ ...item })) : [],
+    reactions: normalizeReactions(message?.reactions),
     meta: message?.meta ? { ...message.meta } : undefined,
   })) : [];
 }
@@ -810,6 +885,35 @@ function getMessageMenuItemsFromOptions(message, currentMessages, currentOptions
   return Array.isArray(items) ? items : [];
 }
 
+function normalizeReactions(reactions) {
+  if (!Array.isArray(reactions)) {
+    return [];
+  }
+  return reactions
+    .map((reaction) => {
+      if (typeof reaction === "string") {
+        const id = reaction.trim();
+        return id ? { id, label: id, count: 0, reactedByCurrentUser: false } : null;
+      }
+      if (!reaction || typeof reaction !== "object") {
+        return null;
+      }
+      const id = String(reaction.id || reaction.key || reaction.value || reaction.label || "").trim();
+      if (!id) {
+        return null;
+      }
+      const count = Number(reaction.count);
+      return {
+        ...reaction,
+        id,
+        label: String(reaction.label || reaction.icon || reaction.emoji || id).trim() || id,
+        count: Number.isFinite(count) && count > 0 ? count : 0,
+        reactedByCurrentUser: Boolean(reaction.reactedByCurrentUser || reaction.active || reaction.selected),
+      };
+    })
+    .filter(Boolean);
+}
+
 function normalizeModerationStatus(status) {
   const value = String(status || "").trim().toLowerCase();
   return value === "hidden" || value === "deleted" ? value : "";
@@ -862,6 +966,9 @@ function estimateMessageHeight(message) {
   }
   if (shouldRenderReplyPreview(getMessageReplyTo(message))) {
     height += 54;
+  }
+  if (normalizeReactions(message?.reactions).length) {
+    height += 34;
   }
   const attachments = Array.isArray(message?.attachments) ? message.attachments : [];
   if (attachments.some((item) => item.kind === "image" || item.kind === "video")) {

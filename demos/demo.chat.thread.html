@@ -33,7 +33,7 @@
         "Do not use it as a conversation list; it is a single-thread surface."
       ],
       description: "The thread helper owns message presentation only. Apps still own transport, upload orchestration, and conversation state beyond the provided message array.",
-      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    senderPresence: 'online',\n    text: 'Team is en route.',\n  }, {\n    id: 'm2',\n    direction: 'outgoing',\n    senderName: 'Operator One',\n    sender: { avatar: '/avatars/operator.jpg', presence: 'online' },\n    replyTo: {\n      id: 'm1',\n      senderName: 'Dispatcher Jane',\n      text: 'Team is en route.',\n    },\n    text: 'Copy. Route packet follows.',\n  }],\n}, {\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onReplyPreviewOpen(message, replyTo) {\n    console.log('reply.open', message.id, replyTo.id);\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
+      defaultSampleCode: "const thread = createChatThread(host, {\n  messages: [{\n    id: 'm1',\n    direction: 'incoming',\n    senderName: 'Dispatcher Jane',\n    senderAvatar: '/avatars/jane.jpg',\n    senderPresence: 'online',\n    text: 'Team is en route.',\n    reactions: [\n      { id: 'like', label: 'Like', count: 2, reactedByCurrentUser: true },\n      { id: 'ack', label: 'Ack', count: 1 }\n    ]\n  }, {\n    id: 'm2',\n    direction: 'outgoing',\n    senderName: 'Operator One',\n    sender: { avatar: '/avatars/operator.jpg', presence: 'online' },\n    replyTo: {\n      id: 'm1',\n      senderName: 'Dispatcher Jane',\n      text: 'Team is en route.',\n    },\n    text: 'Copy. Route packet follows.',\n  }],\n}, {\n  allowedReactions: [\n    { id: 'like', label: 'Like' },\n    { id: 'ack', label: 'Ack' },\n    { id: 'heart', label: 'Heart' }\n  ],\n  getMessageMenuItems(message) {\n    return message.direction === 'system' ? [] : [\n      { id: 'copy', label: 'Copy text' },\n      { id: 'reply', label: 'Reply' }\n    ];\n  },\n  onReactionSelect(message, reaction) {\n    console.log('reaction.select', message.id, reaction.id);\n  },\n  onReplyPreviewOpen(message, replyTo) {\n    console.log('reply.open', message.id, replyTo.id);\n  },\n  onMessageMenuSelect(message, item) {\n    console.log('message.menu', message.id, item.id);\n  },\n  onAttachmentOpen(message, attachment) {\n    console.log('open', message.id, attachment.id);\n  },\n});",
       constructor: [
         { factory: "<code>createChatThread(container, data, options)</code>", arguments: "target container, thread data, thread options", returns: "Chat thread instance" }
       ],
@@ -49,13 +49,16 @@
         { option: "<code>showMessageMenuTrigger</code>", default: '<code>true</code>', description: "Shows a helper-owned action trigger when a message returns menu items." },
         { option: "<code>maxMediaThumbsPerMessage</code>", default: '<code>4</code>', description: "Caps how many image/video attachments render in one message media strip." },
         { option: "<code>mediaStripOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the per-message <code>ui.media.strip</code> instance." },
+        { option: "<code>allowedReactions</code>", default: '<code>[]</code>', description: "List of selectable reaction definitions rendered in the compact picker when <code>onReactionSelect</code> is provided." },
+        { option: "<code>showReactionPicker</code>", default: '<code>true</code>', description: "Set to <code>false</code> to render existing reaction chips without the add-reaction picker." },
         { option: "<code>getMessageMenuItems(message, state)</code>", default: '<code>null</code>', description: "Returns app-defined menu items for a message." },
         { option: "<code>messageMenuOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the shared menu instance used by message actions." },
         { option: "<code>enableVirtualization</code>", default: '<code>false</code>', description: "Opt-in measured-window virtualization for long message histories." },
         { option: "<code>virtualThreshold</code>", default: '<code>120</code>', description: "Minimum message count before virtualization activates." },
         { option: "<code>virtualOverscan</code>", default: '<code>10</code>', description: "Extra messages rendered above and below the visible window." },
         { option: "<code>bottomAnchorThreshold</code>", default: '<code>48</code>', description: "Pixel threshold used to decide whether the thread is pinned near the latest message." },
-        { option: "<code>onReplyPreviewOpen(message, replyTo)</code>", default: '<code>null</code>', description: "Makes reply previews clickable and fires when the preview is selected." }
+        { option: "<code>onReplyPreviewOpen(message, replyTo)</code>", default: '<code>null</code>', description: "Makes reply previews clickable and fires when the preview is selected." },
+        { option: "<code>onReactionSelect(message, reaction)</code>", default: '<code>null</code>', description: "Makes reaction chips and picker options clickable. Apps own persistence, permissions, realtime sync, and updated counts." }
       ],
       data: [
         { property: "<code>message.senderAvatar</code>", description: "Optional sender avatar image URL. When omitted, Helper falls back to initials from <code>senderName</code>." },
@@ -67,14 +70,16 @@
         { property: "<code>message.replyTo</code>", description: "Optional replied-message preview object. Helper renders it inside the message bubble before the message body." },
         { property: "<code>message.replyTo.senderName</code>", description: "Sender label shown at the top of the reply preview." },
         { property: "<code>message.replyTo.text</code>", description: "Short text excerpt shown in the reply preview." },
-        { property: "<code>message.replyTo.attachmentLabel</code>", description: "Optional attachment label used when the replied message was media or file-first." }
+        { property: "<code>message.replyTo.attachmentLabel</code>", description: "Optional attachment label used when the replied message was media or file-first." },
+        { property: "<code>message.reactions</code>", description: "Optional reaction list. Each entry supports <code>id</code>, <code>label</code>, <code>count</code>, and <code>reactedByCurrentUser</code>." }
       ],
       propertiesText: "No stable public instance properties are documented. Use <code>getMessages()</code> and <code>getState()</code> instead of reading DOM or internal fields directly. When virtualization is enabled, <code>getState()</code> also reports whether the virtualized path is active.",
       events: [
         { event: "<code>onAttachmentOpen(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when an attachment open action occurs, including built-in media viewer launches." },
         { event: "<code>onAttachmentDownload(message, attachment)</code>", arguments: "normalized message and attachment", returns: "<code>void</code>", description: "Fires when a listed file/audio attachment download action is selected." },
         { event: "<code>onMessageAction(message, actionId)</code>", arguments: "normalized message and action id", returns: "<code>void</code>", description: "Reserved narrow hook for message-level actions when an app adds them." },
-        { event: "<code>onMessageMenuSelect(message, item, meta)</code>", arguments: "normalized message, selected menu item, and menu meta", returns: "<code>void</code>", description: "Fires when a helper-owned per-message menu action is selected." }
+        { event: "<code>onMessageMenuSelect(message, item, meta)</code>", arguments: "normalized message, selected menu item, and menu meta", returns: "<code>void</code>", description: "Fires when a helper-owned per-message menu action is selected." },
+        { event: "<code>onReactionSelect(message, reaction)</code>", arguments: "normalized message and selected reaction", returns: "<code>void</code>", description: "Fires when an existing chip or allowed picker reaction is selected." }
       ],
       methods: [
         { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
@@ -124,6 +129,10 @@
         senderPresence: "online",
         text: "Team is en route to Lahug. Please keep the line open.",
         timestamp: "09:18",
+        reactions: [
+          { id: "like", label: "Like", count: 2, reactedByCurrentUser: true },
+          { id: "ack", label: "Ack", count: 1 },
+        ],
       },
       {
         id: "m2",
@@ -179,6 +188,9 @@
         text: "Copy. Sharing the route packet and supporting documents now.",
         timestamp: "09:22",
         state: "delivered",
+        reactions: [
+          { id: "ack", label: "Ack", count: 1, reactedByCurrentUser: true },
+        ],
         attachments: [
           { id: "a3", kind: "file", name: "route-plan-for-lahug-cebu-city-response-team.pdf", sizeLabel: "1.2 MB" },
           { id: "a4", kind: "file", name: "route-photos-and-staging-area-reference-document.pdf", sizeLabel: "860 KB" },
@@ -246,6 +258,11 @@
     }
 
     const thread = createChatThread(host, { messages: sampleMessages }, {
+      allowedReactions: [
+        { id: "like", label: "Like" },
+        { id: "ack", label: "Ack" },
+        { id: "heart", label: "Heart" },
+      ],
       getMessageMenuItems(message) {
         if (message.direction === "system") {
           return [];
@@ -267,6 +284,9 @@
       },
       onReplyPreviewOpen(message, replyTo) {
         writeLog("thread.reply.open", { messageId: message.id, replyId: replyTo.id });
+      },
+      onReactionSelect(message, reaction) {
+        writeLog("thread.reaction.select", { messageId: message.id, reactionId: reaction.id });
       },
     });
 

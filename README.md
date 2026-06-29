@@ -1403,6 +1403,7 @@ Methods:
   - timestamps
   - outgoing delivery/read states
   - hidden/deleted moderation placeholders through `message.status`
+  - reaction chips and optional picker callbacks through `message.reactions`
   - grouped message runs
   - grouped image/video attachments through `ui.media.strip`
   - audio/file attachments as listed rows
@@ -1418,6 +1419,12 @@ Methods:
   - `message.replyTo.attachmentLabel`
 - Reply preview callback:
   - `onReplyPreviewOpen(message, replyTo)` makes the preview clickable and lets the app jump to or focus the referenced message
+- Reactions:
+  - `message.reactions` accepts `{ id, label, count, reactedByCurrentUser }` entries
+  - `allowedReactions` defines compact picker options when the app provides `onReactionSelect`
+  - `showReactionPicker: false` keeps existing reaction chips visible without rendering picker options
+  - `onReactionSelect(message, reaction)` fires for existing chips and picker options
+  - apps own persistence, permission checks, realtime sync, and updated counts
 - Moderation placeholders:
   - set `message.status` to `hidden` or `deleted`
   - hidden/deleted messages render as muted placeholders instead of normal message bubbles
