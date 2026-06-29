@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.game.effects` with `createGameEffectTimeline(...)` and `GAME_EFFECT_EASINGS` for non-rendering game feedback lifecycles in the optional game bundle.
 - Updated `ui.chat.thread` hidden/deleted placeholders so moderated messages keep sender avatar placement, initials fallback, and online presence dots while still suppressing original content and menus.
 - Added optional reaction chips and picker callbacks to `ui.chat.thread` via `message.reactions`, `allowedReactions`, `showReactionPicker`, and `onReactionSelect(...)`.
 - Added hidden/deleted placeholder rendering to `ui.chat.thread` via `message.status`, with muted styling and message-menu suppression for moderation states.
