@@ -36,16 +36,17 @@
 
     try {
       const sampleMessages = [
-        { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, senderPresence: "online", text: "Incoming message", timestamp: "09:00" },
+        { id: "i1", direction: "incoming", senderName: "Dispatcher", senderAvatar: inlinePreview, senderPresence: "online", text: "Incoming message", timestamp: "09:00", reactions: [{ id: "like", label: "Like", count: 2, reactedByCurrentUser: true }, { id: "ack", label: "Ack", count: 1 }] },
         { id: "o1", direction: "outgoing", senderName: "Operator", sender: { avatar: inlinePreview, presence: "online" }, replyTo: { id: "i1", senderName: "Dispatcher", text: "Incoming message" }, text: "Outgoing message", timestamp: "09:01", state: "failed" },
         { id: "s1", direction: "system", text: "Transferred" },
         { id: "f1", direction: "incoming", senderName: "Dispatcher", reply: { id: "o1", senderName: "Operator", attachmentLabel: "route-plan.pdf" }, text: "File incoming", attachments: [{ id: "fa1", kind: "file", name: "plan.pdf", sizeLabel: "1.2 MB" }, { id: "au1", kind: "audio", name: "radio-call.mp3", sizeLabel: "420 KB" }] },
         { id: "p1", direction: "incoming", senderName: "Dispatcher", text: "Media incoming", attachments: [{ id: "im1", kind: "image", name: "photo.jpg", previewUrl: inlinePreview }, { id: "vid1", kind: "video", name: "clip.mp4", previewUrl: inlinePreview, url: inlinePreview }] },
-        { id: "h1", direction: "incoming", senderName: "Moderator", status: "hidden", text: "Do not render this text", timestamp: "09:03" },
+        { id: "h1", direction: "incoming", senderName: "Moderator", status: "hidden", text: "Do not render this text", timestamp: "09:03", reactions: [{ id: "like", label: "Like", count: 3 }] },
         { id: "d1", direction: "outgoing", senderName: "Operator", status: "deleted", statusLabel: "Removed by sender", text: "Do not render this either", timestamp: "09:04" },
       ];
 
       const thread = createChatThread(threadHost, { messages: sampleMessages }, {
+        allowedReactions: [{ id: "like", label: "Like" }, { id: "ack", label: "Ack" }, { id: "heart", label: "Heart" }],
         getMessageMenuItems(message) {
           if (message.direction === "system") {
             return [];
@@ -67,6 +68,9 @@
         onReplyPreviewOpen(message, replyTo) {
           events.push({ type: "reply-preview-open", messageId: message.id, replyId: replyTo.id });
         },
+        onReactionSelect(message, reaction) {
+          events.push({ type: "reaction-select", messageId: message.id, reactionId: reaction.id });
+        },
       });
 
       assert(threadHost.querySelectorAll(".ui-chat-message").length === sampleMessages.length, "thread should render all messages");
@@ -75,6 +79,7 @@
       assert(threadHost.querySelector('[data-message-id="d1"][data-message-status="deleted"] .ui-chat-message-placeholder-label')?.textContent === "Removed by sender", "thread should render deleted messages with custom placeholder labels");
       assert(!threadHost.querySelector('[data-message-id="h1"] .ui-chat-message-text'), "hidden message placeholder should not render original message text");
       assert(!threadHost.querySelector('[data-message-id="d1"] .ui-chat-message-menu-trigger'), "deleted message placeholder should not render action menus");
+      assert(!threadHost.querySelector('[data-message-id="h1"] .ui-chat-message-reactions'), "hidden message placeholder should not render reactions");
       assert(threadHost.querySelector(".ui-media-strip"), "thread should render media strip for image/video attachments");
       assert(threadHost.querySelectorAll(".ui-chat-attachment-file").length === 2, "thread should render file/audio attachments individually");
       assert(threadHost.querySelector(".ui-chat-message-state.is-failed"), "thread should render failed outgoing state");
@@ -92,6 +97,9 @@
       assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply-sender')?.textContent === "Dispatcher", "thread should render reply preview sender");
       assert(threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply-text')?.textContent.includes("Incoming message"), "thread should render reply preview text");
       assert(threadHost.querySelector('[data-message-id="f1"] .ui-chat-message-reply-attachment')?.textContent === "route-plan.pdf", "thread should render reply alias attachment label");
+      assert(threadHost.querySelector('[data-message-id="i1"] .ui-chat-message-reaction-chip[data-reaction-id="like"] .ui-chat-message-reaction-count')?.textContent === "2", "thread should render reaction counts");
+      assert(threadHost.querySelector('[data-message-id="i1"] .ui-chat-message-reaction-chip[data-reaction-id="like"]')?.classList.contains("is-active"), "thread should mark current-user reactions active");
+      assert(threadHost.querySelector('[data-message-id="i1"] .ui-chat-message-reaction-option[data-reaction-id="heart"]'), "thread should render allowed reaction picker options");
 
       threadHost.querySelector(".ui-media-thumb").click();
       await wait(40);
@@ -99,12 +107,14 @@
       threadHost.querySelector('[data-message-id="o1"] .ui-chat-message-reply').click();
       threadHost.querySelector(".ui-chat-attachment-file-download").click();
       threadHost.querySelector(".ui-chat-message-menu-trigger").click();
+      threadHost.querySelector('[data-message-id="i1"] .ui-chat-message-reaction-option[data-reaction-id="heart"]').click();
       await wait(20);
       document.querySelector(".ui-menu-item").click();
       assert(events.some((event) => event.type === "attachment-open" && event.attachmentId === "im1"), "thread should emit image open callback");
       assert(events.some((event) => event.type === "attachment-download" && event.attachmentId === "fa1"), "thread should emit file download callback");
       assert(events.some((event) => event.type === "message-menu-select" && event.itemId === "copy"), "thread should emit message menu selection callback");
       assert(events.some((event) => event.type === "reply-preview-open" && event.messageId === "o1" && event.replyId === "i1"), "thread should emit reply preview open callback");
+      assert(events.some((event) => event.type === "reaction-select" && event.messageId === "i1" && event.reactionId === "heart"), "thread should emit reaction selection callback");
 
       const shortThreadHost = document.createElement("div");
       threadHost.parentNode.appendChild(shortThreadHost);
@@ -158,6 +168,7 @@
       assert(threadVirtualHost.querySelector(".ui-chat-thread-virtual-spacer.is-bottom")?.style?.height === "0px", "virtualized thread should keep the newest message slice active when appending near the end");
 
       await scrollViewportAwayFromBottom(viewport, 0.35);
+      await wait(80);
       const beforeAppendScrollTop = viewport.scrollTop;
       const olderReaderMessages = appendedMessages.concat([{ id: "v-202", direction: "incoming", senderName: "Dispatcher", text: "Do not jump" }]);
       virtualThread.setMessages(olderReaderMessages);
