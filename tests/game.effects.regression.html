@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Effects Regression Test</title>
+</head>
+<body data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createGameEffectTimeline, GAME_EFFECT_EASINGS } from "../js/ui/ui.game.effects.js";
+
+    const failures = [];
+    const results = document.getElementById("results");
+
+    try {
+      assert(typeof GAME_EFFECT_EASINGS.outCubic === "function", "effects should expose named easing functions");
+      assert(GAME_EFFECT_EASINGS.outCubic(0.5) > 0.5, "outCubic easing should accelerate progress");
+
+      const timeline = createGameEffectTimeline({
+        defaultDuration: 400,
+        defaultEasing: "outCubic",
+        autoRemove: false,
+      });
+      const spawned = timeline.spawn({
+        id: "line-clear",
+        type: "lineClear",
+        duration: 400,
+        payload: { row: 18, score: 100 },
+      });
+      assert(spawned.id === "line-clear", "spawn should return normalized effect snapshot");
+      assert(spawned.progress === 0 && spawned.active === true, "spawned effect should start active at zero progress");
+      assert(spawned.payload.row === 18, "spawn should preserve app-owned payload");
+
+      timeline.update(100);
+      let effect = timeline.getEffect("line-clear");
+      assert(effect.progress === 0.25, "update should advance progress by milliseconds");
+      assert(effect.eased > effect.progress, "effect snapshot should expose eased progress");
+      assert(effect.remaining === 300, "effect snapshot should expose remaining lifetime");
+
+      timeline.pause();
+      timeline.update(100);
+      assert(timeline.getEffect("line-clear").progress === 0.25, "pause should freeze updates");
+      assert(timeline.isPaused() === true, "isPaused should reflect paused state");
+      timeline.resume();
+      timeline.update(300);
+      effect = timeline.getEffect("line-clear");
+      assert(effect.done === true && effect.progress === 1, "completed effects should report done at progress 1 when autoRemove is false");
+
+      const delayed = timeline.spawn({ id: "delayed", type: "spark", delay: 100, duration: 200, easing: "linear" });
+      assert(delayed.active === false && delayed.progress === 0, "delayed effects should start inactive");
+      timeline.update(50);
+      assert(timeline.getEffect("delayed").active === false, "delay should hold effect inactive");
+      timeline.update(50);
+      assert(timeline.getEffect("delayed").active === true, "effect should become active after delay");
+      timeline.update(100);
+      assert(timeline.getEffect("delayed").progress === 0.5, "delayed effect progress should ignore delay time");
+
+      const seen = [];
+      timeline.forEach((item) => seen.push(item.id), { includeDone: true });
+      assert(seen.includes("line-clear") && seen.includes("delayed"), "forEach should iterate snapshots");
+      assert(timeline.remove("delayed") === true, "remove should delete an effect by id");
+      assert(timeline.getEffect("delayed") === null, "getEffect should return null after remove");
+
+      const autoTimeline = createGameEffectTimeline({ autoRemove: true });
+      autoTimeline.spawn({ id: "burst", duration: 50 });
+      autoTimeline.update(50);
+      assert(autoTimeline.getEffects().length === 0, "autoRemove should remove completed effects");
+
+      const reduced = createGameEffectTimeline({
+        reducedMotion: "force",
+        reducedMotionDuration: 1,
+        autoRemove: false,
+      });
+      reduced.spawn({ id: "rm", duration: 1000, delay: 200 });
+      assert(reduced.getEffect("rm").duration === 1, "forced reduced motion should compress duration");
+      assert(reduced.getEffect("rm").delay === 0, "forced reduced motion should remove delay");
+
+      const cloneSource = { nested: { value: 1 } };
+      const cloned = createGameEffectTimeline().spawn({ payload: cloneSource });
+      cloneSource.nested = { value: 2 };
+      assert(cloned.payload.nested.value === 1, "payload snapshots should shallow-clone object payloads");
+
+      timeline.clear();
+      assert(timeline.getState().count === 0, "clear should remove all effects");
+      timeline.destroy();
+      assert(timeline.getState().destroyed === true, "destroy should mark timeline destroyed");
+      assert(timeline.spawn({ id: "after-destroy" }) === null, "spawn should no-op after destroy");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      if (document.body.dataset.status !== "pending") {
+        return;
+      }
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Game effects regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

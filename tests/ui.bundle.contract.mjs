@@ -55,6 +55,7 @@ const gameCore = await loader.get("ui.game.core", { css: false });
 const gameObjects = await loader.get("ui.game.objects", { css: false });
 const gameGrid = await loader.get("ui.game.grid", { css: false });
 const gameAudio = await loader.get("ui.game.audio", { css: false });
+const gameEffects = await loader.get("ui.game.effects", { css: false });
 const gameStateChrome = await loader.get("ui.game.state.chrome", { css: false });
 const charts = await loader.get("ui.charts", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
@@ -215,6 +216,14 @@ if (typeof gameAudio?.createStarterGameSounds !== "function") {
   throw new Error("Bundle-backed ui.game.audio did not expose createStarterGameSounds().");
 }
 
+if (typeof gameEffects?.createGameEffectTimeline !== "function") {
+  throw new Error("Bundle-backed ui.game.effects did not expose createGameEffectTimeline().");
+}
+
+if (typeof gameEffects?.GAME_EFFECT_EASINGS?.outCubic !== "function") {
+  throw new Error("Bundle-backed ui.game.effects did not expose GAME_EFFECT_EASINGS.");
+}
+
 if (typeof gameStateChrome?.createGameStateChrome !== "function") {
   throw new Error("Bundle-backed ui.game.state.chrome did not expose createGameStateChrome().");
 }
@@ -266,6 +275,7 @@ if (
   !diagnostics.loadedModules.includes("ui.game.objects") ||
   !diagnostics.loadedModules.includes("ui.game.grid") ||
   !diagnostics.loadedModules.includes("ui.game.audio") ||
+  !diagnostics.loadedModules.includes("ui.game.effects") ||
   !diagnostics.loadedModules.includes("ui.game.state.chrome") ||
   !diagnostics.loadedModules.includes("ui.charts") ||
   !diagnostics.loadedModules.includes("incident.types")

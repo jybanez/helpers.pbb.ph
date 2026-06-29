@@ -510,7 +510,7 @@ Application integrations should use the registry loader.
 - The main UI bundle covers non-game `ui.*` and `incident.*` registry entries. The game bundle covers `ui.game.*` entries so non-game pages do not carry growing game helper code.
 - Default shared and game bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
 - Game pages may optionally preload the game bundle with `<script type="module" src="/assets/helper/helpers.game.bundle.min.js"></script>`; `uiLoader` can reuse the preloaded `window.__PBB_HELPER_GAME_BUNDLE__` map when bundle preference is enabled.
-- Current optional game modules include `ui.game.core`, `ui.game.objects`, `ui.game.grid`, `ui.game.audio`, and `ui.game.state.chrome`.
+- Current optional game modules include `ui.game.core`, `ui.game.objects`, `ui.game.grid`, `ui.game.audio`, `ui.game.effects`, and `ui.game.state.chrome`.
 - The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.
 - Components without distinct wrapper chrome should not add a no-op `chrome` flag.
@@ -544,6 +544,33 @@ Application integrations should use the registry loader.
   - form feedback: `.ui-form-error`
   - shell/layout primitives: `.ui-panel`, `.ui-surface`, `.ui-field`, `.ui-label`, `.ui-badge`, `.ui-eyebrow`, `.ui-shell-header`, `.ui-shell-search`
 - If the same override appears more than once in a consuming app, it is a candidate to move back into the shared library instead of remaining project-local.
+
+#### `createGameEffectTimeline(options)` (`js/ui/ui.game.effects.js`)
+
+- Optional game-bundle helper for non-rendering short-lived feedback effects.
+- Helper owns effect lifetime, delay handling, normalized `progress`, `eased` progress, pause/resume, cleanup, reduced-motion compression, and iteration.
+- Games own effect meaning, payload shape, spawn timing, rendering, scoring, and gameplay impact.
+- Main methods:
+  - `spawn(effect)`
+  - `update(deltaMs)`
+  - `forEach(callback, options?)`
+  - `getEffects(options?)`
+  - `getEffect(id)`
+  - `remove(id)`
+  - `clear()`
+  - `pause()` / `resume()` / `setPaused(paused)`
+  - `getState()`
+  - `destroy()`
+- Effect fields:
+  - `id`
+  - `type`
+  - `payload`
+  - `duration`
+  - `delay`
+  - `easing`
+- Snapshot fields include `elapsed`, `age`, `remaining`, `progress`, `eased`, `active`, and `done`.
+- `GAME_EFFECT_EASINGS` currently includes `linear`, `inQuad`, `outQuad`, `inOutQuad`, `inCubic`, `outCubic`, and `inOutCubic`.
+- Related demo: `demos/demo.game.effects.html`
 
 Public component families:
 

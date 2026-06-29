@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Effects Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+    canvas { width: 100%; max-width: 620px; aspect-ratio: 16 / 10; border: 1px solid #2b3750; border-radius: 8px; background: #07111f; }
+    pre { margin: 0; min-height: 330px; white-space: pre-wrap; font-size: 12px; color: #d7e0f4; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow-x: auto; }
+    @media (max-width: 880px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.game.effects"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Game Effects",
+      overview: "Focused reference for createGameEffectTimeline, a non-rendering lifecycle helper for short game feedback effects.",
+      useWhen: [
+        "Use <code>createGameEffectTimeline(...)</code> when a game needs reusable effect lifetime, progress, easing, pause/resume, and cleanup.",
+        "Render the returned effect snapshots in app-owned canvas, DOM, or WebGL code."
+      ],
+      avoidWhen: [
+        "Do not use it as a particle system, sprite animator, or game-specific effects engine.",
+        "Do not put scoring, collision, match resolution, or gameplay outcomes inside Helper effects."
+      ],
+      description: "Game Effects owns timing and lifecycle only. The app owns effect meaning, payload shape, spawn timing, and drawing style.",
+      defaultSampleCode: `const effects = createGameEffectTimeline({\n  defaultDuration: 420,\n  defaultEasing: "outCubic",\n  reducedMotion: "respect",\n});\n\neffects.spawn({\n  type: "scorePopup",\n  duration: 700,\n  payload: { x: 320, y: 180, text: "+250" },\n});\n\nfunction frame(deltaMs) {\n  effects.update(deltaMs);\n  effects.forEach((effect) => {\n    drawEffect(effect.payload, effect.progress, effect.eased);\n  });\n}`,
+      constructor: [
+        { factory: "<code>createGameEffectTimeline(options)</code>", arguments: "lifecycle and easing options", returns: "Game effect timeline API" }
+      ],
+      options: [
+        { option: "<code>defaultDuration</code>", default: "<code>300</code>", description: "Default effect lifetime in milliseconds." },
+        { option: "<code>defaultEasing</code>", default: "<code>linear</code>", description: "Named easing used when an effect does not specify one." },
+        { option: "<code>reducedMotion</code>", default: "<code>respect</code>", description: "<code>respect</code>, <code>ignore</code>, or <code>force</code> reduced-motion behavior." },
+        { option: "<code>reducedMotionDuration</code>", default: "<code>1</code>", description: "Compressed duration used when reduced motion is active." },
+        { option: "<code>autoRemove</code>", default: "<code>true</code>", description: "Removes completed effects during update." },
+        { option: "<code>timeScale</code>", default: "<code>1</code>", description: "Multiplier applied to update deltas." }
+      ],
+      data: [
+        { property: "<code>effect.id</code>", description: "Optional stable id. Helper generates one when omitted." },
+        { property: "<code>effect.type</code>", description: "App-owned effect category such as lineClear, pickup, hit, or combo." },
+        { property: "<code>effect.payload</code>", description: "App-owned rendering/game metadata. Helper shallow-clones object payloads in snapshots." },
+        { property: "<code>effect.duration</code>", description: "Lifetime in milliseconds." },
+        { property: "<code>effect.delay</code>", description: "Optional inactive delay in milliseconds." },
+        { property: "<code>effect.easing</code>", description: "Named easing, e.g. linear, outCubic, or inOutCubic." }
+      ],
+      methods: [
+        { method: "<code>spawn(effect)</code>", arguments: "effect config", returns: "normalized effect snapshot or null after destroy" },
+        { method: "<code>update(deltaMs)</code>", arguments: "elapsed milliseconds", returns: "active snapshots" },
+        { method: "<code>forEach(callback, options?)</code>", arguments: "callback receives effect snapshot", returns: "void" },
+        { method: "<code>getEffects(options?)</code>", arguments: "optional includeDone", returns: "effect snapshots" },
+        { method: "<code>pause()</code> / <code>resume()</code>", arguments: "none", returns: "timeline" },
+        { method: "<code>clear()</code> / <code>destroy()</code>", arguments: "none", returns: "void/timeline" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+        <button id="spawnScore" class="ui-button ui-button-primary" type="button">Score Popup</button>
+        <button id="spawnBurst" class="ui-button" type="button">Impact Burst</button>
+        <button id="spawnDelayed" class="ui-button" type="button">Delayed Trail</button>
+        <button id="pause" class="ui-button ui-button-ghost" type="button">Pause</button>
+        <button id="clear" class="ui-button ui-button-ghost" type="button">Clear</button>
+      </div>
+      <h1 class="ui-title">Game Effects Demo</h1>
+      <p class="muted">Helper owns effect lifetime and eased progress. This canvas is app-owned rendering that reads timeline snapshots.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel"><canvas id="canvas" width="640" height="400"></canvas></div>
+      <aside class="panel"><h2 class="ui-title">Effect State</h2><pre id="stateOutput"></pre></aside>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createGameEffectTimeline } = await uiLoader.get("ui.game.effects");
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stateOutput = document.getElementById("stateOutput");
+    const pauseButton = document.getElementById("pause");
+    const effects = createGameEffectTimeline({ defaultDuration: 700, defaultEasing: "outCubic" });
+    let lastTime = performance.now();
+    let raf = 0;
+
+    document.getElementById("spawnScore").addEventListener("click", () => {
+      effects.spawn({
+        type: "score",
+        duration: 900,
+        easing: "outCubic",
+        payload: { x: randomBetween(180, 460), y: randomBetween(180, 260), text: "+250" },
+      });
+    });
+    document.getElementById("spawnBurst").addEventListener("click", () => {
+      effects.spawn({
+        type: "burst",
+        duration: 520,
+        easing: "outQuad",
+        payload: { x: randomBetween(160, 480), y: randomBetween(120, 280), radius: randomBetween(22, 44) },
+      });
+    });
+    document.getElementById("spawnDelayed").addEventListener("click", () => {
+      effects.spawn({
+        type: "trail",
+        delay: 220,
+        duration: 620,
+        easing: "inOutCubic",
+        payload: { x: randomBetween(160, 480), y: randomBetween(120, 280) },
+      });
+    });
+    pauseButton.addEventListener("click", () => {
+      effects.setPaused(!effects.isPaused());
+      pauseButton.textContent = effects.isPaused() ? "Resume" : "Pause";
+    });
+    document.getElementById("clear").addEventListener("click", () => effects.clear());
+
+    effects.spawn({ type: "score", payload: { x: 320, y: 210, text: "+100" }, duration: 900 });
+    effects.spawn({ type: "burst", payload: { x: 320, y: 210, radius: 36 }, duration: 520 });
+    frame(lastTime);
+
+    function frame(now) {
+      const deltaMs = Math.min(64, now - lastTime);
+      lastTime = now;
+      effects.update(deltaMs);
+      draw();
+      raf = requestAnimationFrame(frame);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#07111f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      effects.forEach((effect) => {
+        if (effect.type === "score") {
+          drawScore(effect);
+        } else if (effect.type === "burst") {
+          drawBurst(effect);
+        } else {
+          drawTrail(effect);
+        }
+      });
+      stateOutput.textContent = JSON.stringify(effects.getState(), null, 2);
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = "rgba(120, 167, 255, 0.12)";
+      for (let x = 40; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 40; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawScore(effect) {
+      const { x, y, text } = effect.payload;
+      ctx.save();
+      ctx.globalAlpha = 1 - effect.progress;
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "700 26px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(text || "+1", x, y - effect.eased * 58);
+      ctx.restore();
+    }
+
+    function drawBurst(effect) {
+      const { x, y, radius } = effect.payload;
+      ctx.save();
+      ctx.globalAlpha = 1 - effect.progress;
+      ctx.strokeStyle = "#58d49a";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y, (radius || 32) * (0.4 + effect.eased), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrail(effect) {
+      const { x, y } = effect.payload;
+      ctx.save();
+      ctx.globalAlpha = effect.active ? 1 - effect.progress : 0.35;
+      ctx.fillStyle = "#78a7ff";
+      ctx.fillRect(x - 40 + effect.eased * 80, y - 4, 80 * (1 - effect.progress), 8);
+      ctx.restore();
+    }
+
+    function randomBetween(min, max) {
+      return Math.round(min + Math.random() * (max - min));
+    }
+
+    window.addEventListener("pagehide", () => cancelAnimationFrame(raf), { once: true });
+  </script>
+</body>
+</html>

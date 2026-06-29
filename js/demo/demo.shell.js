@@ -80,6 +80,7 @@ const DEMO_GROUPS = [
       { href: "./demo.game.action.button.html", label: "Game Action" },
       { href: "./demo.game.action.group.html", label: "Game Action Group" },
       { href: "./demo.game.audio.html", label: "Game Audio" },
+      { href: "./demo.game.effects.html", label: "Game Effects" },
       { href: "./demo.game.state.chrome.html", label: "Game State Chrome" },
       { href: "./demo.game.core.html", label: "Game Core" },
     ],
