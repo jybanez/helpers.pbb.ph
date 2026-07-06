@@ -147,6 +147,28 @@
     document.querySelector("#host .toolbar-add")?.click();
     assert(toolbarClicks === 3, "toolbar button should survive pagination-driven re-render");
 
+    grid.update([
+      { id: 16, status: "resolved", caller: "Maria Santos", aliases: ["closed"] },
+      { id: 15, status: "active", caller: "Juan Dela Cruz", aliases: ["open", "urgent"] },
+      { id: 14, status: "active", caller: "Ana Reyes", aliases: ["open"] },
+    ], {
+      search: "open",
+      sortBy: "",
+      sortDir: "",
+      page: 1,
+      pageSize: 10,
+      searchFilter({ row, query }) {
+        const haystack = [row.status, row.caller, ...(row.aliases || [])].join(" ").toLowerCase();
+        return haystack.includes(query.toLowerCase());
+      },
+      searchRank({ row }) {
+        return row.aliases?.includes("urgent") ? 10 : 1;
+      },
+    });
+    const rankedRows = Array.from(document.querySelectorAll("#host tbody tr[data-row-key]"));
+    assert(rankedRows.length === 2, "custom searchFilter should include rows by hidden alias metadata");
+    assert(rankedRows[0]?.textContent.includes("Juan Dela Cruz"), "custom searchRank should order stronger matches first when no column sort is active");
+
     grid.destroy();
     assert(document.querySelector("#host .ui-grid") === null, "destroy should remove the grid DOM");
 

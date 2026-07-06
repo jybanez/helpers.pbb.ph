@@ -18,6 +18,8 @@ const DEFAULT_OPTIONS = {
   onLoadChildren: null,
   searchTerm: "",
   searchFields: [],
+  searchText: null,
+  searchPredicate: null,
   autoExpandMatches: true,
   highlightMatches: true,
   emptySearchText: "No matching results.",
@@ -147,6 +149,20 @@ export function createTreeGrid(container, options = {}) {
   }
 
   function collectSearchableText(row, searchState) {
+    if (typeof currentOptions.searchText === "function") {
+      const customText = currentOptions.searchText({
+        row,
+        query: searchState.term,
+        fields: [...searchState.fields],
+        columns: [...currentOptions.columns],
+      });
+      if (Array.isArray(customText)) {
+        return customText.join(" ").toLowerCase();
+      }
+      if (customText != null) {
+        return String(customText).toLowerCase();
+      }
+    }
     const values = [];
     searchState.fields.forEach((field) => {
       const value = row?.[field];
@@ -165,6 +181,18 @@ export function createTreeGrid(container, options = {}) {
     return values.join(" ").toLowerCase();
   }
 
+  function matchesSearch(row, searchState) {
+    if (typeof currentOptions.searchPredicate === "function") {
+      return currentOptions.searchPredicate({
+        row,
+        query: searchState.term,
+        fields: [...searchState.fields],
+        columns: [...currentOptions.columns],
+      }) === true;
+    }
+    return collectSearchableText(row, searchState).includes(searchState.term);
+  }
+
   function filterAndFlattenRows(rows, searchState, depth = 0, parentId = null, acc = []) {
     rows.forEach((row) => {
       const id = getRowId(row);
@@ -174,7 +202,7 @@ export function createTreeGrid(container, options = {}) {
       if (children.length) {
         filterAndFlattenRows(children, searchState, depth + 1, id, childEntries);
       }
-      const selfMatch = collectSearchableText(row, searchState).includes(searchState.term);
+      const selfMatch = matchesSearch(row, searchState);
       const include = selfMatch || childEntries.length > 0;
       if (!include) {
         return;

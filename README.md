@@ -4189,6 +4189,8 @@ Options:
 | `toolbarEnd` | `ToolbarContent` | `null` | no | Additive content rendered after helper-owned right toolbar tools. |
 | `search` | `string` | `""` | no | Initial search term. |
 | `searchPlaceholder` | `string` | `"Search..."` | no | Search field placeholder. |
+| `searchFilter` | `({ row, index, query, columns }) => boolean` | `null` | no | Optional local-mode search predicate for domain-specific matching. Current includes-based search is preserved when absent. |
+| `searchRank` | `({ row, index, query, columns }) => number` | `null` | no | Optional local-mode search ranking used after filtering and before normal column sort/pagination. Higher ranks appear first when no active column sort overrides order. |
 | `filters` | `object` | `{}` | no | Additional query metadata preserved in `getQuery()` and `onQueryChange(...)`. |
 | `sortBy` | `string` | `""` | no | Initial sort column key. |
 | `sortDir` | `"asc" \| "desc" \| ""` | `""` | no | Initial sort direction. |
@@ -4320,6 +4322,8 @@ Options:
 | `virtualThreshold` | `number` | `120` | no | Visible-row threshold before virtualization activates. |
 | `searchTerm` | `string` | `""` | no | Current tree-aware search term. |
 | `searchFields` | `string[]` | all column keys | no | Fields included in search matching. |
+| `searchText` | `({ row, query, fields, columns }) => string \| string[]` | `null` | no | Optional searchable text resolver for hidden metadata, aliases, or field keys while preserving tree search behavior. |
+| `searchPredicate` | `({ row, query, fields, columns }) => boolean` | `null` | no | Optional direct row-match predicate for domain-specific tree search. Ancestor-path inclusion remains Helper-owned. |
 | `autoExpandMatches` | `boolean` | `true` | no | Temporarily expands matching ancestor paths. |
 | `highlightMatches` | `boolean` | `true` | no | Highlights all occurrences in rendered text. |
 | `emptyText` | `string` | `"No data available."` | no | Normal empty state copy. |
