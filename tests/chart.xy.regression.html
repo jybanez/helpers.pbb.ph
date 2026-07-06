@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X/Y Chart Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.chart.xy.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .host { width: 760px; margin-bottom: 16px; }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="dateHost" class="host"></div>
+  <div id="categoryHost" class="host"></div>
+  <div id="stateHost" class="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createXyChart } from "../js/ui/ui.chart.xy.js";
+
+    const failures = [];
+    const events = [];
+    const results = document.getElementById("results");
+
+    try {
+      assert(typeof createXyChart === "function", "createXyChart should export");
+
+      const dateChart = createXyChart(document.getElementById("dateHost"), {
+        title: "Response Trend",
+        ariaLabel: "Response trend chart",
+        xType: "date",
+        xLabel: "Date",
+        yLabel: "Minutes",
+        yFormatter: (value) => `${Math.round(Number(value))}m`,
+        xFormatter: (value) => String(value).slice(5),
+        series: [
+          {
+            id: "median",
+            label: "Median",
+            tone: "info",
+            points: [
+              { id: "m1", x: "2026-07-01", y: 12, meta: { source: "ops" } },
+              { id: "m2", x: "2026-07-02", y: 9 },
+              { id: "m3", x: "2026-07-03", y: 10 },
+            ],
+          },
+          {
+            id: "p90",
+            label: "P90",
+            tone: "warning",
+            points: [
+              { x: "2026-07-01", y: 21 },
+              { x: "2026-07-02", y: 17 },
+              { x: "2026-07-03", y: 18 },
+            ],
+          },
+        ],
+        thresholds: [{ axis: "y", value: 15, label: "Target", tone: "warning" }],
+        bands: [{ axis: "y", from: 0, to: 10, label: "Healthy", tone: "success" }],
+        onSelect(point, meta) {
+          events.push({ type: "select", point, meta });
+        },
+        onHover(point, meta) {
+          events.push({ type: "hover", point, meta });
+        },
+      });
+
+      let root = document.querySelector("#dateHost .ui-chart-xy");
+      assert(root?.getAttribute("role") === "figure", "root should expose figure role");
+      assert(root?.getAttribute("aria-label") === "Response trend chart", "root should expose aria label");
+      assert(root.querySelector(".ui-chart-xy-title")?.textContent === "Response Trend", "title should render");
+      assert(root.querySelectorAll(".ui-chart-xy-series").length === 2, "multiple series should render");
+      assert(root.querySelectorAll(".ui-chart-xy-point").length === 6, "all points should render");
+      assert(root.querySelector(".ui-chart-xy-threshold"), "threshold line should render");
+      assert(root.querySelector(".ui-chart-xy-band"), "shaded band should render");
+      assert(root.querySelector(".ui-chart-xy-summary tbody tr td")?.textContent === "Median", "summary table should render normalized rows");
+      assert(root.querySelector(".ui-chart-xy-axis-title")?.textContent === "Date", "x axis title should render");
+
+      const firstPoint = root.querySelector(".ui-chart-xy-point");
+      firstPoint.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      firstPoint.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      assert(events.some((event) => event.type === "hover" && event.meta.series.id === "median"), "onHover should receive point and series");
+      assert(events.some((event) => event.type === "select" && event.point.id === "m1"), "onSelect should receive point id");
+      assert(events.find((event) => event.point.id === "m1")?.point.meta.source === "ops", "point metadata should be preserved");
+
+      const categoryChart = createXyChart(document.getElementById("categoryHost"), {
+        xType: "category",
+        xLabel: "Visit",
+        yLabel: "Completion",
+        series: [{
+          label: "Progress",
+          points: [
+            { x: "Intake", y: 15 },
+            { x: "Assessment", y: 44 },
+            { x: "Follow-up", y: 83 },
+          ],
+        }],
+      });
+      root = document.querySelector("#categoryHost .ui-chart-xy");
+      assert(root.querySelectorAll(".ui-chart-xy-point").length === 3, "category chart should render points");
+      assert(root.textContent.includes("Assessment"), "category x labels should render");
+
+      const stateChart = createXyChart(document.getElementById("stateHost"), { emptyText: "Nothing plotted." });
+      assert(document.querySelector("#stateHost .ui-chart-xy-state--empty")?.textContent === "Nothing plotted.", "empty state should render");
+      stateChart.update({ loading: true });
+      assert(document.querySelector("#stateHost .ui-chart-xy-state--loading"), "loading state should render");
+      stateChart.update({ loading: false, error: "Chart failed." });
+      assert(document.querySelector("#stateHost .ui-chart-xy-state--error")?.textContent === "Chart failed.", "error state should render");
+      stateChart.update({ error: "" });
+      stateChart.setSeries([{ label: "Updated", points: [{ x: 1, y: 4 }, { x: 2, y: 8 }] }]);
+      assert(document.querySelectorAll("#stateHost .ui-chart-xy-point").length === 2, "setSeries should render new points");
+
+      const state = dateChart.getState();
+      assert(state.series.length === 2 && state.series[0].points[0].id === "m1", "getState should expose normalized series");
+
+      dateChart.destroy();
+      categoryChart.destroy();
+      stateChart.destroy();
+      assert(document.getElementById("dateHost").children.length === 0, "destroy should clear host");
+
+      finish();
+    } catch (error) {
+      failures.push(error?.message || String(error));
+      finish();
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function finish() {
+      const passed = failures.length === 0;
+      document.body.dataset.status = passed ? "pass" : "fail";
+      results.textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "X/Y chart regression test passed." : failures.join("\n")}`;
+    }
+  </script>
+</body>
+</html>

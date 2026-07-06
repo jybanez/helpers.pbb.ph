@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X/Y Chart Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+      gap: 14px;
+      min-width: 0;
+    }
+    @media (max-width: 820px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .muted {
+      margin: 0;
+      color: #9fb2d8;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      color: #d7e0f4;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid #2b3750;
+      border-radius: 8px;
+      background: #0b1220;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    #eventLog {
+      min-height: 104px;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.chart.xy"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "X/Y Chart",
+      overview: "Generic SVG X/Y chart primitive for line trends, points, thresholds, and shaded bands.",
+      useWhen: [
+        "Use <code>createXyChart(...)</code> for reusable numeric/date/category trend charts.",
+        "Use it when apps own domain calculations but need Helper-owned rendering, callbacks, and accessible summary output."
+      ],
+      avoidWhen: [
+        "Do not use it for clinical interpretation, percentile calculations, or z-score calculations.",
+        "Do not use it for zooming, brushing, or large analytical chart exploration in V1."
+      ],
+      description: "The X/Y chart helper renders line series with optional points, Y-axis threshold lines, Y-axis shaded bands, loading/empty/error states, and select/hover callbacks.",
+      defaultSampleCode: `const chart = createXyChart(container, {\n  title: "Response Time Trend",\n  xType: "date",\n  xLabel: "Date",\n  yLabel: "Minutes",\n  series: [{\n    label: "Median",\n    points: [\n      { x: "2026-07-01", y: 12 },\n      { x: "2026-07-02", y: 9 },\n    ],\n  }],\n  thresholds: [{ axis: "y", value: 15, label: "Target", tone: "warning" }],\n});`,
+      constructor: [
+        { factory: "<code>createXyChart(container, options)</code>", arguments: "container, X/Y chart options", returns: "X/Y chart instance" }
+      ],
+      options: [
+        { option: "<code>series</code>", default: "<code>[]</code>", description: "Array of series with <code>points</code> containing <code>x</code> and numeric <code>y</code>." },
+        { option: "<code>xType</code>", default: "<code>\"auto\"</code>", description: "<code>auto</code>, <code>number</code>, <code>date</code>, or <code>category</code>." },
+        { option: "<code>thresholds</code>", default: "<code>[]</code>", description: "Y-axis reference lines with <code>value</code>, optional <code>label</code>, <code>tone</code>, or <code>color</code>." },
+        { option: "<code>bands</code>", default: "<code>[]</code>", description: "Y-axis shaded ranges with <code>from</code>, <code>to</code>, optional <code>label</code>, <code>tone</code>, or <code>color</code>." },
+        { option: "<code>xFormatter</code>, <code>yFormatter</code>, <code>pointLabel</code>", default: "<code>null</code>", description: "Formatter hooks for labels, summaries, and point accessibility text." },
+        { option: "<code>onSelect</code>, <code>onHover</code>", default: "<code>null</code>", description: "Interaction callbacks for points. Interactive points are keyboard focusable." }
+      ],
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial chart options", returns: "<code>void</code>" },
+        { method: "<code>setSeries(series)</code>", arguments: "replacement series array", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Options and normalized series snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <div class="toolbar">
+        <a class="back" href="./index.html">&larr; Back to Home</a>
+      </div>
+      <h1 class="ui-title">X/Y Chart Demo</h1>
+      <p class="muted">Axis-based chart primitive for line trends, reference bands, and thresholds. Domain interpretation stays app-owned.</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel"><div id="trendChart"></div></article>
+      <article class="panel">
+        <h2 class="ui-title">Point Events</h2>
+        <pre id="eventLog">Hover or select a point.</pre>
+      </article>
+    </section>
+
+    <section class="panel"><div id="categoryChart"></div></section>
+
+    <section class="panel">
+      <h2 class="ui-title">Usage</h2>
+      <pre>const chart = createXyChart(container, {
+  xType: "date",
+  xLabel: "Date",
+  yLabel: "Minutes",
+  series: [{ label: "Median", points: [{ x: "2026-07-01", y: 12 }] }],
+  thresholds: [{ axis: "y", value: 15, label: "Target", tone: "warning" }],
+  bands: [{ axis: "y", from: 0, to: 10, label: "Healthy", tone: "success" }],
+});</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createXyChart = await uiLoader.get("ui.chart.xy");
+    const eventLog = document.getElementById("eventLog");
+
+    createXyChart(document.getElementById("trendChart"), {
+      title: "Response Time Trend",
+      description: "Date-based multi-series line chart with Y-axis threshold and healthy band.",
+      xType: "date",
+      xLabel: "Date",
+      yLabel: "Minutes",
+      yFormatter: (value) => `${Math.round(Number(value))}m`,
+      xFormatter: (value) => String(value).slice(5),
+      series: [
+        {
+          id: "median",
+          label: "Median",
+          tone: "info",
+          points: [
+            { x: "2026-07-01", y: 12 },
+            { x: "2026-07-02", y: 9 },
+            { x: "2026-07-03", y: 10 },
+            { x: "2026-07-04", y: 7 },
+            { x: "2026-07-05", y: 11 },
+          ],
+        },
+        {
+          id: "p90",
+          label: "P90",
+          tone: "warning",
+          points: [
+            { x: "2026-07-01", y: 21 },
+            { x: "2026-07-02", y: 17 },
+            { x: "2026-07-03", y: 18 },
+            { x: "2026-07-04", y: 14 },
+            { x: "2026-07-05", y: 16 },
+          ],
+        },
+      ],
+      bands: [{ axis: "y", from: 0, to: 10, label: "Healthy", tone: "success" }],
+      thresholds: [{ axis: "y", value: 15, label: "Target", tone: "warning" }],
+      onHover(point, meta) {
+        eventLog.textContent = `Hover: ${meta.series.label} ${point.x} = ${point.y}`;
+      },
+      onSelect(point, meta) {
+        eventLog.textContent = `Selected: ${meta.series.label} ${point.x} = ${point.y}`;
+      },
+    });
+
+    createXyChart(document.getElementById("categoryChart"), {
+      title: "Program Completion Curve",
+      description: "Category X axis with a single progress-style series.",
+      xType: "category",
+      xLabel: "Visit",
+      yLabel: "Completion",
+      yFormatter: (value) => `${Math.round(Number(value))}%`,
+      series: [{
+        label: "Completion",
+        tone: "success",
+        points: [
+          { x: "Intake", y: 18 },
+          { x: "Assessment", y: 42 },
+          { x: "Plan", y: 63 },
+          { x: "Follow-up", y: 81 },
+          { x: "Close", y: 94 },
+        ],
+      }],
+      thresholds: [{ axis: "y", value: 80, label: "Goal", tone: "success" }],
+    });
+  </script>
+</body>
+</html>

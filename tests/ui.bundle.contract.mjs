@@ -58,6 +58,7 @@ const gameAudio = await loader.get("ui.game.audio", { css: false });
 const gameEffects = await loader.get("ui.game.effects", { css: false });
 const gameStateChrome = await loader.get("ui.game.state.chrome", { css: false });
 const charts = await loader.get("ui.charts", { css: false });
+const createXyChart = await loader.get("ui.chart.xy", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
 const diagnostics = loader.getDiagnostics();
 
@@ -244,6 +245,10 @@ if (typeof charts?.createSparkline !== "function") {
   throw new Error("Bundle-backed ui.charts did not expose createSparkline().");
 }
 
+if (typeof createXyChart !== "function") {
+  throw new Error("Bundle-backed ui.chart.xy did not resolve to createXyChart().");
+}
+
 if (typeof incidentTypes !== "function") {
   throw new Error("Bundle-backed incident.types did not resolve to a factory function.");
 }
@@ -278,6 +283,7 @@ if (
   !diagnostics.loadedModules.includes("ui.game.effects") ||
   !diagnostics.loadedModules.includes("ui.game.state.chrome") ||
   !diagnostics.loadedModules.includes("ui.charts") ||
+  !diagnostics.loadedModules.includes("ui.chart.xy") ||
   !diagnostics.loadedModules.includes("incident.types")
 ) {
   throw new Error("Loader did not record bundle-backed module requests.");

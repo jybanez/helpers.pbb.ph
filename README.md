@@ -78,6 +78,7 @@ css/
     ui.map.markers.css
     ui.map.drawing.css
     ui.charts.css
+    ui.chart.xy.css
     ui.nav.css
   incident/
     incident.css
@@ -147,6 +148,7 @@ js/
     ui.map.markers.js
     ui.map.drawing.js
     ui.charts.js
+    ui.chart.xy.js
     ui.menu.js
     ui.dropdown.js
     ui.dropup.js
@@ -348,7 +350,9 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.map.drawing.js`
   - `createMapDrawingTools(container, options)` adapter-based drawing toolbar for map modes, edit actions, measurements, and GeoJSON events
 - `ui.charts.js`
-  - `createChart(container, options)` and chart-specific wrappers for dependency-free bar, horizontal-bar, stacked-bar, donut, and sparkline charts
+- `createChart(container, options)` and chart-specific wrappers for dependency-free bar, horizontal-bar, stacked-bar, donut, and sparkline charts
+- `ui.chart.xy.js`
+- `createXyChart(container, options)` generic SVG X/Y chart primitive for line trends, point markers, Y-axis thresholds, shaded bands, and accessible summaries
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
 - `ui.timeline.scrubber.js`
@@ -579,7 +583,7 @@ Public component families:
 - Forms and input:
   - `ui.form.modal`, preset wrappers, `ui.select`, `ui.tree.select`, `ui.toggle.button`, `ui.toggle.group`, `ui.password`, `ui.path.picker`, `ui.file.input`, `ui.number.stepper`, `ui.datepicker`, `ui.fieldset`, `ui.property.editor`, `ui.file.uploader`, `ui.device.primer`, `ui.device.selector`
 - Data, timeline, map, and inspection:
-- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.stat.cards`, `ui.icon.grid`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
+- `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.stat.cards`, `ui.icon.grid`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.chart.xy`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
   - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
@@ -1726,7 +1730,9 @@ Open from a local server (Apache/WAMP/Nginx):
   - vertical map overlay and horizontal external toolbar layouts
   - no MapLibre global dependency
 - `demos/demo.charts.html` -> dedicated charts playground
-  - bar, horizontal-bar, stacked-bar, donut, and sparkline charts
+- bar, horizontal-bar, stacked-bar, donut, and sparkline charts
+- `demos/demo.chart.xy.html` -> dedicated X/Y chart playground
+- line/point series, Y-axis thresholds, shaded bands, and point callbacks
   - empty, selectable, long-label, and state examples
   - dependency-free DOM/SVG rendering
 - `demos/demo.ui.html` -> UI utilities overview/router
@@ -6017,6 +6023,97 @@ Non-goals:
 Related demos:
 
 - `demos/demo.charts.html`
+
+### `createXyChart(container, options)` (`js/ui/ui.chart.xy.js`)
+
+Purpose:
+
+- Generic SVG X/Y chart primitive for axis-based line trends and point markers.
+- Suitable for vitals trends, growth/reference chart rendering, response-time trends, queue metrics, telemetry, backlog curves, and score/progress curves.
+- Host apps own domain calculations, interpretation, data loading, units, labels, and drill-down surfaces.
+
+Basic usage:
+
+```js
+import { createXyChart } from "./js/ui/ui.chart.xy.js";
+
+const chart = createXyChart(container, {
+  title: "Response Time Trend",
+  xType: "date",
+  xLabel: "Date",
+  yLabel: "Minutes",
+  series: [{
+    id: "median",
+    label: "Median",
+    points: [
+      { x: "2026-07-01", y: 12 },
+      { x: "2026-07-02", y: 9 },
+    ],
+  }],
+  thresholds: [{ axis: "y", value: 15, label: "Target", tone: "warning" }],
+  bands: [{ axis: "y", from: 0, to: 10, label: "Healthy", tone: "success" }],
+});
+```
+
+Series fields:
+
+- `id`: optional stable series id
+- `label`: visible/accessibility series label
+- `tone`: `neutral`, `info`, `success`, `warning`, `danger`, or `critical`
+- `color`: optional CSS color override
+- `points`: point array
+- `meta`: optional app-owned series metadata preserved in state
+
+Point fields:
+
+- `id`: optional stable point id
+- `x`: numeric, date-like, or category x value
+- `y`: numeric y value
+- `label`: optional display/accessibility label
+- `r`: optional point radius
+- `meta`: optional app-owned point metadata preserved in callbacks/state
+
+Options:
+
+- `series`: line series array
+- `xType`: `auto`, `number`, `date`, or `category`
+- `xLabel`: X-axis semantic label
+- `yLabel`: Y-axis semantic label
+- `thresholds`: Y-axis reference lines with `value`, optional `label`, `tone`, or `color`
+- `bands`: Y-axis shaded ranges with `from`, `to`, optional `label`, `tone`, or `color`
+- `showLegend`: renders a series legend
+- `showPoints`: renders point markers
+- `showGrid`: renders horizontal grid guides
+- `xFormatter`: optional X label formatter
+- `yFormatter`: optional Y label formatter
+- `pointLabel`: optional point accessibility label formatter
+- `onSelect`: optional point select callback
+- `onHover`: optional point hover/focus callback
+- `loading`, `loadingText`, `error`, `emptyText`: standard state rendering
+
+Methods:
+
+- `update(options)`
+- `setSeries(series)`
+- `getState()`
+- `destroy()`
+
+Accessibility:
+
+- The root uses figure semantics with an accessible label.
+- The plot exposes an image label.
+- Interactive points become keyboard focusable when `onSelect` or `onHover` is supplied.
+- Rendered charts include a hidden data summary table.
+
+Non-goals:
+
+- Does not implement clinical calculations, z-score interpretation, or percentile interpretation.
+- Does not implement zooming, brushing, pan gestures, or large-data virtualization in V1.
+- Does not replace `ui.charts`; `ui.charts` remains the compact summary chart family.
+
+Related demos:
+
+- `demos/demo.chart.xy.html`
 
 ### `createKanban(container, lanes, options)` (`js/ui/ui.kanban.js`)
 

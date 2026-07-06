@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.chart.xy` with `createXyChart(...)` for generic SVG line/point X-Y charts with multiple series, Y-axis thresholds, shaded bands, formatter hooks, interaction callbacks, and accessible summaries.
 - Added optional custom search hooks to `ui.grid` and `ui.tree.grid` for domain-specific row matching, hidden metadata search, and local search ranking without changing default includes-based behavior.
 - Added `ui.game.effects` with `createGameEffectTimeline(...)` and `GAME_EFFECT_EASINGS` for non-rendering game feedback lifecycles in the optional game bundle.
 - Updated `ui.chat.thread` hidden/deleted placeholders so moderated messages keep sender avatar placement, initials fallback, and online presence dots while still suppressing original content and menus.
