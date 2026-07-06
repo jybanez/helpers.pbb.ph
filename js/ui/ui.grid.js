@@ -22,6 +22,8 @@ const DEFAULT_OPTIONS = {
   wrapCellContent: true,
   searchPlaceholder: "Search...",
   search: "",
+  searchFilter: null,
+  searchRank: null,
   filters: {},
   sortBy: "",
   sortDir: "", // asc | desc | ""
@@ -615,12 +617,15 @@ export function createGrid(container, rows = [], options = {}) {
   function getLocalRows() {
     let next = [...currentRows];
     if (isSearchEnabled() && query.search) {
-      const needle = String(query.search).toLowerCase();
-      next = next.filter((row) =>
-        currentOptions.columns.some((column) =>
-          String(row?.[column.key] ?? "").toLowerCase().includes(needle)
-        )
-      );
+      const searchContext = {
+        query: String(query.search),
+        columns: [...currentOptions.columns],
+        options: { ...currentOptions },
+      };
+      next = next.filter((row, index) => matchesSearch(row, index, searchContext));
+      if (typeof currentOptions.searchRank === "function") {
+        next = rankSearchRows(next, searchContext);
+      }
     }
     if (isSortEnabled() && query.sortBy && query.sortDir) {
       const key = query.sortBy;
@@ -779,6 +784,42 @@ export function createGrid(container, rows = [], options = {}) {
     clearSelection,
     getState,
   };
+}
+
+function matchesSearch(row, index, context) {
+  if (typeof context.options.searchFilter === "function") {
+    return Boolean(context.options.searchFilter({
+      row,
+      index,
+      query: context.query,
+      columns: context.columns,
+    }));
+  }
+  const needle = context.query.toLowerCase();
+  return context.columns.some((column) =>
+    String(row?.[column.key] ?? "").toLowerCase().includes(needle)
+  );
+}
+
+function rankSearchRows(rows, context) {
+  return rows
+    .map((row, index) => ({
+      row,
+      index,
+      rank: normalizeSearchRank(context.options.searchRank({
+        row,
+        index,
+        query: context.query,
+        columns: context.columns,
+      })),
+    }))
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map((entry) => entry.row);
+}
+
+function normalizeSearchRank(value) {
+  const rank = Number(value);
+  return Number.isFinite(rank) ? rank : 0;
 }
 
 function normalizeToolbarValue(value, placement) {

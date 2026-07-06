@@ -125,6 +125,66 @@
     assert(state.visibleRows.length === 5, "clearSearch should restore visible rows");
     assert(document.querySelectorAll("#host tbody tr[data-row-id]").length === 5, "clearSearch should restore DOM rows");
 
+    grid.update({
+      rows: [
+        {
+          id: "program-maternal",
+          label: "Maternal Care",
+          status: "active",
+          location: "Clinic",
+          createdAt: "2026-03-11 10:00",
+          metadata: { key: "mch-prenatal" },
+          children: [
+            {
+              id: "program-rx",
+              label: "Prescription Workflow",
+              status: "draft",
+              location: "Pharmacy",
+              createdAt: "2026-03-11 10:10",
+              metadata: { key: "rx-dispense" },
+            },
+          ],
+        },
+      ],
+      searchText({ row }) {
+        return [row.label, row.status, row.metadata?.key].filter(Boolean);
+      },
+    });
+    grid.setSearchTerm("rx-dispense");
+    state = grid.getState();
+    assert(state.search.matchCount === 1, "custom searchText should match hidden row metadata");
+    assert(state.visibleRows.some((entry) => entry.id === "program-rx"), "custom searchText match should expose the matching child row");
+    assert(state.visibleRows.some((entry) => entry.id === "program-maternal"), "custom searchText match should keep ancestor path visible");
+
+    grid.update({
+      searchTerm: "field:bp",
+      searchPredicate({ row, query }) {
+        return query === "field:bp" && row.metadata?.fieldKey === "blood_pressure";
+      },
+      rows: [
+        {
+          id: "program-vitals",
+          label: "Vitals Program",
+          status: "active",
+          location: "Clinic",
+          createdAt: "2026-03-11 11:00",
+          children: [
+            {
+              id: "field-blood-pressure",
+              label: "Systolic / Diastolic",
+              status: "configured",
+              location: "Vitals",
+              createdAt: "2026-03-11 11:05",
+              metadata: { fieldKey: "blood_pressure" },
+            },
+          ],
+        },
+      ],
+    });
+    state = grid.getState();
+    assert(state.search.matchCount === 1, "custom searchPredicate should control tree-grid self matches");
+    assert(state.visibleRows.some((entry) => entry.id === "field-blood-pressure"), "custom searchPredicate should expose matching metadata rows");
+
     if (failures.length) {
       document.body.dataset.status = "fail";
       results.textContent = `FAIL\\n${failures.map((line) => `- ${line}`).join("\\n")}`;
