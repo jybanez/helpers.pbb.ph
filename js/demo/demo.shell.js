@@ -54,9 +54,15 @@ const DEMO_GROUPS = [
       { href: "./demo.map.legend.html", label: "Map Legend" },
       { href: "./demo.map.markers.html", label: "Map Markers" },
       { href: "./demo.map.drawing.html", label: "Map Drawing" },
-      { href: "./demo.charts.html", label: "Charts" },
-      { href: "./demo.activity.chart.html", label: "Activity Chart" },
       { href: "./demo.inspector.html", label: "Inspector" },
+    ],
+  },
+  {
+    label: "Charts",
+    items: [
+      { href: "./demo.charts.html", label: "Summary Charts" },
+      { href: "./demo.chart.xy.html", label: "X/Y Chart" },
+      { href: "./demo.activity.chart.html", label: "Activity Chart" },
     ],
   },
   {
