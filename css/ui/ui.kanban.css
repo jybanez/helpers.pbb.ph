@@ -47,10 +47,10 @@
 }
 
 .ui-kanban-cards.is-drop-target {
-  border: 1px dashed #6ea6ff;
+  border: 1px dashed var(--ui-accent, #6ea6ff);
   border-radius: 8px;
   padding: 6px;
-  background: rgba(57, 102, 176, 0.12);
+  background: color-mix(in srgb, var(--ui-accent, #6ea6ff) 12%, var(--ui-bg-soft, #101c31));
 }
 
 .ui-kanban-cards.is-drop-target .ui-kanban-card {
@@ -65,8 +65,8 @@
   top: -7px;
   height: 3px;
   border-radius: 999px;
-  background: #6ea6ff;
-  box-shadow: 0 0 0 1px rgba(110, 166, 255, 0.18);
+  background: var(--ui-accent, #6ea6ff);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent, #6ea6ff) 22%, transparent);
 }
 
 .ui-kanban-cards.is-drop-at-end::after {
@@ -74,15 +74,15 @@
   display: block;
   height: 3px;
   border-radius: 999px;
-  background: #6ea6ff;
-  box-shadow: 0 0 0 1px rgba(110, 166, 255, 0.18);
+  background: var(--ui-accent, #6ea6ff);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent, #6ea6ff) 22%, transparent);
   margin-top: 4px;
 }
 
 .ui-kanban-card {
   border: 1px solid var(--ui-border, #2b3750);
   border-radius: 8px;
-  background: rgba(7, 17, 34, 0.55);
+  background: var(--ui-bg, #0d1523);
   padding: 8px;
   display: grid;
   gap: 4px;
@@ -90,7 +90,7 @@
 }
 
 .ui-kanban-card:hover {
-  border-color: #446598;
+  border-color: var(--ui-border-strong, #446598);
 }
 
 .ui-kanban-card.is-dragging {

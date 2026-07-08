@@ -20,6 +20,8 @@ const DEFAULT_OPTIONS = {
   lookups: {},
 };
 
+const THEME_ID_PATTERN = /^[a-z0-9-]+$/;
+
 export function incidentBase(container, data, options = {}) {
   let currentData = data;
   let currentOptions = normalizeIncidentOptions(options);
@@ -47,8 +49,14 @@ export function normalizeIncidentOptions(options = {}) {
   return {
     ...DEFAULT_OPTIONS,
     ...options,
+    theme: normalizeIncidentTheme(options.theme ?? DEFAULT_OPTIONS.theme),
     lookups: options.lookups && typeof options.lookups === "object" ? options.lookups : {},
   };
+}
+
+export function normalizeIncidentTheme(theme) {
+  const value = String(theme || "").trim().toLowerCase();
+  return THEME_ID_PATTERN.test(value) ? value : DEFAULT_OPTIONS.theme;
 }
 
 export function isElement(value) {
@@ -78,7 +86,7 @@ export function createRoot(container, rootClass, options = {}) {
     root.classList.add(normalized.className);
   }
 
-  root.dataset.theme = normalized.theme === "light" ? "light" : "dark";
+  root.dataset.theme = normalized.theme;
 
   clearContainer(container);
   container.appendChild(root);

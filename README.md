@@ -685,6 +685,34 @@ Rule of thumb:
 - `debug`: boolean (default `false`)
 - `lookups`: boot-reference object
 
+## Shared Theme Presets
+
+Helper components resolve palette through shared `--ui-*` tokens. Apps can set a theme on an app shell, modal host, or component surface with `data-theme`.
+
+Stable presets:
+
+- `dark`: existing default operational dark theme
+- `light`: existing general light theme
+- `dark-slate`: calmer slate admin surface
+- `night-command`: high-contrast command-center surface
+- `civic-light`: standard public/admin light surface
+- `care-light`: softer care and citizen-facing surface
+- `field-contrast`: high-visibility field/mobile surface
+
+Example:
+
+```html
+<main data-theme="night-command">
+  ...
+</main>
+```
+
+The `data-theme` presets are token-level palettes. Older component-specific `theme` options may still accept only `dark` or `light` where documented.
+
+Related demos:
+
+- `demos/demo.themes.html`
+
 Editor-only options:
 
 - `onChange(payload)`
@@ -1737,6 +1765,8 @@ Open from a local server (Apache/WAMP/Nginx):
   - dependency-free DOM/SVG rendering
 - `demos/demo.ui.html` -> UI utilities overview/router
   - jump to focused pages for toast, select, toggle button, toggle group, and buttons
+- `demos/demo.themes.html` -> shared theme preset playground
+  - dark, light, slate, command, civic, care, and field token palettes
 - `demos/demo.media.viewer.html` -> dedicated media-viewer playground
   - standalone image/video viewer
   - zoom/pan + fit modes

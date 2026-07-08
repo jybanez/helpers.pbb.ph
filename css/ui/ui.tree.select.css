@@ -9,10 +9,10 @@
   box-sizing: border-box;
   width: 100%;
   min-height: 40px;
-  border: 1px solid #30405f;
+  border: 1px solid var(--ui-border-strong, #30405f);
   border-radius: 10px;
-  background: #162033;
-  color: #d7e0f4;
+  background: var(--ui-bg-soft, #162033);
+  color: var(--ui-text, #d7e0f4);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -24,9 +24,9 @@
 
 .ui-tree-select-trigger:hover,
 .ui-tree-select-trigger:focus-visible {
-  border-color: #5f8ee6;
+  border-color: var(--ui-focus, #5f8ee6);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(86, 134, 225, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus, #5686e1) 20%, transparent);
 }
 
 .ui-tree-select-value {
@@ -60,7 +60,7 @@
 .ui-tree-select-clear {
   border: 0;
   background: transparent;
-  color: #9fb2d8;
+  color: var(--ui-muted, #9fb2d8);
   cursor: pointer;
   padding: 2px;
   border-radius: 6px;
@@ -68,17 +68,17 @@
 
 .ui-tree-select-clear:hover,
 .ui-tree-select-clear:focus-visible {
-  color: #d7e0f4;
-  background: rgba(159, 178, 216, 0.12);
+  color: var(--ui-text, #d7e0f4);
+  background: color-mix(in srgb, var(--ui-muted, #9fb2d8) 12%, transparent);
   outline: none;
 }
 
 .ui-tree-select-menu {
   box-sizing: border-box;
   z-index: 2000;
-  border: 1px solid #30405f;
+  border: 1px solid var(--ui-border-strong, #30405f);
   border-radius: 12px;
-  background: #121b2b;
+  background: var(--ui-bg, #121b2b);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
   padding: 8px;
 }
@@ -100,7 +100,7 @@
 .ui-tree-select-empty {
   margin: 0;
   padding: 10px;
-  color: #9fb2d8;
+  color: var(--ui-muted, #9fb2d8);
   font-size: 13px;
 }
 
@@ -109,7 +109,7 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #d7e0f4;
+  color: var(--ui-text, #d7e0f4);
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
@@ -121,12 +121,12 @@
 
 .ui-tree-select-option:hover,
 .ui-tree-select-option.is-active {
-  background: rgba(89, 128, 199, 0.18);
+  background: color-mix(in srgb, var(--ui-accent, #5980c7) 18%, transparent);
 }
 
 .ui-tree-select-option.is-selected {
-  background: rgba(89, 128, 199, 0.26);
-  color: #eef4ff;
+  background: color-mix(in srgb, var(--ui-accent, #5980c7) 26%, transparent);
+  color: var(--ui-text, #eef4ff);
 }
 
 .ui-tree-select-option.is-disabled {
@@ -149,7 +149,7 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #9fb2d8;
+  color: var(--ui-muted, #9fb2d8);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -159,8 +159,8 @@
 
 .ui-tree-select-toggle:hover,
 .ui-tree-select-toggle:focus-visible {
-  background: rgba(159, 178, 216, 0.12);
-  color: #d7e0f4;
+  background: color-mix(in srgb, var(--ui-muted, #9fb2d8) 12%, transparent);
+  color: var(--ui-text, #d7e0f4);
   outline: none;
 }
 
@@ -183,7 +183,7 @@
 
 .ui-tree-select-option-path {
   min-width: 0;
-  color: #92a8d1;
+  color: var(--ui-muted, #92a8d1);
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -191,7 +191,7 @@
 }
 
 .ui-tree-select-match {
-  background: rgba(255, 223, 112, 0.22);
+  background: color-mix(in srgb, var(--ui-warning, #ffdf70) 22%, transparent);
   color: inherit;
   border-radius: 4px;
   padding: 0 1px;

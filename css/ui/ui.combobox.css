@@ -48,7 +48,7 @@
 }
 
 .ui-combobox-empty {
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.82rem;
   padding: 7px 8px;
 }

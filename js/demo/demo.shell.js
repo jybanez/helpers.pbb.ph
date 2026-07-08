@@ -5,6 +5,7 @@ const DEMO_GROUPS = [
       { href: "./index.html", label: "Home", home: true },
       { href: "./cookbook.html", label: "Cookbook" },
       { href: "./guide.which-helper.html", label: "Which Helper?" },
+      { href: "./demo.themes.html", label: "Themes" },
     ],
   },
   {
@@ -186,6 +187,16 @@ const DOC_LINKS = [
 ];
 const NAV_SCROLL_STORAGE_KEY = "demo-shell.nav.scroll.v1";
 const NAV_COLLAPSED_STORAGE_KEY = "demo-shell.nav.collapsed.v1";
+const DEMO_THEME_STORAGE_KEY = "demo-shell.theme.v1";
+const DEMO_THEME_PRESETS = [
+  { id: "dark", label: "Dark" },
+  { id: "light", label: "Light" },
+  { id: "dark-slate", label: "Dark Slate" },
+  { id: "night-command", label: "Night Command" },
+  { id: "civic-light", label: "Civic Light" },
+  { id: "care-light", label: "Care Light" },
+  { id: "field-contrast", label: "Field Contrast" },
+];
 
 function readNavScrollState() {
   try {
@@ -274,6 +285,70 @@ function setNavCollapsed(nav, toggle, collapsed, persist = true) {
   if (persist) {
     writeNavCollapsedState(collapsed);
   }
+}
+
+function readDemoTheme() {
+  try {
+    const stored = window.localStorage.getItem(DEMO_THEME_STORAGE_KEY);
+    if (DEMO_THEME_PRESETS.some((theme) => theme.id === stored)) {
+      return stored;
+    }
+  } catch (_error) {
+    // Ignore storage failures; the default theme still applies.
+  }
+  return "dark";
+}
+
+function writeDemoTheme(theme) {
+  try {
+    window.localStorage.setItem(DEMO_THEME_STORAGE_KEY, theme);
+  } catch (_error) {
+    // Ignore storage failures; the selector still updates the current page.
+  }
+}
+
+function applyDemoTheme(theme, persist = true) {
+  const safeTheme = DEMO_THEME_PRESETS.some((item) => item.id === theme) ? theme : "dark";
+  document.documentElement.dataset.theme = safeTheme;
+  document.body.dataset.theme = safeTheme;
+  document.querySelectorAll("main.page[data-theme]").forEach((page) => {
+    page.dataset.theme = safeTheme;
+  });
+  document.body.style.background = "";
+  window.dispatchEvent(new CustomEvent("demo-theme-change", { detail: { theme: safeTheme } }));
+  if (persist) {
+    writeDemoTheme(safeTheme);
+  }
+  return safeTheme;
+}
+
+function buildThemeSwitcher() {
+  const current = applyDemoTheme(readDemoTheme(), false);
+  const field = document.createElement("label");
+  field.className = "demo-shell-theme";
+
+  const text = document.createElement("span");
+  text.className = "demo-shell-theme__label";
+  text.textContent = "Theme";
+
+  const select = document.createElement("select");
+  select.className = "demo-shell-theme__select";
+  select.setAttribute("aria-label", "Demo theme");
+
+  DEMO_THEME_PRESETS.forEach((theme) => {
+    const option = document.createElement("option");
+    option.value = theme.id;
+    option.textContent = theme.label;
+    select.appendChild(option);
+  });
+  select.value = current;
+
+  select.addEventListener("change", () => {
+    applyDemoTheme(select.value);
+  });
+
+  field.append(text, select);
+  return field;
 }
 
 function buildDemoShell() {
@@ -400,7 +475,7 @@ function buildDemoShell() {
     setNavCollapsed(nav, toggle, stored ?? event.matches, false);
   });
 
-  inner.append(title, links, docs);
+  inner.append(title, buildThemeSwitcher(), links, docs);
   nav.appendChild(inner);
   bindNavScrollPersistence(links);
   nav.addEventListener("click", () => {

@@ -246,31 +246,31 @@
 
 .ui-form-modal-alert {
   padding: 10px 12px;
-  border: 1px solid #38527f;
+  border: 1px solid color-mix(in srgb, var(--ui-accent, #6f9cff) 46%, var(--ui-border, #2b3750));
   border-radius: var(--ui-radius-sm);
-  background: rgba(34, 53, 86, 0.4);
-  color: #d7e0f4;
-  font: 500 13px/1.45 var(--ui-font);
+  background: color-mix(in srgb, var(--ui-accent, #6f9cff) 10%, var(--ui-bg, #0d1523));
+  color: var(--ui-text, #d7e0f4);
+  font: 600 13px/1.45 var(--ui-font);
 }
 
 .ui-form-modal-alert.is-info {
-  border-color: #38527f;
-  background: rgba(34, 53, 86, 0.4);
+  border-color: color-mix(in srgb, var(--ui-accent, #6f9cff) 46%, var(--ui-border, #2b3750));
+  background: color-mix(in srgb, var(--ui-accent, #6f9cff) 10%, var(--ui-bg, #0d1523));
 }
 
 .ui-form-modal-alert.is-success {
-  border-color: #2f6a55;
-  background: rgba(25, 68, 48, 0.38);
+  border-color: color-mix(in srgb, var(--ui-success, #4fd29b) 46%, var(--ui-border, #2b3750));
+  background: color-mix(in srgb, var(--ui-success, #4fd29b) 10%, var(--ui-bg, #0d1523));
 }
 
 .ui-form-modal-alert.is-warning {
-  border-color: #8a6e37;
-  background: rgba(82, 58, 20, 0.38);
+  border-color: color-mix(in srgb, var(--ui-warning, #f4c14f) 50%, var(--ui-border, #2b3750));
+  background: color-mix(in srgb, var(--ui-warning, #f4c14f) 12%, var(--ui-bg, #0d1523));
 }
 
 .ui-form-modal-alert.is-danger {
-  border-color: #8d3b48;
-  background: rgba(69, 24, 33, 0.38);
+  border-color: color-mix(in srgb, var(--ui-danger, #ff5f67) 52%, var(--ui-border, #2b3750));
+  background: color-mix(in srgb, var(--ui-danger, #ff5f67) 12%, var(--ui-bg, #0d1523));
 }
 
 .ui-form-modal-divider {

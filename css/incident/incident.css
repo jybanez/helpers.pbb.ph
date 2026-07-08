@@ -18,16 +18,16 @@
   border: 1px solid;
 }
 
-.hh-incident-teams-assignments[data-theme],
-.hh-incident-teams-assignments-editor[data-theme],
-.hh-incident-teams-assignments-viewer[data-theme],
-.hh-incident-types[data-theme],
-.hh-incident-types-details-editor[data-theme],
-.hh-incident-types-details-viewer[data-theme] {
+.hh-incident-teams-assignments,
+.hh-incident-teams-assignments-editor,
+.hh-incident-teams-assignments-viewer,
+.hh-incident-types,
+.hh-incident-types-details-editor,
+.hh-incident-types-details-viewer {
   --hh-bg: var(--ui-bg, #12161c);
   --hh-bg-soft: var(--ui-bg-soft, #1b2230);
   --hh-text: var(--ui-text, #edf2ff);
-  --hh-text-soft: var(--ui-text-muted, #b8c2d9);
+  --hh-text-soft: var(--ui-muted, #b8c2d9);
   --hh-border: var(--ui-border, #2a3448);
   --hh-border-strong: var(--ui-border-strong, var(--hh-border));
   --hh-accent: var(--ui-accent, #4f74b9);

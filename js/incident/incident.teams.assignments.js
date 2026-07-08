@@ -114,7 +114,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     if (!rootEl) {
       return;
     }
-    rootEl.dataset.theme = currentOptions.theme === "light" ? "light" : "dark";
+    rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-teams-assignments";
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
@@ -164,6 +164,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
         }
       },
     });
+    drawerApi.panel.dataset.theme = currentOptions.theme;
 
     const left = createElement("div", { className: "hh-team-categories" });
     const right = createElement("div", { className: "hh-team-chooser" });

@@ -6,21 +6,22 @@
   <title>Icons Demo</title>
   <link rel='stylesheet' href='../css/demo/demo.shell.css'>
   <style>
-    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin: 0; padding: 24px; background: var(--demo-shell-bg, var(--ui-bg, #0c1017)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
-    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .panel { border: 1px solid var(--demo-shell-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-shell-surface-muted, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
     .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
-    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
-    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
-    .log { color: #b2c2e5; min-height: 160px; }
+    .back { color: var(--demo-shell-accent, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-shell-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-shell-control, var(--ui-bg, #0b1220)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); padding: 10px; overflow: auto; }
+    .log { min-height: 160px; }
     .icon-groups { display: grid; gap: 12px; }
-    .icon-group { display: grid; gap: 10px; padding: 12px; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; }
+    .icon-group { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--demo-shell-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-shell-surface, var(--ui-bg, #0b1220)); }
     .icon-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-    .icon-card { display: grid; gap: 8px; padding: 12px; border: 1px solid #263146; border-radius: 8px; background: #111826; cursor: pointer; }
-    .icon-preview { display: flex; align-items: center; gap: 12px; color: #f2f6ff; }
+    .icon-card { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--demo-shell-border, var(--ui-border, #263146)); border-radius: 8px; background: var(--demo-shell-surface-muted, var(--ui-bg-soft, #111826)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); cursor: pointer; }
+    .icon-card:hover { border-color: var(--demo-shell-accent, var(--ui-accent, #8db5ff)); background: var(--demo-shell-control-hover, var(--ui-bg-soft, #111826)); }
+    .icon-preview { display: flex; align-items: center; gap: 12px; color: var(--demo-shell-text, var(--ui-text, #f2f6ff)); }
     .icon-preview .ui-icon { width: 20px; height: 20px; }
-    .icon-meta { font-size: 12px; color: #9fb2d8; font-family: Consolas, "Courier New", monospace; }
+    .icon-meta { font-size: 12px; color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8)); font-family: Consolas, "Courier New", monospace; }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -63,7 +64,7 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
       <div class="row">
         <a class="back" href="./index.html">← Back to Home</a>

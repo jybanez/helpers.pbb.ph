@@ -154,7 +154,12 @@
       <label for="themeSelect">Theme</label>
       <select id="themeSelect">
         <option value="dark" selected>dark</option>
+        <option value="dark-slate">dark-slate</option>
+        <option value="night-command">night-command</option>
         <option value="light">light</option>
+        <option value="civic-light">civic-light</option>
+        <option value="care-light">care-light</option>
+        <option value="field-contrast">field-contrast</option>
       </select>
       <label>
         <input id="debugToggle" type="checkbox">
@@ -253,7 +258,8 @@
         operators
       };
 
-      let theme = "dark";
+      let theme = document.body.dataset.theme || "dark";
+      themeSelect.value = theme;
       let debug = false;
       const nowIso = () => new Date().toISOString();
       let incidentState = {};
@@ -501,6 +507,16 @@
 
       themeSelect.addEventListener("change", () => {
         theme = themeSelect.value;
+        rerenderAll();
+      });
+
+      window.addEventListener("demo-theme-change", (event) => {
+        const nextTheme = event.detail?.theme || "dark";
+        if (themeSelect.value === nextTheme) {
+          return;
+        }
+        theme = nextTheme;
+        themeSelect.value = nextTheme;
         rerenderAll();
       });
 

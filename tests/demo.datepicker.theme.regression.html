@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Datepicker Demo Theme Regression</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    iframe {
+      width: 1200px;
+      height: 900px;
+      border: 0;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <iframe id="demoFrame"></iframe>
+  <pre id="result">Running...</pre>
+  <script>
+    const frame = document.getElementById("demoFrame");
+    const result = document.getElementById("result");
+
+    run().catch((error) => {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL ${error.message || error}`;
+    });
+
+    async function run() {
+      await loadFrame("../demos/demo.datepicker.html");
+      await waitFor(() => frame.contentDocument?.querySelector(".demo-shell-theme__select"));
+      const doc = frame.contentDocument;
+      await waitFor(() => doc.querySelector(".picker-card"));
+
+      const select = doc.querySelector(".demo-shell-theme__select");
+      const card = doc.querySelector(".picker-card");
+      select.value = "care-light";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      await delay(220);
+
+      const after = snapshot({ card });
+      assert(after.cardBg !== "rgb(11, 18, 32)", "datepicker picker card should not keep old dark local background");
+
+      document.body.dataset.status = "pass";
+      result.textContent = "PASS";
+    }
+
+    function loadFrame(url) {
+      return new Promise((resolve) => {
+        frame.addEventListener("load", resolve, { once: true });
+        frame.src = url;
+      });
+    }
+
+    function snapshot(nodes) {
+      return {
+        cardBg: getComputedStyle(nodes.card).backgroundColor,
+      };
+    }
+
+    async function waitFor(predicate, timeout = 4000) {
+      const started = performance.now();
+      while (performance.now() - started < timeout) {
+        if (predicate()) {
+          return;
+        }
+        await delay(40);
+      }
+      throw new Error("Timed out waiting for condition");
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+  </script>
+</body>
+</html>

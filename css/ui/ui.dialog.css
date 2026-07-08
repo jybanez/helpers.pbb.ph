@@ -63,6 +63,7 @@
 
 .ui-dialog .ui-modal-header {
   position: relative;
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-dialog .ui-modal-header::before {
@@ -90,27 +91,27 @@
 }
 
 .ui-dialog--success .ui-modal-header {
-  background: linear-gradient(180deg, rgba(26, 57, 46, 0.34), rgba(13, 21, 38, 0.86));
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-dialog--info .ui-modal-header {
-  background: linear-gradient(180deg, rgba(33, 60, 108, 0.34), rgba(13, 21, 38, 0.86));
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-dialog--warning .ui-modal-header {
-  background: linear-gradient(180deg, rgba(82, 56, 18, 0.34), rgba(13, 21, 38, 0.86));
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-dialog--error .ui-modal-header {
-  background: linear-gradient(180deg, rgba(92, 25, 33, 0.34), rgba(13, 21, 38, 0.86));
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-dialog--success .ui-dialog-message {
-  color: #dff8ec;
+  color: var(--ui-text, #d7e0f4);
 }
 
 .ui-dialog--success .ui-dialog-description {
-  color: #bfe8d5;
+  color: var(--ui-muted, #9fb2d8);
 }
 
 .ui-dialog--success .ui-dialog-variant-icon {
@@ -118,11 +119,11 @@
 }
 
 .ui-dialog--info .ui-dialog-message {
-  color: #dbe9ff;
+  color: var(--ui-text, #d7e0f4);
 }
 
 .ui-dialog--info .ui-dialog-description {
-  color: #bfd7ff;
+  color: var(--ui-muted, #9fb2d8);
 }
 
 .ui-dialog--info .ui-dialog-variant-icon {
@@ -130,11 +131,11 @@
 }
 
 .ui-dialog--warning .ui-dialog-message {
-  color: #fff0cc;
+  color: var(--ui-text, #d7e0f4);
 }
 
 .ui-dialog--warning .ui-dialog-description {
-  color: #f6dca2;
+  color: var(--ui-muted, #9fb2d8);
 }
 
 .ui-dialog--warning .ui-dialog-variant-icon {
@@ -142,11 +143,11 @@
 }
 
 .ui-dialog--error .ui-dialog-message {
-  color: #ffdfe3;
+  color: var(--ui-text, #d7e0f4);
 }
 
 .ui-dialog--error .ui-dialog-description {
-  color: #f4b8c0;
+  color: var(--ui-muted, #9fb2d8);
 }
 
 .ui-dialog--error .ui-dialog-error {

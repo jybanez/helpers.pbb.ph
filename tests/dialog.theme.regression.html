@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en" data-theme="care-light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dialog Theme Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.dialog.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font-family: var(--ui-font);
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-theme="care-light" data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { uiAlert, uiConfirm, uiPrompt } from "../js/ui/ui.dialog.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    let expectedText = "";
+    let expectedMuted = "";
+    let expectedPanelBackground = "";
+
+    run().catch((error) => {
+      failures.push(error.message || String(error));
+      finish();
+    });
+
+    async function run() {
+      expectedText = getComputedStyle(document.documentElement).getPropertyValue("--ui-text").trim();
+      expectedMuted = getComputedStyle(document.documentElement).getPropertyValue("--ui-muted").trim();
+      expectedPanelBackground = getComputedStyle(document.documentElement).getPropertyValue("--ui-bg").trim();
+
+      uiAlert("Alert message", {
+        title: "Alert",
+        variant: "info",
+        description: "Alert description",
+      });
+      await waitForDialog();
+      assertDialogColors("alert");
+      cleanupDialog();
+      await delay(60);
+
+      uiConfirm("Confirm message", {
+        title: "Confirm",
+        variant: "warning",
+        description: "Confirm description",
+      });
+      await waitForDialog();
+      assertDialogColors("confirm");
+      cleanupDialog();
+      await delay(60);
+
+      uiPrompt("Prompt message", {
+        title: "Prompt",
+        variant: "error",
+        description: "Prompt description",
+        defaultValue: "sample",
+      });
+      await waitForDialog();
+      assertDialogColors("prompt");
+      assert(colorEquals(getComputedStyle(document.querySelector(".ui-dialog-prompt-body .ui-input")).color, expectedText), "prompt input should use theme text color");
+      cleanupDialog();
+      finish();
+    }
+
+    function finish() {
+      if (failures.length) {
+        document.body.dataset.status = "fail";
+        results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+      } else {
+        document.body.dataset.status = "pass";
+        results.textContent = "PASS";
+      }
+    }
+
+    function assertDialogColors(label) {
+      const message = document.querySelector(".ui-dialog-message");
+      const description = document.querySelector(".ui-dialog-description");
+      const header = document.querySelector(".ui-dialog .ui-modal-header");
+      assert(colorEquals(getComputedStyle(message).color, expectedText), `${label} message should use theme text color`);
+      assert(colorEquals(getComputedStyle(description).color, expectedMuted), `${label} description should use theme muted color`);
+      assert(colorEquals(getComputedStyle(header).backgroundColor, expectedPanelBackground), `${label} header should use theme modal background`);
+    }
+
+    async function waitForDialog() {
+      await waitUntil(() => Boolean(document.querySelector(".ui-dialog.is-mounted .ui-dialog-message")));
+    }
+
+    function cleanupDialog() {
+      document.querySelectorAll(".ui-modal-root").forEach((node) => node.remove());
+      document.body.classList.remove("ui-modal-body-lock");
+      document.body.style.overflow = "";
+    }
+
+    async function waitUntil(predicate, timeout = 1800) {
+      const started = performance.now();
+      while (performance.now() - started < timeout) {
+        if (predicate()) {
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+      throw new Error("Timed out waiting for condition");
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function colorEquals(actual, expected) {
+      return normalizeColor(actual) === normalizeColor(expected);
+    }
+
+    function normalizeColor(value) {
+      const probe = document.createElement("span");
+      probe.style.color = value;
+      document.body.appendChild(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
+    }
+  </script>
+</body>
+</html>

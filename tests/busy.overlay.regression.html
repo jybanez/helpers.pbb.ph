@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Busy Overlay Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.busy.overlay.css">
   <style>
@@ -28,7 +29,7 @@
     }
   </style>
 </head>
-<body data-status="pending">
+<body data-status="pending" data-theme="care-light">
   <div id="scopedHost"></div>
   <pre id="results">Running...</pre>
 
@@ -38,6 +39,7 @@
     const host = document.getElementById("scopedHost");
     const results = document.getElementById("results");
     const failures = [];
+    const expectedBusyText = "rgb(238, 245, 255)";
 
     const scoped = createBusyOverlay(host, {
       text: "Refreshing panel...",
@@ -54,6 +56,7 @@
     assert(scopedRoot.hidden === false, "scoped overlay should show");
     assert(scopedRoot.classList.contains("is-scoped"), "scoped overlay should expose scoped class");
     assert(scopedRoot.querySelector(".ui-busy-overlay-message").textContent.includes("Refreshing"), "scoped overlay should render text");
+    assert(colorEquals(getComputedStyle(scopedRoot.querySelector(".ui-busy-overlay-message")).color, expectedBusyText), "scoped busy message should use readable overlay text color under light themes");
     assert(host.getAttribute("aria-busy") === "true", "scoped host should expose aria-busy while visible");
 
     scoped.setText("Applying filters...");
@@ -75,6 +78,7 @@
     const scopedCancel = scopedRoot.querySelector(".ui-busy-overlay-cancel");
     assert(scopedCancel.hidden === false, "cancel button should render when cancel handler exists");
     assert(scopedCancel.textContent.includes("Cancel Refresh"), "cancel button should use custom label");
+    assert(colorEquals(getComputedStyle(scopedCancel).color, expectedBusyText), "scoped cancel button should use readable overlay text color under light themes");
     scopedCancel.click();
     await tick(100);
     assert(scopedCancelCalls === 1, "cancel handler should fire once");
@@ -104,6 +108,8 @@
     assert(fullscreenRoot.hidden === false, "fullscreen overlay should default to visible");
     assert(document.body.style.overflow === "hidden", "fullscreen overlay should lock body scroll while visible");
     assert(fullscreenRoot.querySelector(".ui-busy-overlay-cancel").hidden === false, "fullscreen cancel button should render");
+    assert(colorEquals(getComputedStyle(fullscreenRoot.querySelector(".ui-busy-overlay-message")).color, expectedBusyText), "fullscreen busy message should use readable overlay text color under light themes");
+    assert(colorEquals(getComputedStyle(fullscreenRoot.querySelector(".ui-busy-overlay-cancel")).color, expectedBusyText), "fullscreen cancel button should use readable overlay text color under light themes");
     fullscreenRoot.querySelector(".ui-busy-overlay-cancel").click();
     await tick(100);
     assert(fullscreenCancelCalls === 1, "fullscreen cancel handler should fire");
@@ -134,6 +140,10 @@
 
     function tick(ms) {
       return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function colorEquals(actual, expected) {
+      return String(actual || "").replace(/\s+/g, " ").trim() === expected;
     }
   </script>
 </body>

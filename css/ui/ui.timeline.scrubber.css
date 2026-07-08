@@ -1,9 +1,9 @@
 .ui-timeline-scrubber {
   display: grid;
   gap: 8px;
-  border: 1px solid var(--ui-border-soft, #2a3d60);
+  border: 1px solid var(--ui-border, #2a3d60);
   border-radius: 10px;
-  background: var(--ui-surface, #0d172c);
+  background: var(--ui-bg-soft, #0d172c);
   padding: 10px;
 }
 
@@ -20,7 +20,7 @@
   gap: 10px;
   font-family: Consolas, "Courier New", monospace;
   font-size: 12px;
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
 }
 
 .ui-timeline-scrubber-current {
@@ -123,7 +123,7 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  color: var(--ui-text-dim, #6f89b1);
+  color: var(--ui-muted, #6f89b1);
   font-size: 11px;
   font-family: Consolas, "Courier New", monospace;
 }

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Theme Tokens Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <style>
+    body { margin: 0; padding: 16px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .probe { position: absolute; inset: auto; width: 1px; height: 1px; overflow: hidden; }
+    #results { white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script>
+    const themes = ["dark", "light", "dark-slate", "night-command", "civic-light", "care-light", "field-contrast"];
+    const tokens = ["--ui-bg", "--ui-bg-soft", "--ui-text", "--ui-border", "--ui-border-strong", "--ui-muted", "--ui-accent", "--ui-scrollbar-track", "--ui-scrollbar-thumb", "--ui-scrollbar-thumb-hover"];
+    const failures = [];
+    const host = document.getElementById("host");
+
+    themes.forEach((theme) => {
+      const probe = document.createElement("div");
+      probe.className = "probe";
+      probe.dataset.theme = theme;
+      host.appendChild(probe);
+      const styles = getComputedStyle(probe);
+      tokens.forEach((token) => {
+        const value = styles.getPropertyValue(token).trim();
+        assert(value.length > 0, `${theme} should define ${token}`);
+      });
+      assert(styles.getPropertyValue("--ui-bg").trim() !== styles.getPropertyValue("--ui-text").trim(), `${theme} background and text should differ`);
+      assert(styles.getPropertyValue("--ui-accent").trim() !== styles.getPropertyValue("--ui-bg").trim(), `${theme} accent should differ from background`);
+    });
+
+    const passed = failures.length === 0;
+    document.body.dataset.status = passed ? "pass" : "fail";
+    document.getElementById("results").textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Theme token regression test passed." : failures.join("\n")}`;
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,8 @@
 .ui-busy-overlay {
+  --ui-busy-overlay-text: #eef5ff;
+  --ui-busy-overlay-cancel-border: rgba(238, 245, 255, 0.58);
+  --ui-busy-overlay-cancel-bg: rgba(8, 15, 27, 0.28);
+  --ui-busy-overlay-cancel-bg-hover: rgba(8, 15, 27, 0.42);
   position: fixed;
   inset: 0;
   z-index: 1700;
@@ -88,8 +92,9 @@
 
 .ui-busy-overlay-message {
   max-width: min(80%, 360px);
-  color: var(--ui-text, #d7e0f4);
+  color: var(--ui-busy-overlay-text, #eef5ff);
   font: 600 13px/1.35 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
 }
 
 .ui-busy-overlay-actions {
@@ -101,6 +106,17 @@
 .ui-busy-overlay-actions[hidden],
 .ui-busy-overlay-cancel[hidden] {
   display: none;
+}
+
+.ui-busy-overlay-cancel.ui-button {
+  border-color: var(--ui-busy-overlay-cancel-border);
+  background: var(--ui-busy-overlay-cancel-bg);
+  color: var(--ui-busy-overlay-text, #eef5ff);
+}
+
+.ui-busy-overlay-cancel.ui-button:hover:not(:disabled) {
+  border-color: rgba(238, 245, 255, 0.78);
+  background: var(--ui-busy-overlay-cancel-bg-hover);
 }
 
 @keyframes ui-busy-overlay-spin {

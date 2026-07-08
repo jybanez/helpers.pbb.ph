@@ -9,9 +9,9 @@
     body {
       margin: 0;
       padding: 24px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--demo-bg, var(--ui-bg, #0c1017));
+      color: var(--demo-text, var(--ui-text, #d7e0f4));
+      font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
     }
     .page {
       max-width: 1120px;
@@ -20,9 +20,9 @@
       gap: 14px;
     }
     .panel {
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 10px;
-      background: #111826;
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #111826));
       padding: 14px;
       display: grid;
       gap: 12px;
@@ -34,26 +34,26 @@
       gap: 10px;
     }
     .back {
-      color: #b2c2e5;
+      color: var(--demo-muted, var(--ui-muted, #b2c2e5));
       text-decoration: none;
       font-size: 13px;
     }
     .muted {
       margin: 0;
-      color: #9fb2d8;
+      color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       font-size: 13px;
       line-height: 1.45;
     }
     .map-demo-surface {
       min-height: 440px;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
       background:
-        linear-gradient(90deg, rgba(72, 92, 128, 0.28) 1px, transparent 1px),
-        linear-gradient(rgba(72, 92, 128, 0.22) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--ui-border-strong, #485c80) 32%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--ui-border-strong, #485c80) 28%, transparent) 1px, transparent 1px),
         radial-gradient(circle at 32% 38%, rgba(244, 179, 80, 0.22), transparent 9%),
         radial-gradient(circle at 68% 58%, rgba(100, 181, 246, 0.2), transparent 10%),
-        #071018;
+        var(--demo-surface-bg, var(--ui-bg, #071018));
       background-size: 72px 72px, 72px 72px, auto, auto, auto;
       padding: 16px;
       box-sizing: border-box;
@@ -65,11 +65,11 @@
       margin: 0;
       white-space: pre-wrap;
       font-size: 12px;
-      color: #d7e0f4;
+      color: var(--demo-code-text, var(--ui-text, #d7e0f4));
       font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
-      background: #0b1220;
+      background: var(--demo-code-bg, var(--ui-bg, #0b1220));
       padding: 10px;
       overflow-x: auto;
     }
@@ -118,7 +118,7 @@
   <script type="module" src="../js/demo/demo.shell.js"></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark" data-demo-structured="true">
+  <main class="page" data-demo-structured="true">
     <section class="panel">
       <div class="toolbar">
         <a class="back" href="./index.html">&larr; Back to Home</a>

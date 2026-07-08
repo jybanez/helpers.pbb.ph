@@ -1,7 +1,7 @@
 .ui-empty-state {
   border: 1px dashed var(--ui-border, #2b3750);
   border-radius: 10px;
-  background: rgba(11, 18, 32, 0.7);
+  background: color-mix(in srgb, var(--ui-bg-soft, #101c31) 70%, transparent);
   padding: 14px;
   display: grid;
   gap: 8px;
@@ -20,7 +20,7 @@
   height: 34px;
   display: grid;
   place-items: center;
-  color: #9dc4ff;
+  color: var(--ui-accent, #9dc4ff);
 }
 
 .ui-empty-state-icon svg {
