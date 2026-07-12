@@ -10,6 +10,25 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed incident team assignment and incident type components so shared theme presets propagate through component roots and drawer panels instead of collapsing to dark styling.
+- Fixed standalone busy overlay message and cancel action contrast so scoped/fullscreen busy states remain readable under light theme presets.
+- Fixed icon catalog preview colors so SVG icons, labels, and ids follow the active demo theme instead of retaining light-on-dark text under light presets.
+- Tightened Utilities component internals so fieldset, tree select, device primer/selector, property editor, toggle, number stepper, password, progress, empty state, and related primitives use shared theme tokens instead of fixed dark component colors.
+- Fixed Utilities demo surfaces so command palette, drawer, toast, select, field group, device, control, progress, empty, skeleton, and related helper pages follow the shared theme switcher instead of retaining legacy dark local chrome.
+- Fixed remaining media, gaming, communication, and navigation demo surfaces so legacy local CSS no longer forces dark panels, controls, or helper hosts under light `data-theme` presets.
+- Fixed inspector, activity chart, audio session, audio timeline, audiograph stream, and timeline demo/component surfaces so they follow light `data-theme` presets instead of retaining dark local colors.
+- Fixed icon grid, map controls, and map legend demo/component surfaces so they follow light `data-theme` presets instead of retaining dark local colors.
+- Fixed elapsed time, signal strength, and heartbeat strip demo/component surfaces so they follow light `data-theme` presets instead of retaining dark local colors.
+- Fixed tree mind map, kanban, virtual list, and scheduler demo/component surfaces so they follow light `data-theme` presets instead of retaining dark local colors.
+- Fixed file uploader, tree, and hierarchy map demo/component surfaces so they follow light `data-theme` presets instead of retaining dark local colors.
+- Fixed datepicker demo and trigger surfaces so the picker follows light `data-theme` presets instead of falling back to dark local colors.
+- Fixed form modal alert tone contrast so danger reason prompts remain readable under light `data-theme` presets.
+- Fixed modal busy-state message and cancel action contrast so busy overlays remain readable under light `data-theme` presets.
+- Fixed alert, confirm, and prompt dialog headers so semantic variants no longer force dark gradient title bars under light `data-theme` presets.
+- Fixed alert, confirm, and prompt dialog text colors so semantic variants remain readable across light and dark `data-theme` presets.
+- Fixed custom modal body text defaults so arbitrary modal content stays readable across light and dark `data-theme` presets.
+- Added a shared demo-shell theme switcher and theme-aware demo chrome so Helper demos, including manually structured demo pages, can test components across all stable `data-theme` presets.
+- Added five shared `data-theme` token presets: `dark-slate`, `night-command`, `civic-light`, `care-light`, and `field-contrast`.
 - Added `ui.chart.xy` with `createXyChart(...)` for generic SVG line/point X-Y charts with multiple series, Y-axis thresholds, shaded bands, formatter hooks, interaction callbacks, and accessible summaries.
 - Added optional custom search hooks to `ui.grid` and `ui.tree.grid` for domain-specific row matching, hidden metadata search, and local search ranking without changing default includes-based behavior.
 - Added `ui.game.effects` with `createGameEffectTimeline(...)` and `GAME_EFFECT_EASINGS` for non-rendering game feedback lifecycles in the optional game bundle.

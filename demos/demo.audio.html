@@ -9,9 +9,9 @@
     body {
       margin: 0;
       padding: 24px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--demo-bg, var(--ui-bg, #0c1017));
+      color: var(--demo-text, var(--ui-text, #d7e0f4));
+      font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
     }
     .page {
       max-width: 980px;
@@ -20,13 +20,13 @@
       gap: 14px;
     }
     .panel {
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 10px;
-      background: #111826;
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #111826));
       padding: 14px;
     }
     .back {
-      color: #b2c2e5;
+      color: var(--demo-muted, var(--ui-muted, #b2c2e5));
       text-decoration: none;
       font-size: 13px;
     }
@@ -34,11 +34,11 @@
       margin: 0;
       white-space: pre-wrap;
       font-size: 12px;
-      color: #b2c2e5;
+      color: var(--demo-code-text, var(--ui-text, #b2c2e5));
       font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
-      background: #0b1220;
+      background: var(--demo-code-bg, var(--ui-bg, #0b1220));
       padding: 10px;
       height: 220px;
       overflow-y: auto;
@@ -49,11 +49,11 @@
       white-space: pre;
       font-size: 12px;
       line-height: 1.5;
-      color: #d7e8ff;
+      color: var(--demo-code-text, var(--ui-text, #d7e8ff));
       font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
-      background: #0b1220;
+      background: var(--demo-code-bg, var(--ui-bg, #0b1220));
       padding: 10px;
       max-height: 260px;
       overflow: auto;
@@ -115,7 +115,7 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark" data-demo-structured="true">
+  <main class="page" data-demo-structured="true">
     <section class="panel">
       <div class="audio-demo-controls">
         <a class="back" href="./index.html">← Back to Home</a>

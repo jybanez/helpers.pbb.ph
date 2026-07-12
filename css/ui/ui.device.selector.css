@@ -1,9 +1,9 @@
 .ui-device-selector {
-  --ui-device-selector-bg: rgba(13, 21, 35, 0.72);
+  --ui-device-selector-bg: color-mix(in srgb, var(--ui-bg-soft, #101c31) 72%, transparent);
   --ui-device-selector-border: var(--ui-border, #2b3750);
   --ui-device-selector-text: var(--ui-text, #d7e0f4);
   --ui-device-selector-muted: var(--ui-muted, #9fb2d8);
-  --ui-device-selector-accent: #7db7ff;
+  --ui-device-selector-accent: var(--ui-accent, #7db7ff);
   display: grid;
   gap: 10px;
   width: 100%;
@@ -85,22 +85,22 @@
 }
 
 .ui-device-selector-status.is-ready {
-  border-color: color-mix(in oklab, #49c27f 58%, var(--ui-device-selector-border));
-  color: #7edfa6;
+  border-color: color-mix(in srgb, var(--ui-success, #49c27f) 58%, var(--ui-device-selector-border));
+  color: color-mix(in srgb, var(--ui-success, #49c27f) 68%, var(--ui-device-selector-text));
 }
 
 .ui-device-selector-status.is-loading,
 .ui-device-selector-status.is-testing,
 .ui-device-selector-status.is-needs-user-action {
-  border-color: color-mix(in oklab, #f4b350 60%, var(--ui-device-selector-border));
-  color: #f4c97d;
+  border-color: color-mix(in srgb, var(--ui-warning, #f4b350) 60%, var(--ui-device-selector-border));
+  color: color-mix(in srgb, var(--ui-warning, #f4b350) 70%, var(--ui-device-selector-text));
 }
 
 .ui-device-selector-status.is-error,
 .ui-device-selector-status.is-test-failed,
 .ui-device-selector-status.is-permission-denied {
-  border-color: color-mix(in oklab, #ff6b6b 60%, var(--ui-device-selector-border));
-  color: #ff9999;
+  border-color: color-mix(in srgb, var(--ui-danger, #ff6b6b) 60%, var(--ui-device-selector-border));
+  color: color-mix(in srgb, var(--ui-danger, #ff6b6b) 58%, var(--ui-device-selector-text));
 }
 
 .ui-device-selector-controls {
@@ -122,7 +122,7 @@
   box-sizing: border-box;
   border: 1px solid var(--ui-device-selector-border);
   border-radius: 7px;
-  background: rgba(5, 10, 20, 0.58);
+  background: var(--ui-bg, #0d1523);
   color: var(--ui-device-selector-text);
   font: inherit;
   font-size: 13px;
@@ -137,7 +137,7 @@
 .ui-device-selector-select-host .ui-select-trigger {
   min-height: 34px;
   border-radius: 7px;
-  background: rgba(5, 10, 20, 0.58);
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-device-selector-select:disabled {
@@ -160,7 +160,7 @@
   box-sizing: border-box;
   border: 1px solid var(--ui-device-selector-border);
   border-radius: 7px;
-  background: rgba(5, 10, 20, 0.58);
+  background: var(--ui-bg, #0d1523);
   color: var(--ui-device-selector-text);
   cursor: pointer;
   font: inherit;
@@ -200,7 +200,7 @@
   overflow: auto;
   border: 1px solid var(--ui-device-selector-border);
   border-radius: 8px;
-  background: #0d1523;
+  background: var(--ui-bg, #0d1523);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
   padding: 6px;
 }
@@ -222,7 +222,7 @@
   box-sizing: border-box;
   border: 1px solid var(--ui-device-selector-border);
   border-radius: 8px;
-  background: rgba(5, 10, 20, 0.38);
+  background: color-mix(in srgb, var(--ui-bg, #0d1523) 72%, transparent);
   color: var(--ui-device-selector-text);
   cursor: pointer;
   font: inherit;
@@ -240,8 +240,8 @@
 .ui-device-selector-list-item:hover,
 .ui-device-selector-menu-item.is-selected,
 .ui-device-selector-list-item.is-selected {
-  border-color: #4f89ff;
-  background: rgba(79, 137, 255, 0.14);
+  border-color: var(--ui-focus, #4f89ff);
+  background: color-mix(in srgb, var(--ui-accent, #4f89ff) 14%, transparent);
 }
 
 .ui-device-selector-option-label {

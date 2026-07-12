@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Demo Shell Manual Theme Regression</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .demo-workbench__center {
+      background: radial-gradient(circle at top left, rgba(58, 92, 158, 0.12), transparent 32%), #0c1017;
+    }
+    .demo-workbench__content {
+      border-left: 1px solid #263146;
+      background: #0f1521;
+    }
+    .panel {
+      border: 1px solid #263146;
+      background: #111826;
+    }
+    .demo-stack,
+    .guidance-card {
+      border: 1px solid #263146;
+      background: #0b1220;
+    }
+    .demo-stack__row + .demo-stack__row {
+      border-top: 1px solid #24314a;
+    }
+    .demo-stack__header p,
+    .content-section p,
+    .guidance-card p {
+      color: #9fb2d8;
+    }
+    .demo-chip {
+      border: 1px solid #334563;
+      background: #10192b;
+      color: #b7c9eb;
+    }
+    .demo-code,
+    .demo-log {
+      border: 1px solid #2b3750;
+      background: #09111d;
+      color: #c8d6f2;
+    }
+    th {
+      background: #0f1829;
+      color: #8db5ff;
+    }
+  </style>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="demo-workbench">
+    <section class="demo-workbench__center">
+      <section class="panel intro">
+        <span class="eyebrow">Forms</span>
+        <h1>Manual Demo Theme Regression</h1>
+        <p>Manual workbench intro.</p>
+      </section>
+      <article class="demo-stack">
+        <div class="demo-stack__row demo-stack__row--live">
+          <div class="demo-stack__header">
+            <h2>Manual Stack</h2>
+            <p>Legacy page-specific demo stack header.</p>
+          </div>
+          <span class="demo-chip">chip</span>
+        </div>
+        <div class="demo-stack__row">
+          <pre class="demo-code">const demo = true;</pre>
+        </div>
+        <div class="demo-stack__row">
+          <pre class="demo-log">No events yet.</pre>
+        </div>
+      </article>
+    </section>
+    <aside class="demo-workbench__content">
+      <section class="panel content-section">
+        <h2>Reference</h2>
+        <p>Manual content panel.</p>
+        <div class="guidance-card">
+          <h3>Guidance</h3>
+          <p>Guidance copy.</p>
+        </div>
+        <table>
+          <thead><tr><th>Factory</th></tr></thead>
+          <tbody><tr><td><code>createThing()</code></td></tr></tbody>
+        </table>
+      </section>
+    </aside>
+  </main>
+  <pre id="result">Running...</pre>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      window.setTimeout(() => {
+        const result = document.getElementById("result");
+        try {
+          const select = document.querySelector(".demo-shell-theme__select");
+          const stack = document.querySelector(".demo-stack");
+          const center = document.querySelector(".demo-workbench__center");
+          const content = document.querySelector(".demo-workbench__content");
+          const chip = document.querySelector(".demo-chip");
+          const code = document.querySelector(".demo-code");
+          const guidanceText = document.querySelector(".guidance-card p");
+          const before = snapshot({ stack, center, content, chip, code, guidanceText });
+          select.value = "care-light";
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          const after = snapshot({ stack, center, content, chip, code, guidanceText });
+          assert(before.stackBg !== after.stackBg, "manual stack background should change");
+          assert(before.centerBg !== after.centerBg, "manual center background should change");
+          assert(before.contentBg !== after.contentBg, "manual content background should change");
+          assert(before.codeBg !== after.codeBg, "manual code background should change");
+          assert(after.guidanceColor !== "rgb(159, 178, 216)", "manual guidance text should not keep old dark muted color");
+          assert(after.chipBg !== "rgb(16, 25, 43)", "manual chip should not keep old dark background");
+          document.body.dataset.status = "pass";
+          result.textContent = "PASS";
+        } catch (error) {
+          document.body.dataset.status = "fail";
+          result.textContent = `FAIL ${error.message || error}`;
+        }
+      }, 0);
+    });
+
+    function snapshot(nodes) {
+      return {
+        stackBg: getComputedStyle(nodes.stack).backgroundColor,
+        centerBg: getComputedStyle(nodes.center).backgroundColor,
+        contentBg: getComputedStyle(nodes.content).backgroundColor,
+        chipBg: getComputedStyle(nodes.chip).backgroundColor,
+        codeBg: getComputedStyle(nodes.code).backgroundColor,
+        guidanceColor: getComputedStyle(nodes.guidanceText).color,
+      };
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+  </script>
+</body>
+</html>

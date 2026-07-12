@@ -21,8 +21,8 @@
   position: relative;
   overflow: auto;
   border-radius: 8px;
-  border: 1px solid rgba(43, 55, 80, 0.55);
-  background: rgba(8, 16, 28, 0.6);
+  border: 1px solid var(--ui-border, #2b3750);
+  background: var(--ui-bg, #0d1523);
 }
 
 .ui-tree-rows-layer {
@@ -45,7 +45,7 @@
 }
 
 .ui-tree-row.is-selected {
-  background: rgba(70, 117, 186, 0.2);
+  background: color-mix(in srgb, var(--ui-accent, #6f9cff) 14%, var(--ui-bg, #0d1523));
 }
 
 .ui-tree-toggle,
@@ -95,11 +95,11 @@
 
 .ui-tree-label:hover {
   border-color: var(--ui-border, #2b3750);
-  background: rgba(61, 93, 145, 0.15);
+  background: color-mix(in srgb, var(--ui-accent, #6f9cff) 10%, var(--ui-bg, #0d1523));
 }
 
 .ui-tree-check {
-  accent-color: #4f95ff;
+  accent-color: var(--ui-accent, #4f95ff);
 }
 
 .ui-tree-empty {

@@ -1,6 +1,6 @@
 .ui-progress {
-  --ui-progress-color: #4f89ff;
-  --ui-progress-track: #1a2740;
+  --ui-progress-color: var(--ui-accent, #4f89ff);
+  --ui-progress-track: color-mix(in srgb, var(--ui-bg, #0d1523) 78%, var(--ui-border, #1a2740));
   --ui-progress-text: var(--ui-text, #d7e0f4);
   display: grid;
   gap: 8px;
@@ -73,7 +73,7 @@
 }
 
 .ui-progress--gradient .ui-progress-fill {
-  background: linear-gradient(90deg, #5ed6ff 0%, #4f89ff 52%, #7a66ff 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent, #5ed6ff) 70%, #ffffff) 0%, var(--ui-progress-color) 52%, color-mix(in srgb, var(--ui-accent, #7a66ff) 70%, #7a66ff) 100%);
 }
 
 .ui-progress.is-indeterminate .ui-progress-fill {
@@ -127,7 +127,7 @@
 
 .ui-progress-step.is-active {
   border-color: color-mix(in oklab, var(--ui-progress-color) 50%, var(--ui-border, #2b3750));
-  background: color-mix(in oklab, var(--ui-progress-color) 35%, #0d1523);
+  background: color-mix(in srgb, var(--ui-progress-color) 35%, var(--ui-bg, #0d1523));
   color: var(--ui-text, #d7e0f4);
 }
 

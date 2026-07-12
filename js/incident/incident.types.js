@@ -110,7 +110,7 @@ export function incidentTypes(container, data, options = {}) {
     if (!rootEl) {
       return;
     }
-    rootEl.dataset.theme = currentOptions.theme === "light" ? "light" : "dark";
+    rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-types";
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
@@ -154,6 +154,7 @@ export function incidentTypes(container, data, options = {}) {
         }
       },
     });
+    drawerApi.panel.dataset.theme = currentOptions.theme;
 
     const left = createElement("div", { className: "hh-incident-type-categories" });
     const right = createElement("div", { className: "hh-incident-type-chooser" });

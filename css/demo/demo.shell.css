@@ -1,14 +1,33 @@
+@import "../ui/ui.tokens.css";
+
+.demo-shell-nav,
+body.demo-shell-sidebar {
+  --demo-shell-bg: var(--ui-bg, #0d1523);
+  --demo-shell-bg-soft: var(--ui-bg-soft, #101c31);
+  --demo-shell-surface: color-mix(in srgb, var(--ui-bg-soft, #101c31) 92%, var(--ui-bg, #0d1523));
+  --demo-shell-surface-muted: color-mix(in srgb, var(--ui-bg-soft, #101c31) 76%, var(--ui-bg, #0d1523));
+  --demo-shell-control: color-mix(in srgb, var(--ui-bg-soft, #101c31) 84%, var(--ui-bg, #0d1523));
+  --demo-shell-control-hover: color-mix(in srgb, var(--ui-accent, #6f9cff) 12%, var(--ui-bg-soft, #101c31));
+  --demo-shell-control-active: color-mix(in srgb, var(--ui-accent, #6f9cff) 22%, var(--ui-bg-soft, #101c31));
+  --demo-shell-text: var(--ui-text, #d7e0f4);
+  --demo-shell-muted: var(--ui-muted, #9fb2d8);
+  --demo-shell-accent: var(--ui-accent, #6f9cff);
+  --demo-shell-border: var(--ui-border, #2b3750);
+  --demo-shell-border-strong: var(--ui-border-strong, #344769);
+  --demo-shell-shadow: color-mix(in srgb, var(--ui-bg, #0d1523) 52%, transparent);
+}
+
 .demo-shell-nav {
   position: sticky;
   top: 12px;
   z-index: 40;
   max-width: 1200px;
   margin: 0 auto 16px;
-  border: 1px solid #263146;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 12px;
-  background: rgba(17, 24, 38, 0.92);
+  background: color-mix(in srgb, var(--demo-shell-surface) 92%, transparent);
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 24px var(--demo-shell-shadow);
 }
 
 .demo-shell-nav__inner {
@@ -37,10 +56,10 @@
   width: fit-content;
   max-width: 100%;
   padding: 0 10px;
-  border: 1px solid #334563;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 999px;
-  color: #d7e0f4;
-  background: #0b1423;
+  color: var(--demo-shell-text);
+  background: var(--demo-shell-control);
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
@@ -48,13 +67,13 @@
 }
 
 .demo-shell-nav__title a {
-  color: #d7e0f4;
+  color: var(--demo-shell-text);
   text-decoration: none;
   font-weight: 600;
 }
 
 .demo-shell-nav__title small {
-  color: #9fb2d8;
+  color: var(--demo-shell-muted);
   font-size: 12px;
 }
 
@@ -65,22 +84,53 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid #334563;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 10px;
-  color: #d7e0f4;
-  background: #0b1423;
+  color: var(--demo-shell-text);
+  background: var(--demo-shell-control);
   cursor: pointer;
 }
 
 .demo-shell-nav__toggle:hover {
-  border-color: #4a5f86;
-  background: #101a2b;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-hover);
 }
 
 .demo-shell-nav__toggle svg {
   width: 18px;
   height: 18px;
   transition: transform 180ms ease;
+}
+
+.demo-shell-theme {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.demo-shell-theme__label {
+  color: var(--demo-shell-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-shell-theme__select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--demo-shell-border-strong);
+  border-radius: 10px;
+  background: var(--demo-shell-control);
+  color: var(--demo-shell-text);
+  padding: 0 34px 0 10px;
+  font: 600 13px/1 var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+}
+
+.demo-shell-theme__select:focus {
+  outline: none;
+  border-color: var(--demo-shell-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--demo-shell-accent) 24%, transparent);
 }
 
 .demo-shell-nav__groups {
@@ -95,13 +145,13 @@
 
 .demo-shell-nav__group.is-current-group {
   padding: 8px;
-  border: 1px solid #2f4465;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 12px;
-  background: rgba(16, 26, 43, 0.72);
+  background: color-mix(in srgb, var(--demo-shell-control-active) 72%, transparent);
 }
 
 .demo-shell-nav__group-label {
-  color: #8db5ff;
+  color: var(--demo-shell-accent);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -130,11 +180,11 @@
   gap: 6px;
   min-height: 34px;
   padding: 0 12px;
-  border: 1px solid #334563;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 999px;
-  color: #d7e0f4;
+  color: var(--demo-shell-text);
   text-decoration: none;
-  background: #0b1423;
+  background: var(--demo-shell-control);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -144,36 +194,36 @@
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid #334563;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 999px;
-  color: #9fb2d8;
+  color: var(--demo-shell-muted);
   text-decoration: none;
-  background: #0b1423;
+  background: var(--demo-shell-control);
   font-size: 12px;
   white-space: nowrap;
 }
 
 .demo-shell-nav__links a:hover {
-  border-color: #4a5f86;
-  background: #101a2b;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-hover);
 }
 
 .demo-shell-nav__docs a:hover {
-  border-color: #4a5f86;
-  background: #101a2b;
-  color: #d7e0f4;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-hover);
+  color: var(--demo-shell-text);
 }
 
 .demo-shell-nav__links a.is-active {
-  border-color: #5d86da;
-  background: #152848;
-  color: #ffffff;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-active);
+  color: var(--demo-shell-text);
 }
 
 .demo-shell-nav__docs a.is-active {
-  border-color: #5d86da;
-  background: #152848;
-  color: #ffffff;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-active);
+  color: var(--demo-shell-text);
 }
 
 .demo-shell-nav__links a.is-home {
@@ -189,6 +239,244 @@ body.demo-shell-sidebar {
   margin: 0;
   padding: 0 !important;
   overflow: hidden;
+  background: var(--demo-shell-bg) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .page {
+  color: var(--demo-shell-text);
+}
+
+body.demo-shell-sidebar .panel,
+body.demo-shell-sidebar .demo-auto-panel {
+  border-color: var(--demo-shell-border) !important;
+  background: var(--demo-shell-surface) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .muted,
+body.demo-shell-sidebar .back,
+body.demo-shell-sidebar .log,
+body.demo-shell-sidebar .field,
+body.demo-shell-sidebar .control label,
+body.demo-shell-sidebar .check-row,
+body.demo-shell-sidebar .demo-auto-panel--intro .muted {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar pre,
+body.demo-shell-sidebar .log,
+body.demo-shell-sidebar pre:not(.log),
+body.demo-shell-sidebar .demo-auto-stack__code,
+body.demo-shell-sidebar .demo-auto-stack__log {
+  border-color: var(--demo-shell-border) !important;
+  background: var(--demo-shell-control) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .ui-title {
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+body.demo-shell-sidebar select,
+body.demo-shell-sidebar textarea,
+body.demo-shell-sidebar .ui-input {
+  border-color: var(--demo-shell-border-strong) !important;
+  background: var(--demo-shell-control) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar input::placeholder,
+body.demo-shell-sidebar textarea::placeholder {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar .demo-workbench__center {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--demo-shell-accent) 12%, transparent), transparent 32%),
+    var(--demo-shell-bg);
+}
+
+body.demo-shell-sidebar .demo-workbench__content {
+  border-color: var(--demo-shell-border);
+  background: var(--demo-shell-surface-muted);
+}
+
+body.demo-shell-sidebar .intro p,
+body.demo-shell-sidebar .content-section p,
+body.demo-shell-sidebar .content-section li,
+body.demo-shell-sidebar .demo-stack__header p,
+body.demo-shell-sidebar .guidance-card p,
+body.demo-shell-sidebar .demo-matrix-meta,
+body.demo-shell-sidebar .preview-label,
+body.demo-shell-sidebar .host-card span,
+body.demo-shell-sidebar .window-media-status,
+body.demo-shell-sidebar .window-queue ul,
+body.demo-shell-sidebar .viewer-option label,
+body.demo-shell-sidebar .card small {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar .eyebrow,
+body.demo-shell-sidebar .demo-doc-panel__eyebrow,
+body.demo-shell-sidebar .demo-stack strong,
+body.demo-shell-sidebar .window-stat strong,
+body.demo-shell-sidebar .window-inspector-card strong,
+body.demo-shell-sidebar .window-help,
+body.demo-shell-sidebar .anchor-links a,
+body.demo-shell-sidebar .markdown-doc a {
+  color: var(--demo-shell-accent) !important;
+}
+
+body.demo-shell-sidebar .demo-stack,
+body.demo-shell-sidebar .guidance-card,
+body.demo-shell-sidebar .demo-matrix-card,
+body.demo-shell-sidebar .preview,
+body.demo-shell-sidebar .host,
+body.demo-shell-sidebar .host-card,
+body.demo-shell-sidebar .demo-stage,
+body.demo-shell-sidebar .control,
+body.demo-shell-sidebar .metric,
+body.demo-shell-sidebar .stack-item,
+body.demo-shell-sidebar .thumb-card,
+body.demo-shell-sidebar .guidance,
+body.demo-shell-sidebar .host-shell,
+body.demo-shell-sidebar .icon-group,
+body.demo-shell-sidebar .icon-card,
+body.demo-shell-sidebar .incident-list-item,
+body.demo-shell-sidebar .bundle-card,
+body.demo-shell-sidebar .status-card,
+body.demo-shell-sidebar .demo-card,
+body.demo-shell-sidebar #tabsHost,
+body.demo-shell-sidebar #timelineScrubberHost,
+body.demo-shell-sidebar #timelineLinkedHost,
+body.demo-shell-sidebar #mediaStripHost,
+body.demo-shell-sidebar #mediaStripHostScroll,
+body.demo-shell-sidebar #mediaStripHostWrap,
+body.demo-shell-sidebar #queueHost,
+body.demo-shell-sidebar #threadHost,
+body.demo-shell-sidebar #composerHost,
+body.demo-shell-sidebar #gameAudioHost,
+body.demo-shell-sidebar #gameSessionHost,
+body.demo-shell-sidebar #gameCanvasHost,
+body.demo-shell-sidebar #gameObjectHost,
+body.demo-shell-sidebar #gameLayerHost,
+body.demo-shell-sidebar #gameGridHost,
+body.demo-shell-sidebar #stripHost,
+body.demo-shell-sidebar #busyHost,
+body.demo-shell-sidebar #overlayHost,
+body.demo-shell-sidebar #selectHost,
+body.demo-shell-sidebar #treeSelectHost,
+body.demo-shell-sidebar #fieldGroupHost,
+body.demo-shell-sidebar #fieldsetHost,
+body.demo-shell-sidebar #deviceSelectorHost,
+body.demo-shell-sidebar #propertyEditorHost,
+body.demo-shell-sidebar #toggleHost,
+body.demo-shell-sidebar #toggleGroupHost,
+body.demo-shell-sidebar #checkboxHost,
+body.demo-shell-sidebar #checkboxGroupHost,
+body.demo-shell-sidebar #comboboxHost,
+body.demo-shell-sidebar #numberStepperHost,
+body.demo-shell-sidebar #passwordHost,
+body.demo-shell-sidebar #progressHost,
+body.demo-shell-sidebar #emptyStateHost,
+body.demo-shell-sidebar #skeletonHost,
+body.demo-shell-sidebar #teamAssignmentsHost,
+body.demo-shell-sidebar #incidentTypesHost,
+body.demo-shell-sidebar #host,
+body.demo-shell-sidebar #treeHost,
+body.demo-shell-sidebar .window-stat,
+body.demo-shell-sidebar .window-inspector-card,
+body.demo-shell-sidebar .window-surface,
+body.demo-shell-sidebar .window-host,
+body.demo-shell-sidebar .card,
+body.demo-shell-sidebar .markdown-doc,
+body.demo-shell-sidebar .markdown-page .panel {
+  border-color: var(--demo-shell-border) !important;
+  background: var(--demo-shell-surface-muted) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .demo-stack__row + .demo-stack__row,
+body.demo-shell-sidebar .table-wrap,
+body.demo-shell-sidebar .markdown-doc th,
+body.demo-shell-sidebar .markdown-doc td,
+body.demo-shell-sidebar .markdown-doc hr {
+  border-color: var(--demo-shell-border) !important;
+}
+
+body.demo-shell-sidebar .demo-chip,
+body.demo-shell-sidebar .anchor-links a,
+body.demo-shell-sidebar .demo-doc-panel__anchors a,
+body.demo-shell-sidebar .markdown-doc code {
+  border-color: var(--demo-shell-border-strong) !important;
+  background: var(--demo-shell-control) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .demo-chip {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar .icon-preview,
+body.demo-shell-sidebar .icon-preview .ui-icon {
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .icon-meta {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar .demo-code,
+body.demo-shell-sidebar .demo-log,
+body.demo-shell-sidebar .markdown-doc pre,
+body.demo-shell-sidebar .markdown-doc code {
+  border-color: var(--demo-shell-border) !important;
+  background: var(--demo-shell-control) !important;
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar th,
+body.demo-shell-sidebar .markdown-doc th {
+  background: var(--demo-shell-control) !important;
+  color: var(--demo-shell-accent) !important;
+}
+
+body.demo-shell-sidebar td,
+body.demo-shell-sidebar .markdown-doc p,
+body.demo-shell-sidebar .markdown-doc li,
+body.demo-shell-sidebar .markdown-doc blockquote {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar td code,
+body.demo-shell-sidebar .markdown-doc h1,
+body.demo-shell-sidebar .markdown-doc h2,
+body.demo-shell-sidebar .markdown-doc h3,
+body.demo-shell-sidebar .markdown-doc h4,
+body.demo-shell-sidebar .markdown-doc h5,
+body.demo-shell-sidebar .markdown-doc h6,
+body.demo-shell-sidebar .viewer-option-check {
+  color: var(--demo-shell-text) !important;
+}
+
+body.demo-shell-sidebar .anchor-links a:hover,
+body.demo-shell-sidebar .card:hover {
+  border-color: var(--demo-shell-accent) !important;
+  background: var(--demo-shell-control-hover) !important;
+}
+
+body.demo-shell-sidebar [style*="color:#9fb2d8"],
+body.demo-shell-sidebar [style*="color: #9fb2d8"] {
+  color: var(--demo-shell-muted) !important;
+}
+
+body.demo-shell-sidebar [style*="color:#d7e0f4"],
+body.demo-shell-sidebar [style*="color: #d7e0f4"],
+body.demo-shell-sidebar [style*="color:#ffffff"],
+body.demo-shell-sidebar [style*="color: #ffffff"] {
+  color: var(--demo-shell-text) !important;
 }
 
 body.demo-shell-sidebar .demo-shell-nav {
@@ -199,16 +487,16 @@ body.demo-shell-sidebar .demo-shell-nav {
   height: 100vh;
   margin: 0;
   border: 0;
-  border-right: 1px solid #263146;
+  border-right: 1px solid var(--demo-shell-border);
   border-radius: 0;
-  background: #101723;
+  background: var(--demo-shell-surface);
   box-shadow: none;
 }
 
 body.demo-shell-sidebar .demo-shell-nav__inner {
   height: 100%;
   box-sizing: border-box;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 14px;
   padding: 18px 14px;
 }
@@ -227,8 +515,12 @@ body.demo-shell-sidebar .demo-shell-nav__groups {
   padding-right: 4px;
   padding-bottom: 12px;
   scrollbar-width: thin;
-  scrollbar-color: #73819b #101826;
+  scrollbar-color: var(--demo-shell-muted) var(--demo-shell-control);
   scrollbar-gutter: stable;
+}
+
+body.demo-shell-sidebar .demo-shell-theme {
+  padding-bottom: 4px;
 }
 
 body.demo-shell-sidebar .demo-shell-nav__groups::-webkit-scrollbar {
@@ -236,18 +528,18 @@ body.demo-shell-sidebar .demo-shell-nav__groups::-webkit-scrollbar {
 }
 
 body.demo-shell-sidebar .demo-shell-nav__groups::-webkit-scrollbar-track {
-  background: #101826;
+  background: var(--demo-shell-control);
   border-radius: 999px;
 }
 
 body.demo-shell-sidebar .demo-shell-nav__groups::-webkit-scrollbar-thumb {
-  background: #73819b;
+  background: var(--demo-shell-muted);
   border-radius: 999px;
-  border: 2px solid #101826;
+  border: 2px solid var(--demo-shell-control);
 }
 
 body.demo-shell-sidebar .demo-shell-nav__groups::-webkit-scrollbar-thumb:hover {
-  background: #8a99b6;
+  background: var(--demo-shell-accent);
 }
 
 body.demo-shell-sidebar .demo-shell-nav__links {
@@ -291,16 +583,16 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   gap: 14px;
   align-content: start;
   background:
-    radial-gradient(circle at top left, rgba(58, 92, 158, 0.12), transparent 32%),
-    #0c1017;
+    radial-gradient(circle at top left, color-mix(in srgb, var(--demo-shell-accent) 12%, transparent), transparent 32%),
+    var(--demo-shell-bg);
 }
 
 .demo-workbench__content {
   display: grid;
   gap: 14px;
   align-content: start;
-  border-left: 1px solid #263146;
-  background: #0f1521;
+  border-left: 1px solid var(--demo-shell-border);
+  background: var(--demo-shell-surface-muted);
 }
 
 .demo-page-legacy {
@@ -310,9 +602,9 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 }
 
 .demo-doc-panel {
-  border: 1px solid #263146;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 14px;
-  background: #111826;
+  background: var(--demo-shell-surface);
   padding: 16px;
   display: grid;
   gap: 12px;
@@ -327,7 +619,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 
 .demo-doc-panel p,
 .demo-doc-panel li {
-  color: #9fb2d8;
+  color: var(--demo-shell-muted);
   line-height: 1.5;
 }
 
@@ -338,7 +630,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 }
 
 .demo-doc-panel__eyebrow {
-  color: #8db5ff;
+  color: var(--demo-shell-accent);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -356,22 +648,22 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid #334563;
+  border: 1px solid var(--demo-shell-border-strong);
   border-radius: 999px;
-  color: #d7e0f4;
+  color: var(--demo-shell-text);
   text-decoration: none;
-  background: #0b1423;
+  background: var(--demo-shell-control);
   font-size: 12px;
 }
 
 .demo-doc-panel__anchors a:hover {
-  border-color: #4a5f86;
-  background: #101a2b;
+  border-color: var(--demo-shell-accent);
+  background: var(--demo-shell-control-hover);
 }
 
 .demo-doc-panel__table-wrap {
   overflow: auto;
-  border: 1px solid #263146;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 12px;
 }
 
@@ -384,28 +676,28 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 .demo-doc-panel th,
 .demo-doc-panel td {
   padding: 10px 12px;
-  border-bottom: 1px solid #24314a;
+  border-bottom: 1px solid var(--demo-shell-border);
   text-align: left;
   vertical-align: top;
 }
 
 .demo-doc-panel th {
-  color: #8db5ff;
+  color: var(--demo-shell-accent);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: #0f1829;
+  background: var(--demo-shell-control);
   position: sticky;
   top: 0;
 }
 
 .demo-doc-panel td code {
-  color: #ffffff;
+  color: var(--demo-shell-text);
 }
 
 .demo-doc-panel__cell-meta {
   margin-top: 6px;
-  color: #9fb2d8;
+  color: var(--demo-shell-muted);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -421,9 +713,9 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   display: grid;
   gap: 0;
   min-width: 0;
-  border: 1px solid #263146;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 14px;
-  background: #0b1220;
+  background: var(--demo-shell-surface-muted);
 }
 
 .demo-auto-stack__row {
@@ -434,7 +726,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 }
 
 .demo-auto-stack__row + .demo-auto-stack__row {
-  border-top: 1px solid #24314a;
+  border-top: 1px solid var(--demo-shell-border);
 }
 
 .demo-auto-stack__row--live {
@@ -456,7 +748,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 }
 
 .demo-auto-stack__heading p {
-  color: #9fb2d8;
+  color: var(--demo-shell-muted);
   line-height: 1.5;
 }
 
@@ -465,11 +757,11 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   margin: 0;
   white-space: pre-wrap;
   font-size: 12px;
-  color: #c8d6f2;
+  color: var(--demo-shell-text);
   font-family: Consolas, "Courier New", monospace;
-  border: 1px solid #2b3750;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 10px;
-  background: #09111d;
+  background: var(--demo-shell-control);
   padding: 10px;
   overflow: auto;
 }
@@ -484,9 +776,9 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 }
 
 .demo-auto-panel {
-  border: 1px solid #263146;
+  border: 1px solid var(--demo-shell-border);
   border-radius: 14px;
-  background: #111826;
+  background: var(--demo-shell-surface);
   padding: 16px;
   display: grid;
   gap: 12px;
@@ -528,10 +820,10 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
     max-width: 1200px;
     height: auto;
     margin: 0 auto 16px;
-    border: 1px solid #263146;
+    border: 1px solid var(--demo-shell-border);
     border-radius: 12px;
-    background: rgba(17, 24, 38, 0.92);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    background: color-mix(in srgb, var(--demo-shell-surface) 92%, transparent);
+    box-shadow: 0 10px 24px var(--demo-shell-shadow);
   }
 
   body.demo-shell-sidebar .demo-shell-nav__inner {
@@ -562,7 +854,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
 
   .demo-workbench__content {
     border-left: 0;
-    border-top: 1px solid #263146;
+    border-top: 1px solid var(--demo-shell-border);
   }
 }
 
@@ -589,7 +881,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
     width: 46px;
     height: 46px;
     border-radius: 999px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+    box-shadow: 0 10px 24px var(--demo-shell-shadow);
   }
 
   body.demo-shell-sidebar .demo-shell-nav__inner {
@@ -621,6 +913,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   }
 
   .demo-shell-nav.is-collapsed .demo-shell-nav__groups,
+  .demo-shell-nav.is-collapsed .demo-shell-theme,
   .demo-shell-nav.is-collapsed .demo-shell-nav__docs {
     display: none;
   }

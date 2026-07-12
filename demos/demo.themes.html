@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Themes Demo</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #0c1017;
+      color: #d7e0f4;
+      font-family: var(--ui-font);
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel {
+      border: 1px solid #263146;
+      border-radius: 10px;
+      background: #111826;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .theme-card {
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--ui-border);
+      border-radius: 10px;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      padding: 14px;
+      min-width: 0;
+    }
+    .theme-card h2 {
+      margin: 0;
+      color: var(--ui-text);
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .theme-card p {
+      margin: 0;
+      color: var(--ui-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .theme-surface {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--ui-border-strong);
+      border-radius: 8px;
+      background: var(--ui-bg-soft);
+      padding: 10px;
+    }
+    .theme-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .theme-badge {
+      border: 1px solid var(--ui-border-strong);
+      border-radius: 999px;
+      color: var(--ui-text);
+      background: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-bg-soft));
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .swatches {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--ui-border-strong);
+      border-radius: 8px;
+    }
+    .back {
+      color: #b2c2e5;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    code {
+      color: #d7e0f4;
+    }
+  </style>
+  <script>
+    window.demoMeta = {
+      title: "Themes",
+      overview: "Shared data-theme presets backed by Helper design tokens.",
+      useWhen: [
+        "Use <code>data-theme</code> on an app shell, modal host, or component surface to switch Helper token palettes.",
+        "Use named presets when an app needs a more specific operational tone than default dark or light."
+      ],
+      avoidWhen: [
+        "Do not fork component CSS just to change palette.",
+        "Do not encode app-specific business meaning into theme names."
+      ],
+      defaultSampleCode: `<main data-theme="night-command">...</main>`,
+      options: [
+        { option: "<code>dark</code>", default: "default", description: "Existing default operational dark theme." },
+        { option: "<code>light</code>", default: "existing", description: "Existing general light theme." },
+        { option: "<code>dark-slate</code>", default: "new", description: "Calmer slate admin surface." },
+        { option: "<code>night-command</code>", default: "new", description: "High-contrast command-center surface." },
+        { option: "<code>civic-light</code>", default: "new", description: "Standard public/admin light surface." },
+        { option: "<code>care-light</code>", default: "new", description: "Softer care and citizen-facing surface." },
+        { option: "<code>field-contrast</code>", default: "new", description: "High-visibility field/mobile surface." }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark" data-demo-structured="true">
+    <section class="panel">
+      <a class="back" href="./index.html">&larr; Back to Home</a>
+      <h1 class="ui-title">Themes Demo</h1>
+      <p class="ui-text-muted">Token presets for app shells and Helper components.</p>
+    </section>
+
+    <section class="theme-grid" id="themeGrid"></section>
+  </main>
+
+  <script>
+    const themes = [
+      ["dark", "Dark", "Default operational dark theme."],
+      ["light", "Light", "Existing general light theme."],
+      ["dark-slate", "Dark Slate", "Calmer slate admin surface."],
+      ["night-command", "Night Command", "High-contrast command-center surface."],
+      ["civic-light", "Civic Light", "Standard public/admin light surface."],
+      ["care-light", "Care Light", "Softer care and citizen-facing surface."],
+      ["field-contrast", "Field Contrast", "High-visibility field/mobile surface."],
+    ];
+    const grid = document.getElementById("themeGrid");
+    themes.forEach(([id, label, description]) => {
+      const card = document.createElement("article");
+      card.className = "theme-card";
+      card.dataset.theme = id;
+      card.innerHTML = `
+        <div class="theme-row">
+          <h2>${label}</h2>
+          <span class="theme-badge">${id}</span>
+        </div>
+        <p>${description}</p>
+        <div class="theme-surface">
+          <div class="theme-row">
+            <span>Surface</span>
+            <button class="ui-button ui-button-primary" type="button">Action</button>
+          </div>
+          <div class="swatches" aria-label="${label} token swatches">
+            <span class="swatch" style="background: var(--ui-bg)"></span>
+            <span class="swatch" style="background: var(--ui-bg-soft)"></span>
+            <span class="swatch" style="background: var(--ui-text)"></span>
+            <span class="swatch" style="background: var(--ui-muted)"></span>
+            <span class="swatch" style="background: var(--ui-accent)"></span>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>

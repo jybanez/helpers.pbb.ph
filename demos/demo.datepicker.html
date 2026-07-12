@@ -6,17 +6,17 @@
   <title>Datepicker Demo</title>
   <link rel='stylesheet' href='../css/demo/demo.shell.css'>
   <style>
-    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
-    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
     .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
     .two-up { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .picker-card { display: grid; gap: 8px; padding: 12px; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; }
-    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
-    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
-    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
-    .log { color: #b2c2e5; min-height: 180px; }
-    pre:not(.log) { color: #d7e0f4; }
+    .picker-card { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); }
+    .back { color: var(--demo-link, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); padding: 10px; overflow: auto; }
+    .log { color: var(--demo-muted, var(--ui-muted, #b2c2e5)); min-height: 180px; }
+    pre:not(.log) { color: var(--demo-code-text, var(--ui-text, #d7e0f4)); }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -58,11 +58,10 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
       <div class="row">
         <a class="back" href="./index.html">← Back to Home</a>
-        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Datepicker Demo</h1>
       <p class="muted">Dedicated picker demo for single-date and range-plus-time selection behavior.</p>
@@ -106,17 +105,11 @@ createDatepicker(document.getElementById("datePickerHostRange"), {
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const createDatepicker = await uiLoader.get("ui.datepicker");
-    const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
     }
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      const next = page.dataset.theme === "dark" ? "light" : "dark";
-      page.dataset.theme = next;
-      writeLog("theme.toggle", { theme: next });
-    });
     createDatepicker(document.getElementById("datePickerHostSingle"), {
       ariaLabel: "Incident date picker",
       placeholder: "Pick incident date",

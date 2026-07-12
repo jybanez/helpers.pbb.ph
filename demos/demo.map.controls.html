@@ -9,9 +9,9 @@
     body {
       margin: 0;
       padding: 24px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--demo-bg, var(--ui-bg, #0c1017));
+      color: var(--demo-text, var(--ui-text, #d7e0f4));
+      font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
     }
     .page {
       max-width: 1180px;
@@ -20,32 +20,32 @@
       gap: 14px;
     }
     .panel {
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 10px;
-      background: #111826;
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #111826));
       padding: 14px;
       display: grid;
       gap: 12px;
     }
     .back {
-      color: #b2c2e5;
+      color: var(--demo-muted, var(--ui-muted, #b2c2e5));
       text-decoration: none;
       font-size: 13px;
     }
     .muted {
       margin: 0;
-      color: #9fb2d8;
+      color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       font-size: 13px;
       line-height: 1.45;
     }
     .map-stage {
       min-height: 420px;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
       background:
-        linear-gradient(90deg, rgba(110, 166, 255, 0.08) 1px, transparent 1px),
-        linear-gradient(rgba(110, 166, 255, 0.08) 1px, transparent 1px),
-        #0b1220;
+        linear-gradient(90deg, color-mix(in srgb, var(--ui-accent, #6ea6ff) 18%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--ui-accent, #6ea6ff) 18%, transparent) 1px, transparent 1px),
+        var(--demo-surface-bg, var(--ui-bg, #0b1220));
       background-size: 42px 42px;
       position: relative;
       overflow: hidden;
@@ -57,7 +57,7 @@
       background:
         radial-gradient(circle at 32% 28%, rgba(73, 194, 127, 0.28), transparent 18%),
         radial-gradient(circle at 66% 58%, rgba(244, 179, 80, 0.24), transparent 16%),
-        linear-gradient(140deg, transparent 0 46%, rgba(110, 166, 255, 0.24) 47% 50%, transparent 51% 100%);
+        linear-gradient(140deg, transparent 0 46%, color-mix(in srgb, var(--ui-accent, #6ea6ff) 34%, transparent) 47% 50%, transparent 51% 100%);
     }
     #mapControlsHost {
       position: absolute;
@@ -70,12 +70,12 @@
       left: 14px;
       bottom: 14px;
       z-index: 2;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
-      background: rgba(13, 21, 35, 0.88);
+      background: color-mix(in srgb, var(--demo-surface-bg, var(--ui-bg, #0d1523)) 88%, transparent);
       padding: 10px;
       min-width: 220px;
-      color: #b2c2e5;
+      color: var(--demo-code-text, var(--ui-text, #b2c2e5));
       font-size: 12px;
       white-space: pre-wrap;
     }
@@ -83,11 +83,11 @@
       margin: 0;
       white-space: pre-wrap;
       font-size: 12px;
-      color: #d7e0f4;
+      color: var(--demo-code-text, var(--ui-text, #d7e0f4));
       font-family: Consolas, "Courier New", monospace;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 8px;
-      background: #0b1220;
+      background: var(--demo-code-bg, var(--ui-bg, #0b1220));
       padding: 10px;
       overflow-x: auto;
     }
@@ -140,7 +140,7 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
       <a class="back" href="./index.html">&larr; Back to Home</a>
       <h1 class="ui-title">Map Controls Demo</h1>

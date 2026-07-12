@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="care-light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Form Modal Presets Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.modal.css">
   <link rel="stylesheet" href="../css/ui/ui.form.modal.css">
@@ -11,9 +12,9 @@
     body {
       margin: 0;
       padding: 16px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font-family: var(--ui-font);
     }
     #results {
       margin-top: 12px;
@@ -23,7 +24,7 @@
     }
   </style>
 </head>
-<body data-status="pending">
+<body data-theme="care-light" data-status="pending">
   <pre id="results">Running...</pre>
 
   <script type="module">
@@ -38,6 +39,7 @@
 
     const results = document.getElementById("results");
     const failures = [];
+    const expectedTextColor = getComputedStyle(document.documentElement).getPropertyValue("--ui-text").trim();
     const avatarPreviewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#2d4775"/><stop offset="1" stop-color="#111827"/></linearGradient></defs><rect width="128" height="128" rx="64" fill="url(#g)"/><circle cx="64" cy="48" r="22" fill="#d7e0f4" fill-opacity="0.92"/><path d="M29 106c7-19 22-29 35-29s28 10 35 29" fill="#d7e0f4" fill-opacity="0.92"/></svg>`;
     const avatarPreviewUrl = `data:image/svg+xml;utf8,${encodeURIComponent(avatarPreviewSvg)}`;
     const loginMediaSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="20" fill="#164e63"/><circle cx="48" cy="48" r="24" fill="#e0f2fe"/></svg>`;
@@ -273,8 +275,10 @@
     Array.from(document.querySelectorAll(".ui-modal-footer .ui-button")).find((button) => /confirm/i.test(button.textContent || "")).click();
     await wait(180);
     const reasonValues = reasonModal.getValues();
+    const reasonAlert = document.querySelector(".ui-form-modal-alert.is-danger");
     const confirmError = document.querySelector('input[name="confirm_cancel"]')?.closest(".ui-form-modal-field")?.querySelector(".ui-form-modal-field-error");
     const confirmInput = document.querySelector('input[name="confirm_cancel"]');
+    assert(colorEquals(getComputedStyle(reasonAlert).color, expectedTextColor), "reason preset danger alert should use readable theme text color");
     assert(reasonValues.cancel_reason === "operational_override", "reason preset should use remapped reason field name");
     assert(reasonValues.remarks === "Unsafe current routing.", "reason preset should use remapped details field name");
     assert(reasonModal.getState().open === true, "reason preset should keep modal open when confirmation phrase is invalid");
@@ -506,6 +510,19 @@
       if (!condition) {
         failures.push(message);
       }
+    }
+
+    function colorEquals(actual, expected) {
+      return normalizeColor(actual) === normalizeColor(expected);
+    }
+
+    function normalizeColor(value) {
+      const probe = document.createElement("span");
+      probe.style.color = value;
+      document.body.appendChild(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
     }
 
     function wait(ms) {

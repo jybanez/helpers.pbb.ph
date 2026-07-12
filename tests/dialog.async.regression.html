@@ -45,19 +45,19 @@
     }
 
     function getOpenModal() {
-      return document.querySelector(".ui-modal-root.is-open .ui-modal");
+      return document.querySelector(".ui-modal-root.is-mounted .ui-modal");
     }
 
     function getFooterButtons() {
-      return Array.from(document.querySelectorAll(".ui-modal-root.is-open .ui-dialog-footer-actions button, .ui-modal-root.is-open .ui-modal-footer button"));
+      return Array.from(document.querySelectorAll(".ui-modal-root.is-mounted .ui-dialog-footer-actions button, .ui-modal-root.is-mounted .ui-modal-footer button"));
     }
 
     function getDialogFooterActions() {
-      return document.querySelector(".ui-modal-root.is-open .ui-dialog-footer-actions");
+      return document.querySelector(".ui-modal-root.is-mounted .ui-dialog-footer-actions");
     }
 
     function getCloseButton() {
-      return document.querySelector(".ui-modal-root.is-open .ui-modal-close");
+      return document.querySelector(".ui-modal-root.is-mounted .ui-modal-close");
     }
 
     function findFooterButton(label) {
@@ -91,7 +91,7 @@
     assert(confirmCalls === 1, "Confirm handler should only run once while busy.");
     assert(Boolean(getOpenModal()), "Confirm dialog should remain open while async confirm is pending.");
     const confirmError = await waitFor(() => {
-      const node = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+      const node = document.querySelector(".ui-modal-root.is-mounted .ui-dialog-error");
       return (node?.textContent || "").includes("First confirm attempt failed.") ? node : null;
     });
     assert((confirmError?.textContent || "").includes("First confirm attempt failed."), "Confirm dialog should surface inline error text after rejection.");
@@ -110,26 +110,26 @@
         return true;
       },
     });
-    const promptInput = await waitFor(() => document.querySelector(".ui-modal-root.is-open input.ui-input"));
+    const promptInput = await waitFor(() => document.querySelector(".ui-modal-root.is-mounted input.ui-input"));
     assert(promptInput, "Prompt dialog should render an input.");
     assert(getCloseButton()?.hidden === true, "Prompt dialog should hide the header close button by default.");
     promptInput.value = "abc";
     promptInput.dispatchEvent(new Event("input", { bubbles: true }));
     findFooterButton("Save")?.click();
     const promptError = await waitFor(() => {
-      const node = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+      const node = document.querySelector(".ui-modal-root.is-mounted .ui-dialog-error");
       return (node?.textContent || "").includes("at least 4 characters") ? node : null;
     });
     assert((promptError?.textContent || "").includes("at least 4 characters"), "Prompt dialog should surface inline async validation error.");
     promptInput.value = "abcd";
     promptInput.dispatchEvent(new Event("input", { bubbles: true }));
-    const clearedPromptError = document.querySelector(".ui-modal-root.is-open .ui-dialog-error");
+    const clearedPromptError = document.querySelector(".ui-modal-root.is-mounted .ui-dialog-error");
     assert((clearedPromptError?.textContent || "").trim() === "", "Prompt input edits should clear inline error text.");
     findFooterButton("Save")?.click();
     const promptResult = await Promise.race([promptPromise, delay(1500).then(() => "__timeout__")]);
     assert(promptResult === "abcd", "Prompt dialog should resolve entered value after async submit succeeds.");
 
-    const allClosed = await waitFor(() => !document.querySelector(".ui-modal-root.is-open"), 2000);
+    const allClosed = await waitFor(() => !document.querySelector(".ui-modal-root.is-mounted"), 2000);
     assert(Boolean(allClosed), "All dialogs should close after async handlers succeed.");
 
     if (failures.length) {

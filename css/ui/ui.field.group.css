@@ -18,7 +18,7 @@
 .ui-field-group-required {
   border: 1px solid var(--ui-border, #2a3448);
   border-radius: 999px;
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.75rem;
   line-height: 1.2;
   padding: 2px 7px;
@@ -65,7 +65,7 @@
 }
 
 .ui-field-group-item-title {
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -174,7 +174,7 @@
   border: 1px solid var(--ui-border, #2a3448);
   border-radius: 7px;
   background: var(--ui-bg-soft, #151d2d);
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   cursor: pointer;
   padding: 0;
 }
@@ -204,7 +204,7 @@
   border: 1px solid color-mix(in srgb, var(--ui-border, #2a3448) 82%, transparent);
   border-radius: 7px;
   padding: 8px 10px;
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.84rem;
   line-height: 1.4;
   background: color-mix(in srgb, var(--ui-bg-soft, #151d2d) 42%, transparent);
@@ -231,7 +231,7 @@
 }
 
 .ui-field-group-breakdown-title {
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -246,7 +246,7 @@
 }
 
 .ui-field-group-breakdown-warning {
-  color: var(--ui-text-muted, #9fb2d8);
+  color: var(--ui-muted, #9fb2d8);
   font-size: 0.76rem;
   line-height: 1.35;
 }
@@ -258,7 +258,7 @@
   height: 6px;
   margin-right: 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ui-text-muted, #9fb2d8) 52%, transparent);
+  background: color-mix(in srgb, var(--ui-muted, #9fb2d8) 52%, transparent);
   vertical-align: 1px;
 }
 

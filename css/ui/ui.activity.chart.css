@@ -8,7 +8,7 @@
 
 .ui-activity-chart-empty {
   margin: 0;
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
   border: 1px dashed var(--ui-border, #2f4e85);
   border-radius: 8px;
   padding: 12px;
@@ -21,7 +21,7 @@
 }
 
 .ui-activity-chart-eyebrow {
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -58,7 +58,7 @@
 }
 
 .ui-activity-chart-summary-main span {
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -78,10 +78,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--ui-border-soft, #2a3d60);
+  border: 1px solid var(--ui-border, #2a3d60);
   border-radius: 999px;
-  background: var(--ui-surface, #0d172c);
-  color: var(--ui-text-muted, #9fb1cf);
+  background: var(--ui-bg-soft, #0d172c);
+  color: var(--ui-muted, #9fb1cf);
   padding: 4px 8px;
   font-size: 12px;
   line-height: 1.2;
@@ -94,9 +94,9 @@
 .ui-activity-chart-scroll {
   max-width: 100%;
   overflow: auto;
-  border: 1px solid var(--ui-border-soft, #2a3d60);
+  border: 1px solid var(--ui-border, #2a3d60);
   border-radius: 8px;
-  background: var(--ui-surface, #0d172c);
+  background: var(--ui-bg, #0d172c);
 }
 
 .ui-activity-chart-matrix {
@@ -119,8 +119,8 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  background: var(--ui-surface-strong, #111b31);
-  color: var(--ui-text-muted, #9fb1cf);
+  background: var(--ui-bg-soft, #111b31);
+  color: var(--ui-muted, #9fb1cf);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -134,7 +134,7 @@
   width: 180px;
   max-width: 180px;
   text-align: left;
-  background: var(--ui-surface-strong, #111b31);
+  background: var(--ui-bg-soft, #111b31);
 }
 
 .ui-activity-chart-matrix thead th:first-child {
@@ -261,7 +261,7 @@
 
 .ui-activity-chart-total,
 .ui-activity-chart-bar-total {
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
   font-size: 12px;
   font-weight: 700;
 }
@@ -279,9 +279,9 @@
   gap: 10px;
   align-items: center;
   min-width: 0;
-  border: 1px solid var(--ui-border-soft, #2a3d60);
+  border: 1px solid var(--ui-border, #2a3d60);
   border-radius: 8px;
-  background: var(--ui-surface, #0d172c);
+  background: var(--ui-bg, #0d172c);
   padding: 8px;
 }
 
@@ -372,7 +372,7 @@
 }
 
 .ui-activity-chart-legend-label {
-  color: var(--ui-text-muted, #9fb1cf);
+  color: var(--ui-muted, #9fb1cf);
   font-size: 12px;
 }
 

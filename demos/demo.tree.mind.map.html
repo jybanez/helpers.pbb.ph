@@ -8,9 +8,9 @@
   <style>
     body {
       margin: 0;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--demo-bg, var(--ui-bg, #0c1017));
+      color: var(--demo-text, var(--ui-text, #d7e0f4));
+      font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
     }
     .demo-workbench {
       display: grid;
@@ -29,20 +29,18 @@
     .demo-workbench__center {
       display: grid;
       gap: 14px;
-      background:
-        radial-gradient(circle at top left, rgba(58, 92, 158, 0.12), transparent 32%),
-        #0c1017;
+      background: var(--demo-bg, var(--ui-bg, #0c1017));
     }
     .demo-workbench__content {
       display: grid;
       gap: 14px;
-      border-left: 1px solid #263146;
-      background: #0f1521;
+      border-left: 1px solid var(--demo-border, var(--ui-border, #263146));
+      background: var(--demo-bg, var(--ui-bg, #0f1521));
     }
     .panel {
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 14px;
-      background: #111826;
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #111826));
       padding: 16px;
       display: grid;
       gap: 12px;
@@ -59,11 +57,11 @@
     .content-section p,
     .content-section li,
     .muted {
-      color: #9fb2d8;
+      color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       line-height: 1.5;
     }
     .eyebrow {
-      color: #8db5ff;
+      color: var(--ui-accent, #8db5ff);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -76,9 +74,9 @@
     .demo-stack {
       display: grid;
       gap: 0;
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 14px;
-      background: #0b1220;
+      background: var(--demo-surface-bg, var(--ui-bg, #0b1220));
     }
     .demo-stack__row {
       padding: 14px 16px;
@@ -86,7 +84,7 @@
       gap: 12px;
     }
     .demo-stack__row + .demo-stack__row {
-      border-top: 1px solid #24314a;
+      border-top: 1px solid var(--demo-border, var(--ui-border, #24314a));
     }
     .demo-stack__header {
       display: flex;
@@ -100,7 +98,7 @@
       margin: 0;
     }
     .demo-stack__header p {
-      color: #9fb2d8;
+      color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       max-width: 760px;
       line-height: 1.5;
     }
@@ -118,22 +116,22 @@
       align-items: center;
       min-height: 24px;
       padding: 0 10px;
-      border: 1px solid #334563;
+      border: 1px solid var(--demo-border, var(--ui-border, #334563));
       border-radius: 999px;
-      background: #10192b;
-      color: #b7c9eb;
+      background: var(--demo-chip-bg, var(--ui-bg-soft, #10192b));
+      color: var(--demo-muted, var(--ui-muted, #b7c9eb));
       font-size: 12px;
       text-decoration: none;
       white-space: nowrap;
     }
     .anchor-links a {
       min-height: 30px;
-      color: #d7e0f4;
-      background: #0b1423;
+      color: var(--demo-text, var(--ui-text, #d7e0f4));
+      background: var(--demo-surface-bg, var(--ui-bg, #0b1423));
     }
     .anchor-links a:hover {
-      border-color: #4a5f86;
-      background: #101a2b;
+      border-color: var(--ui-border-strong, #4a5f86);
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #101a2b));
     }
     .stats {
       display: grid;
@@ -144,9 +142,9 @@
       display: grid;
       gap: 4px;
       padding: 12px;
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 10px;
-      background: #0d1626;
+      background: var(--demo-surface-bg, var(--ui-bg, #0d1626));
     }
     .stat strong {
       font-size: 20px;
@@ -160,9 +158,9 @@
     .map-frame,
     .selection-panel,
     .demo-code {
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 10px;
-      background: #09111d;
+      background: var(--demo-surface-bg, var(--ui-bg, #09111d));
     }
     .map-frame {
       padding: 12px;
@@ -183,7 +181,7 @@
       margin: 0;
     }
     .selection-panel p {
-      color: #9fb2d8;
+      color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       font-size: 13px;
     }
     .selection-output,
@@ -191,15 +189,15 @@
       margin: 0;
       white-space: pre-wrap;
       font-size: 12px;
-      color: #c8d6f2;
+      color: var(--demo-code-text, var(--ui-text, #c8d6f2));
       font-family: Consolas, "Courier New", monospace;
       padding: 10px;
       overflow: auto;
     }
     .selection-output {
-      border: 1px solid #2b3750;
+      border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
       border-radius: 10px;
-      background: #0b1220;
+      background: var(--demo-code-bg, var(--ui-bg, #0b1220));
       min-height: 320px;
       max-height: 560px;
     }
@@ -213,7 +211,7 @@
     }
     .table-wrap {
       overflow: auto;
-      border: 1px solid #263146;
+      border: 1px solid var(--demo-border, var(--ui-border, #263146));
       border-radius: 12px;
     }
     table {
@@ -224,21 +222,21 @@
     th,
     td {
       padding: 10px 12px;
-      border-bottom: 1px solid #24314a;
+      border-bottom: 1px solid var(--demo-border, var(--ui-border, #24314a));
       text-align: left;
       vertical-align: top;
     }
     th {
-      color: #8db5ff;
+      color: var(--ui-accent, #8db5ff);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      background: #0f1829;
+      background: var(--demo-panel-bg, var(--ui-bg-soft, #0f1829));
       position: sticky;
       top: 0;
     }
     td code {
-      color: #ffffff;
+      color: var(--demo-text, var(--ui-text, #ffffff));
     }
     @media (max-width: 1500px) {
       .live-layout {
@@ -254,7 +252,7 @@
       }
       .demo-workbench__content {
         border-left: 0;
-        border-top: 1px solid #263146;
+        border-top: 1px solid var(--demo-border, var(--ui-border, #263146));
       }
     }
     @media (max-width: 860px) {
@@ -516,12 +514,60 @@ map.loadTheme("./theme.json");</pre>
     const nodes = buildSampleNodes(sampleRegions);
     document.getElementById("nodeCount").textContent = String(nodes.length);
 
+    function readCssToken(name, fallback) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+    }
+
+    function colorWithAlpha(color, alpha) {
+      const value = color.trim();
+      if (/^#[0-9a-f]{6}$/i.test(value)) {
+        const red = parseInt(value.slice(1, 3), 16);
+        const green = parseInt(value.slice(3, 5), 16);
+        const blue = parseInt(value.slice(5, 7), 16);
+        return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+      }
+      const rgb = value.match(/^rgb\(([^)]+)\)$/i);
+      if (rgb) {
+        return `rgba(${rgb[1]}, ${alpha})`;
+      }
+      return value;
+    }
+
+    function createCurrentMindMapTheme() {
+      const background = readCssToken("--ui-bg", "#07111f");
+      const surface = readCssToken("--ui-bg-soft", "#111b2d");
+      const text = readCssToken("--ui-text", "#e2ebfb");
+      const muted = readCssToken("--ui-muted", "#9eb4d8");
+      const border = readCssToken("--ui-border", "#304768");
+      const borderStrong = readCssToken("--ui-border-strong", border);
+      const accent = readCssToken("--ui-accent", "#7fb2ff");
+      return {
+        background,
+        grid: colorWithAlpha(border, 0.34),
+        edge: colorWithAlpha(borderStrong, 0.68),
+        edgeSelected: accent,
+        nodeFill: surface,
+        nodeFillHover: background,
+        nodeBorder: borderStrong,
+        nodeBorderSelected: accent,
+        nodeText: text,
+        nodeSubtext: muted,
+        nodeShadow: colorWithAlpha(text, 0.12),
+        toggleFill: background,
+        toggleBorder: borderStrong,
+        status: {
+          selected: accent,
+        },
+      };
+    }
+
     const map = createTreeMindMap(document.getElementById("mapHost"), {
       nodes,
       rootId: "hq",
       height: 700,
       expandDepth: 2,
       selectionMode: "multi",
+      theme: createCurrentMindMapTheme(),
       onSelectionChange(selection) {
         output.textContent = JSON.stringify(selection, null, 2);
       },
@@ -532,6 +578,9 @@ map.loadTheme("./theme.json");</pre>
     document.getElementById("expandButton").addEventListener("click", () => map.expandAll());
     document.getElementById("collapseButton").addEventListener("click", () => map.collapseAll());
     document.getElementById("clearSelectionButton").addEventListener("click", () => map.clearSelection());
+    window.addEventListener("demo-theme-change", () => {
+      requestAnimationFrame(() => map.setTheme(createCurrentMindMapTheme()));
+    });
     document.getElementById("themeButton").addEventListener("click", () => {
       map.setTheme({
         background: "#f7faff",

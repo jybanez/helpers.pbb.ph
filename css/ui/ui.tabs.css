@@ -20,9 +20,9 @@
 }
 
 .ui-tab.is-active {
-  border-color: #4f74b9;
-  background: #12213a;
-  color: #e7efff;
+  border-color: color-mix(in srgb, var(--ui-accent, #4f74b9) 68%, var(--ui-border-strong, #344769));
+  background: color-mix(in srgb, var(--ui-accent, #4f74b9) 18%, var(--ui-bg-soft, #101c31));
+  color: var(--ui-text, #e7efff);
 }
 
 [data-theme="light"] .ui-tab.is-active {

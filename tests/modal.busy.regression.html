@@ -1,18 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="care-light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Modal Busy Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.modal.css">
   <style>
     body {
       margin: 0;
       padding: 16px;
-      background: #0c1017;
-      color: #d7e0f4;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font-family: var(--ui-font);
     }
     #results {
       margin-top: 12px;
@@ -22,7 +23,7 @@
     }
   </style>
 </head>
-<body data-status="pending">
+<body data-theme="care-light" data-status="pending">
   <pre id="results">Running...</pre>
 
   <script type="module">
@@ -31,6 +32,7 @@
 
     const results = document.getElementById("results");
     const failures = [];
+    const expectedBusyText = "rgb(238, 245, 255)";
 
     const content = createElement("div", { className: "ui-stack" });
     const input = createElement("input", {
@@ -117,6 +119,7 @@
     assert(panel.getAttribute("aria-busy") === "true", "aria-busy should be true during busy state");
     assert(getBusyLayer().hidden === false, "busy layer should be visible during busy state");
     assert(getBusyMessage().textContent.includes("Saving"), "busy message should render during busy state");
+    assert(colorEquals(getComputedStyle(getBusyMessage()).color, expectedBusyText), "busy message should use readable overlay text color");
     assert(getCloseButton().hidden === true, "close button should remain hidden during busy state");
     assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should remain visually hidden during busy state");
     assert(getBusyCancelButton().hidden === true, "busy cancel button should stay hidden when cancelBusy is not configured");
@@ -155,6 +158,7 @@
 
     assert(getBusyCancelButton().hidden === false, "busy cancel button should render when cancelBusy is configured");
     assert(getBusyCancelButton().textContent.includes("Abort Save"), "busy cancel button should use custom label");
+    assert(colorEquals(getComputedStyle(getBusyCancelButton()).color, expectedBusyText), "busy cancel button should use readable overlay text color");
     getBusyCancelButton().click();
     getBusyCancelButton().click();
     await new Promise((resolve) => setTimeout(resolve, 120));
@@ -224,6 +228,19 @@
       if (!condition) {
         failures.push(message);
       }
+    }
+
+    function colorEquals(actual, expected) {
+      return normalizeColor(actual) === normalizeColor(expected);
+    }
+
+    function normalizeColor(value) {
+      const probe = document.createElement("span");
+      probe.style.color = value;
+      document.body.appendChild(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
     }
   </script>
 </body>

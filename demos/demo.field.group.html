@@ -121,7 +121,7 @@
   <script type="module" src="../js/demo/demo.shell.js"></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
       <div class="row">
         <a class="back" href="./index.html">Back to Home</a>
@@ -418,7 +418,6 @@
 
     document.getElementById("themeToggle").addEventListener("click", () => {
       page.dataset.theme = page.dataset.theme === "light" ? "dark" : "light";
-      document.body.style.background = page.dataset.theme === "light" ? "#edf2f8" : "#0c1017";
     });
 
     writeLog(missingLog, "initial", missingPersons.getValue());

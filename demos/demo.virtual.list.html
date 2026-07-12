@@ -6,13 +6,13 @@
   <title>Virtual List Demo</title>
   <link rel='stylesheet' href='../css/demo/demo.shell.css'>
   <style>
-    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
     .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
-    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 10px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 10px; }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
-    #host { border: 1px solid #2b3750; border-radius: 8px; padding: 10px; background: #0b1220; }
-    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: #b2c2e5; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; height: 220px; overflow: auto; }
+    .back { color: var(--demo-muted, var(--ui-muted, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    #host { border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; padding: 10px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); }
+    .log { margin: 0; white-space: pre-wrap; font-size: 12px; color: var(--demo-code-text, var(--ui-text, #b2c2e5)); font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); padding: 10px; height: 220px; overflow: auto; }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -50,12 +50,8 @@
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
-  <main class="page" data-theme="dark">
+  <main class="page">
     <section class="panel">
-      <div class="row">
-        <a class="back" href="./index.html">← Back to Home</a>
-        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
-      </div>
       <h1 class="ui-title">Virtual List Demo</h1>
       <p>Shows stable rendering with large row counts using windowed virtualization.</p>
     </section>
@@ -80,7 +76,6 @@
     const createVirtualList = await uiLoader.get("ui.virtual.list");
     const createElement = await uiLoader.get("ui.dom.createElement");
 
-    const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -99,7 +94,7 @@
       overscan: 8,
       renderItem(item) {
         const row = createElement("div", {
-          html: `<strong>${item.label}</strong> <span style="color:#9fb2d8">• ${item.location}</span>`,
+          html: `<strong>${item.label}</strong> <span style="color:var(--ui-muted, #9fb2d8)">• ${item.location}</span>`,
         });
         return row;
       },
@@ -111,12 +106,6 @@
     document.getElementById("scrollTopBtn").addEventListener("click", () => list.scrollToIndex(0, "smooth"));
     document.getElementById("scrollMidBtn").addEventListener("click", () => list.scrollToIndex(Math.floor(rows.length / 2), "smooth"));
     document.getElementById("scrollEndBtn").addEventListener("click", () => list.scrollToIndex(rows.length - 1, "smooth"));
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      const next = page.dataset.theme === "dark" ? "light" : "dark";
-      page.dataset.theme = next;
-      writeLog("theme.toggle", { theme: next });
-    });
-
     window.virtualListDemo = { list };
   </script>
 </body>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Demo Shell Theme Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <script>
+    window.demoMeta = {
+      title: "Demo Shell Theme Regression",
+      overview: "Regression harness for shared demo theme switching.",
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-theme="dark">
+    <section class="panel">
+      <h1>Demo Shell Theme Regression</h1>
+      <p class="muted">Theme-aware shell panel.</p>
+    </section>
+  </main>
+  <script>
+    const result = document.createElement("pre");
+    result.id = "result";
+    document.body.appendChild(result);
+
+    function pass(message) {
+      document.body.dataset.status = "pass";
+      result.textContent = `PASS ${message}`;
+    }
+
+    function fail(message) {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL ${message}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      window.setTimeout(() => {
+        try {
+          const select = document.querySelector(".demo-shell-theme__select");
+          const page = document.querySelector("main.page");
+          if (!select) {
+            fail("theme select was not rendered");
+            return;
+          }
+          const nav = document.querySelector(".demo-shell-nav");
+          const panel = document.querySelector(".demo-auto-panel");
+          const center = document.querySelector(".demo-workbench__center");
+          const before = {
+            nav: getComputedStyle(nav).backgroundColor,
+            panel: getComputedStyle(panel).backgroundColor,
+            center: getComputedStyle(center).backgroundColor,
+          };
+          select.value = "care-light";
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          const stored = window.localStorage.getItem("demo-shell.theme.v1");
+          const after = {
+            nav: getComputedStyle(nav).backgroundColor,
+            panel: getComputedStyle(panel).backgroundColor,
+            center: getComputedStyle(center).backgroundColor,
+          };
+          if (
+            document.documentElement.dataset.theme !== "care-light" ||
+            document.body.dataset.theme !== "care-light" ||
+            page.dataset.theme !== "care-light" ||
+            stored !== "care-light"
+          ) {
+            fail("theme was not applied to html/body/page and storage");
+            return;
+          }
+          if (before.nav === after.nav || before.panel === after.panel || before.center === after.center) {
+            fail("demo shell surfaces did not adapt computed colors");
+            return;
+          }
+          pass("theme switcher updates shared demo scopes");
+        } catch (error) {
+          fail(error.message || String(error));
+        }
+      }, 0);
+    });
+  </script>
+</body>
+</html>

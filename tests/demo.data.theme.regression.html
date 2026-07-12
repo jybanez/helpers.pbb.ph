@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Data Demo Theme Regression</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    iframe {
+      width: 1280px;
+      height: 1000px;
+      border: 0;
+    }
+  </style>
+</head>
+<body data-status="pending">
+  <iframe id="demoFrame"></iframe>
+  <pre id="result">Running...</pre>
+  <script>
+    const frame = document.getElementById("demoFrame");
+    const result = document.getElementById("result");
+
+    const cases = [
+      {
+        label: "file uploader",
+        url: "../demos/demo.file.uploader.html",
+        selectors: [".demo-auto-stack", ".demo-auto-stack__code"],
+        stale: ["rgb(11, 18, 32)", "rgb(9, 17, 29)"],
+      },
+      {
+        label: "tree",
+        url: "../demos/demo.tree.html",
+        selectors: [".demo-auto-stack", ".demo-auto-stack__code"],
+        stale: ["rgb(11, 18, 32)", "rgb(9, 17, 29)"],
+      },
+      {
+        label: "hierarchy map",
+        url: "../demos/demo.hierarchy.map.html",
+        selectors: [".stat", ".map-frame", ".selection-panel"],
+        stale: ["rgb(13, 22, 38)", "rgb(9, 17, 29)", "rgb(11, 18, 32)"],
+      },
+      {
+        label: "tree mind map",
+        url: "../demos/demo.tree.mind.map.html",
+        selectors: [".stat", ".map-frame", ".selection-panel"],
+        stale: ["rgb(13, 22, 38)", "rgb(9, 17, 29)", "rgb(11, 18, 32)"],
+      },
+      {
+        label: "kanban",
+        url: "../demos/demo.kanban.html",
+        selectors: ["#kanbanHost", "#kanbanRailHost"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(7, 17, 34, 0.55)"],
+      },
+      {
+        label: "virtual list",
+        url: "../demos/demo.virtual.list.html",
+        selectors: ["#host", ".log"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(8, 16, 28, 0.6)"],
+      },
+      {
+        label: "scheduler",
+        url: "../demos/demo.scheduler.html",
+        selectors: [".host-shell", ".log"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(10, 18, 32, 0.68)"],
+      },
+      {
+        label: "elapsed time",
+        url: "../demos/demo.elapsed.time.html",
+        selectors: ["#incidentGrid", "#assignmentGrid"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(13, 21, 35, 0.72)"],
+      },
+      {
+        label: "signal strength",
+        url: "../demos/demo.signal.strength.html",
+        selectors: [".signal-demo-navbar", ".signal-demo-card"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(13, 21, 35, 0.72)"],
+      },
+      {
+        label: "heartbeat strip",
+        url: "../demos/demo.heartbeat.strip.html",
+        selectors: [".rail-card"],
+        stale: ["rgb(17, 24, 38)", "rgb(11, 18, 32)", "rgba(13, 21, 35, 0.72)"],
+      },
+      {
+        label: "icon grid",
+        url: "../demos/demo.icon.grid.html",
+        selectors: [".landing-card", ".landing-heading"],
+        stale: ["rgb(13, 22, 38)", "rgb(11, 18, 32)"],
+      },
+      {
+        label: "map controls",
+        url: "../demos/demo.map.controls.html",
+        selectors: [".map-stage", ".map-readout"],
+        stale: ["rgb(11, 18, 32)", "rgba(13, 21, 35, 0.88)"],
+      },
+      {
+        label: "map legend",
+        url: "../demos/demo.map.legend.html",
+        selectors: [".map-demo-surface", "pre"],
+        stale: ["rgb(7, 16, 24)", "rgb(11, 18, 32)"],
+      },
+      {
+        label: "inspector",
+        url: "../demos/demo.inspector.html",
+        selectors: ["#host", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgba(11, 18, 32, 0.75)"],
+      },
+      {
+        label: "activity chart",
+        url: "../demos/demo.activity.chart.html",
+        selectors: ["#activityHost", ".sample-code"],
+        stale: ["rgb(11, 18, 32)", "rgb(13, 23, 44)"],
+      },
+      {
+        label: "audio session",
+        url: "../demos/demo.audio.html",
+        selectors: ["#audioHost", ".sample-code"],
+        stale: ["rgb(11, 18, 32)", "rgb(10, 19, 34)"],
+      },
+      {
+        label: "audio timeline",
+        url: "../demos/demo.audio.timeline.html",
+        selectors: ["#audioHost", ".sample-code"],
+        stale: ["rgb(11, 18, 32)", "rgb(10, 19, 34)"],
+      },
+      {
+        label: "audio graph stream",
+        url: "../demos/demo.audio.audiograph.stream.html",
+        selectors: ["#graphHost", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(10, 20, 35)"],
+      },
+      {
+        label: "timeline",
+        url: "../demos/demo.timeline.html",
+        selectors: ["#timelineHostVertical", "#timelineHostCustom", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(11, 20, 36)"],
+      },
+      {
+        label: "media viewer",
+        url: "../demos/demo.media.viewer.html",
+        selectors: [".guidance-card", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(8, 13, 22)"],
+      },
+      {
+        label: "media strip",
+        url: "../demos/demo.media.strip.html",
+        selectors: ["#mediaStripHostScroll", "#mediaStripHostWrap", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "timeline scrubber",
+        url: "../demos/demo.timeline.scrubber.html",
+        selectors: ["#timelineScrubberHost", "#timelineLinkedHost", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(13, 23, 44)"],
+      },
+      {
+        label: "game session",
+        url: "../demos/demo.game.session.html",
+        selectors: [".demo-stage", ".field input", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(7, 16, 29)"],
+      },
+      {
+        label: "game dpad",
+        url: "../demos/demo.game.dpad.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game joystick",
+        url: "../demos/demo.game.joystick.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game action button",
+        url: "../demos/demo.game.action.button.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game action group",
+        url: "../demos/demo.game.action.group.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game audio",
+        url: "../demos/demo.game.audio.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game effects",
+        url: "../demos/demo.game.effects.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game state chrome",
+        url: "../demos/demo.game.state.chrome.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game core",
+        url: "../demos/demo.game.core.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game objects overview",
+        url: "../demos/demo.game.objects.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game object",
+        url: "../demos/demo.game.object.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game object layer",
+        url: "../demos/demo.game.object.layer.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game flip card",
+        url: "../demos/demo.game.flip.card.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game tetromino",
+        url: "../demos/demo.game.tetromino.html",
+        selectors: [".panel", "pre", "select"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "game grid",
+        url: "../demos/demo.game.grid.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(12, 16, 23)"],
+      },
+      {
+        label: "chat thread",
+        url: "../demos/demo.chat.thread.html",
+        selectors: [".preview", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "chat composer",
+        url: "../demos/demo.chat.composer.html",
+        selectors: [".preview", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "chat upload queue",
+        url: "../demos/demo.chat.upload.queue.html",
+        selectors: [".preview", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "navbar",
+        url: "../demos/demo.navbar.html",
+        selectors: [".preview", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "breadcrumbs",
+        url: "../demos/demo.breadcrumbs.html",
+        selectors: [".preview", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "navigation stack",
+        url: "../demos/demo.navigation.stack.html",
+        selectors: ["#stackHost", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "tabs",
+        url: "../demos/demo.tabs.html",
+        selectors: ["#tabsHost", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(16, 28, 49)"],
+      },
+      {
+        label: "command palette",
+        url: "../demos/demo.command.palette.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "drawers",
+        url: "../demos/demo.drawers.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "ui utilities overview",
+        url: "../demos/demo.ui.html",
+        selectors: [".panel", ".card"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "toast",
+        url: "../demos/demo.toast.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "busy overlay",
+        url: "../demos/demo.busy.overlay.html",
+        selectors: [".panel", ".host", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "select",
+        url: "../demos/demo.select.html",
+        selectors: [".panel", ".ui-select-trigger", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "tree select",
+        url: "../demos/demo.tree.select.html",
+        selectors: [".panel", ".ui-tree-select-trigger", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group",
+        url: "../demos/demo.field.group.html",
+        selectors: [".panel", ".ui-field-group", ".ui-field-group-child", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group person",
+        url: "../demos/demo.field.group.preset.person.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group address",
+        url: "../demos/demo.field.group.preset.address.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group missing person",
+        url: "../demos/demo.field.group.preset.missing-person.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group evacuee",
+        url: "../demos/demo.field.group.preset.evacuee.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group family",
+        url: "../demos/demo.field.group.preset.family.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group casualty patient",
+        url: "../demos/demo.field.group.preset.casualty-patient.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group infrastructure damage",
+        url: "../demos/demo.field.group.preset.infrastructure-damage.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group shelter damage",
+        url: "../demos/demo.field.group.preset.shelter-damage.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group road access",
+        url: "../demos/demo.field.group.preset.road-access-status.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "field group vehicle",
+        url: "../demos/demo.field.group.preset.vehicle-involved.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "fieldset",
+        url: "../demos/demo.fieldset.html",
+        selectors: [".panel", ".ui-fieldset", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "device primer",
+        url: "../demos/demo.device.primer.html",
+        selectors: [".panel", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "device selector",
+        url: "../demos/demo.device.selector.html",
+        selectors: [".panel", ".ui-device-selector", ".ui-device-selector-menu-trigger", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "loader bundle",
+        url: "../demos/demo.loader.bundle.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "property editor",
+        url: "../demos/demo.property.editor.html",
+        selectors: [".panel", ".ui-property-editor-selection", ".ui-property-editor-section", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "toggle button",
+        url: "../demos/demo.toggle.button.html",
+        selectors: [".panel", ".ui-toggle-button", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "toggle group",
+        url: "../demos/demo.toggle.group.html",
+        selectors: [".panel", ".ui-toggle-group--segmented", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "checkbox",
+        url: "../demos/demo.checkbox.html",
+        selectors: [".panel", ".ui-checkbox-box", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "checkbox group",
+        url: "../demos/demo.checkbox.group.html",
+        selectors: [".panel", ".ui-checkbox-group", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "combobox",
+        url: "../demos/demo.combobox.html",
+        selectors: [".panel", ".ui-combobox", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "number stepper",
+        url: "../demos/demo.number.stepper.html",
+        selectors: [".panel", ".ui-number-stepper", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "buttons",
+        url: "../demos/demo.buttons.html",
+        selectors: [".panel", "pre"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "password",
+        url: "../demos/demo.password.html",
+        selectors: [".panel", ".ui-password", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "icons",
+        url: "../demos/demo.icons.html",
+        selectors: [".panel", ".icon-group", ".icon-card"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+        textSelectors: [".icon-preview", ".icon-preview .ui-icon", ".icon-meta"],
+        staleText: ["rgb(242, 246, 255)", "rgb(215, 224, 244)", "rgb(159, 178, 216)"],
+      },
+      {
+        label: "strips",
+        url: "../demos/demo.strips.html",
+        selectors: [".panel", "#stripHost", ".ui-strip", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "progress",
+        url: "../demos/demo.progress.html",
+        selectors: [".panel", "#progressLive", ".ui-progress-track", "#progressGallery"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "empty state",
+        url: "../demos/demo.empty.state.html",
+        selectors: [".panel", ".host-shell", ".ui-empty-state", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "skeleton",
+        url: "../demos/demo.skeleton.html",
+        selectors: [".panel", ".ui-skeleton", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "team assignments",
+        url: "../demos/demo.team.assignments.html",
+        selectors: [".panel", ".hh-incident-teams-assignments", ".hh-incident-teams-assignments-editor", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+      {
+        label: "incident types",
+        url: "../demos/demo.incident.types.html",
+        selectors: [".panel", ".hh-incident-types", ".hh-incident-types-details-editor", ".log"],
+        stale: ["rgb(11, 18, 32)", "rgb(17, 24, 38)"],
+      },
+    ];
+
+    run().catch((error) => {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL ${error.message || error}`;
+    });
+
+    async function run() {
+      for (const testCase of cases) {
+        await loadCase(testCase);
+      }
+      document.body.dataset.status = "pass";
+      result.textContent = "PASS";
+    }
+
+    async function loadCase(testCase) {
+      await loadFrame(testCase.url);
+      await waitFor(() => frame.contentDocument?.querySelector(".demo-shell-theme__select"), 10000);
+      const doc = frame.contentDocument;
+      await waitFor(() => testCase.selectors.every((selector) => doc.querySelector(selector)), 10000);
+
+      const select = doc.querySelector(".demo-shell-theme__select");
+      select.value = "care-light";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      await delay(220);
+      const after = snapshot(doc, testCase.selectors);
+
+      testCase.selectors.forEach((selector, index) => {
+        assert(!testCase.stale.includes(after[index]), `${testCase.label} ${selector} should not keep stale dark background ${after[index]}`);
+      });
+
+      if (testCase.textSelectors?.length) {
+        await waitFor(() => testCase.textSelectors.every((selector) => doc.querySelector(selector)), 10000);
+        const textAfter = snapshot(doc, testCase.textSelectors, "color");
+        testCase.textSelectors.forEach((selector, index) => {
+          assert(
+            !testCase.staleText.includes(textAfter[index]),
+            `${testCase.label} ${selector} should not keep stale dark text color ${textAfter[index]}`
+          );
+        });
+      }
+    }
+
+    function loadFrame(url) {
+      return new Promise((resolve) => {
+        frame.addEventListener("load", resolve, { once: true });
+        frame.src = url;
+      });
+    }
+
+    function snapshot(doc, selectors, property = "backgroundColor") {
+      return selectors.map((selector) => getComputedStyle(doc.querySelector(selector))[property]);
+    }
+
+    async function waitFor(predicate, timeout = 4000) {
+      const started = performance.now();
+      while (performance.now() - started < timeout) {
+        if (predicate()) {
+          return;
+        }
+        await delay(40);
+      }
+      throw new Error("Timed out waiting for condition");
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 .ui-tree-mind-map {
   display: grid;
   min-width: 0;
-  border: 1px solid #263146;
+  border: 1px solid var(--ui-border, #263146);
   border-radius: 8px;
-  background: #0b1220;
+  background: var(--ui-bg-soft, #0b1220);
   overflow: hidden;
 }
 
@@ -17,7 +17,7 @@
   position: relative;
   min-height: 240px;
   overflow: hidden;
-  background: #07111f;
+  background: var(--ui-bg, #07111f);
 }
 
 .ui-tree-mind-map__canvas {
@@ -33,7 +33,7 @@
 }
 
 .ui-tree-mind-map__canvas:focus-visible {
-  outline: 2px solid #7fb2ff;
+  outline: 2px solid var(--ui-accent, #7fb2ff);
   outline-offset: -2px;
 }
 
@@ -57,7 +57,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  color: #9fb2d8;
+  color: var(--ui-muted, #9fb2d8);
   font-size: 14px;
   text-align: center;
   pointer-events: none;
@@ -65,13 +65,4 @@
 
 .ui-tree-mind-map__empty[hidden] {
   display: none;
-}
-
-[data-theme="light"] .ui-tree-mind-map {
-  border-color: #cad4e7;
-  background: #f7faff;
-}
-
-[data-theme="light"] .ui-tree-mind-map__viewport {
-  background: #f7faff;
 }

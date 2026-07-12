@@ -139,7 +139,7 @@ longModal.open();
       const body = createElement("div");
       body.innerHTML = `
         <form class="ui-modal-demo-form">
-          <p style="margin:0;color:#9fb2d8;">General-purpose modal content can be any HTMLElement. This sample uses common form fields.</p>
+          <p style="margin:0;">General-purpose modal content can be any HTMLElement. This sample uses common form fields.</p>
           <label>
             Incident Title
             <input type="text" class="ui-input" placeholder="Power outage in Sector 7" value="Power outage in Sector 7">
@@ -156,7 +156,7 @@ longModal.open();
             Notes
             <textarea class="ui-input" placeholder="Add dispatch notes">Transformer issue reported by caller. Awaiting field confirmation.</textarea>
           </label>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:#d7e0f4;">
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ui-text);">
             <input type="checkbox" checked>
             Notify assigned teams immediately
           </label>

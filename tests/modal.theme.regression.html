@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" data-theme="care-light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modal Theme Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.modal.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font-family: var(--ui-font);
+    }
+    #results {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-theme="care-light" data-status="pending">
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createElement } from "../js/ui/ui.dom.js";
+    import { createModal } from "../js/ui/ui.modal.js";
+
+    const results = document.getElementById("results");
+    const failures = [];
+
+    const content = createElement("form");
+    content.innerHTML = `
+      <p id="sampleHelp" style="margin:0;">General-purpose modal content should stay readable.</p>
+      <label id="sampleLabel">
+        Incident Title
+        <input id="sampleInput" type="text" value="Power outage in Sector 7">
+      </label>
+      <label id="sampleCheckboxLabel" style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ui-text);">
+        <input id="sampleCheckbox" type="checkbox" checked>
+        Notify assigned teams immediately
+      </label>
+    `;
+
+    const modal = createModal({
+      title: "Theme Regression",
+      ownerTitle: "Care Light",
+      content,
+    });
+
+    modal.open();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const modalEl = document.querySelector(".ui-modal");
+    const help = document.getElementById("sampleHelp");
+    const label = document.getElementById("sampleLabel");
+    const checkboxLabel = document.getElementById("sampleCheckboxLabel");
+    const input = document.getElementById("sampleInput");
+    const expectedText = getComputedStyle(document.documentElement).getPropertyValue("--ui-text").trim();
+    const expectedMuted = getComputedStyle(document.documentElement).getPropertyValue("--ui-muted").trim();
+
+    assert(colorEquals(getComputedStyle(modalEl).color, expectedText), "modal shell should use theme text color");
+    assert(colorEquals(getComputedStyle(help).color, expectedMuted), "modal paragraph text should use theme muted color");
+    assert(colorEquals(getComputedStyle(label).color, expectedMuted), "modal field label should use theme muted color");
+    assert(colorEquals(getComputedStyle(checkboxLabel).color, expectedText), "custom checkbox label should use theme text color");
+    assert(colorEquals(getComputedStyle(input).color, expectedText), "modal input text should use theme text color");
+
+    modal.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function colorEquals(actual, expected) {
+      const actualRgb = normalizeColor(actual);
+      const expectedRgb = normalizeColor(expected);
+      return actualRgb === expectedRgb;
+    }
+
+    function normalizeColor(value) {
+      const probe = document.createElement("span");
+      probe.style.color = value;
+      document.body.appendChild(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
+    }
+  </script>
+</body>
+</html>
