@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Badges Demo</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.icons.css">
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--demo-shell-bg, var(--ui-bg, #0c1017));
+      color: var(--demo-shell-text, var(--ui-text, #d7e0f4));
+      font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 1px solid var(--demo-shell-border, var(--ui-border, #263146));
+      border-radius: 10px;
+      background: var(--demo-shell-surface-muted, var(--ui-bg-soft, #111826));
+      color: var(--demo-shell-text, var(--ui-text, #d7e0f4));
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .back {
+      color: var(--demo-shell-accent, var(--ui-accent, #b2c2e5));
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .muted {
+      margin: 0;
+      color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8));
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .badge-board {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    }
+
+    .badge-card {
+      border: 1px solid var(--demo-shell-border, var(--ui-border, #263146));
+      border-radius: 8px;
+      background: var(--demo-shell-surface, var(--ui-bg, #0b1220));
+      color: var(--demo-shell-text, var(--ui-text, #d7e0f4));
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-height: 128px;
+    }
+
+    .badge-card h3 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .demo-badge {
+      width: fit-content;
+    }
+
+    .recognition-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--demo-shell-border, var(--ui-border, #263146));
+      border-radius: 8px;
+      background: var(--demo-shell-control, var(--ui-bg, #0b1220));
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .recognition-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--ui-radius-md, 10px);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ui-accent, #8db5ff);
+      background: color-mix(in srgb, var(--ui-accent, #8db5ff) 16%, var(--ui-bg-soft, #111826));
+      border: 1px solid color-mix(in srgb, var(--ui-accent, #8db5ff) 42%, var(--ui-border, #263146));
+    }
+
+    .recognition-icon .ui-icon {
+      width: 26px;
+      height: 26px;
+    }
+
+    .recognition-card strong,
+    .recognition-card span {
+      display: block;
+      min-width: 0;
+    }
+
+    .recognition-card span {
+      margin-top: 3px;
+      color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8));
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      border: 1px solid var(--demo-shell-border, var(--ui-border, #2b3750));
+      border-radius: 8px;
+      background: var(--demo-shell-control, var(--ui-bg, #0b1220));
+      color: var(--demo-shell-text, var(--ui-text, #d7e0f4));
+      padding: 10px;
+      overflow: auto;
+    }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.icons"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Badges",
+      overview: "Reference page for the shared <code>.ui-badge</code> utility and badge-related community icons.",
+      useWhen: [
+        "Use <code>.ui-badge</code> for compact state labels, counts, role tags, and inline metadata chips.",
+        "Use the built-in semantic classes such as <code>is-success</code>, <code>is-warning</code>, <code>is-danger</code>, <code>is-active</code>, and <code>is-inactive</code> instead of app-local low-contrast badge colors."
+      ],
+      avoidWhen: [
+        "Do not use badges as primary actions; use buttons for commands.",
+        "Do not put long sentences inside badges. Use a card, alert, or helper text when the content needs explanation."
+      ],
+      description: "Badges are currently a CSS utility, not a JS component. Apps can compose text and shared icons inside <code>.ui-badge</code>, then use shared semantic tone classes for common state badges.",
+      defaultSampleCode: `<span class="ui-badge">Ready</span>\n<span class="ui-badge is-success">Active</span>\n<span class="ui-badge is-inactive">Inactive</span>`,
+      propertiesText: "No JS instance. Badge behavior is plain HTML/CSS, while icon rendering can use <code>ui.icons</code>.",
+      constructor: [
+        { factory: "<code>.ui-badge</code>", arguments: "HTML class", returns: "inline badge/chip styling" },
+        { factory: "<code>createIcon(name, options)</code>", arguments: "optional shared badge icon", returns: "<code>SVGElement</code>" }
+      ],
+      options: [
+        { option: "<code>.ui-badge</code>", default: "required", description: "Base badge shell with theme-aware border, background, radius, text, and spacing." },
+        { option: "<code>is-neutral</code>", default: "optional", description: "Muted metadata badge tone." },
+        { option: "<code>is-success</code> / <code>is-active</code>", default: "optional", description: "Positive or active state badge tone." },
+        { option: "<code>is-warning</code> / <code>is-pending</code>", default: "optional", description: "Pending or caution state badge tone." },
+        { option: "<code>is-danger</code> / <code>is-inactive</code> / <code>is-error</code>", default: "optional", description: "Danger, inactive, or error state badge tone." }
+      ],
+      events: [],
+      methods: []
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+      </div>
+      <h1 class="ui-title">Badges Demo</h1>
+      <p class="muted">Focused reference for compact labels, count chips, status badges, and community recognition iconography.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Status And Metadata Badges</h2>
+      <p class="muted">The helper owns the base badge shell. Apps can add small domain tone classes around it when plain neutral treatment is not enough.</p>
+      <div class="badge-board">
+        <article class="badge-card">
+          <h3>Workflow</h3>
+          <div class="badge-row">
+            <span class="ui-badge demo-badge is-success">Verified</span>
+            <span class="ui-badge demo-badge is-warning">Pending</span>
+            <span class="ui-badge demo-badge is-danger">Blocked</span>
+          </div>
+          <p class="muted">Short state labels for rows, cards, and compact summaries.</p>
+        </article>
+        <article class="badge-card">
+          <h3>Counts</h3>
+          <div class="badge-row">
+            <span class="ui-badge demo-badge">7 Requests</span>
+            <span class="ui-badge demo-badge is-neutral">3 Drafts</span>
+            <span class="ui-badge demo-badge is-warning">2 Review</span>
+          </div>
+          <p class="muted">Count badges should stay brief enough to scan at a glance.</p>
+        </article>
+        <article class="badge-card">
+          <h3>Roles</h3>
+          <div class="badge-row">
+            <span class="ui-badge demo-badge">Barangay</span>
+            <span class="ui-badge demo-badge">Responder</span>
+            <span class="ui-badge demo-badge">Coordinator</span>
+          </div>
+          <p class="muted">Role labels can use the neutral base badge without extra semantics.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Community Recognition Badges</h2>
+      <p class="muted">These use the shared <code>ui.icons</code> community artwork and inherit the active theme color.</p>
+      <div id="recognitionGrid" class="badge-board"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Sample Code</h2>
+      <pre>const badge = document.createElement("span");
+badge.className = "ui-badge is-success";
+badge.textContent = "Verified";
+
+const icon = createIcon("community.badge", {
+  size: 14,
+  title: "Badge",
+  decorative: false,
+});
+badge.prepend(icon);</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const { createIcon } = await uiLoader.get("ui.icons");
+    const recognitionGrid = document.getElementById("recognitionGrid");
+    const items = [
+      { icon: "community.badge", label: "Badge", description: "Generic user or record recognition marker." },
+      { icon: "community.award", label: "Award", description: "Achievement or milestone recognition." },
+      { icon: "community.medal", label: "Medal", description: "Ranked accomplishment or earned standing." },
+      { icon: "community.certificate", label: "Certificate", description: "Formal completion or validation credential." },
+    ];
+
+    items.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "recognition-card";
+      const iconHost = document.createElement("span");
+      iconHost.className = "recognition-icon";
+      iconHost.appendChild(createIcon(item.icon, { size: 26, title: item.label, decorative: false }));
+      const text = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = item.label;
+      const description = document.createElement("span");
+      description.textContent = item.description;
+      const code = document.createElement("span");
+      code.textContent = item.icon;
+      text.append(title, description, code);
+      card.append(iconHost, text);
+      recognitionGrid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
