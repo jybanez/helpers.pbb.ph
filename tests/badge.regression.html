@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Badge Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+</head>
+<body>
+  <main id="root" data-theme="care-light">
+    <span id="baseBadge" class="ui-badge">Citizen</span>
+    <span id="activeBadge" class="ui-badge is-active">Active</span>
+    <span id="inactiveBadge" class="ui-badge is-inactive">Inactive</span>
+    <span id="warningBadge" class="ui-badge is-warning">Pending</span>
+  </main>
+  <pre id="result">Running...</pre>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const result = document.getElementById("result");
+      try {
+        const root = document.getElementById("root");
+        const base = document.getElementById("baseBadge");
+        const active = document.getElementById("activeBadge");
+        const inactive = document.getElementById("inactiveBadge");
+        const warning = document.getElementById("warningBadge");
+        const staleDarkBadge = "rgba(22, 35, 58, 0.55)";
+        assert(getComputedStyle(base).backgroundColor !== staleDarkBadge, "base badge should not keep fixed dark translucent background");
+        assert(getComputedStyle(base).color === "rgb(23, 48, 45)", "base badge text should use care-light theme text color");
+        assert(getComputedStyle(active).borderColor !== getComputedStyle(base).borderColor, "active badge should have a semantic border tone");
+        assert(getComputedStyle(inactive).borderColor !== getComputedStyle(active).borderColor, "inactive badge should differ from active badge");
+        assert(getComputedStyle(warning).borderColor !== getComputedStyle(base).borderColor, "warning badge should have a semantic border tone");
+        root.dataset.theme = "civic-light";
+        assert(getComputedStyle(base).backgroundColor !== staleDarkBadge, "civic-light badge should not keep fixed dark translucent background");
+        assert(getComputedStyle(base).color === "rgb(23, 35, 58)", "base badge text should use civic-light theme text color");
+        document.body.dataset.status = "pass";
+        result.textContent = "PASS";
+      } catch (error) {
+        document.body.dataset.status = "fail";
+        result.textContent = `FAIL ${error.message || error}`;
+      }
+    });
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+  </script>
+</body>
+</html>

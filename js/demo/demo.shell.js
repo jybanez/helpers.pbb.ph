@@ -169,6 +169,7 @@ const DEMO_GROUPS = [
       { href: "./demo.number.stepper.html", label: "Number Stepper" },
       { href: "./demo.buttons.html", label: "Buttons" },
       { href: "./demo.password.html", label: "Password Field" },
+      { href: "./demo.badges.html", label: "Badges" },
       { href: "./demo.icons.html", label: "Icons" },
       { href: "./demo.tabs.html", label: "Tabs" },
       { href: "./demo.strips.html", label: "Strips" },

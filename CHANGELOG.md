@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed shared `.ui-badge` contrast so base, active, inactive, success, warning, danger, and neutral badges remain readable across light and dark theme presets.
+- Added a Badges demo page covering the shared `.ui-badge` utility, compact status/count/role examples, and community recognition icons.
 - Fixed incident team assignment and incident type components so shared theme presets propagate through component roots and drawer panels instead of collapsing to dark styling.
 - Fixed standalone busy overlay message and cancel action contrast so scoped/fullscreen busy states remain readable under light theme presets.
 - Fixed icon catalog preview colors so SVG icons, labels, and ids follow the active demo theme instead of retaining light-on-dark text under light presets.
