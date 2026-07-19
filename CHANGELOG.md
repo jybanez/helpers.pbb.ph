@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.pdf.viewer` with `createPdfViewer(...)` for browser-native inline PDF viewing in a Helper-owned accessible near/fullscreen shell, with loading, empty, error, unsupported, focus-return, Escape/backdrop/close, update, destroy, demo, and regression coverage.
 - Fixed shared `.ui-badge` contrast so base, active, inactive, success, warning, danger, and neutral badges remain readable across light and dark theme presets.
 - Added a Badges demo page covering the shared `.ui-badge` utility, compact status/count/role examples, and community recognition icons.
 - Fixed incident team assignment and incident type components so shared theme presets propagate through component roots and drawer panels instead of collapsing to dark styling.

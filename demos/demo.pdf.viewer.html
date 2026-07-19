@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Viewer Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--demo-shell-bg, var(--ui-bg, #0c1017)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
+    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid var(--demo-shell-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-shell-surface-muted, var(--ui-bg-soft, #111826)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .back { color: var(--demo-shell-accent, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .controls { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .launch-panel { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--demo-shell-border, var(--ui-border, #263146)); border-radius: 8px; background: var(--demo-shell-surface, var(--ui-bg, #0b1220)); }
+    .launch-panel h3 { margin: 0; font-size: 16px; line-height: 1.25; color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); }
+    .field { display: grid; gap: 6px; color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8)); font-size: 12px; font-weight: 700; }
+    .field input, .field select { width: 100%; box-sizing: border-box; }
+    pre { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-shell-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-shell-control, var(--ui-bg, #0b1220)); color: var(--demo-shell-text, var(--ui-text, #d7e0f4)); padding: 10px; overflow: auto; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.pdf.viewer"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "PDF Viewer",
+      overview: "Browser-native inline PDF viewer shell for signed same-origin documents, with Helper-owned lifecycle, accessibility, state, and theme behavior.",
+      useWhen: [
+        "Use <code>createPdfViewer(...)</code> when an app needs to display a PDF inline without building its own modal or dialog chrome.",
+        "Use it when the app owns document authorization and delivery, while Helper owns the viewer shell, focus return, loading/error states, and close behavior."
+      ],
+      avoidWhen: [
+        "Do not use it as a download manager; Helper intentionally does not render a download action.",
+        "Do not pass unauthorized or unvalidated URLs. The app remains responsible for signed same-origin access, content validation, and audit."
+      ],
+      description: "The v1 PDF viewer uses the browser's native PDF support through an inline <code>iframe</code>. A bundled PDF renderer can remain a future option if target browser support proves insufficient.",
+      defaultSampleCode: `const viewer = createPdfViewer({\n  title: "Barangay Preparedness Guide",\n  url: signedPdfUrl,\n  initialPage: 2,\n  closeOnEscape: true,\n  closeOnBackdrop: true,\n});\n\nviewer.open();`,
+      constructor: [
+        { factory: "<code>createPdfViewer(options)</code>", arguments: "viewer options", returns: "PDF viewer instance mounted under <code>document.body</code>" },
+        { factory: "<code>createPdfViewer(container, options)</code>", arguments: "container and viewer options", returns: "PDF viewer instance mounted in the container" }
+      ],
+      options: [
+        { option: "<code>url</code>", default: "<code>\"\"</code>", description: "Signed same-origin PDF URL supplied by the app." },
+        { option: "<code>title</code>", default: "<code>\"PDF Viewer\"</code>", description: "Dialog title and document label." },
+        { option: "<code>initialPage</code>", default: "<code>null</code>", description: "Optional first page passed through the PDF URL fragment." },
+        { option: "<code>fullscreen</code>", default: "<code>true</code>", description: "Fullscreen shell by default; set false for a near-fullscreen window." },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Allow Escape to close the viewer." },
+        { option: "<code>closeOnBackdrop</code>", default: "<code>true</code>", description: "Allow backdrop click to close the viewer." }
+      ],
+      events: [
+        { event: "<code>onOpen(state)</code>", payload: "Viewer state when opened." },
+        { event: "<code>onClose(state)</code>", payload: "Viewer state plus close reason." },
+        { event: "<code>onLoad(state)</code>", payload: "Native object load event resolved." },
+        { event: "<code>onError(state)</code>", payload: "Native object error event resolved." }
+      ],
+      methods: [
+        { method: "<code>open(nextOptions?)</code>", arguments: "optional option patch", returns: "viewer instance" },
+        { method: "<code>close(meta?)</code>", arguments: "optional close metadata", returns: "viewer instance" },
+        { method: "<code>update(nextOptions)</code>", arguments: "option patch", returns: "viewer instance" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current viewer state" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">← Back to Home</a></div>
+      <h1 class="ui-title">PDF Viewer Demo</h1>
+      <p class="muted">Helper-owned shell for native inline PDF viewing. The app supplies signed same-origin URLs and owns authorization.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Options</h2>
+      <div class="launch-panel">
+        <h3>Launch Sample PDF</h3>
+        <p class="muted">Use the buttons below to open the generated sample PDF in the Helper viewer shell.</p>
+        <div class="row">
+          <button id="openBtn" class="ui-button ui-button-primary" type="button">Open Fullscreen Viewer</button>
+          <button id="windowedBtn" class="ui-button" type="button">Open Windowed Viewer</button>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="field">Title <input id="titleInput" class="ui-input" value="Library Preparedness Guide"></label>
+        <label class="field">Initial Page <input id="pageInput" class="ui-input" type="number" min="1" value="2"></label>
+        <label class="field">Close Policy <select id="policySelect" class="ui-input"><option value="both">Escape + backdrop</option><option value="escape">Escape only</option><option value="button">Close button only</option></select></label>
+      </div>
+      <pre>const viewer = createPdfViewer({
+  title,
+  url: signedPdfUrl,
+  initialPage,
+  fullscreen: true,
+  closeOnEscape: true,
+  closeOnBackdrop: true,
+});</pre>
+      <pre id="log">No events yet.</pre>
+    </section>
+  </main>
+  <div id="viewerHost"></div>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createPdfViewer = await uiLoader.get("ui.pdf.viewer");
+    const log = document.getElementById("log");
+    const titleInput = document.getElementById("titleInput");
+    const pageInput = document.getElementById("pageInput");
+    const policySelect = document.getElementById("policySelect");
+    const pdfUrl = URL.createObjectURL(new Blob([samplePdf()], { type: "application/pdf" }));
+    const viewer = createPdfViewer(document.getElementById("viewerHost"), {
+      title: titleInput.value,
+      url: pdfUrl,
+      initialPage: Number(pageInput.value),
+      onOpen: (state) => writeLog("pdf.open", state),
+      onClose: (state) => writeLog("pdf.close", state),
+      onLoad: (state) => writeLog("pdf.load", state),
+      onError: (state) => writeLog("pdf.error", state),
+    });
+
+    document.getElementById("openBtn").addEventListener("click", () => viewer.open(readOptions(true)));
+    document.getElementById("windowedBtn").addEventListener("click", () => viewer.open(readOptions(false)));
+
+    function readOptions(fullscreen) {
+      const policy = policySelect.value;
+      return {
+        title: titleInput.value,
+        url: pdfUrl,
+        initialPage: Number(pageInput.value),
+        fullscreen,
+        closeOnEscape: policy === "both" || policy === "escape",
+        closeOnBackdrop: policy === "both",
+      };
+    }
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload, null, 2)}`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n\n${log.textContent}`;
+    }
+
+    function samplePdf() {
+      const stream = [
+        "BT",
+        "/F1 24 Tf",
+        "72 720 Td",
+        "(PBB Helper PDF Viewer) Tj",
+        "0 -36 Td",
+        "/F1 14 Tf",
+        "(Native inline PDF shell demo.) Tj",
+        "ET",
+      ].join("\n");
+      const objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+      ];
+      let pdf = "%PDF-1.4\n";
+      const offsets = ["0000000000 65535 f "];
+      objects.forEach((body, index) => {
+        offsets.push(`${String(pdf.length).padStart(10, "0")} 00000 n `);
+        pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+      });
+      const xrefOffset = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n${offsets.join("\n")}\n`;
+      pdf += `trailer\n<< /Root 1 0 R /Size ${objects.length + 1} >>\nstartxref\n${xrefOffset}\n%%EOF`;
+      return pdf;
+    }
+  </script>
+</body>
+</html>

@@ -9,7 +9,7 @@ const UI_CHAT_REV = "0.21.120";
 const UI_PASSWORD_REV = "0.21.64";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.140";
+const UI_BUNDLE_REV = "0.21.141";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -538,6 +538,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.media.viewer.css"],
     deps: ["ui.audio.audiograph"],
     export: "createMediaViewer",
+  },
+  "ui.pdf.viewer": {
+    js: "./ui.pdf.viewer.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.pdf.viewer.css"],
+    deps: [],
+    export: "createPdfViewer",
   },
   "ui.grid": {
     js: "./ui.grid.js",
