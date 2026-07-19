@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Viewer Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.pdf.viewer.css">
+</head>
+<body>
+  <button id="returnFocus">Return Focus</button>
+  <div id="host"></div>
+  <pre id="result">Running...</pre>
+  <script type="module">
+    import { createPdfViewer } from "../js/ui/ui.pdf.viewer.js";
+
+    const result = document.getElementById("result");
+    const returnFocus = document.getElementById("returnFocus");
+    returnFocus.focus();
+
+    try {
+      let closePayload = null;
+      const viewer = createPdfViewer(document.getElementById("host"), {
+        title: "Smoke PDF",
+        url: "/signed/library.pdf",
+        initialPage: 3,
+        open: true,
+        readyDelayMs: 20,
+        onClose: (state) => {
+          closePayload = state;
+        },
+      });
+      await delay(80);
+      const root = viewer.root;
+      const dialog = root.querySelector(".ui-pdf-viewer");
+      const frame = root.querySelector(".ui-pdf-viewer-frame");
+      assert(root.classList.contains("is-open"), "viewer should open");
+      assert(dialog?.getAttribute("role") === "dialog", "viewer should render dialog role");
+      assert(dialog?.getAttribute("aria-modal") === "true", "viewer should be modal");
+      assert(frame?.tagName === "IFRAME", "viewer should use browser-native iframe embedding");
+      assert(frame?.getAttribute("src") === "/signed/library.pdf#page=3", "viewer should apply initial page fragment");
+      assert(document.activeElement === dialog, "viewer should focus dialog after open");
+      assert(viewer.getState().status === "ready", "viewer should leave loading after ready fallback");
+      assert(root.querySelector(".ui-pdf-viewer-state")?.textContent === "", "ready subtitle should be blank by default");
+
+      viewer.update({ title: "Updated PDF", url: "/signed/updated.pdf", initialPage: 7, fullscreen: false, readyDelayMs: 20 });
+      await delay(40);
+      assert(root.querySelector(".ui-pdf-viewer-title")?.textContent === "Updated PDF", "update should refresh title");
+      assert(root.querySelector(".ui-pdf-viewer-frame")?.getAttribute("src") === "/signed/updated.pdf#page=7", "update should refresh PDF URL");
+      assert(root.querySelector(".ui-pdf-viewer")?.classList.contains("is-windowed"), "update should switch fullscreen mode");
+      assert(viewer.getState().status === "ready", "update should leave loading after ready fallback");
+
+      root.querySelector(".ui-pdf-viewer").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await delay(40);
+      assert(!root.classList.contains("is-open"), "Escape should close viewer");
+      assert(closePayload?.reason === "escape", "close payload should include reason");
+      assert(document.activeElement === returnFocus, "close should restore focus");
+
+      viewer.destroy();
+      assert(document.getElementById("host").children.length === 0, "destroy should clear host");
+      assert(!document.getElementById("host").classList.contains("ui-pdf-viewer-shell"), "destroy should clear helper shell class from provided host");
+      document.body.dataset.status = "pass";
+      result.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL ${error.message || error}`;
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

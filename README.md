@@ -65,6 +65,7 @@ css/
     ui.strips.css
     ui.media.strip.css
     ui.media.viewer.css
+    ui.pdf.viewer.css
     ui.audio.css
     ui.grid.css
     ui.tree.grid.css
@@ -136,6 +137,7 @@ js/
     ui.strips.js
     ui.media.strip.js
     ui.media.viewer.js
+    ui.pdf.viewer.js
     ui.grid.js
     ui.tree.grid.js
     ui.hierarchy.map.js
@@ -396,6 +398,8 @@ Reusable shared UI utilities live under `js/ui`:
   - options include `layout: "scroll" | "wrap"` and `animationMs` (default `300`)
 - `ui.media.viewer.js`
   - `createMediaViewer(container, options)` standalone image/video lightbox viewer with zoom/pan, fit modes, gallery navigation, and optional video audiograph
+- `ui.pdf.viewer.js`
+  - `createPdfViewer(options)` / `createPdfViewer(container, options)` browser-native inline PDF viewer shell with Helper-owned accessibility, lifecycle, loading/error states, and no Helper-rendered download action
 - `ui.grid.js`
   - `createGrid(container, rows, options)` data grid/table with local/remote modes, optional sort/search/pagination, optional row virtualization, and optional chrome-less rendering
 - `ui.tree.grid.js`
@@ -535,6 +539,7 @@ Application integrations should use the registry loader.
   - `uiAlert(...)`, `uiConfirm(...)`, `uiPrompt(...)`
   - `createToastStack(...)`
   - `createMediaViewer(...)`
+  - `createPdfViewer(...)`
   - `createHierarchyMap(...)`
 - If the library is close but missing a repeated capability, do not patch the shared helper contract ad hoc from project work.
 - Submit a proposal or spec update first so the shared helper change can be reviewed for:
@@ -585,7 +590,7 @@ Public component families:
 - Data, timeline, map, and inspection:
 - `ui.grid`, `ui.tree`, `ui.tree.grid`, `ui.hierarchy.map`, `ui.tree.mind.map`, `ui.virtual.list`, `ui.scheduler`, `ui.elapsed.time`, `ui.clock`, `ui.signal.strength`, `ui.heartbeat.strip`, `ui.stat.cards`, `ui.icon.grid`, `ui.map.controls`, `ui.map.legend`, `ui.map.markers`, `ui.map.drawing`, `ui.charts`, `ui.chart.xy`, `ui.timeline`, `ui.timeline.scrubber`, `ui.data.inspector`, `ui.empty.state`, `ui.skeleton`, `ui.progress`
 - Media and playback:
-  - `ui.media.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
+  - `ui.media.viewer`, `ui.pdf.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
   - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`, `ui.menu`, `ui.dropdown`, `ui.dropup`, `ui.command.palette`, `ui.tabs`, `ui.strips`
 - Workflow and layout:
@@ -6806,6 +6811,74 @@ Returned API:
 Related demos:
 
 - `demos/demo.media.viewer.html`
+
+### `createPdfViewer(options)` / `createPdfViewer(container, options)` (`js/ui/ui.pdf.viewer.js`)
+
+Purpose:
+
+- Render a Helper-owned inline PDF viewer shell using browser-native PDF support.
+- Suitable for signed same-origin PDFs where the app owns authorization, content delivery, validation, immutable hashes, and audit.
+- Helper owns the responsive shell, focus return, Escape/backdrop/close controls, loading/error/unsupported states, theme behavior, and lifecycle methods.
+
+Factory:
+
+```js
+import { createPdfViewer } from "./js/ui/ui.pdf.viewer.js";
+
+const viewer = createPdfViewer({
+  title: "Barangay Preparedness Guide",
+  url: signedPdfUrl,
+  initialPage: 2,
+});
+
+viewer.open();
+```
+
+Options:
+
+| Option | Type | Default | Required | Description |
+|---|---|---:|---|---|
+| `url` | `string` | `""` | no | PDF URL supplied by the app. Prefer signed same-origin URLs. |
+| `title` | `string` | `"PDF Viewer"` | no | Header title and PDF object label. |
+| `initialPage` | `number \| string \| null` | `null` | no | Optional first page passed through the PDF URL fragment. |
+| `open` | `boolean` | `false` | no | Starts viewer open when `true`. |
+| `fullscreen` | `boolean` | `true` | no | Fullscreen shell by default; `false` uses a near-fullscreen window. |
+| `closeOnEscape` | `boolean` | `true` | no | Allows `Esc` close. |
+| `closeOnBackdrop` | `boolean` | `true` | no | Allows backdrop click close. |
+| `showHeader` | `boolean` | `true` | no | Shows title/status header. |
+| `showCloseButton` | `boolean` | `true` | no | Shows close control. |
+| `trapFocus` | `boolean` | `true` | no | Keeps keyboard focus inside the viewer shell while open. |
+| `loadingMessage` | `string` | component default | no | Status text while native PDF loading is pending. |
+| `readyMessage` | `string` | `""` | no | Status text after the viewer considers the PDF ready. Blank by default to avoid persistent header noise. |
+| `readyDelayMs` | `number` | `800` | no | Fallback delay for marking the viewer ready when browser-native PDF rendering does not emit a reliable iframe load signal. |
+| `emptyMessage` | `string` | component default | no | Status text when no URL is set. |
+| `unsupportedMessage` | `string` | component default | no | Fallback text when native inline PDF display is unavailable. |
+| `errorMessage` | `string` | component default | no | Status text when the native iframe emits an error. |
+| `onOpen` | `(state) => void` | `null` | no | Fires when viewer opens. |
+| `onClose` | `(state) => void` | `null` | no | Fires when viewer closes. |
+| `onLoad` | `(state) => void` | `null` | no | Fires when the native iframe emits `load` or the ready fallback completes. |
+| `onError` | `(state) => void` | `null` | no | Fires when the native iframe emits `error`. |
+
+Returned API:
+
+| Method | Arguments | Returns | Description |
+|---|---|---|---|
+| `open` | `nextOptions?` | `viewer` | Opens the viewer, optionally patching options first. |
+| `close` | `meta?` | `viewer` | Closes the viewer and restores focus. |
+| `update` | `nextOptions` | `viewer` | Re-renders the viewer with updated options. |
+| `getState` | none | `object` | Returns current viewer state. |
+| `destroy` | none | `void` | Removes DOM and listeners. |
+
+Behavior notes:
+
+- V1 uses an inline `<iframe>` with browser-native PDF support instead of bundling a PDF renderer.
+- Browser-native PDF viewers can render content without a dependable page-level load event, so Helper also uses `readyDelayMs` to leave the loading state after assigning a URL.
+- Helper does not render a download action or fallback download link.
+- Browser PDF plugins may still expose browser-owned controls; apps should rely on HTTP headers and signed URL policy for access control.
+
+Related demos:
+
+- `demos/demo.pdf.viewer.html`
 
 ### Audio UI
 
