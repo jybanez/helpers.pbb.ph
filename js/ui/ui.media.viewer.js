@@ -115,7 +115,7 @@ export function createMediaViewer(container, options = {}) {
     });
 
     if (currentOptions.showHeader) {
-      const header = createElement("header", { className: "ui-media-viewer-header" });
+      const header = createElement("div", { className: "ui-media-viewer-header" });
       const headingWrap = createElement("div", { className: "ui-media-viewer-heading" });
       titleEl = createElement("p", { className: "ui-media-viewer-title" });
       counterEl = createElement("p", { className: "ui-media-viewer-counter" });

@@ -79,9 +79,12 @@
     await wait(250);
 
     const singleDebug = viewer.getDebugState();
+    const chrome = host.querySelector(".ui-media-viewer-header");
     const body = host.querySelector(".ui-media-viewer-body");
     const viewport = host.querySelector(".ui-media-viewer-viewport");
     const closeButton = host.querySelector(".ui-media-viewer-close");
+    assert(chrome?.tagName === "DIV", "viewer title chrome should not create a banner landmark");
+    assert(!host.querySelector("header.ui-media-viewer-header"), "viewer title chrome should not render as a native header");
     assert(viewport?.getAttribute("role") === "group", "focusable viewport should expose a semantic role for its accessible name");
     assert(viewport?.getAttribute("aria-label") === "Media viewport", "viewport should keep an accessible name");
     assert(document.activeElement === closeButton, "viewer should initially focus the close button");
