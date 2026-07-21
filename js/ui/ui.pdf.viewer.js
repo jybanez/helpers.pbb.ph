@@ -99,7 +99,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
     });
 
     if (options.showHeader) {
-      const header = createElement("header", { className: "ui-pdf-viewer-header" });
+      const header = createElement("div", { className: "ui-pdf-viewer-header" });
       const heading = createElement("div", { className: "ui-pdf-viewer-heading" });
       titleEl = createElement("h2", { className: "ui-pdf-viewer-title", text: options.title });
       stateEl = createElement("p", { className: "ui-pdf-viewer-state", attrs: { "aria-live": "polite" } });

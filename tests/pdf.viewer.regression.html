@@ -33,10 +33,13 @@
       await delay(80);
       const root = viewer.root;
       const dialog = root.querySelector(".ui-pdf-viewer");
+      const chrome = root.querySelector(".ui-pdf-viewer-header");
       const frame = root.querySelector(".ui-pdf-viewer-frame");
       assert(root.classList.contains("is-open"), "viewer should open");
       assert(dialog?.getAttribute("role") === "dialog", "viewer should render dialog role");
       assert(dialog?.getAttribute("aria-modal") === "true", "viewer should be modal");
+      assert(chrome?.tagName === "DIV", "viewer title chrome should not create a banner landmark");
+      assert(!root.querySelector("header.ui-pdf-viewer-header"), "viewer title chrome should not render as a native header");
       assert(frame?.tagName === "IFRAME", "viewer should use browser-native iframe embedding");
       assert(frame?.getAttribute("src") === "/signed/library.pdf#page=3", "viewer should apply initial page fragment");
       assert(document.activeElement === dialog, "viewer should focus dialog after open");
