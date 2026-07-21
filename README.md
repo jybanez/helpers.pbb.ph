@@ -2155,6 +2155,7 @@ Purpose:
 
 - Shared password-entry primitive with a helper-owned show/hide toggle.
 - Used directly by teams and composed by `createFormModal(...)` password rows, including login and re-auth presets.
+- Toggle target is sized by Helper to meet WCAG 2.2 target-size minimums in standalone and modal/preset usage.
 
 Factory:
 
@@ -6691,6 +6692,7 @@ Recommended item shape:
 | `title` | `string` | Optional visible title/label. |
 | `processing` | `boolean` | Optional pending-media flag. When `true`, image/video items survive normalization without `srcUrl` and render as non-clickable placeholders. |
 | `processingLabel` | `string` | Optional short text shown on a pending placeholder card. |
+| `tracks` / `textTracks` / `captionTracks` / `captions` | `array` | Optional video text tracks forwarded to `createMediaViewer(...)`. Track fields are `kind`, `src`/`url`/`path`, `srclang`/`lang`/`language`, `label`, and `default`. |
 
 Options:
 
@@ -6737,6 +6739,7 @@ Behavior notes:
 - Keep thumbnails lightweight; full-size assets belong in the viewer/player layer.
 - Use `baseUrl` when items carry relative asset paths from app APIs.
 - Pending image/video items with `processing: true` render a placeholder even without `srcUrl`, do not open the viewer while still processing, and can later resolve in place when the host calls `update(...)` with the same `id` plus real media URLs.
+- Video caption/text tracks survive strip normalization and are rendered by the delegated viewer as native `<track>` elements.
 
 Related demos:
 
@@ -6778,6 +6781,7 @@ Options:
 | `showToolbar` | `boolean` | `true` | no | Shows zoom/fit toolbar. |
 | `closeOnBackdrop` | `boolean` | `true` | no | Allows backdrop close. |
 | `closeOnEscape` | `boolean` | `true` | no | Allows `Esc` close. |
+| `trapFocus` | `boolean` | `true` | no | Keeps Tab/Shift+Tab focus inside the open viewer. |
 | `ariaLabel` | `string` | `""` | no | Accessible viewer label. |
 | `autoplayVideo` | `boolean` | `false` | no | Starts video playback automatically. |
 | `mutedVideo` | `boolean` | `false` | no | Starts video muted. |
@@ -6790,6 +6794,19 @@ Options:
 | `onChange` | `(item, index) => void` | `null` | no | Fires when active item changes. |
 | `onClose` | `() => void` | `null` | no | Fires when viewer closes. |
 | `onZoomChange` | `(state) => void` | `null` | no | Fires on zoom state changes. |
+
+Media item track fields:
+
+- `tracks`, `textTracks`, `captionTracks`, or `captions` may contain video text-track objects.
+- Track `kind` accepts `subtitles`, `captions`, `descriptions`, `chapters`, or `metadata`; unknown kinds fall back to `captions`.
+- Track `src`, `url`, or `path` is required and is resolved through `baseUrl` like media sources.
+- Track language can be supplied as `srclang`, `lang`, or `language`; default is `en`.
+- Track `label` / `title` and boolean `default` are rendered onto native `<track>` elements.
+
+Accessibility:
+
+- The open viewer traps Tab/Shift+Tab, restores focus on close, and keeps Escape close behavior when enabled.
+- The focusable viewport exposes `role="group"` with an accessible name for Axe-compatible semantics.
 
 Returned API:
 

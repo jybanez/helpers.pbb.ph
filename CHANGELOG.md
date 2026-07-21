@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed media/password accessibility by sizing shared password toggles above the 24px target minimum, adding focus containment and viewport semantics to `ui.media.viewer`, and preserving/rendering video text tracks through `ui.media.strip` and `ui.media.viewer`.
 - Added `ui.pdf.viewer` with `createPdfViewer(...)` for browser-native inline PDF viewing in a Helper-owned accessible near/fullscreen shell, with loading, empty, error, unsupported, focus-return, Escape/backdrop/close, update, destroy, demo, and regression coverage.
 - Fixed shared `.ui-badge` contrast so base, active, inactive, success, warning, danger, and neutral badges remain readable across light and dark theme presets.
 - Added a Badges demo page covering the shared `.ui-badge` utility, compact status/count/role examples, and community recognition icons.

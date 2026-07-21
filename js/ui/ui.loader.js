@@ -6,10 +6,11 @@ const UI_AUDIO_REV = "0.21.61";
 const UI_ICONS_REV = "0.21.117";
 const UI_FILE_INPUT_REV = "0.21.108";
 const UI_CHAT_REV = "0.21.120";
-const UI_PASSWORD_REV = "0.21.64";
+const UI_PASSWORD_REV = "0.21.65";
+const UI_MEDIA_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.141";
+const UI_BUNDLE_REV = "0.21.142";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -499,7 +500,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.chat.thread": {
     js: `./ui.chat.thread.js?v=${UI_CHAT_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.nav.css", `../../css/ui/ui.chat.thread.css?v=${UI_CHAT_REV}`, "../../css/ui/ui.media.strip.css", "../../css/ui/ui.media.viewer.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.nav.css", `../../css/ui/ui.chat.thread.css?v=${UI_CHAT_REV}`, `../../css/ui/ui.media.strip.css?v=${UI_MEDIA_REV}`, `../../css/ui/ui.media.viewer.css?v=${UI_MEDIA_REV}`],
     deps: ["ui.media.strip", "ui.menu"],
     export: "createChatThread",
   },
@@ -511,7 +512,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.chat.upload.queue": {
     js: "./ui.chat.upload.queue.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.upload.queue.css", "../../css/ui/ui.media.strip.css", "../../css/ui/ui.media.viewer.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.upload.queue.css", `../../css/ui/ui.media.strip.css?v=${UI_MEDIA_REV}`, `../../css/ui/ui.media.viewer.css?v=${UI_MEDIA_REV}`],
     deps: ["ui.media.strip"],
     export: "createChatUploadQueue",
   },
@@ -528,14 +529,14 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createStrip",
   },
   "ui.media.strip": {
-    js: "./ui.media.strip.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.media.strip.css"],
+    js: `./ui.media.strip.js?v=${UI_MEDIA_REV}`,
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.media.strip.css?v=${UI_MEDIA_REV}`],
     deps: ["ui.media.viewer"],
     export: "createMediaStrip",
   },
   "ui.media.viewer": {
-    js: "./ui.media.viewer.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.media.viewer.css"],
+    js: `./ui.media.viewer.js?v=${UI_MEDIA_REV}`,
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.media.viewer.css?v=${UI_MEDIA_REV}`],
     deps: ["ui.audio.audiograph"],
     export: "createMediaViewer",
   },
