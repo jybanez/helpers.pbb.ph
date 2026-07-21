@@ -66,7 +66,7 @@ export function createModal(options = {}) {
     className: "ui-modal",
     attrs: { role: "dialog", "aria-modal": "true", tabindex: "-1" },
   });
-  const header = createElement("header", { className: "ui-modal-header" });
+  const header = createElement("div", { className: "ui-modal-header" });
   const titleBlock = createElement("div", { className: "ui-modal-title-block" });
   const titleEl = createElement("h3", { className: "ui-title ui-modal-title" });
   const ownerTitleEl = createElement("div", {

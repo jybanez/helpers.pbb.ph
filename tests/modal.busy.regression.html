@@ -94,6 +94,7 @@
     assert(root.classList.contains("is-mounted"), "modal should remain mounted after open");
     assert(root.classList.contains("is-open"), "modal should remain open after open");
     assert(ownerTitle?.textContent === "Regression Fixture", "owner title should render below the modal title when provided");
+    assert(header?.tagName === "DIV", "modal title bar should not render as a native header/banner landmark");
     assert(header.classList.contains("is-draggable"), "modal header should expose draggable affordance by default");
     assert(panel.classList.contains("is-draggable"), "modal panel should expose draggable state by default");
     assert(getComputedStyle(header).cursor === "move", "draggable modal headers should expose move cursor styling");

@@ -3079,6 +3079,11 @@ Returned API:
 | `getState` | none | `object` | Returns current modal state snapshot. |
 | `destroy` | none | `void` | Removes DOM and listeners. |
 
+Accessibility:
+
+- Modal title chrome renders as non-landmark markup, so Helper modals do not introduce a second page banner inside app shells.
+- The modal panel owns `role="dialog"` / `aria-modal="true"` and labels itself from the helper title.
+
 Returned refs:
 
 - `panel`
@@ -6807,6 +6812,7 @@ Accessibility:
 
 - The open viewer traps Tab/Shift+Tab, restores focus on close, and keeps Escape close behavior when enabled.
 - The focusable viewport exposes `role="group"` with an accessible name for Axe-compatible semantics.
+- Explicit decorative image `alt: ""` is preserved on the rendered `<img>`; the viewer chrome still keeps the item title/counter for context and controls.
 
 Returned API:
 

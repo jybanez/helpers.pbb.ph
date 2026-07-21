@@ -273,7 +273,7 @@ export function createMediaViewer(container, options = {}) {
         className: "ui-media-viewer-media ui-media-viewer-image",
         attrs: {
           src: item.srcUrl,
-          alt: item.alt || item.title || `Image ${activeIndex + 1}`,
+          alt: item.alt,
           draggable: "false",
         },
       });
@@ -978,7 +978,9 @@ function normalizeItems(items, options = {}) {
         type: normalizedType,
         srcUrl,
         thumbUrl,
-        alt: String(item?.alt || item?.title || ""),
+        alt: Object.prototype.hasOwnProperty.call(item || {}, "alt")
+          ? String(item?.alt ?? "")
+          : String(item?.title || ""),
         title: String(item?.title || ""),
         posterUrl: resolveUrl(String(item?.posterUrl || item?.poster || ""), normalizedOptions.baseUrl),
         tracks: normalizeTracks(item, normalizedOptions.baseUrl),
