@@ -66,6 +66,7 @@ export function createMediaStrip(container, items = [], options = {}) {
         src: item.srcUrl,
         thumb: item.thumbUrl,
         poster: item.posterUrl,
+        tracks: item.tracks,
         title: item.title,
         alt: item.alt,
         duration_seconds: item.duration,
@@ -266,6 +267,7 @@ function normalizeItems(items, options = {}) {
         duration: item?.duration ?? item?.duration_seconds ?? null,
         mimeType: item?.mimeType || "",
         posterUrl: resolveUrl(String(item?.posterUrl || item?.poster || ""), normalizedOptions.baseUrl),
+        tracks: normalizeTracks(item, normalizedOptions.baseUrl),
         metadata: item?.metadata && typeof item.metadata === "object" ? { ...item.metadata } : {},
         raw: item,
       };
@@ -292,6 +294,33 @@ function createProcessingPlaceholder(item, index) {
     text: item.processingLabel || item.alt || item.title || `Processing media ${index + 1}`,
   }));
   return placeholder;
+}
+
+function normalizeTracks(item, baseUrl) {
+  const candidates = item?.tracks || item?.textTracks || item?.captionTracks || item?.captions || [];
+  return (Array.isArray(candidates) ? candidates : [])
+    .map((track) => {
+      const src = resolveUrl(String(track?.src || track?.url || track?.path || ""), baseUrl);
+      if (!src) {
+        return null;
+      }
+      return {
+        kind: normalizeTrackKind(track?.kind),
+        src,
+        srclang: String(track?.srclang || track?.lang || track?.language || "en").trim() || "en",
+        label: String(track?.label || track?.title || "Captions").trim() || "Captions",
+        default: Boolean(track?.default),
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeTrackKind(value) {
+  const kind = String(value || "").toLowerCase().trim();
+  if (["subtitles", "captions", "descriptions", "chapters", "metadata"].includes(kind)) {
+    return kind;
+  }
+  return "captions";
 }
 
 function getViewerItemsFromStripItems(items) {

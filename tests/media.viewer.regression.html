@@ -40,12 +40,29 @@
       alt: "Tall portrait repro graphic",
       metadata: { type: "photo", shape: "portrait" },
     };
+    const videoItem = {
+      id: "captioned-video",
+      type: "video",
+      src: "data:video/mp4;base64,AAAA",
+      title: "Captioned video",
+      alt: "Captioned video sample",
+      tracks: [
+        {
+          kind: "captions",
+          src: "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00.000%20--%3E%2000:01.000%0ACaption",
+          srclang: "en",
+          label: "English",
+          default: true,
+        },
+      ],
+    };
 
     const viewer = createMediaViewer(host, {
       items: [firstImage],
       fit: "contain",
       baseUrl: "",
       showFooter: false,
+      showToolbar: false,
       autoplayVideo: false,
       zoomStep: 0.2,
     });
@@ -55,6 +72,17 @@
 
     const singleDebug = viewer.getDebugState();
     const body = host.querySelector(".ui-media-viewer-body");
+    const viewport = host.querySelector(".ui-media-viewer-viewport");
+    const closeButton = host.querySelector(".ui-media-viewer-close");
+    assert(viewport?.getAttribute("role") === "group", "focusable viewport should expose a semantic role for its accessible name");
+    assert(viewport?.getAttribute("aria-label") === "Media viewport", "viewport should keep an accessible name");
+    assert(document.activeElement === closeButton, "viewer should initially focus the close button");
+    viewport.focus();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    assert(document.activeElement === closeButton, "Tab from the last focusable viewer control should wrap to first control");
+    closeButton.focus();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }));
+    assert(document.activeElement === viewport, "Shift+Tab from the first focusable viewer control should wrap to last control");
     assert(body.classList.contains("is-nav-hidden"), "single-item viewer should collapse nav layout");
     assert(singleDebug.viewport.width > 0 && singleDebug.viewport.height > 0, "single-item viewer should have a measurable viewport");
     assert(singleDebug.panLimits.maxPanX === 0 && singleDebug.panLimits.maxPanY === 0, "single-item contain at zoom 1 should not expose pan");
@@ -73,7 +101,6 @@
     assert(coverDebug.panLimits.maxPanY > 0, "tall cover should expose vertical pan");
 
     const panSurface = host.querySelector(".ui-media-viewer-pan-surface");
-    const viewport = host.querySelector(".ui-media-viewer-viewport");
     const viewportRect = viewport.getBoundingClientRect();
     const startX = Math.round(viewportRect.left + viewportRect.width / 2);
     const startY = Math.round(viewportRect.top + viewportRect.height / 2);
@@ -108,6 +135,18 @@
     const afterZoom = viewer.getDebugState();
     assert(afterZoom.host.width > beforeZoom.host.width && afterZoom.host.height > beforeZoom.host.height, "zoom should increase rendered host size");
     assert(Math.abs(afterZoom.panX) < 1 && Math.abs(afterZoom.panY) < 1, "centered zoom should keep pan near viewport center");
+
+    viewer.update({ items: [videoItem], fit: "contain", showFooter: false, autoplayVideo: false });
+    viewer.open(0);
+    await wait(120);
+    const video = host.querySelector(".ui-media-viewer-video");
+    const track = video?.querySelector("track");
+    assert(Boolean(video), "video media should render a video element");
+    assert(track?.getAttribute("kind") === "captions", "video should render normalized caption track kind");
+    assert(track?.getAttribute("src")?.startsWith("data:text/vtt"), "video should render caption track source");
+    assert(track?.getAttribute("srclang") === "en", "video should render caption track language");
+    assert(track?.getAttribute("label") === "English", "video should render caption track label");
+    assert(track?.hasAttribute("default"), "video should render default caption track");
 
     viewer.close();
     await wait(40);

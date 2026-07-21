@@ -84,6 +84,15 @@
           srcUrl: resolvedUrl,
           thumbUrl: resolvedUrl,
           title: "Resolved pending video",
+          tracks: [
+            {
+              kind: "captions",
+              src: "data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00.000%20--%3E%2000:01.000%0Cebu caption",
+              srclang: "en",
+              label: "English",
+              default: true,
+            },
+          ],
         },
         {
           id: "resolved-1",
@@ -104,6 +113,11 @@
       strip.openById("pending-1");
       await wait(80);
       assert(opened.some((entry) => entry.id === "pending-1"), "resolved placeholder should open normally after update");
+      const viewerTrack = document.querySelector(".ui-media-viewer-video track");
+      assert(viewerTrack?.getAttribute("kind") === "captions", "media strip should pass caption track kind to viewer");
+      assert(viewerTrack?.getAttribute("srclang") === "en", "media strip should pass caption track language to viewer");
+      assert(viewerTrack?.getAttribute("label") === "English", "media strip should pass caption track label to viewer");
+      assert(viewerTrack?.hasAttribute("default"), "media strip should pass default caption track to viewer");
 
       strip.destroy();
       assert(host.innerHTML === "", "destroy should clear the host");

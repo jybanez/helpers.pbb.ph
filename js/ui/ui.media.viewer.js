@@ -20,6 +20,7 @@ const DEFAULT_OPTIONS = {
   showPrevNext: true,
   showToolbar: true,
   keyboard: true,
+  trapFocus: true,
   closeOnBackdrop: true,
   closeOnEscape: true,
   autoplayVideo: true,
@@ -37,6 +38,16 @@ const DEFAULT_OPTIONS = {
   onClose: null,
   onZoomChange: null,
 };
+
+const tabbableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "video[controls]",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
 
 export function createMediaViewer(container, options = {}) {
   const events = createEventBag();
@@ -141,7 +152,7 @@ export function createMediaViewer(container, options = {}) {
 
     viewport = createElement("div", {
       className: "ui-media-viewer-viewport",
-      attrs: { tabindex: "0", "aria-label": "Media viewport" },
+      attrs: { role: "group", tabindex: "0", "aria-label": "Media viewport" },
     });
     transformLayer = createElement("div", { className: "ui-media-viewer-transform" });
     panLayer = createElement("div", { className: "ui-media-viewer-pan-layer" });
@@ -235,6 +246,7 @@ export function createMediaViewer(container, options = {}) {
         },
       });
       mediaHost.appendChild(mediaEl);
+      renderVideoTracks(mediaEl, item.tracks);
       bindVideoState(item);
       mediaEvents.on(mediaEl, "loadedmetadata", () => syncUi());
       if (currentOptions.showAudiograph) {
@@ -319,8 +331,30 @@ export function createMediaViewer(container, options = {}) {
     mediaEvents.on(mediaEl, "loadedmetadata", syncPlayback);
   }
 
+  function renderVideoTracks(videoEl, tracks = []) {
+    (Array.isArray(tracks) ? tracks : []).forEach((track) => {
+      const trackEl = createElement("track", {
+        attrs: {
+          kind: track.kind,
+          src: track.src,
+          srclang: track.srclang,
+          label: track.label,
+          default: track.default ? "default" : null,
+        },
+      });
+      videoEl.appendChild(trackEl);
+    });
+  }
+
   function onDocumentKeyDown(event) {
-    if (!isOpen || !currentOptions.keyboard) {
+    if (!isOpen) {
+      return;
+    }
+    if (event.key === "Tab" && currentOptions.trapFocus) {
+      trapDialogFocus(event);
+      return;
+    }
+    if (!currentOptions.keyboard) {
       return;
     }
     if (event.key === "Escape" && currentOptions.closeOnEscape) {
@@ -361,6 +395,32 @@ export function createMediaViewer(container, options = {}) {
     if (event.key === "End") {
       event.preventDefault();
       setIndex(currentItems.length - 1);
+    }
+  }
+
+  function trapDialogFocus(event) {
+    if (!dialog) {
+      return;
+    }
+    const focusable = getFocusable(dialog);
+    if (!focusable.length) {
+      event.preventDefault();
+      dialog.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!dialog.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -483,10 +543,17 @@ export function createMediaViewer(container, options = {}) {
     if (!wasOpen) {
       render();
       renderCurrentItem({ emitChange: true, emitOpen: true });
-      closeBtn?.focus?.({ preventScroll: true });
+      focusInitial();
       return;
     }
     renderCurrentItem({ emitChange: true, emitOpen: false });
+  }
+
+  function focusInitial() {
+    const target = closeBtn && !closeBtn.hidden && !closeBtn.disabled
+      ? closeBtn
+      : viewport || dialog;
+    target?.focus?.({ preventScroll: true });
   }
 
   function close() {
@@ -890,6 +957,7 @@ function normalizeOptions(options = {}) {
   next.maxZoom = Math.max(next.minZoom, Number(next.maxZoom) || 6);
   next.index = Math.max(0, Number(next.index) || 0);
   next.open = Boolean(next.open);
+  next.trapFocus = next.trapFocus !== false;
   return next;
 }
 
@@ -913,12 +981,40 @@ function normalizeItems(items, options = {}) {
         alt: String(item?.alt || item?.title || ""),
         title: String(item?.title || ""),
         posterUrl: resolveUrl(String(item?.posterUrl || item?.poster || ""), normalizedOptions.baseUrl),
+        tracks: normalizeTracks(item, normalizedOptions.baseUrl),
         duration: item?.duration ?? item?.duration_seconds ?? null,
         metadata: item?.metadata && typeof item.metadata === "object" ? { ...item.metadata } : {},
         raw: item,
       };
     })
     .filter((item) => (item.type === "image" || item.type === "video") && Boolean(item.srcUrl));
+}
+
+function normalizeTracks(item, baseUrl) {
+  const candidates = item?.tracks || item?.textTracks || item?.captionTracks || item?.captions || [];
+  return (Array.isArray(candidates) ? candidates : [])
+    .map((track) => {
+      const src = resolveUrl(String(track?.src || track?.url || track?.path || ""), baseUrl);
+      if (!src) {
+        return null;
+      }
+      return {
+        kind: normalizeTrackKind(track?.kind),
+        src,
+        srclang: String(track?.srclang || track?.lang || track?.language || "en").trim() || "en",
+        label: String(track?.label || track?.title || "Captions").trim() || "Captions",
+        default: Boolean(track?.default),
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeTrackKind(value) {
+  const kind = String(value || "").toLowerCase().trim();
+  if (["subtitles", "captions", "descriptions", "chapters", "metadata"].includes(kind)) {
+    return kind;
+  }
+  return "captions";
 }
 
 function normalizeFit(value) {
@@ -975,6 +1071,16 @@ function clampIndex(index, length) {
     return 0;
   }
   return Math.min(length - 1, Math.max(0, Number(index) || 0));
+}
+
+function getFocusable(root) {
+  return Array.from(root.querySelectorAll(tabbableSelector)).filter((node) => {
+    if (!(node instanceof HTMLElement) || node.disabled || node.hidden || node.getAttribute("aria-hidden") === "true") {
+      return false;
+    }
+    const style = window.getComputedStyle(node);
+    return style.display !== "none" && style.visibility !== "hidden";
+  });
 }
 
 function clone(value) {
