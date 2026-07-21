@@ -40,6 +40,14 @@
       alt: "Tall portrait repro graphic",
       metadata: { type: "photo", shape: "portrait" },
     };
+    const decorativeImage = {
+      id: "decorative-image",
+      type: "image",
+      src: "../samples/media/photos/pbb-preview-graphic-2x.png",
+      title: "Decorative Repro Graphic",
+      alt: "",
+      metadata: { type: "photo", decorative: true },
+    };
     const videoItem = {
       id: "captioned-video",
       type: "video",
@@ -135,6 +143,14 @@
     const afterZoom = viewer.getDebugState();
     assert(afterZoom.host.width > beforeZoom.host.width && afterZoom.host.height > beforeZoom.host.height, "zoom should increase rendered host size");
     assert(Math.abs(afterZoom.panX) < 1 && Math.abs(afterZoom.panY) < 1, "centered zoom should keep pan near viewport center");
+
+    viewer.update({ items: [decorativeImage], fit: "contain", showFooter: false, autoplayVideo: false });
+    viewer.open(0);
+    await wait(120);
+    const decorativeMedia = host.querySelector(".ui-media-viewer-image");
+    assert(viewer.getState().item?.alt === "", "viewer state should preserve explicitly decorative empty alt text");
+    assert(decorativeMedia?.getAttribute("alt") === "", "decorative image should render an empty alt attribute");
+    assert(host.querySelector(".ui-media-viewer-title")?.textContent === "Decorative Repro Graphic", "viewer chrome should keep the item title for accessible context");
 
     viewer.update({ items: [videoItem], fit: "contain", showFooter: false, autoplayVideo: false });
     viewer.open(0);
