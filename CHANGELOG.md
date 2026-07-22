@@ -11,6 +11,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 ## Unreleased
 
 - Fixed remaining media/modal accessibility regressions by preserving explicit decorative image `alt: ""` values in `ui.media.viewer`, making `.ui-modal-header` non-landmark chrome, and making `ui.media.viewer` title chrome non-landmark markup to avoid duplicate banner landmarks inside app shells. Bumped `UI_MEDIA_REV` and `UI_BUNDLE_REV` so downstream cached module and bundle URLs fetch the fix.
+- Fixed `ui.pdf.viewer` title chrome so it no longer creates a second banner landmark inside app shells, and added `UI_PDF_REV` plus a `UI_BUNDLE_REV` bump so cached modular and bundled clients fetch the PDF viewer fix.
 - Fixed media/password accessibility by sizing shared password toggles above the 24px target minimum, adding focus containment and viewport semantics to `ui.media.viewer`, and preserving/rendering video text tracks through `ui.media.strip` and `ui.media.viewer`.
 - Added `ui.pdf.viewer` with `createPdfViewer(...)` for browser-native inline PDF viewing in a Helper-owned accessible near/fullscreen shell, with loading, empty, error, unsupported, focus-return, Escape/backdrop/close, update, destroy, demo, and regression coverage.
 - Fixed shared `.ui-badge` contrast so base, active, inactive, success, warning, danger, and neutral badges remain readable across light and dark theme presets.
