@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed modal slot array rendering so `setHeaderActions([...])` appends all action-modal header actions in order instead of clearing previous entries and leaving only the final action.
 - Fixed action-modal icon CSS so shared stroke-based `ui.icons` keep `fill="none"` semantics in header/footer action buttons, and fixed compact vertical timeline spacing so markers remain aligned to the rail.
 - Added grouped navbar menu support through `items[].menuGroups` / `actions[].menuGroups`, including Helper-owned desktop mega-menu rendering with contained or viewport-width sizing, labelled mobile flattening, group-aware selection metadata, a focused demo, nav cache revisioning, and rebuilt bundle artifacts.
 - Added `ui.calendar` with `createCalendar(...)` as a standalone month-grid primitive and updated `ui.datepicker` to compose it for shared calendar rendering.
