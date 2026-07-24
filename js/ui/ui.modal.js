@@ -197,11 +197,15 @@ export function createModal(options = {}) {
 
   function setSlot(target, value) {
     clearNode(target);
+    appendSlotValue(target, value);
+  }
+
+  function appendSlotValue(target, value) {
     if (value == null) {
       return;
     }
     if (typeof value === "function") {
-      setSlot(target, value(panel));
+      appendSlotValue(target, value(panel));
       return;
     }
     if (value instanceof HTMLElement) {
@@ -209,7 +213,7 @@ export function createModal(options = {}) {
       return;
     }
     if (Array.isArray(value)) {
-      value.forEach((entry) => setSlot(target, entry));
+      value.forEach((entry) => appendSlotValue(target, entry));
       return;
     }
     target.appendChild(document.createTextNode(String(value)));

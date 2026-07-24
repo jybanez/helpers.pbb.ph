@@ -236,6 +236,16 @@
     assert(Boolean(actionIconSvg), "action modal should render header action SVG icon");
     assert(getComputedStyle(actionIconSvg).fill === "none" || getComputedStyle(actionIconSvg).fill === "rgba(0, 0, 0, 0)", "action modal icon SVG should not force solid fill");
     assert(normalizeColor(getComputedStyle(actionIconSvg).stroke) === normalizeColor(getComputedStyle(actionIconSvg).color), "action modal icon SVG stroke should follow currentColor");
+    iconModal.setHeaderActions([
+      { id: "schedule", label: "Schedule", icon: strokeIcon, iconOnly: true, ariaLabel: "Schedule" },
+      { id: "note", label: "Add note", icon: strokeIcon, iconOnly: true, ariaLabel: "Add note" },
+      { id: "referral", label: "Create referral", icon: strokeIcon, iconOnly: true, ariaLabel: "Create referral" },
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 32));
+    const headerActionLabels = Array.from(document.querySelectorAll(".ui-modal-header-actions .ui-action-modal-button"))
+      .map((button) => button.getAttribute("aria-label") || button.textContent.trim());
+    assert(headerActionLabels.length === 3, "setHeaderActions should render every action in a multi-action array");
+    assert(headerActionLabels.join("|") === "Schedule|Add note|Create referral", "setHeaderActions should preserve header action order");
     iconModal.destroy();
     await new Promise((resolve) => setTimeout(resolve, 80));
     assert(document.querySelector(".ui-modal-root") === null, "icon modal destroy should remove root from DOM");
