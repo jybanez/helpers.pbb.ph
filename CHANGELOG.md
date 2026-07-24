@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added grouped navbar menu support through `items[].menuGroups` / `actions[].menuGroups`, including Helper-owned desktop mega-menu rendering with contained or viewport-width sizing, labelled mobile flattening, group-aware selection metadata, a focused demo, nav cache revisioning, and rebuilt bundle artifacts.
 - Added `ui.calendar` with `createCalendar(...)` as a standalone month-grid primitive and updated `ui.datepicker` to compose it for shared calendar rendering.
 - Fixed remaining media/modal accessibility regressions by preserving explicit decorative image `alt: ""` values in `ui.media.viewer`, making `.ui-modal-header` non-landmark chrome, and making `ui.media.viewer` title chrome non-landmark markup to avoid duplicate banner landmarks inside app shells. Bumped `UI_MEDIA_REV` and `UI_BUNDLE_REV` so downstream cached module and bundle URLs fetch the fix.
 - Fixed `ui.pdf.viewer` title chrome so it no longer creates a second banner landmark inside app shells, and added `UI_PDF_REV` plus a `UI_BUNDLE_REV` bump so cached modular and bundled clients fetch the PDF viewer fix.
