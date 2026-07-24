@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .two-up { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .calendar-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); }
+    .calendar-host { width: min(100%, 320px); }
+    .back { color: var(--demo-link, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); padding: 10px; overflow: auto; }
+    .log { color: var(--demo-muted, var(--ui-muted, #b2c2e5)); min-height: 160px; }
+    pre:not(.log) { color: var(--demo-code-text, var(--ui-text, #d7e0f4)); }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.calendar"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Calendar",
+      overview: "Reusable month-grid primitive for date surfaces that do not need a trigger, popover, or time inputs.",
+      useWhen: [
+        "Use <code>createCalendar(...)</code> when the app needs an always-visible month grid.",
+        "Use it when datepicker behavior is too much but shared month navigation and date-cell states are still useful."
+      ],
+      avoidWhen: [
+        "Do not use it for form-field picker behavior; use <code>createDatepicker(...)</code> instead.",
+        "Do not use it for full resource scheduling; use <code>createScheduler(...)</code> for event boards."
+      ],
+      description: "The calendar primitive owns month/year navigation, weekday rows, day-cell rendering, selected/range/today/outside-month states, disabled dates, and selection events. Datepicker now composes this same primitive.",
+      defaultSampleCode: `const calendar = createCalendar(host, {\n  value: "2026-07-24",\n  viewDate: "2026-07-01",\n  onSelect(date, state) {\n    writeLog("calendar.select", { date: date.toISOString(), state });\n  },\n});`,
+      constructor: [
+        { factory: "<code>createCalendar(container, options)</code>", arguments: "host element, calendar <code>options</code>", returns: "Calendar instance" }
+      ],
+      options: [
+        { option: "<code>value</code>", default: "<code>null</code>", description: "Selected date for single-date highlighting." },
+        { option: "<code>viewDate</code>", default: "<code>new Date()</code>", description: "Month to display." },
+        { option: "<code>mode</code>", default: "<code>\"single\"</code>", description: "Selection styling mode.", values: ["single", "range"] },
+        { option: "<code>rangeStart</code> / <code>rangeEnd</code>", default: "<code>null</code>", description: "Range endpoints for range highlighting." },
+        { option: "<code>disabledDates</code>", default: "<code>null</code>", description: "Predicate for app-owned date disable rules." },
+        { option: "<code>onSelect</code>", default: "<code>null</code>", description: "Callback when a selectable date is clicked." },
+        { option: "<code>onViewChange</code>", default: "<code>null</code>", description: "Callback when month/year navigation changes the visible month." }
+      ],
+      propertiesText: "Use methods for state access. The instance exposes <code>root</code> as a read-only getter for the mounted calendar root.",
+      events: [
+        { event: "<code>onSelect</code>", arguments: "<code>(date, state)</code>", returns: "<code>void</code>" },
+        { event: "<code>onViewChange</code>", arguments: "<code>(viewDate, state)</code>", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>setValue(value)</code>", arguments: "date value", returns: "<code>void</code>" },
+        { method: "<code>setViewDate(value)</code>", arguments: "date value", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "calendar state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">← Back to Home</a>
+      </div>
+      <h1 class="ui-title">Calendar Demo</h1>
+      <p class="muted">Standalone month-grid primitive shared by date-related helpers.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Operational Month Selection</h2>
+      <p class="muted">Use the primitive when a date surface should be visible inside a panel, drawer, dashboard, or custom app-owned workflow.</p>
+      <div class="two-up">
+        <div class="calendar-card">
+          <strong>Single Date</strong>
+          <div id="calendarSingle" class="calendar-host"></div>
+        </div>
+        <div class="calendar-card">
+          <strong>Range Display</strong>
+          <div id="calendarRange" class="calendar-host"></div>
+        </div>
+      </div>
+      <pre>createCalendar(document.getElementById("calendarSingle"), {
+  value: "2026-07-24",
+  viewDate: "2026-07-01",
+  onSelect(date, state) {
+    writeLog("calendar.single.select", { date: date.toISOString(), state });
+  },
+});
+
+createCalendar(document.getElementById("calendarRange"), {
+  mode: "range",
+  viewDate: "2026-07-01",
+  rangeStart: "2026-07-12",
+  rangeEnd: "2026-07-18",
+  disabledDates(date) {
+    return date.getDay() === 0;
+  },
+  onSelect(date, state) {
+    writeLog("calendar.range.select", { date: date.toISOString(), state });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createCalendar = await uiLoader.get("ui.calendar");
+    const log = document.getElementById("log");
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+    createCalendar(document.getElementById("calendarSingle"), {
+      value: "2026-07-24",
+      viewDate: "2026-07-01",
+      onSelect(date, state) {
+        writeLog("calendar.single.select", { date: date.toISOString(), state });
+      },
+    });
+    createCalendar(document.getElementById("calendarRange"), {
+      mode: "range",
+      viewDate: "2026-07-01",
+      rangeStart: "2026-07-12",
+      rangeEnd: "2026-07-18",
+      disabledDates(date) {
+        return date.getDay() === 0;
+      },
+      onSelect(date, state) {
+        writeLog("calendar.range.select", { date: date.toISOString(), state });
+      },
+    });
+  </script>
+</body>
+</html>

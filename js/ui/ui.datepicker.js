@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
+import { createCalendar } from "./ui.calendar.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -19,8 +20,6 @@ const DEFAULT_OPTIONS = {
   onChange: null,
 };
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export function createDatepicker(container, options = {}) {
   const events = createEventBag();
   const globalEvents = createEventBag();
@@ -34,6 +33,7 @@ export function createDatepicker(container, options = {}) {
   let root = null;
   let trigger = null;
   let panel = null;
+  let calendar = null;
   let lastFocusedElement = null;
   const panelId = `ui-datepicker-panel-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -44,6 +44,8 @@ export function createDatepicker(container, options = {}) {
       return;
     }
     events.clear();
+    calendar?.destroy();
+    calendar = null;
     clearNode(container);
 
     root = createElement("div", {
@@ -78,145 +80,40 @@ export function createDatepicker(container, options = {}) {
 
     if (open) {
       panel = createElement("div", { className: "ui-datepicker-panel", attrs: { role: "dialog", id: panelId, "aria-label": currentOptions.ariaLabel } });
-      renderHeader(panel);
-      renderWeekdayRow(panel);
-      renderCalendarGrid(panel);
+      const calendarHost = createElement("div", { className: "ui-datepicker-calendar-host" });
+      panel.appendChild(calendarHost);
+      calendar = createCalendar(calendarHost, {
+        ariaLabel: `${currentOptions.ariaLabel} calendar`,
+        locale: currentOptions.locale,
+        value: start,
+        viewDate,
+        mode: currentOptions.mode,
+        rangeStart: start,
+        rangeEnd: end,
+        weekStartsOn: currentOptions.weekStartsOn,
+        min: currentOptions.min,
+        max: currentOptions.max,
+        disabledDates: currentOptions.disabledDates,
+        yearRangePast: currentOptions.yearRangePast,
+        yearRangeFuture: currentOptions.yearRangeFuture,
+        onSelect(date) {
+          selectDate(date);
+        },
+        onViewChange(date) {
+          viewDate = startOfMonth(date);
+        },
+      });
       if (currentOptions.showTime) {
         renderTimeSection(panel);
       }
       root.appendChild(panel);
       requestAnimationFrame(() => {
-        panel?.querySelector?.(".ui-datepicker-day:not(.is-disabled), .ui-datepicker-nav, .ui-datepicker-select, .ui-input")?.focus?.();
+        panel?.querySelector?.(".ui-calendar-day:not(.is-disabled), .ui-calendar-nav, .ui-calendar-select, .ui-input")?.focus?.();
       });
     }
 
     container.appendChild(root);
     bindGlobal();
-  }
-
-  function renderHeader(host) {
-    const header = createElement("div", { className: "ui-datepicker-header" });
-    const prevBtn = createElement("button", {
-      className: "ui-button ui-datepicker-nav",
-      attrs: { type: "button", "aria-label": "Previous month" },
-      html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
-    });
-    const nextBtn = createElement("button", {
-      className: "ui-button ui-datepicker-nav",
-      attrs: { type: "button", "aria-label": "Next month" },
-      html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
-    });
-    const title = createElement("p", {
-      className: "ui-datepicker-title",
-      text: formatMonthYear(viewDate, currentOptions.locale),
-    });
-    events.on(prevBtn, "click", () => {
-      viewDate = addMonths(viewDate, -1);
-      render();
-    });
-    events.on(nextBtn, "click", () => {
-      viewDate = addMonths(viewDate, 1);
-      render();
-    });
-    header.append(prevBtn, title, nextBtn);
-    host.appendChild(header);
-
-    const jump = createElement("div", { className: "ui-datepicker-jump" });
-    const monthSelect = createElement("select", {
-      className: "ui-input ui-datepicker-select",
-      attrs: { "aria-label": "Select month" },
-    });
-    getMonthOptions(currentOptions.locale).forEach((month, index) => {
-      const option = createElement("option", {
-        text: month,
-        attrs: { value: String(index) },
-      });
-      monthSelect.appendChild(option);
-    });
-    monthSelect.value = String(viewDate.getMonth());
-
-    const yearSelect = createElement("select", {
-      className: "ui-input ui-datepicker-select",
-      attrs: { "aria-label": "Select year" },
-    });
-    getYearRange(viewDate.getFullYear(), currentOptions.yearRangePast, currentOptions.yearRangeFuture).forEach((year) => {
-      const option = createElement("option", {
-        text: String(year),
-        attrs: { value: String(year) },
-      });
-      yearSelect.appendChild(option);
-    });
-    yearSelect.value = String(viewDate.getFullYear());
-
-    events.on(monthSelect, "change", () => {
-      const month = Number(monthSelect.value);
-      if (!Number.isFinite(month)) {
-        return;
-      }
-      viewDate = new Date(viewDate.getFullYear(), month, 1);
-      render();
-    });
-    events.on(yearSelect, "change", () => {
-      const year = Number(yearSelect.value);
-      if (!Number.isFinite(year)) {
-        return;
-      }
-      viewDate = new Date(year, viewDate.getMonth(), 1);
-      render();
-    });
-
-    jump.append(monthSelect, yearSelect);
-    host.appendChild(jump);
-  }
-
-  function renderWeekdayRow(host) {
-    const row = createElement("div", { className: "ui-datepicker-weekdays" });
-    const weekNames = rotateWeekdays(DAY_NAMES, currentOptions.weekStartsOn);
-    weekNames.forEach((day) => {
-      row.appendChild(createElement("span", { className: "ui-datepicker-weekday", text: day }));
-    });
-    host.appendChild(row);
-  }
-
-  function renderCalendarGrid(host) {
-    const grid = createElement("div", { className: "ui-datepicker-grid" });
-    buildCalendarDays(viewDate, currentOptions.weekStartsOn).forEach((item) => {
-      const classes = ["ui-datepicker-day"];
-      if (item.outsideMonth) {
-        classes.push("is-outside");
-      }
-      if (isSameDay(item.date, new Date())) {
-        classes.push("is-today");
-      }
-      if (isSelected(item.date)) {
-        classes.push("is-selected");
-      }
-      if (isInRange(item.date)) {
-        classes.push("is-in-range");
-      }
-      if (currentOptions.mode === "range" && start && isSameDay(item.date, start)) {
-        classes.push("is-range-start");
-      }
-      if (currentOptions.mode === "range" && end && isSameDay(item.date, end)) {
-        classes.push("is-range-end");
-      }
-      const disabled = isDisabledDate(item.date);
-      if (disabled) {
-        classes.push("is-disabled");
-      }
-      const cell = createElement("button", {
-        className: classes.join(" "),
-        text: String(item.date.getDate()),
-        attrs: { type: "button", disabled: disabled ? "disabled" : null },
-      });
-      if (!disabled) {
-        events.on(cell, "click", () => {
-          selectDate(item.date);
-        });
-      }
-      grid.appendChild(cell);
-    });
-    host.appendChild(grid);
   }
 
   function renderTimeSection(host) {
@@ -287,42 +184,6 @@ export function createDatepicker(container, options = {}) {
       open = false;
     }
     render();
-  }
-
-  function isSelected(date) {
-    if (!start) {
-      return false;
-    }
-    if (currentOptions.mode === "single") {
-      return isSameDay(date, start);
-    }
-    return isSameDay(date, start) || (end ? isSameDay(date, end) : false);
-  }
-
-  function isInRange(date) {
-    if (currentOptions.mode !== "range" || !start || !end) {
-      return false;
-    }
-    const d = startOfDay(date).getTime();
-    const a = startOfDay(start).getTime();
-    const b = startOfDay(end).getTime();
-    return d > Math.min(a, b) && d < Math.max(a, b);
-  }
-
-  function isDisabledDate(date) {
-    const day = startOfDay(date);
-    const minDate = currentOptions.min ? startOfDay(parseAnyDate(currentOptions.min)) : null;
-    const maxDate = currentOptions.max ? startOfDay(parseAnyDate(currentOptions.max)) : null;
-    if (minDate && day < minDate) {
-      return true;
-    }
-    if (maxDate && day > maxDate) {
-      return true;
-    }
-    if (typeof currentOptions.disabledDates === "function") {
-      return Boolean(currentOptions.disabledDates(new Date(day)));
-    }
-    return false;
   }
 
   function getDisplayValue() {
@@ -442,10 +303,12 @@ export function createDatepicker(container, options = {}) {
   function destroy() {
     globalEvents.clear();
     events.clear();
+    calendar?.destroy();
     clearNode(container);
     root = null;
     trigger = null;
     panel = null;
+    calendar = null;
   }
 
   render();
@@ -499,57 +362,6 @@ function parseRange(value) {
   return { start: null, end: null };
 }
 
-function buildCalendarDays(monthDate, weekStartsOn) {
-  const first = startOfMonth(monthDate);
-  const startOffset = (first.getDay() - weekStartsOn + 7) % 7;
-  const gridStart = addDays(first, -startOffset);
-  const days = [];
-  for (let i = 0; i < 42; i += 1) {
-    const date = addDays(gridStart, i);
-    days.push({
-      date,
-      outsideMonth: date.getMonth() !== first.getMonth(),
-    });
-  }
-  return days;
-}
-
-function rotateWeekdays(days, start) {
-  const head = days.slice(start);
-  const tail = days.slice(0, start);
-  return head.concat(tail);
-}
-
-function getMonthOptions(locale) {
-  const formatter = new Intl.DateTimeFormat(locale, { month: "short" });
-  const year = 2026;
-  const months = [];
-  for (let i = 0; i < 12; i += 1) {
-    months.push(formatter.format(new Date(year, i, 1)));
-  }
-  return months;
-}
-
-function getYearRange(baseYear, past, future) {
-  const years = [];
-  for (let year = baseYear + future; year >= baseYear - past; year -= 1) {
-    years.push(year);
-  }
-  return years;
-}
-
-function addMonths(date, amount) {
-  const next = new Date(date.getTime());
-  next.setMonth(next.getMonth() + amount);
-  return startOfMonth(next);
-}
-
-function addDays(date, amount) {
-  const next = new Date(date.getTime());
-  next.setDate(next.getDate() + amount);
-  return next;
-}
-
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -565,18 +377,6 @@ function compareDay(a, b) {
     return 0;
   }
   return x < y ? -1 : 1;
-}
-
-function isSameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function formatMonthYear(date, locale) {
-  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(date);
 }
 
 function formatValue(date, locale, withTime) {

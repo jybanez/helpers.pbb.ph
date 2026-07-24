@@ -35,6 +35,7 @@ const DEMO_GROUPS = [
     label: "Data",
     items: [
       { href: "./demo.grid.html", label: "Grid" },
+      { href: "./demo.calendar.html", label: "Calendar" },
       { href: "./demo.datepicker.html", label: "Datepicker" },
       { href: "./demo.path.picker.html", label: "Path Picker" },
       { href: "./demo.file.uploader.html", label: "File Uploader" },
