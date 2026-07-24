@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grouped Navbar Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: var(--demo-link, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .preview { border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 10px; padding: 12px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); padding: 10px; overflow: auto; }
+    .log { color: var(--demo-muted, var(--ui-muted, #b2c2e5)); min-height: 180px; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.navbar"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Grouped Navbar Menus",
+      overview: "Navbar menuGroups contract for operational app chrome with more destinations than a flat menu can scan comfortably.",
+      useWhen: [
+        "Use <code>items[].menuGroups</code> when a primary navbar destination represents grouped operational links.",
+        "Use it for app shells such as Library Cloud/Node where desktop needs a compact multi-column panel and mobile needs labelled flattened sections."
+      ],
+      avoidWhen: [
+        "Do not use this for arbitrary app content or recursive fly-out menus.",
+        "Do not pass unauthorized destinations and expect Helper to filter by role."
+      ],
+      description: "Grouped navbar menus are additive to the existing navbar contract. Flat <code>menuItems</code> continue to render as a single-column shared menu. Grouped <code>menuGroups</code> render a desktop mega menu and flatten into labelled mobile menu sections. The default mega menu is bounded; apps may opt into viewport-width presentation with <code>menuOptions.width: \"viewport\"</code>. Helper owns presentation, focus, theme, and callbacks; applications own routes and permissions.",
+      defaultSampleCode: `createNavbar(host, {}, {
+  items: [{
+    id: "operations",
+    label: "Operations",
+    menuGroups: [{
+      id: "sources",
+      label: "Sources",
+      items: [
+        { id: "source-systems", label: "Source systems", href: "/admin/sources" },
+        { id: "connectors", label: "Connectors", href: "/admin/connectors" },
+      ],
+    }],
+    menuOptions: { width: "viewport" },
+  }],
+  onItemMenuSelect(navItem, menuItem, meta) {
+    console.log(navItem.id, meta.group?.id, menuItem.id);
+  },
+});`,
+      constructor: [
+        { factory: "<code>createNavbar(container, data, options)</code>", arguments: "host element, unused data object, navbar options", returns: "Navbar instance" }
+      ],
+      options: [
+        { option: "<code>items[].menuGroups</code>", default: "<code>[]</code>", description: "Grouped menu sections for a navbar item. Mutually exclusive with flat <code>menuItems</code>; grouped data wins when both are supplied." },
+        { option: "<code>menuGroups[].items</code>", default: "<code>[]</code>", description: "Selectable child destinations. Fields mirror flat menu items: <code>id</code>, <code>label</code>, <code>description</code>, <code>icon</code>, <code>href</code>, <code>disabled</code>, <code>danger</code>, <code>className</code>, and app metadata." },
+        { option: "<code>menuGroups[].hidden</code>", default: "<code>false</code>", description: "Presentation filter. Hidden or empty groups are omitted." },
+        { option: "<code>menuGroups[].disabled</code>", default: "<code>false</code>", description: "Disables every child destination in the group while still showing the group context." },
+        { option: "<code>menuOptions.width</code>", default: "<code>\"contained\"</code>", description: "Mega-menu width strategy. Use <code>\"viewport\"</code> when the menu should span the screen width with small edge gutters.", values: ["contained", "viewport"] }
+      ],
+      events: [
+        { event: "<code>onItemMenuSelect(item, menuItem, meta)</code>", arguments: "navbar item, selected child item, metadata with <code>group</code>, <code>groupIndex</code>, <code>itemIndex</code>, and <code>source</code>", returns: "<code>void</code>" },
+        { event: "<code>onActionMenuSelect(action, menuItem, meta)</code>", arguments: "right-side action, selected child item, metadata with optional <code>group</code>", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "unused data object, partial options", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "current option snapshot" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+      </div>
+      <h1 class="ui-title">Grouped Navbar Demo</h1>
+      <p class="muted">Open Operations to inspect the desktop grouped menu. Narrow the viewport to inspect the flattened mobile sections.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Library-Style App Chrome</h2>
+      <div class="preview" id="navbarHost"></div>
+      <pre>createNavbar(host, {}, {
+  brandText: "PBB Library",
+  activeId: "collections",
+  items: [
+    { id: "home", label: "Home" },
+    { id: "collections", label: "Collections" },
+    { id: "my-library", label: "My Library" },
+    {
+      id: "operations",
+      label: "Operations",
+      menuGroups: operationGroups,
+      menuOptions: { width: "viewport" },
+    },
+  ],
+  onItemMenuSelect(item, menuItem, meta) {
+    writeLog("navbar.grouped.select", {
+      itemId: item.id,
+      groupId: meta.group?.id,
+      menuItemId: menuItem.id,
+      source: meta.source,
+    });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createNavbar = await uiLoader.get("ui.navbar");
+    const log = document.getElementById("log");
+    const operationGroups = [
+      {
+        id: "overview",
+        label: "Overview",
+        description: "Operational landing pages",
+        items: [
+          { id: "operations-overview", label: "Operations overview", description: "Queue health and active work" },
+        ],
+      },
+      {
+        id: "sources",
+        label: "Sources",
+        description: "Catalog intake and external systems",
+        items: [
+          { id: "source-systems", label: "Source systems" },
+          { id: "connectors", label: "Connectors" },
+          { id: "import-jobs", label: "Import jobs" },
+        ],
+      },
+      {
+        id: "content",
+        label: "Content",
+        items: [
+          { id: "records", label: "Records" },
+          { id: "collections-admin", label: "Collections" },
+          { id: "search-indexes", label: "Search indexes" },
+        ],
+      },
+      {
+        id: "governance",
+        label: "Governance",
+        items: [
+          { id: "reviews", label: "Reviews" },
+          { id: "retention", label: "Retention" },
+          { id: "audit-events", label: "Audit events" },
+        ],
+      },
+      {
+        id: "releases",
+        label: "Releases",
+        items: [
+          { id: "release-builds", label: "Builds" },
+          { id: "release-approvals", label: "Approvals" },
+          { id: "published-releases", label: "Published releases" },
+        ],
+      },
+    ];
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    createNavbar(document.getElementById("navbarHost"), {}, {
+      brandText: "PBB Library",
+      brandSubtitle: "Cloud workspace",
+      activeId: "collections",
+      mobileLayout: "collapse",
+      items: [
+        { id: "home", label: "Home" },
+        { id: "collections", label: "Collections" },
+        { id: "my-library", label: "My Library" },
+        {
+          id: "operations",
+          label: "Operations",
+          menuGroups: operationGroups,
+          menuOptions: { ariaLabel: "Library operations", width: "viewport" },
+        },
+      ],
+      actions: [
+        {
+          id: "profile",
+          label: "Account",
+          menuItems: [
+            { id: "account", label: "Account settings" },
+            { id: "logout", label: "Sign out", danger: true },
+          ],
+        },
+      ],
+      onNavigate(item) {
+        writeLog("navbar.navigate", { itemId: item.id });
+      },
+      onItemMenuSelect(item, menuItem, meta) {
+        writeLog("navbar.grouped.select", {
+          itemId: item.id,
+          groupId: meta.group?.id || null,
+          groupLabel: meta.group?.label || null,
+          menuItemId: menuItem.id,
+          source: meta.source,
+        });
+      },
+      onActionMenuSelect(action, item, meta) {
+        writeLog("navbar.action.select", { actionId: action.id, itemId: item.id, source: meta.source });
+      },
+    });
+  </script>
+</body>
+</html>

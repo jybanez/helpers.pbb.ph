@@ -147,6 +147,76 @@ export function createNavbar(container, data = {}, options = {}) {
     return entry ? [entry] : [];
   }
 
+  function getMenuGroups(owner) {
+    return (Array.isArray(owner?.menuGroups) ? owner.menuGroups : [])
+      .filter((group) => group && !group.hidden)
+      .map((group, groupIndex) => ({
+        ...group,
+        id: group.id || `${owner?.id || "menu"}:group:${groupIndex}`,
+        label: group.label ?? String(group.id ?? `Group ${groupIndex + 1}`),
+        items: (Array.isArray(group.items) ? group.items : []).filter((item) => item && !item.hidden && (item.label || item.id)),
+      }))
+      .filter((group) => group.items.length);
+  }
+
+  function getFlatMenuItems(owner) {
+    if (Array.isArray(owner?.menuGroups) && owner.menuGroups.length && Array.isArray(owner?.menuItems) && owner.menuItems.length) {
+      warnMixedMenuContract(owner);
+    }
+    if (getMenuGroups(owner).length) {
+      return [];
+    }
+    return Array.isArray(owner?.menuItems) ? owner.menuItems : [];
+  }
+
+  function warnMixedMenuContract(owner) {
+    if (typeof console === "undefined" || typeof console.warn !== "function") {
+      return;
+    }
+    console.warn(`ui.navbar item \"${owner?.id || owner?.label || "unknown"}\" supplied both menuGroups and menuItems. menuGroups will be used.`);
+  }
+
+  function pushMobileGroupedEntries(entries, owner, ownerKind) {
+    const groups = getMenuGroups(owner);
+    if (!groups.length) {
+      return false;
+    }
+    entries.push({
+      id: `mobile-group:${owner.id || entries.length}`,
+      label: owner.label ?? String(owner.id ?? "Menu"),
+      icon: owner.icon || "",
+      disabled: true,
+      className: "ui-navbar-mobile-menu-group",
+      __mobileKind: "group-label",
+    });
+    groups.forEach((group, groupIndex) => {
+      entries.push({
+        id: `mobile-subgroup:${owner.id || "menu"}:${group.id || groupIndex}`,
+        label: group.label ?? String(group.id ?? `Group ${groupIndex + 1}`),
+        icon: group.icon || "",
+        disabled: true,
+        className: "ui-navbar-mobile-menu-subgroup",
+        __mobileKind: "subgroup-label",
+      });
+      group.items.forEach((menuItem, itemIndex) => {
+        entries.push({
+          id: menuItem?.id || `${owner.id || ownerKind}:${group.id || groupIndex}:${itemIndex}`,
+          label: menuItem?.label ?? menuItem?.id ?? String(itemIndex),
+          icon: menuItem?.icon || "",
+          className: "ui-navbar-mobile-menu-child",
+          disabled: Boolean(group.disabled || menuItem?.disabled),
+          danger: Boolean(menuItem?.danger),
+          __mobileKind: `${ownerKind}-menu`,
+          __item: ownerKind === "item" ? owner : null,
+          __action: ownerKind === "action" ? owner : null,
+          __menuItem: menuItem,
+          __group: group,
+        });
+      });
+    });
+    return true;
+  }
+
   function buildMobileMenuItems() {
     const entries = [];
     const pushEntries = (items) => {
@@ -174,7 +244,10 @@ export function createNavbar(container, data = {}, options = {}) {
       if (!item) {
         return;
       }
-      const menuItems = Array.isArray(item.menuItems) ? item.menuItems : [];
+      if (pushMobileGroupedEntries(entries, item, "item")) {
+        return;
+      }
+      const menuItems = getFlatMenuItems(item);
       if (menuItems.length) {
         entries.push({
           id: `mobile-group:${item.id || entries.length}`,
@@ -213,7 +286,10 @@ export function createNavbar(container, data = {}, options = {}) {
       if (!action) {
         return;
       }
-      const menuItems = Array.isArray(action.menuItems) ? action.menuItems : [];
+      if (pushMobileGroupedEntries(entries, action, "action")) {
+        return;
+      }
+      const menuItems = getFlatMenuItems(action);
       if (menuItems.length) {
         entries.push({
           id: `mobile-group:${action.id || entries.length}`,
@@ -361,11 +437,16 @@ export function createNavbar(container, data = {}, options = {}) {
         },
       });
       appendIconLabel(btn, item);
-      const menuItems = Array.isArray(item?.menuItems) ? item.menuItems : [];
-      if (menuItems.length) {
-        const menuApi = createMenu(btn, menuItems, {
+      const menuGroups = getMenuGroups(item);
+      const menuItems = getFlatMenuItems(item);
+      if (menuGroups.length || menuItems.length) {
+        const grouped = menuGroups.length > 0;
+        const menuOptions = (item?.menuOptions && typeof item.menuOptions === "object") ? item.menuOptions : {};
+        const menuApi = createMenu(btn, grouped ? menuGroups : menuItems, {
           placement: "bottom-start",
-          ...((item?.menuOptions && typeof item.menuOptions === "object") ? item.menuOptions : {}),
+          ...menuOptions,
+          mode: grouped ? "mega" : menuOptions.mode,
+          className: [grouped ? "ui-navbar-mega-menu" : "", menuOptions.className].filter(Boolean).join(" "),
           onSelect: (menuItem, meta) => {
             currentOptions.onItemMenuSelect?.(item, menuItem, meta);
           },
@@ -395,11 +476,16 @@ export function createNavbar(container, data = {}, options = {}) {
         attrs: { type: "button", ...(action?.disabled ? { disabled: "disabled" } : {}) },
       });
       appendIconLabel(btn, action);
-      const menuItems = Array.isArray(action?.menuItems) ? action.menuItems : [];
-      if (menuItems.length) {
-        const menuApi = createMenu(btn, menuItems, {
+      const menuGroups = getMenuGroups(action);
+      const menuItems = getFlatMenuItems(action);
+      if (menuGroups.length || menuItems.length) {
+        const grouped = menuGroups.length > 0;
+        const menuOptions = (action?.menuOptions && typeof action.menuOptions === "object") ? action.menuOptions : {};
+        const menuApi = createMenu(btn, grouped ? menuGroups : menuItems, {
           placement: "bottom-end",
-          ...((action?.menuOptions && typeof action.menuOptions === "object") ? action.menuOptions : {}),
+          ...menuOptions,
+          mode: grouped ? "mega" : menuOptions.mode,
+          className: [grouped ? "ui-navbar-mega-menu" : "", menuOptions.className].filter(Boolean).join(" "),
           onSelect: (item, meta) => {
             currentOptions.onActionMenuSelect?.(action, item, meta);
           },
@@ -451,13 +537,13 @@ export function createNavbar(container, data = {}, options = {}) {
               currentOptions.onNavigate?.(entry.__item);
               break;
             case "item-menu":
-              currentOptions.onItemMenuSelect?.(entry.__item, entry.__menuItem, { ...meta, source: "mobile-menu" });
+              currentOptions.onItemMenuSelect?.(entry.__item, entry.__menuItem, { ...meta, group: entry.__group || null, source: "mobile-menu" });
               break;
             case "action":
               currentOptions.onAction?.(entry.__action);
               break;
             case "action-menu":
-              currentOptions.onActionMenuSelect?.(entry.__action, entry.__menuItem, { ...meta, source: "mobile-menu" });
+              currentOptions.onActionMenuSelect?.(entry.__action, entry.__menuItem, { ...meta, group: entry.__group || null, source: "mobile-menu" });
               break;
             default:
               break;

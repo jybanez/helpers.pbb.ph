@@ -6,6 +6,8 @@ const DEFAULT_OPTIONS = {
   align: null, // null | left | right
   offset: 6,
   ariaLabel: "Menu",
+  mode: "flat", // flat | grouped | mega
+  width: "contained", // contained | viewport
   closeOnSelect: true,
   closeOnOutsideClick: true,
   closeOnEscape: true,
@@ -31,11 +33,11 @@ export function createMenu(triggerEl, items = [], options = {}) {
       return;
     }
     root = createElement("div", {
-      className: `ui-menu ${currentOptions.className}`.trim(),
       attrs: { role: "menu", tabindex: "-1", id: rootId, "aria-label": currentOptions.ariaLabel },
     });
-    listEl = createElement("div", { className: "ui-menu-list" });
+    listEl = createElement("div", {});
     root.appendChild(listEl);
+    syncMenuClasses();
     renderItems();
   }
 
@@ -43,49 +45,104 @@ export function createMenu(triggerEl, items = [], options = {}) {
     if (!listEl) {
       return;
     }
+    syncMenuClasses();
     clearNode(listEl);
     activeIndex = -1;
+    if (isGroupedMode()) {
+      renderGroups();
+      return;
+    }
     currentItems.forEach((item, index) => {
-      const disabled = Boolean(item?.disabled);
-      const row = createElement("button", {
-        className: `ui-menu-item${disabled ? " is-disabled" : ""}${item?.danger ? " is-danger" : ""}${item?.className ? ` ${String(item.className).trim()}` : ""}`,
-        attrs: {
-          type: "button",
-          role: "menuitem",
-          tabindex: "-1",
-          "data-index": String(index),
-          ...(disabled ? { disabled: "disabled" } : {}),
-        },
+      listEl.appendChild(createMenuItemButton({
+        item,
+        index,
+        source: "menu",
+        disabled: Boolean(item?.disabled),
+      }));
+    });
+  }
+
+  function renderGroups() {
+    normalizeGroups(currentItems).forEach((group, groupIndex) => {
+      const section = createElement("section", {
+        className: `ui-menu-group${group.disabled ? " is-disabled" : ""}${group.className ? ` ${String(group.className).trim()}` : ""}`,
+        attrs: { role: "group", "aria-label": group.label },
       });
-      if (item?.icon) {
-        const icon = createElement("span", { className: "ui-menu-item-icon", html: String(item.icon) });
-        row.appendChild(icon);
+      const heading = createElement("div", { className: "ui-menu-group-heading" });
+      if (group.icon) {
+        heading.appendChild(createElement("span", { className: "ui-menu-group-icon", html: String(group.icon) }));
       }
-      row.appendChild(createElement("span", { className: "ui-menu-item-label", text: item?.label ?? String(item?.id ?? index) }));
-      if (item?.shortcut) {
-        row.appendChild(createElement("kbd", { className: "ui-menu-item-shortcut", text: String(item.shortcut) }));
+      const text = createElement("span", { className: "ui-menu-group-text" });
+      text.appendChild(createElement("span", { className: "ui-menu-group-label", text: group.label }));
+      if (group.description) {
+        text.appendChild(createElement("span", { className: "ui-menu-group-description", text: group.description }));
       }
-      events.on(row, "click", () => {
-        if (disabled) {
+      heading.appendChild(text);
+      section.appendChild(heading);
+
+      const groupList = createElement("div", { className: "ui-menu-group-list" });
+      group.items.forEach((item, itemIndex) => {
+        const entry = getEntryByGroupPosition(groupIndex, itemIndex);
+        if (!entry) {
           return;
         }
-        currentOptions.onSelect?.(item, { index, source: "menu" });
-        if (currentOptions.closeOnSelect) {
-          close();
-        }
+        groupList.appendChild(createMenuItemButton({
+          item,
+          group,
+          index: entry.index,
+          itemIndex,
+          groupIndex,
+          source: "menu",
+          disabled: Boolean(group.disabled || item?.disabled),
+        }));
       });
-      events.on(row, "mouseenter", () => setActiveIndex(index));
-      listEl.appendChild(row);
+      section.appendChild(groupList);
+      listEl.appendChild(section);
     });
+  }
+
+  function createMenuItemButton({ item, group = null, index, itemIndex = index, groupIndex = null, source = "menu", disabled = false }) {
+    const row = createElement("button", {
+      className: `ui-menu-item${disabled ? " is-disabled" : ""}${item?.danger ? " is-danger" : ""}${item?.className ? ` ${String(item.className).trim()}` : ""}`,
+      attrs: {
+        type: "button",
+        role: "menuitem",
+        tabindex: "-1",
+        "data-index": String(index),
+        "data-menu-index": String(index),
+        ...(disabled ? { disabled: "disabled" } : {}),
+      },
+    });
+    if (item?.icon) {
+      row.appendChild(createElement("span", { className: "ui-menu-item-icon", html: String(item.icon) }));
+    }
+    row.appendChild(createElement("span", { className: "ui-menu-item-label", text: item?.label ?? String(item?.id ?? index) }));
+    if (item?.description) {
+      row.appendChild(createElement("span", { className: "ui-menu-item-description", text: String(item.description) }));
+    }
+    if (item?.shortcut) {
+      row.appendChild(createElement("kbd", { className: "ui-menu-item-shortcut", text: String(item.shortcut) }));
+    }
+    events.on(row, "click", () => {
+      if (disabled) {
+        return;
+      }
+      currentOptions.onSelect?.(item, buildSelectMeta({ index, itemIndex, groupIndex, group, source }));
+      if (currentOptions.closeOnSelect) {
+        close();
+      }
+    });
+    events.on(row, "mouseenter", () => setActiveIndex(index));
+    return row;
   }
 
   function setActiveIndex(index) {
     if (!listEl) {
       return;
     }
-    const children = Array.from(listEl.querySelectorAll(".ui-menu-item"));
+    const children = Array.from(listEl.querySelectorAll(".ui-menu-item[data-menu-index]"));
     children.forEach((node) => node.classList.remove("is-active"));
-    const target = children[index];
+    const target = children.find((node) => Number(node.dataset.menuIndex) === index);
     if (target && !target.disabled) {
       target.classList.add("is-active");
       target.focus();
@@ -94,10 +151,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
   }
 
   function moveActive(delta) {
-    const enabledIndexes = currentItems
-      .map((item, index) => ({ item, index }))
-      .filter((entry) => !entry.item?.disabled)
-      .map((entry) => entry.index);
+    const enabledIndexes = getEnabledEntries().map((entry) => entry.index);
     if (!enabledIndexes.length) {
       return;
     }
@@ -124,6 +178,9 @@ export function createMenu(triggerEl, items = [], options = {}) {
     }
     if (placement.endsWith("end")) {
       left = rect.right - menuWidth;
+    }
+    if (currentOptions.mode === "mega" && currentOptions.width === "viewport") {
+      left = 12;
     }
 
     const maxLeft = window.innerWidth - menuWidth - 8;
@@ -166,9 +223,9 @@ export function createMenu(triggerEl, items = [], options = {}) {
     });
     currentOptions.onOpenChange?.(true);
     bindGlobal();
-    const firstEnabled = currentItems.findIndex((item) => !item?.disabled);
-    if (firstEnabled >= 0) {
-      setActiveIndex(firstEnabled);
+    const firstEnabled = getEnabledEntries()[0];
+    if (firstEnabled) {
+      setActiveIndex(firstEnabled.index);
     }
   }
 
@@ -270,10 +327,10 @@ export function createMenu(triggerEl, items = [], options = {}) {
           return;
         }
         if (event.key === "Enter" || event.key === " ") {
-          const item = currentItems[activeIndex];
-          if (item && !item.disabled) {
+          const entry = getEntryByIndex(activeIndex);
+          if (entry && !entry.disabled) {
             event.preventDefault();
-            currentOptions.onSelect?.(item, { index: activeIndex, source: "keyboard" });
+            currentOptions.onSelect?.(entry.item, buildSelectMeta({ ...entry, source: "keyboard" }));
             if (currentOptions.closeOnSelect) {
               close();
             }
@@ -298,14 +355,81 @@ export function createMenu(triggerEl, items = [], options = {}) {
   }
 
   function moveActiveToBoundary(edge) {
-    const enabledIndexes = currentItems
-      .map((item, index) => ({ item, index }))
-      .filter((entry) => !entry.item?.disabled)
-      .map((entry) => entry.index);
+    const enabledIndexes = getEnabledEntries().map((entry) => entry.index);
     if (!enabledIndexes.length) {
       return;
     }
     setActiveIndex(edge === "end" ? enabledIndexes[enabledIndexes.length - 1] : enabledIndexes[0]);
+  }
+
+  function isGroupedMode() {
+    return currentOptions.mode === "grouped" || currentOptions.mode === "mega";
+  }
+
+  function syncMenuClasses() {
+    const grouped = isGroupedMode();
+    if (root) {
+      root.className = [
+        "ui-menu",
+        grouped ? "is-grouped" : "",
+        currentOptions.mode === "mega" ? "is-mega" : "",
+        currentOptions.mode === "mega" && currentOptions.width === "viewport" ? "is-width-viewport" : "",
+        currentOptions.className,
+      ].filter(Boolean).join(" ");
+    }
+    if (listEl) {
+      listEl.className = grouped ? "ui-menu-list ui-menu-groups" : "ui-menu-list";
+    }
+  }
+
+  function getFlatEntries() {
+    if (!isGroupedMode()) {
+      return currentItems.map((item, index) => ({
+        item,
+        index,
+        itemIndex: index,
+        groupIndex: null,
+        group: null,
+        disabled: Boolean(item?.disabled),
+      }));
+    }
+
+    const entries = [];
+    normalizeGroups(currentItems).forEach((group, groupIndex) => {
+      group.items.forEach((item, itemIndex) => {
+        entries.push({
+          item,
+          index: entries.length,
+          itemIndex,
+          groupIndex,
+          group,
+          disabled: Boolean(group.disabled || item?.disabled),
+        });
+      });
+    });
+    return entries;
+  }
+
+  function getEnabledEntries() {
+    return getFlatEntries().filter((entry) => !entry.disabled);
+  }
+
+  function getEntryByIndex(index) {
+    return getFlatEntries().find((entry) => entry.index === index) || null;
+  }
+
+  function getEntryByGroupPosition(groupIndex, itemIndex) {
+    return getFlatEntries().find((entry) => entry.groupIndex === groupIndex && entry.itemIndex === itemIndex) || null;
+  }
+
+  function buildSelectMeta({ index, itemIndex = index, groupIndex = null, group = null, source = "menu" }) {
+    return {
+      index,
+      itemIndex,
+      groupIndex,
+      group,
+      source,
+    };
   }
 
   function update(nextItems = [], nextOptions = {}) {
@@ -334,6 +458,8 @@ export function createMenu(triggerEl, items = [], options = {}) {
       activeIndex,
       placement: resolvePlacement(currentOptions),
       items: [...currentItems],
+      mode: currentOptions.mode,
+      groups: isGroupedMode() ? normalizeGroups(currentItems) : [],
     };
   }
 
@@ -360,10 +486,30 @@ export function createMenu(triggerEl, items = [], options = {}) {
 }
 
 function normalizeOptions(options) {
+  const mode = String(options?.mode || DEFAULT_OPTIONS.mode).toLowerCase();
+  const width = String(options?.width || DEFAULT_OPTIONS.width).toLowerCase();
   return {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
+    mode: mode === "grouped" || mode === "mega" ? mode : "flat",
+    width: width === "viewport" ? "viewport" : "contained",
   };
+}
+
+function isRenderableItem(item) {
+  return Boolean(item && !item.hidden && (item.label || item.id));
+}
+
+function normalizeGroups(groups) {
+  return (Array.isArray(groups) ? groups : [])
+    .filter((group) => group && !group.hidden)
+    .map((group, groupIndex) => ({
+      ...group,
+      id: group.id || `group:${groupIndex}`,
+      label: group.label ?? String(group.id ?? `Group ${groupIndex + 1}`),
+      items: (Array.isArray(group.items) ? group.items : []).filter(isRenderableItem),
+    }))
+    .filter((group) => group.items.length);
 }
 
 function resolvePlacement(options = {}) {

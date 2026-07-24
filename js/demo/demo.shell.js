@@ -118,6 +118,7 @@ const DEMO_GROUPS = [
     items: [
       { href: "./demo.nav.html", label: "Overview" },
       { href: "./demo.navbar.html", label: "Navbar" },
+      { href: "./demo.navbar.grouped.html", label: "Grouped Navbar" },
       { href: "./demo.sidebar.html", label: "Sidebar" },
       { href: "./demo.breadcrumbs.html", label: "Breadcrumbs" },
       { href: "./demo.dropdown.html", label: "Dropdown" },

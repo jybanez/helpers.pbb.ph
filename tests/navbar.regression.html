@@ -80,6 +80,38 @@
               { id: "app:workspace", label: "Workspace" },
             ],
           },
+          {
+            id: "operations",
+            label: "Operations",
+            menuOptions: { width: "viewport" },
+            menuGroups: [
+              {
+                id: "sources",
+                label: "Sources",
+                description: "External inputs",
+                items: [
+                  { id: "source-systems", label: "Source systems" },
+                  { id: "connectors", label: "Connectors" },
+                ],
+              },
+              {
+                id: "hidden",
+                label: "Hidden",
+                hidden: true,
+                items: [
+                  { id: "hidden-child", label: "Hidden child" },
+                ],
+              },
+              {
+                id: "releases",
+                label: "Releases",
+                items: [
+                  { id: "release-builds", label: "Builds" },
+                  { id: "release-approvals", label: "Approvals", disabled: true },
+                ],
+              },
+            ],
+          },
         ],
         actions: [
           {
@@ -95,7 +127,7 @@
           events.push({ type: "navigate", id: item?.id || null });
         },
         onItemMenuSelect(item, menuItem, meta) {
-          events.push({ type: "item-menu-select", itemId: item.id, menuItemId: menuItem.id, source: meta.source });
+          events.push({ type: "item-menu-select", itemId: item.id, menuItemId: menuItem.id, groupId: meta.group?.id || null, source: meta.source });
         },
         onItemMenuOpenChange(item, open) {
           events.push({ type: "item-menu-open", itemId: item.id, open });
@@ -124,7 +156,7 @@
       assert(host.querySelector(".ui-navbar-status")?.getAttribute("aria-label") === "System status", "persistent status content should expose an accessible group label");
 
       const navButtons = Array.from(host.querySelectorAll(".ui-navbar-item"));
-      assert(navButtons.length === 2, "navbar should render 2 primary items");
+      assert(navButtons.length === 3, "navbar should render 3 primary items");
       assert(navButtons[0].classList.contains("ui-button"), "navbar items should include the shared ui-button base class");
       assert(navButtons[0].classList.contains("ui-button-borderless"), "navbar items should accept shared button utility classes through item.className");
       assert(navButtons[0].classList.contains("test-dashboard-nav"), "navbar items should preserve app-provided className");
@@ -146,6 +178,23 @@
 
       assert(events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:relay"), "menu-backed primary item should emit selection callback");
       assert(events.filter((event) => event.type === "navigate" && event.id === "apps").length === 0, "menu-backed primary item should not also emit onNavigate");
+
+      navButtons[2].click();
+      await wait(50);
+      const groupedMenu = document.querySelector(".ui-menu.is-grouped.is-mega");
+      assert(Boolean(groupedMenu), "grouped navbar item should render a grouped mega menu");
+      assert(groupedMenu.classList.contains("is-width-viewport"), "grouped navbar item should support viewport-width mega menus");
+      assert(groupedMenu.querySelectorAll(".ui-menu-group").length === 2, "grouped menu should omit hidden groups");
+      assert(Boolean(groupedMenu.querySelector(".ui-menu-group-description")), "grouped menu should render group descriptions");
+      assert(!groupedMenu.textContent.includes("Hidden child"), "grouped menu should not render hidden group children");
+      const connectorsMenuButton = Array.from(groupedMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Connectors"));
+      assert(Boolean(connectorsMenuButton), "grouped menu should render child destinations");
+      connectorsMenuButton.click();
+      await wait(50);
+      assert(
+        events.some((event) => event.type === "item-menu-select" && event.itemId === "operations" && event.menuItemId === "connectors" && event.groupId === "sources"),
+        "grouped menu selection should include group metadata"
+      );
 
       const actionButton = host.querySelector(".ui-navbar-action");
       assert(actionButton.classList.contains("ui-button-borderless"), "navbar actions should accept shared button utility classes through action.className");
@@ -191,7 +240,7 @@
       const mobileMenuLabels = Array.from(mobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
       assert(!mobileMenuLabels.includes("Syncing 3 calls"), "persistent status content should not duplicate into the mobile hamburger menu");
       assert(
-        mobileMenuLabels.slice(0, 9).join("|") === [
+        mobileMenuLabels.slice(0, 16).join("|") === [
           "Operations",
           "Realtime Connected",
           "Region 7",
@@ -199,6 +248,13 @@
           "Apps",
           "Relay",
           "Workspace",
+          "Operations",
+          "Sources",
+          "Source systems",
+          "Connectors",
+          "Releases",
+          "Builds",
+          "Approvals",
           "Profile",
           "Logout",
         ].join("|"),
@@ -226,6 +282,22 @@
       assert(
         events.some((event) => event.type === "item-menu-select" && event.itemId === "apps" && event.menuItemId === "app:workspace" && event.source === "mobile-menu"),
         "mobile menu should flatten menu-backed navbar items and emit selection callbacks"
+      );
+
+      mobileToggle.click();
+      const mobileOperationsMenu = await waitFor(() => {
+        const menu = getMobileMenu();
+        return menu && isMobileMenuOpen() ? menu : null;
+      });
+      const mobileConnector = Array.from(mobileOperationsMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Connectors");
+      mobileConnector.click();
+      await waitFor(() => {
+        const menu = getMobileMenu();
+        return !menu || !isMobileMenuOpen();
+      });
+      assert(
+        events.some((event) => event.type === "item-menu-select" && event.itemId === "operations" && event.menuItemId === "connectors" && event.groupId === "sources" && event.source === "mobile-menu"),
+        "mobile menu should flatten grouped navbar items and preserve group metadata"
       );
 
       mobileToggle.click();
