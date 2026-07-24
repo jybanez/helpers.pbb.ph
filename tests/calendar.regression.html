@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendar Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.calendar.css">
+  <link rel="stylesheet" href="../css/ui/ui.datepicker.css">
+</head>
+<body data-status="pending">
+  <div id="calendarHost"></div>
+  <div id="datepickerHost"></div>
+  <pre id="result">Running...</pre>
+  <script type="module">
+    import { createCalendar } from "../js/ui/ui.calendar.js";
+    import { createDatepicker } from "../js/ui/ui.datepicker.js";
+
+    const result = document.getElementById("result");
+    const failures = [];
+    let selectedPayload = null;
+    let viewPayload = null;
+
+    const calendar = createCalendar(document.getElementById("calendarHost"), {
+      value: "2026-07-24",
+      viewDate: "2026-07-01",
+      min: "2026-07-05",
+      max: "2026-08-05",
+      disabledDates(date) {
+        return date.getDay() === 0;
+      },
+      onSelect(date, state) {
+        selectedPayload = { date: date.toISOString(), state };
+      },
+      onViewChange(date, state) {
+        viewPayload = { date: date.toISOString(), state };
+      },
+    });
+
+    assert(calendar.root?.classList.contains("ui-calendar"), "calendar should expose a root element");
+    assert(document.querySelectorAll("#calendarHost .ui-calendar-day").length === 42, "calendar should render a six-week month grid");
+    assert(document.querySelector("#calendarHost .ui-calendar-day.is-selected")?.textContent === "24", "calendar should mark the selected date");
+    assert(document.querySelector("#calendarHost .ui-calendar-day.is-disabled")?.textContent === "28", "calendar should disable out-of-range days");
+    document.querySelector("#calendarHost .ui-calendar-nav[aria-label='Next month']")?.click();
+    assert(viewPayload?.state.source === "next", "next navigation should emit view-change source");
+    assert(isLocalDate(calendar.getState().viewDate, 2026, 7, 1), "next navigation should update view month");
+    const augustFour = Array.from(document.querySelectorAll("#calendarHost .ui-calendar-day")).find((day) => day.textContent === "4" && !day.classList.contains("is-outside"));
+    augustFour?.click();
+    assert(isLocalDate(selectedPayload?.date, 2026, 7, 4), "calendar should emit selected date");
+
+    const picker = createDatepicker(document.getElementById("datepickerHost"), {
+      value: "2026-07-24",
+      closeOnSelect: false,
+    });
+    document.querySelector("#datepickerHost .ui-datepicker-trigger")?.click();
+    assert(Boolean(document.querySelector("#datepickerHost .ui-calendar")), "datepicker should compose the shared calendar primitive");
+    assert(document.querySelector("#datepickerHost .ui-calendar-day.is-selected")?.textContent === "24", "datepicker calendar should preserve selected state");
+
+    picker.destroy();
+    calendar.destroy();
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      result.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+
+    function isLocalDate(value, year, month, day) {
+      const date = new Date(value);
+      return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
+    }
+  </script>
+</body>
+</html>
