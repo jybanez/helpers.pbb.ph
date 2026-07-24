@@ -13,7 +13,7 @@ const UI_MEDIA_REV = "0.21.3";
 const UI_PDF_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.147";
+const UI_BUNDLE_REV = "0.21.148";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
