@@ -28,7 +28,7 @@
 
   <script type="module">
     import { createElement } from "../js/ui/ui.dom.js";
-    import { createModal } from "../js/ui/ui.modal.js";
+    import { createActionModal, createModal } from "../js/ui/ui.modal.js";
 
     const results = document.getElementById("results");
     const failures = [];
@@ -77,7 +77,7 @@
     });
 
     modal.open();
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    await waitFor(() => document.querySelector(".ui-modal-root")?.classList.contains("is-open"));
 
     const root = document.querySelector(".ui-modal-root");
     const panel = document.querySelector(".ui-modal");
@@ -217,6 +217,29 @@
     await new Promise((resolve) => setTimeout(resolve, 80));
     assert(document.querySelector(".ui-modal-root") === null, "interactive header modal destroy should remove root from DOM");
 
+    const strokeIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h8M8 12h8M8 17h6"></path></svg>';
+    const iconModal = createActionModal({
+      title: "Icon Fill Regression",
+      content: createElement("p", { text: "Action modal icons should preserve stroke icon semantics." }),
+      headerActions: [{
+        id: "copy",
+        label: "Copy",
+        icon: strokeIcon,
+        iconOnly: true,
+        ariaLabel: "Copy",
+      }],
+      actions: [{ id: "close", label: "Close" }],
+    });
+    iconModal.open();
+    await waitFor(() => document.querySelector(".ui-modal-root")?.classList.contains("is-open"));
+    const actionIconSvg = document.querySelector(".ui-action-modal-button-icon svg");
+    assert(Boolean(actionIconSvg), "action modal should render header action SVG icon");
+    assert(getComputedStyle(actionIconSvg).fill === "none" || getComputedStyle(actionIconSvg).fill === "rgba(0, 0, 0, 0)", "action modal icon SVG should not force solid fill");
+    assert(normalizeColor(getComputedStyle(actionIconSvg).stroke) === normalizeColor(getComputedStyle(actionIconSvg).color), "action modal icon SVG stroke should follow currentColor");
+    iconModal.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert(document.querySelector(".ui-modal-root") === null, "icon modal destroy should remove root from DOM");
+
     if (failures.length) {
       document.body.dataset.status = "fail";
       results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
@@ -242,6 +265,17 @@
       const normalized = getComputedStyle(probe).color;
       probe.remove();
       return normalized;
+    }
+
+    async function waitFor(predicate, timeoutMs = 1000) {
+      const started = performance.now();
+      while (performance.now() - started < timeoutMs) {
+        if (predicate()) {
+          return true;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
+      return false;
     }
   </script>
 </body>

@@ -143,6 +143,19 @@
     assert(calls.includes("destroy:call-2:media-c"), "timeline destroy should destroy active custom content");
     assert(host.childNodes.length === 0, "destroy should clear timeline container");
 
+    const compactHost = document.createElement("div");
+    document.body.appendChild(compactHost);
+    const compactTimeline = createTimeline(compactHost, baseItems, {
+      groupByDate: false,
+      density: "compact",
+      orientation: "vertical",
+    });
+    const compactItemStyle = getComputedStyle(compactHost.querySelector(".ui-timeline-item"));
+    assert(compactItemStyle.paddingTop === "0px" && compactItemStyle.paddingLeft === "0px", "compact vertical timeline items should keep zero padding for rail alignment");
+    assert(compactItemStyle.gap === "0px", "compact vertical timeline items should keep zero gap for rail alignment");
+    compactTimeline.destroy();
+    compactHost.remove();
+
     if (failures.length) {
       document.body.dataset.status = "failed";
       results.textContent = failures.join("\n");

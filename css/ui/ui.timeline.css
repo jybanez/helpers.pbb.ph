@@ -319,6 +319,11 @@
   gap: 8px;
 }
 
+.ui-timeline--vertical.ui-timeline--density-compact .ui-timeline-item {
+  padding: 0;
+  gap: 0;
+}
+
 .ui-timeline--density-compact .ui-timeline-title {
   font-size: 13px;
 }

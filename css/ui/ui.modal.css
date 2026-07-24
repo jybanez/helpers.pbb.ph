@@ -164,7 +164,8 @@
 .ui-action-modal-button-icon svg {
   width: 14px;
   height: 14px;
-  fill: currentColor;
+  fill: none;
+  stroke: currentColor;
 }
 
 .ui-action-modal-button-label {
