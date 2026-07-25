@@ -58,9 +58,10 @@ export function createModal(options = {}) {
   let activeDocument = null;
   let dragState = null;
   let busyCancelPending = false;
-  const titleId = `ui-modal-title-${++modalIdSeed}`;
+  const modalInstanceId = `ui-modal-${++modalIdSeed}`;
+  const titleId = `${modalInstanceId}-title`;
 
-  const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true" } });
+  const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true", "data-ui-modal-id": modalInstanceId } });
   const backdrop = createElement("div", { className: "ui-modal-backdrop" });
   const panel = createElement("section", {
     className: "ui-modal",
@@ -394,7 +395,8 @@ export function createModal(options = {}) {
   }
 
   function trapFocusInPanel(event) {
-    const focusable = getFocusable(panel);
+    const boundaries = getFocusBoundaries();
+    const focusable = boundaries.flatMap((node) => getFocusable(node));
     if (!focusable.length) {
       event.preventDefault();
       panel.focus();
@@ -404,14 +406,24 @@ export function createModal(options = {}) {
     const last = focusable[focusable.length - 1];
     const active = getDocumentContext().activeElement;
     if (event.shiftKey) {
-      if (active === first || !panel.contains(active)) {
+      if (active === first || !isInsideFocusBoundaries(active, boundaries)) {
         event.preventDefault();
         last.focus();
       }
-    } else if (active === last || !panel.contains(active)) {
+    } else if (active === last || !isInsideFocusBoundaries(active, boundaries)) {
       event.preventDefault();
       first.focus();
     }
+  }
+
+  function getFocusBoundaries() {
+    const doc = getDocumentContext();
+    const ownedPortals = Array.from(doc.querySelectorAll(`[data-ui-modal-portal-owner="${modalInstanceId}"]`)).filter((node) => node instanceof HTMLElement);
+    return [panel, ...ownedPortals];
+  }
+
+  function isInsideFocusBoundaries(active, boundaries) {
+    return Boolean(active && boundaries.some((node) => node === active || node.contains(active)));
   }
 
   function getFocusable(node) {

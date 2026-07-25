@@ -17,12 +17,14 @@ const DEFAULT_OPTIONS = {
   disabledDates: null, // (date:Date) => boolean
   yearRangePast: 80,
   yearRangeFuture: 20,
+  panelParent: "auto", // auto | self | body | HTMLElement
   onChange: null,
 };
 
 export function createDatepicker(container, options = {}) {
   const events = createEventBag();
   const globalEvents = createEventBag();
+  const portalEvents = createEventBag();
   let currentOptions = normalizeOptions(options);
   let open = false;
   let viewDate = startOfMonth(new Date());
@@ -44,8 +46,11 @@ export function createDatepicker(container, options = {}) {
       return;
     }
     events.clear();
+    globalEvents.clear();
+    portalEvents.clear();
     calendar?.destroy();
     calendar = null;
+    panel?.remove?.();
     clearNode(container);
 
     root = createElement("div", {
@@ -77,6 +82,7 @@ export function createDatepicker(container, options = {}) {
       render();
     });
     root.appendChild(trigger);
+    container.appendChild(root);
 
     if (open) {
       panel = createElement("div", { className: "ui-datepicker-panel", attrs: { role: "dialog", id: panelId, "aria-label": currentOptions.ariaLabel } });
@@ -106,14 +112,109 @@ export function createDatepicker(container, options = {}) {
       if (currentOptions.showTime) {
         renderTimeSection(panel);
       }
-      root.appendChild(panel);
+      mountPanel();
       requestAnimationFrame(() => {
+        positionPanel();
         panel?.querySelector?.(".ui-calendar-day:not(.is-disabled), .ui-calendar-nav, .ui-calendar-select, .ui-input")?.focus?.();
       });
     }
 
-    container.appendChild(root);
     bindGlobal();
+  }
+
+  function mountPanel() {
+    const parent = resolvePanelParent();
+    const portaled = parent !== root;
+    const ownerModal = root.closest?.("[data-ui-modal-id]");
+    panel.classList.toggle("is-portaled", portaled);
+    panel.dataset.placement = portaled ? "bottom" : "";
+    if (portaled && ownerModal?.dataset?.uiModalId) {
+      panel.dataset.uiModalPortalOwner = ownerModal.dataset.uiModalId;
+    } else {
+      delete panel.dataset.uiModalPortalOwner;
+    }
+    parent.appendChild(panel);
+    if (portaled) {
+      positionPanel();
+      portalEvents.on(window, "resize", positionPanel);
+      portalEvents.on(window, "scroll", positionPanel, true);
+      if (window.visualViewport) {
+        portalEvents.on(window.visualViewport, "resize", positionPanel);
+        portalEvents.on(window.visualViewport, "scroll", positionPanel);
+      }
+    }
+  }
+
+  function resolvePanelParent() {
+    const configured = currentOptions.panelParent ?? currentOptions.appendTo ?? "auto";
+    if (configured === "self" || configured === false) {
+      return root;
+    }
+    if (configured === "body" || configured === true) {
+      return document.body || root;
+    }
+    if (configured && configured.nodeType === 1) {
+      return configured;
+    }
+    if (typeof configured === "string" && configured !== "auto") {
+      return document.querySelector(configured) || root;
+    }
+    return shouldPortalPanel() ? (document.body || root) : root;
+  }
+
+  function shouldPortalPanel() {
+    let node = root?.parentElement;
+    while (node && node !== document.body && node !== document.documentElement) {
+      if (node.classList?.contains("ui-modal") || node.classList?.contains("ui-modal-body") || node.classList?.contains("ui-drawer")) {
+        return true;
+      }
+      const style = window.getComputedStyle?.(node);
+      const overflow = `${style?.overflow || ""} ${style?.overflowX || ""} ${style?.overflowY || ""}`;
+      if (/\b(auto|scroll|hidden|clip)\b/.test(overflow)) {
+        return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function positionPanel() {
+    if (!open || !panel || !trigger || !panel.classList.contains("is-portaled")) {
+      return;
+    }
+    const rect = trigger.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewportWidth = viewport?.width || document.documentElement.clientWidth || window.innerWidth;
+    const viewportHeight = viewport?.height || document.documentElement.clientHeight || window.innerHeight;
+    const offsetLeft = viewport?.offsetLeft || 0;
+    const offsetTop = viewport?.offsetTop || 0;
+    const margin = 8;
+    const gap = 6;
+    const width = Math.min(Math.max(rect.width, 300), Math.max(180, viewportWidth - margin * 2));
+
+    panel.style.width = `${Math.round(width)}px`;
+    panel.style.maxHeight = "";
+    panel.style.left = "0px";
+    panel.style.top = "0px";
+
+    const measured = panel.getBoundingClientRect();
+    const spaceBelow = viewportHeight - rect.bottom - gap - margin;
+    const spaceAbove = rect.top - gap - margin;
+    const placeAbove = measured.height > spaceBelow && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(160, placeAbove ? spaceAbove : spaceBelow);
+    const maxHeight = Math.min(Math.max(measured.height, 160), availableHeight);
+    const minLeft = offsetLeft + margin;
+    const maxLeft = offsetLeft + viewportWidth - width - margin;
+    const left = Math.min(Math.max(rect.left + offsetLeft, minLeft), Math.max(minLeft, maxLeft));
+    const rawTop = placeAbove ? rect.top + offsetTop - maxHeight - gap : rect.bottom + offsetTop + gap;
+    const minTop = offsetTop + margin;
+    const maxTop = offsetTop + viewportHeight - maxHeight - margin;
+    const top = Math.min(Math.max(rawTop, minTop), Math.max(minTop, maxTop));
+
+    panel.dataset.placement = placeAbove ? "top" : "bottom";
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.maxHeight = `${Math.round(maxHeight)}px`;
   }
 
   function renderTimeSection(host) {
@@ -239,7 +340,7 @@ export function createDatepicker(container, options = {}) {
     }
     globalEvents.on(document, "mousedown", (event) => {
       const target = event.target;
-      if (target && root && !root.contains(target)) {
+      if (target && !isInsideDatepicker(target)) {
         open = false;
         render();
         restoreFocus();
@@ -252,6 +353,10 @@ export function createDatepicker(container, options = {}) {
         restoreFocus();
       }
     });
+  }
+
+  function isInsideDatepicker(target) {
+    return Boolean((root && root.contains(target)) || (panel && panel.contains(target)));
   }
 
   function restoreFocus() {
@@ -302,8 +407,10 @@ export function createDatepicker(container, options = {}) {
 
   function destroy() {
     globalEvents.clear();
+    portalEvents.clear();
     events.clear();
     calendar?.destroy();
+    panel?.remove?.();
     clearNode(container);
     root = null;
     trigger = null;
@@ -324,6 +431,9 @@ export function createDatepicker(container, options = {}) {
 
 function normalizeOptions(options) {
   const next = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  if (options && Object.prototype.hasOwnProperty.call(options, "appendTo") && !Object.prototype.hasOwnProperty.call(options, "panelParent")) {
+    next.panelParent = options.appendTo;
+  }
   next.ariaLabel = String(next.ariaLabel || "Date picker");
   next.mode = next.mode === "range" ? "range" : "single";
   const week = Number(next.weekStartsOn);

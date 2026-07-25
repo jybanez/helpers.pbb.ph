@@ -12,6 +12,8 @@
     .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
     .two-up { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .picker-card { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); }
+    .clip-demo { position: relative; min-height: 116px; overflow: hidden; border: 1px dashed var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; padding: 12px; }
+    .clip-demo .ui-datepicker { position: absolute; left: 12px; right: 12px; bottom: 10px; }
     .back { color: var(--demo-link, var(--ui-accent, #b2c2e5)); text-decoration: none; font-size: 13px; }
     .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); padding: 10px; overflow: auto; }
@@ -43,6 +45,7 @@
         { option: "<code>mode</code>", default: "<code>\"single\"</code>", description: "Selection mode.", values: ["single", "range"] },
         { option: "<code>showTime</code>", default: "<code>false</code>", description: "Enables time inputs alongside date selection.", values: ["true", "false"] },
         { option: "<code>closeOnSelect</code>", default: "<code>true</code>", description: "Controls whether the picker closes after selection.", values: ["true", "false"] },
+        { option: "<code>panelParent</code>", default: "<code>\"auto\"</code>", description: "Controls panel mounting. Auto portals out of modal or overflow ancestors to avoid clipping.", values: ["auto", "self", "body", "HTMLElement"] },
         { option: "<code>onChange</code>", default: "<code>null</code>", description: "Change callback receiving value and picker state." }
       ],
       propertiesText: "No stable public instance properties are documented. Use explicit methods such as <code>getValue()</code> or <code>getState()</code> where available.",
@@ -79,6 +82,13 @@
           <div id="datePickerHostRange"></div>
         </div>
       </div>
+      <div class="picker-card">
+        <strong>Overflow / Modal Host</strong>
+        <p class="muted">The panel auto-portals outside clipping hosts, matching modal body usage.</p>
+        <div class="clip-demo ui-modal">
+          <div id="datePickerHostModal"></div>
+        </div>
+      </div>
       <pre>createDatepicker(document.getElementById("datePickerHostSingle"), {
   ariaLabel: "Incident date picker",
   placeholder: "Pick incident date",
@@ -96,6 +106,15 @@ createDatepicker(document.getElementById("datePickerHostRange"), {
   closeOnSelect: false,
   onChange(value, state) {
     writeLog("datepicker.range.change", { value, state });
+  },
+});
+
+createDatepicker(document.getElementById("datePickerHostModal"), {
+  ariaLabel: "Modal due date picker",
+  placeholder: "Pick modal due date",
+  panelParent: "auto",
+  onChange(value, state) {
+    writeLog("datepicker.modal.change", { value, state });
   },
 });</pre>
       <pre id="log" class="log">No events yet.</pre>
@@ -126,6 +145,14 @@ createDatepicker(document.getElementById("datePickerHostRange"), {
       closeOnSelect: false,
       onChange(value, state) {
         writeLog("datepicker.range.change", { value, state });
+      },
+    });
+    createDatepicker(document.getElementById("datePickerHostModal"), {
+      ariaLabel: "Modal due date picker",
+      placeholder: "Pick modal due date",
+      panelParent: "auto",
+      onChange(value, state) {
+        writeLog("datepicker.modal.change", { value, state });
       },
     });
   </script>
