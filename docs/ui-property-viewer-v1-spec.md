@@ -59,12 +59,43 @@ const viewer = createPropertyViewer(container, data, options);
 - `password`
 - `color`
 - `color-select`
+- `custom`
 - `tags`
 - `badges`
 - `action`
 - `divider`
 
-All non-action kinds render read-only value presentation. Password values are masked by default.
+All non-action kinds render read-only value presentation. Password values are masked by default. Plain object values continue to render as JSON text unless the app opts into `kind: "custom"`.
+
+## Custom Values
+
+Use `kind: "custom"` when the app needs rich read-only value presentation that cannot be expressed by the built-in display, chip, color, password, or action rows.
+
+```js
+{
+  id: "linked_contact",
+  label: "Linked Contact",
+  kind: "custom",
+  value: { id: 29, name: "Caller #29" },
+  render(value, meta) {
+    const node = meta.createElement("span", {
+      className: "app-linked-record",
+      text: `${value.name}`
+    });
+    node.dataset.recordId = String(value.id);
+    return node;
+  }
+}
+```
+
+The custom renderer may return:
+
+- a DOM `Node` or `DocumentFragment`
+- an array of DOM nodes and/or text-like values
+- a string, number, or boolean, which Helper renders as text
+- `null` or `undefined`, which leaves the value area empty
+
+Do not return raw HTML strings expecting them to be parsed. Helper treats string results as text. If the app needs markup, build DOM nodes in `render(...)`.
 
 ## Options
 

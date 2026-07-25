@@ -46,6 +46,29 @@
           { id: "mixed", label: "Coverage", kind: "text", value: "", mixed: true },
           { id: "empty", label: "Last Sync", kind: "display", value: "" },
           { id: "details", label: "Details", kind: "display", value: { source: "account", id: 4 } },
+          {
+            id: "custom-dom",
+            label: "Linked Contact",
+            kind: "custom",
+            value: { id: 29, label: "Caller #29" },
+            render(value, meta) {
+              const node = meta.createElement("span", {
+                className: "custom-linked-contact",
+                text: `${value.label} (${meta.propertyId})`,
+              });
+              node.dataset.contactId = String(value.id);
+              return node;
+            },
+          },
+          {
+            id: "custom-text",
+            label: "Raw Custom Text",
+            kind: "custom",
+            value: "<strong>Not HTML</strong>",
+            render(value) {
+              return value;
+            },
+          },
           { id: "audit", label: "Audit", kind: "display", value: "Ready", actions: [{ id: "open-audit", label: "Open" }] },
         ],
       }],
@@ -60,7 +83,7 @@
     });
 
     assert(host.querySelector(".ui-property-viewer-selection-value")?.textContent.includes("Practitioner Account"), "selection label should render");
-    assert(host.querySelectorAll(".ui-property-viewer-row").length === 16, "property rows should render");
+    assert(host.querySelectorAll(".ui-property-viewer-row").length === 18, "property rows should render");
     assert(!host.querySelector("input, textarea, select"), "property viewer should not render editable native controls");
     assert(host.querySelector('[data-property-id="role"] .ui-property-viewer-display')?.textContent === "Doctor", "select values should resolve option labels");
     assert(Array.from(host.querySelectorAll('[data-property-id="programs"] .ui-property-viewer-chip')).map((node) => node.textContent).join("|") === "Maternal Care|TB DOTS", "array values should render as option-label chips");
@@ -87,6 +110,10 @@
     assert(host.querySelector('[data-property-id="mixed"] .ui-property-viewer-display')?.textContent === "Mixed", "mixed values should render mixed label");
     assert(host.querySelector('[data-property-id="empty"] .ui-property-viewer-display')?.textContent === "—", "empty values should render fallback");
     assert(host.querySelector('[data-property-id="details"] .ui-property-viewer-display')?.textContent.includes('"source"'), "object values should render JSON text");
+    assert(host.querySelector('[data-property-id="custom-dom"] .custom-linked-contact')?.dataset.contactId === "29", "custom values should mount app-rendered DOM nodes");
+    assert(host.querySelector('[data-property-id="custom-dom"] .custom-linked-contact')?.textContent === "Caller #29 (custom-dom)", "custom renderer should receive value and metadata");
+    assert(host.querySelector('[data-property-id="custom-text"] .ui-property-viewer-custom')?.textContent === "<strong>Not HTML</strong>", "custom string renderer output should remain text");
+    assert(!host.querySelector('[data-property-id="custom-text"] strong'), "custom string renderer output should not be interpreted as HTML");
     assert(host.querySelectorAll(".ui-property-viewer-copy").length === 2, "only explicitly copyable properties should show copy by default");
     assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy [data-icon="actions.copy"]'), "copy button should use shared actions.copy icon");
     assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy')?.getAttribute("aria-label") === "Copy practitioner name", "property copy label should override the default accessible label");

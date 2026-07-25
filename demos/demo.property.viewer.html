@@ -31,7 +31,7 @@
         "Do not use it for arbitrary deep object browsing; use <code>createDataInspector(...)</code> when recursive inspection is the goal."
       ],
       description: "The viewer shares the section/property mental model with Property Editor while removing inputs by construction. Helper owns the read-only layout and default formatting; apps own permissions, data, actions, and domain-specific formatters.",
-      defaultSampleCode: `const viewer = createPropertyViewer(host, {\n  selectionLabel: "Practitioner Account",\n  sections: [{\n    id: "profile",\n    title: "Profile",\n    properties: [\n      { id: "name", label: "Name", kind: "text", value: "Maria Santos", copyable: true },\n      { id: "role", label: "Role", kind: "select", value: "doctor", options: [\n        { value: "doctor", label: "Doctor" }\n      ] },\n      { id: "programs", label: "Programs", kind: "ui.select", value: ["mch", "tb"], options: [\n        { value: "mch", label: "Maternal Care" },\n        { value: "tb", label: "TB DOTS" }\n      ] }\n    ]\n  }]\n});`,
+      defaultSampleCode: `const viewer = createPropertyViewer(host, {\n  selectionLabel: "Practitioner Account",\n  sections: [{\n    id: "profile",\n    title: "Profile",\n    properties: [\n      { id: "name", label: "Name", kind: "text", value: "Maria Santos", copyable: true },\n      { id: "role", label: "Role", kind: "select", value: "doctor", options: [\n        { value: "doctor", label: "Doctor" }\n      ] },\n      { id: "contact", label: "Contact", kind: "custom", value: { phone: "09990000099" },\n        render(value, meta) {\n          return meta.createElement("span", { className: "ui-badge", text: value.phone });\n        }\n      }\n    ]\n  }]\n});`,
       constructor: [
         { factory: "<code>createPropertyViewer(container, data, options)</code>", arguments: "host container, viewer data, and viewer options", returns: "Property viewer instance" }
       ],
@@ -40,6 +40,7 @@
         { option: "<code>property.copyValue</code>", default: "formatted value", description: "Optional per-property value emitted through <code>onCopy</code> and written by the default clipboard fallback." },
         { option: "<code>property.copyLabel</code>", default: "<code>copyLabel</code>", description: "Optional per-property accessible label/title for the copy icon button." },
         { option: "<code>property.revealable</code>", default: "<code>true</code>", description: "Password-row control for whether the show/hide icon can reveal the stored value." },
+        { option: "<code>property.render(value, meta)</code>", default: "<code>null</code>", description: "Required for <code>kind: \"custom\"</code>. Return DOM nodes for app-owned rich read-only value presentation." },
         { option: "<code>showPasswordToggle</code>", default: "<code>true</code>", description: "Viewer-level switch for password-row show/hide controls." },
         { option: "<code>showCopyButtons</code>", default: "<code>false</code>", description: "Viewer-level default for rows that do not define <code>copyable</code>." },
         { option: "<code>copyLabel</code>", default: "<code>\"Copy\"</code>", description: "Accessible label and title for the copy icon button." },
@@ -111,6 +112,15 @@
           { id: "active", label: "Active", kind: "toggle", value: true, tone: "success" },
           { id: "token", label: "Token", kind: "password", value: "signed-practitioner-token", copyable: false },
           { id: "badge_color", label: "Badge Color", kind: "color", value: "#208c7d" },
+          {
+            id: "contact",
+            label: "Contact",
+            kind: "custom",
+            value: { phone: "09990000099" },
+            render(value, meta) {
+              return meta.createElement("span", { className: "ui-badge", text: value.phone });
+            },
+          },
           { id: "audit", label: "Audit Trail", kind: "display", value: "Available", actions: [{ id: "open-audit", label: "Open" }] },
         ],
       }],

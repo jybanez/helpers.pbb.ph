@@ -93,6 +93,18 @@
   gap: 6px;
 }
 
+.ui-property-viewer-custom {
+  min-width: 0;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ui-text, #d7e0f4);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .ui-property-viewer-list {
   display: flex;
   align-items: center;

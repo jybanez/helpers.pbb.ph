@@ -152,6 +152,10 @@ export function createPropertyViewer(container, data = {}, options = {}) {
       return button;
     }
 
+    if (property.kind === "custom") {
+      return createCustomValueNode(section, property);
+    }
+
     if (property.kind === "color" || property.kind === "color-select") {
       const wrap = createElement("div", { className: "ui-property-viewer-color" });
       wrap.appendChild(createElement("span", {
@@ -194,6 +198,36 @@ export function createPropertyViewer(container, data = {}, options = {}) {
         text: resolveOptionLabel(property, value),
       }));
     });
+    return wrap;
+  }
+
+  function createCustomValueNode(section, property) {
+    const wrap = createElement("div", { className: "ui-property-viewer-custom" });
+    if (typeof property.render !== "function") {
+      wrap.appendChild(createElement("span", {
+        className: "ui-property-viewer-display",
+        text: formatPropertyValue(property, {
+          revealed: isPropertyRevealed(section, property),
+        }),
+      }));
+      return wrap;
+    }
+
+    try {
+      const rendered = property.render(property.value, {
+        sectionId: section.id,
+        propertyId: property.id,
+        property: cloneProperty(property),
+        createElement,
+      });
+      appendCustomRenderResult(wrap, rendered);
+    } catch (error) {
+      console.error("[ui.property.viewer] Custom property renderer failed.", error);
+      wrap.appendChild(createElement("span", {
+        className: "ui-property-viewer-display",
+        text: currentOptions.emptyValue,
+      }));
+    }
     return wrap;
   }
 
@@ -468,11 +502,27 @@ function normalizeKind(kind) {
     "password",
     "color",
     "color-select",
+    "custom",
     "action",
     "divider",
     "tags",
     "badges",
   ].includes(value) ? value : "display";
+}
+
+function appendCustomRenderResult(container, rendered) {
+  if (rendered === undefined || rendered === null) {
+    return;
+  }
+  if (typeof Node !== "undefined" && rendered instanceof Node) {
+    container.appendChild(rendered);
+    return;
+  }
+  if (Array.isArray(rendered)) {
+    rendered.forEach((item) => appendCustomRenderResult(container, item));
+    return;
+  }
+  container.textContent = String(rendered);
 }
 
 function normalizeTone(tone) {
