@@ -13,7 +13,7 @@ const UI_MEDIA_REV = "0.21.3";
 const UI_PDF_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.149";
+const UI_BUNDLE_REV = "0.21.153";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -278,6 +278,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.editor.css", "../../css/ui/ui.toggle.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css"],
     deps: ["ui.toggle.button", "ui.select", "ui.password"],
     export: "createPropertyEditor",
+  },
+  "ui.property.viewer": {
+    js: "./ui.property.viewer.js",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.viewer.css"],
+    deps: [],
+    export: "createPropertyViewer",
   },
   "ui.select": {
     js: "./ui.select.js",
@@ -777,6 +783,7 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.field.group.presets",
     "ui.fieldset",
     "ui.property.editor",
+    "ui.property.viewer",
     "ui.device.selector",
     "ui.device.selector.media",
     "ui.select",

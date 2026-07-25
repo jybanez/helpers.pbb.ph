@@ -164,6 +164,7 @@ const DEMO_GROUPS = [
       { href: "./demo.device.selector.html", label: "Device Selector" },
       { href: "./demo.loader.bundle.html", label: "Loader Bundle" },
       { href: "./demo.property.editor.html", label: "Property Editor" },
+      { href: "./demo.property.viewer.html", label: "Property Viewer" },
       { href: "./demo.toggle.button.html", label: "Toggle Button" },
       { href: "./demo.toggle.group.html", label: "Toggle Group" },
       { href: "./demo.checkbox.html", label: "Checkbox" },

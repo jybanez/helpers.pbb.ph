@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Viewer Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif); }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); color: var(--demo-code-text, var(--ui-text, #d7e0f4)); padding: 10px; overflow: auto; }
+    .log { min-height: 180px; color: var(--demo-muted, var(--ui-muted, #b2c2e5)); }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.property.viewer"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Property Viewer",
+      overview: "Read-only inspector-style property surface for grouped labels, display values, chips, optional copy actions, and app-owned row actions.",
+      useWhen: [
+        "Use <code>createPropertyViewer(...)</code> for details drawers, record summaries, audit panels, and read-only object inspectors.",
+        "Use it when the app already has property descriptors but should not expose inline editing controls."
+      ],
+      avoidWhen: [
+        "Do not use it for continuous editing; use <code>createPropertyEditor(...)</code> instead.",
+        "Do not use it for arbitrary deep object browsing; use <code>createDataInspector(...)</code> when recursive inspection is the goal."
+      ],
+      description: "The viewer shares the section/property mental model with Property Editor while removing inputs by construction. Helper owns the read-only layout and default formatting; apps own permissions, data, actions, and domain-specific formatters.",
+      defaultSampleCode: `const viewer = createPropertyViewer(host, {\n  selectionLabel: "Practitioner Account",\n  sections: [{\n    id: "profile",\n    title: "Profile",\n    properties: [\n      { id: "name", label: "Name", kind: "text", value: "Maria Santos", copyable: true },\n      { id: "role", label: "Role", kind: "select", value: "doctor", options: [\n        { value: "doctor", label: "Doctor" }\n      ] },\n      { id: "contact", label: "Contact", kind: "custom", value: { phone: "09990000099" },\n        render(value, meta) {\n          return meta.createElement("span", { className: "ui-badge", text: value.phone });\n        }\n      }\n    ]\n  }]\n});`,
+      constructor: [
+        { factory: "<code>createPropertyViewer(container, data, options)</code>", arguments: "host container, viewer data, and viewer options", returns: "Property viewer instance" }
+      ],
+      options: [
+        { option: "<code>property.copyable</code>", default: "<code>null</code>", description: "Per-property copy control. Use <code>true</code> to show copy, <code>false</code> to suppress copy even when global copy is enabled." },
+        { option: "<code>property.copyValue</code>", default: "formatted value", description: "Optional per-property value emitted through <code>onCopy</code> and written by the default clipboard fallback." },
+        { option: "<code>property.copyLabel</code>", default: "<code>copyLabel</code>", description: "Optional per-property accessible label/title for the copy icon button." },
+        { option: "<code>property.revealable</code>", default: "<code>true</code>", description: "Password-row control for whether the show/hide icon can reveal the stored value." },
+        { option: "<code>property.render(value, meta)</code>", default: "<code>null</code>", description: "Required for <code>kind: \"custom\"</code>. Return DOM nodes for app-owned rich read-only value presentation." },
+        { option: "<code>showPasswordToggle</code>", default: "<code>true</code>", description: "Viewer-level switch for password-row show/hide controls." },
+        { option: "<code>showCopyButtons</code>", default: "<code>false</code>", description: "Viewer-level default for rows that do not define <code>copyable</code>." },
+        { option: "<code>copyLabel</code>", default: "<code>\"Copy\"</code>", description: "Accessible label and title for the copy icon button." },
+        { option: "<code>formatValue</code>", default: "<code>null</code>", description: "Optional app formatter for domain-specific display text." },
+        { option: "<code>maskPasswords</code>", default: "<code>true</code>", description: "Masks password property values by default." },
+        { option: "<code>labelWidth</code>", default: "<code>null</code>", description: "Optional fixed width for the property label column." }
+      ],
+      propertiesText: "Use <code>getState()</code>. The instance exposes <code>root</code> as a read-only getter.",
+      events: [
+        { event: "<code>onCopy(payload, meta)</code>", arguments: "copy payload and source metadata", returns: "<code>void</code>" },
+        { event: "<code>onAction(property, action, meta)</code>", arguments: "property descriptor, action descriptor, and metadata", returns: "<code>void</code>" }
+      ],
+      methods: [
+        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or options", returns: "<code>void</code>" },
+        { method: "<code>setSections(sections)</code>", arguments: "full section array", returns: "<code>void</code>" },
+        { method: "<code>setSelectionLabel(label)</code>", arguments: "next selection label", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "normalized viewer state" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <h1 class="ui-title">Property Viewer Demo</h1>
+      <p class="muted">Read-only companion to Property Editor for details panes and record summaries.</p>
+    </section>
+    <section class="panel">
+      <div class="row">
+        <button id="sampleBtn" class="ui-button ui-button-primary" type="button">Show Practitioner</button>
+        <button id="incidentBtn" class="ui-button" type="button">Show Incident</button>
+        <button id="compactBtn" class="ui-button ui-button-ghost" type="button">Toggle Dense</button>
+        <button id="copyBtn" class="ui-button ui-button-ghost" type="button" aria-pressed="false">Enable Copy</button>
+      </div>
+      <div id="viewerHost"></div>
+      <pre id="code">createPropertyViewer(host, data, {
+  showCopyButtons: false, // default for rows without copyable
+  onCopy(payload) {
+    writeLog("viewer.copy", payload);
+  },
+  onAction(property, action, meta) {
+    writeLog("viewer.action", { property, action, meta });
+  },
+});</pre>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const createPropertyViewer = await uiLoader.get("ui.property.viewer");
+    const host = document.getElementById("viewerHost");
+    const log = document.getElementById("log");
+    let dense = false;
+    let showCopyButtons = false;
+
+    const practitionerData = {
+      selectionLabel: "Practitioner Account",
+      sections: [{
+        id: "profile",
+        title: "Profile",
+        description: "Read-only identity and credential metadata.",
+        properties: [
+          { id: "name", label: "Name", kind: "text", value: "Maria Santos", copyable: true, copyValue: "Maria Santos <maria@example.test>", copyLabel: "Copy name" },
+          { id: "role", label: "Role", kind: "select", value: "doctor", options: [{ value: "doctor", label: "Doctor" }, { value: "nurse", label: "Nurse" }] },
+          { id: "programs", label: "Programs", kind: "ui.select", value: ["mch", "tb"], options: [{ value: "mch", label: "Maternal Care" }, { value: "tb", label: "TB DOTS" }, { value: "dental", label: "Dental" }] },
+          { id: "active", label: "Active", kind: "toggle", value: true, tone: "success" },
+          { id: "token", label: "Token", kind: "password", value: "signed-practitioner-token", copyable: false },
+          { id: "badge_color", label: "Badge Color", kind: "color", value: "#208c7d" },
+          {
+            id: "contact",
+            label: "Contact",
+            kind: "custom",
+            value: { phone: "09990000099" },
+            render(value, meta) {
+              return meta.createElement("span", { className: "ui-badge", text: value.phone });
+            },
+          },
+          { id: "audit", label: "Audit Trail", kind: "display", value: "Available", actions: [{ id: "open-audit", label: "Open" }] },
+        ],
+      }],
+    };
+
+    const incidentData = {
+      selectionLabel: "Incident INC-104",
+      sections: [{
+        id: "dispatch",
+        title: "Dispatch",
+        description: "Operational status and routing details.",
+        properties: [
+          { id: "status", label: "Status", kind: "display", value: "Active", tone: "warning" },
+          { id: "teams", label: "Assigned Teams", kind: "tags", value: ["Team Alpha", "Radio Net", "Barangay Desk"] },
+          { id: "eta", label: "ETA", kind: "display", value: "12 minutes", copyable: true },
+          { id: "notes", label: "Latest Note", kind: "textarea", value: "Responder is en route to Lahug. Keep line open." },
+          { id: "links", label: "Linked Records", kind: "display", value: { callerId: 29, reportId: 118 } },
+        ],
+      }],
+    };
+
+    const viewer = createPropertyViewer(host, practitionerData, {
+      labelWidth: 170,
+      showCopyButtons,
+      dense,
+      onCopy(payload) {
+        writeLog("viewer.copy", payload);
+      },
+      onAction(property, action, meta) {
+        writeLog("viewer.action", { propertyId: property.id, actionId: action.id, meta });
+      },
+    });
+
+    document.getElementById("sampleBtn").addEventListener("click", () => viewer.update(practitionerData, { dense, showCopyButtons }));
+    document.getElementById("incidentBtn").addEventListener("click", () => viewer.update(incidentData, { dense, showCopyButtons }));
+    document.getElementById("compactBtn").addEventListener("click", () => {
+      dense = !dense;
+      viewer.update({}, { dense });
+      writeLog("viewer.dense", { dense });
+    });
+    document.getElementById("copyBtn").addEventListener("click", (event) => {
+      showCopyButtons = !showCopyButtons;
+      event.currentTarget.setAttribute("aria-pressed", String(showCopyButtons));
+      event.currentTarget.textContent = showCopyButtons ? "Disable Copy" : "Enable Copy";
+      viewer.update({}, { showCopyButtons });
+      writeLog("viewer.copyVisibility", { showCopyButtons });
+    });
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+  </script>
+</body>
+</html>

@@ -43,6 +43,7 @@ const createBusyOverlay = await loader.get("ui.busy.overlay", { css: false });
 const createFormModal = await loader.get("ui.form.modal", { css: false });
 const createFileInput = await loader.get("ui.file.input", { css: false });
 const createPathPicker = await loader.get("ui.path.picker", { css: false });
+const createPropertyViewer = await loader.get("ui.property.viewer", { css: false });
 const createDeviceSelector = await loader.get("ui.device.selector", { css: false });
 const createMediaDeviceAdapter = await loader.get("ui.device.selector.media", { css: false });
 const createClock = await loader.get("ui.clock", { css: false });
@@ -103,6 +104,10 @@ if (typeof createBusyOverlay !== "function") {
 
 if (typeof createPathPicker !== "function") {
   throw new Error("Bundle-backed ui.path.picker did not resolve to a factory function.");
+}
+
+if (typeof createPropertyViewer !== "function") {
+  throw new Error("Bundle-backed ui.property.viewer did not resolve to a factory function.");
 }
 
 if (typeof createDeviceSelector !== "function") {

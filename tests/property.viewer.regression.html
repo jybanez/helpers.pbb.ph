@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" data-theme="care-light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Property Viewer Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.property.viewer.css">
+  <style>
+    body { margin: 0; padding: 16px; background: var(--ui-bg); color: var(--ui-text); font-family: var(--ui-font); }
+    #results { margin-top: 12px; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  </style>
+</head>
+<body data-theme="care-light" data-status="pending">
+  <div id="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createPropertyViewer } from "../js/ui/ui.property.viewer.js";
+
+    const host = document.getElementById("host");
+    const results = document.getElementById("results");
+    const failures = [];
+    const events = [];
+
+    const viewer = createPropertyViewer(host, {
+      selectionLabel: "Practitioner Account",
+      sections: [{
+        id: "profile",
+        title: "Profile",
+        description: "Read-only account and credential metadata.",
+        properties: [
+          { id: "name", label: "Name", kind: "text", value: "Maria Santos", copyable: true, copyValue: "Maria Santos <maria@example.test>", copyLabel: "Copy practitioner name" },
+          { id: "role", label: "Role", kind: "select", value: "doctor", options: [{ value: "doctor", label: "Doctor" }, { value: "nurse", label: "Nurse" }] },
+          { id: "programs", label: "Programs", kind: "ui.select", value: ["mch", "tb"], options: [{ value: "mch", label: "Maternal Care" }, { value: "tb", label: "TB DOTS" }] },
+          { id: "active", label: "Active", kind: "toggle", value: true, tone: "success" },
+          { id: "secret", label: "Token", kind: "password", value: "super-secret", copyable: false },
+          { id: "secret-default", label: "Signing Secret", kind: "password", value: "implicit-secret" },
+          { id: "secret-copy", label: "Recovery Code", kind: "password", value: "explicit-secret", copyable: true },
+          { id: "neutral", label: "Neutral State", kind: "display", value: "Neutral", tone: "neutral" },
+          { id: "info", label: "Information State", kind: "display", value: "Information", tone: "info" },
+          { id: "warning", label: "Warning State", kind: "display", value: "Warning", tone: "warning" },
+          { id: "danger", label: "Danger State", kind: "display", value: "Danger", tone: "danger" },
+          { id: "color", label: "Badge Color", kind: "color", value: "#208c7d" },
+          { id: "mixed", label: "Coverage", kind: "text", value: "", mixed: true },
+          { id: "empty", label: "Last Sync", kind: "display", value: "" },
+          { id: "details", label: "Details", kind: "display", value: { source: "account", id: 4 } },
+          {
+            id: "custom-dom",
+            label: "Linked Contact",
+            kind: "custom",
+            value: { id: 29, label: "Caller #29" },
+            render(value, meta) {
+              const node = meta.createElement("span", {
+                className: "custom-linked-contact",
+                text: `${value.label} (${meta.propertyId})`,
+              });
+              node.dataset.contactId = String(value.id);
+              return node;
+            },
+          },
+          {
+            id: "custom-text",
+            label: "Raw Custom Text",
+            kind: "custom",
+            value: "<strong>Not HTML</strong>",
+            render(value) {
+              return value;
+            },
+          },
+          { id: "audit", label: "Audit", kind: "display", value: "Ready", actions: [{ id: "open-audit", label: "Open" }] },
+        ],
+      }],
+    }, {
+      labelWidth: 160,
+      onCopy(payload) {
+        events.push({ type: "copy", ...payload });
+      },
+      onAction(property, action, meta) {
+        events.push({ type: "action", propertyId: property.id, actionId: action.id, sectionId: meta.sectionId });
+      },
+    });
+
+    assert(host.querySelector(".ui-property-viewer-selection-value")?.textContent.includes("Practitioner Account"), "selection label should render");
+    assert(host.querySelectorAll(".ui-property-viewer-row").length === 18, "property rows should render");
+    assert(!host.querySelector("input, textarea, select"), "property viewer should not render editable native controls");
+    assert(host.querySelector('[data-property-id="role"] .ui-property-viewer-display')?.textContent === "Doctor", "select values should resolve option labels");
+    assert(Array.from(host.querySelectorAll('[data-property-id="programs"] .ui-property-viewer-chip')).map((node) => node.textContent).join("|") === "Maternal Care|TB DOTS", "array values should render as option-label chips");
+    assert(host.querySelector('[data-property-id="active"] .ui-property-viewer-display')?.textContent === "Yes", "boolean values should render yes/no labels");
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "••••••••", "password values should be masked by default");
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle [data-icon="actions.view"]'), "password rows should render a reveal icon by default");
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.getAttribute("aria-label") === "Show value", "password reveal button should expose an accessible label");
+    host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "super-secret", "password reveal should show the actual value");
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle [data-icon="actions.hide"]'), "revealed password rows should render a hide icon");
+    assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password reveal should preserve focus on the replacement toggle");
+    host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "••••••••", "password hide should restore the masked value");
+    assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password hide should preserve focus on the replacement toggle");
+    assert(getComputedStyle(host.querySelector('[data-property-id="name"] .ui-property-viewer-display')).borderTopWidth === "0px", "display values should not render like fields");
+    const defaultValueColor = getComputedStyle(host.querySelector('[data-property-id="name"] .ui-property-viewer-display')).color;
+    ["active", "neutral", "info", "warning", "danger"].forEach((propertyId) => {
+      assert(
+        getComputedStyle(host.querySelector(`[data-property-id="${propertyId}"] .ui-property-viewer-display`)).color !== defaultValueColor,
+        `${propertyId} tone should have a visible theme-aware text color`,
+      );
+    });
+    assert(host.querySelector('[data-property-id="color"] .ui-property-viewer-color-swatch'), "color values should render a swatch");
+    assert(host.querySelector('[data-property-id="mixed"] .ui-property-viewer-display')?.textContent === "Mixed", "mixed values should render mixed label");
+    assert(host.querySelector('[data-property-id="empty"] .ui-property-viewer-display')?.textContent === "—", "empty values should render fallback");
+    assert(host.querySelector('[data-property-id="details"] .ui-property-viewer-display')?.textContent.includes('"source"'), "object values should render JSON text");
+    assert(host.querySelector('[data-property-id="custom-dom"] .custom-linked-contact')?.dataset.contactId === "29", "custom values should mount app-rendered DOM nodes");
+    assert(host.querySelector('[data-property-id="custom-dom"] .custom-linked-contact')?.textContent === "Caller #29 (custom-dom)", "custom renderer should receive value and metadata");
+    assert(host.querySelector('[data-property-id="custom-text"] .ui-property-viewer-custom')?.textContent === "<strong>Not HTML</strong>", "custom string renderer output should remain text");
+    assert(!host.querySelector('[data-property-id="custom-text"] strong'), "custom string renderer output should not be interpreted as HTML");
+    assert(host.querySelectorAll(".ui-property-viewer-copy").length === 2, "only explicitly copyable properties should show copy by default");
+    assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy [data-icon="actions.copy"]'), "copy button should use shared actions.copy icon");
+    assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy')?.getAttribute("aria-label") === "Copy practitioner name", "property copy label should override the default accessible label");
+    assert(!host.querySelector('[data-property-id="secret"] .ui-property-viewer-copy'), "property-level copyable false should hide copy for sensitive rows");
+    assert(!host.querySelector('[data-property-id="secret-default"] .ui-property-viewer-copy'), "password rows should not inherit global copy behavior by default");
+    assert(host.querySelector('[data-property-id="secret-copy"] .ui-property-viewer-copy'), "password rows should allow an explicit copy opt-in");
+    host.querySelector('[data-property-id="name"] .ui-property-viewer-copy')?.click();
+
+    viewer.update({}, { showCopyButtons: true });
+    assert(host.querySelector('[data-property-id="role"] .ui-property-viewer-copy')?.getAttribute("aria-label") === "Copy", "global copy default should use default accessible label");
+    assert(!host.querySelector('[data-property-id="secret"] .ui-property-viewer-copy'), "property-level copyable false should override the global default");
+    assert(!host.querySelector('[data-property-id="secret-default"] .ui-property-viewer-copy'), "global copy should not expose an implicit password copy control");
+    assert(host.querySelector('[data-property-id="secret-copy"] .ui-property-viewer-copy'), "explicit password copy opt-in should remain available");
+    host.querySelector('[data-property-id="role"] .ui-property-viewer-copy')?.click();
+    host.querySelector('[data-property-id="audit"] .ui-property-viewer-actions .ui-button')?.click();
+    assert(events.some((event) => event.type === "copy" && event.propertyId === "name" && event.value === "Maria Santos <maria@example.test>"), "copy handler should receive property copyValue payload");
+    assert(events.some((event) => event.type === "copy" && event.propertyId === "role" && event.value === "Doctor"), "copy handler should fall back to formatted raw property value");
+    assert(events.some((event) => event.type === "action" && event.propertyId === "audit" && event.actionId === "open-audit"), "action handler should receive property action payload");
+
+    viewer.setSelectionLabel("Practitioner Account Updated");
+    assert(host.querySelector(".ui-property-viewer-selection-value")?.textContent.includes("Updated"), "setSelectionLabel should rerender selection row");
+
+    viewer.setSections([{ id: "status", title: "Status", properties: [{ id: "state", label: "State", kind: "display", value: "Verified" }] }]);
+    assert(host.querySelectorAll(".ui-property-viewer-row").length === 1, "setSections should replace section rows");
+    assert(viewer.getState().sections[0].id === "status", "getState should expose normalized sections");
+
+    viewer.destroy();
+    assert(host.childNodes.length === 0, "destroy should clear host");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      results.textContent = "PASS";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>
