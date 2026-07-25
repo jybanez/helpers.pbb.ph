@@ -96,6 +96,7 @@ Copy is primarily controlled per property:
 - `copyable: true` shows the icon-only copy action for that row
 - `copyable: false` suppresses copy for that row, even when `showCopyButtons` is enabled
 - omitted `copyable` inherits the viewer-level `showCopyButtons` default
+- password properties never inherit the viewer-level default and require explicit `copyable: true`
 - `copyValue` overrides the copied/emitted value when display text is not the desired clipboard value
 - `copyLabel` overrides the accessible label/title for that row
 
@@ -107,8 +108,13 @@ Use `kind: "password"` for passwords, tokens, secrets, or other sensitive values
 
 - password rows are masked by default when `maskPasswords` is not `false`
 - password rows render an icon-only show/hide action by default
+- focus remains on the show/hide action after its state changes
 - set `revealable: false` on a password property when the value must never be exposed in the viewer
 - set `showPasswordToggle: false` on the viewer to suppress reveal controls for all password rows
+
+## Tones
+
+Property rows accept `neutral`, `success`, `info`, `warning`, and `danger`. Each tone applies a theme-aware text color to the displayed property value.
 
 ## Methods
 

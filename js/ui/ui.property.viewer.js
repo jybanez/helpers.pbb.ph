@@ -236,6 +236,7 @@ export function createPropertyViewer(container, data = {}, options = {}) {
       button.addEventListener("click", () => {
         togglePropertyReveal(section, property);
         render();
+        focusSensitiveToggle(section.id, property.id);
       });
       cell.appendChild(button);
     }
@@ -366,10 +367,23 @@ export function createPropertyViewer(container, data = {}, options = {}) {
     if (property.kind === "action") {
       return false;
     }
+    if (property.kind === "password") {
+      return property.copyable === true;
+    }
     if (property.copyable !== null) {
       return property.copyable;
     }
     return currentOptions.showCopyButtons;
+  }
+
+  function focusSensitiveToggle(sectionId, propertyId) {
+    const rows = root?.querySelectorAll(".ui-property-viewer-row") || [];
+    const row = Array.from(rows).find((candidate) => {
+      const section = candidate.closest(".ui-property-viewer-section");
+      return section?.dataset.sectionId === String(sectionId)
+        && candidate.dataset.propertyId === String(propertyId);
+    });
+    row?.querySelector(".ui-property-viewer-sensitive-toggle")?.focus();
   }
 
   function shouldShowPasswordToggle(property) {

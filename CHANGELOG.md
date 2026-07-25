@@ -10,7 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
-- Added `ui.property.viewer` with `createPropertyViewer(...)` for read-only inspector-style property panels, including grouped sections, option-label resolution, plain read-only value styling, masked password display with show/hide controls, chips, per-property copy controls, copy/action callbacks, demo, spec, and regression coverage.
+- Added `ui.property.viewer` with `createPropertyViewer(...)` for read-only inspector-style property panels, including grouped sections, option-label resolution, plain read-only value styling, masked password display with focus-preserving show/hide controls, chips, safe opt-in copy controls, complete neutral/success/info/warning/danger tones, copy/action callbacks, demo, spec, and regression coverage.
 - Fixed modal slot array rendering so `setHeaderActions([...])` appends all action-modal header actions in order instead of clearing previous entries and leaving only the final action.
 - Fixed action-modal icon CSS so shared stroke-based `ui.icons` keep `fill="none"` semantics in header/footer action buttons, and fixed compact vertical timeline spacing so markers remain aligned to the rail.
 - Added grouped navbar menu support through `items[].menuGroups` / `actions[].menuGroups`, including Helper-owned desktop mega-menu rendering with contained or viewport-width sizing, labelled mobile flattening, group-aware selection metadata, a focused demo, nav cache revisioning, and rebuilt bundle artifacts.

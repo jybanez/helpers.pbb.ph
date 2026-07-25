@@ -36,6 +36,12 @@
           { id: "programs", label: "Programs", kind: "ui.select", value: ["mch", "tb"], options: [{ value: "mch", label: "Maternal Care" }, { value: "tb", label: "TB DOTS" }] },
           { id: "active", label: "Active", kind: "toggle", value: true, tone: "success" },
           { id: "secret", label: "Token", kind: "password", value: "super-secret", copyable: false },
+          { id: "secret-default", label: "Signing Secret", kind: "password", value: "implicit-secret" },
+          { id: "secret-copy", label: "Recovery Code", kind: "password", value: "explicit-secret", copyable: true },
+          { id: "neutral", label: "Neutral State", kind: "display", value: "Neutral", tone: "neutral" },
+          { id: "info", label: "Information State", kind: "display", value: "Information", tone: "info" },
+          { id: "warning", label: "Warning State", kind: "display", value: "Warning", tone: "warning" },
+          { id: "danger", label: "Danger State", kind: "display", value: "Danger", tone: "danger" },
           { id: "color", label: "Badge Color", kind: "color", value: "#208c7d" },
           { id: "mixed", label: "Coverage", kind: "text", value: "", mixed: true },
           { id: "empty", label: "Last Sync", kind: "display", value: "" },
@@ -54,7 +60,7 @@
     });
 
     assert(host.querySelector(".ui-property-viewer-selection-value")?.textContent.includes("Practitioner Account"), "selection label should render");
-    assert(host.querySelectorAll(".ui-property-viewer-row").length === 10, "property rows should render");
+    assert(host.querySelectorAll(".ui-property-viewer-row").length === 16, "property rows should render");
     assert(!host.querySelector("input, textarea, select"), "property viewer should not render editable native controls");
     assert(host.querySelector('[data-property-id="role"] .ui-property-viewer-display')?.textContent === "Doctor", "select values should resolve option labels");
     assert(Array.from(host.querySelectorAll('[data-property-id="programs"] .ui-property-viewer-chip')).map((node) => node.textContent).join("|") === "Maternal Care|TB DOTS", "array values should render as option-label chips");
@@ -65,22 +71,35 @@
     host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "super-secret", "password reveal should show the actual value");
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle [data-icon="actions.hide"]'), "revealed password rows should render a hide icon");
+    assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password reveal should preserve focus on the replacement toggle");
     host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "••••••••", "password hide should restore the masked value");
+    assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password hide should preserve focus on the replacement toggle");
     assert(getComputedStyle(host.querySelector('[data-property-id="name"] .ui-property-viewer-display')).borderTopWidth === "0px", "display values should not render like fields");
+    const defaultValueColor = getComputedStyle(host.querySelector('[data-property-id="name"] .ui-property-viewer-display')).color;
+    ["active", "neutral", "info", "warning", "danger"].forEach((propertyId) => {
+      assert(
+        getComputedStyle(host.querySelector(`[data-property-id="${propertyId}"] .ui-property-viewer-display`)).color !== defaultValueColor,
+        `${propertyId} tone should have a visible theme-aware text color`,
+      );
+    });
     assert(host.querySelector('[data-property-id="color"] .ui-property-viewer-color-swatch'), "color values should render a swatch");
     assert(host.querySelector('[data-property-id="mixed"] .ui-property-viewer-display')?.textContent === "Mixed", "mixed values should render mixed label");
     assert(host.querySelector('[data-property-id="empty"] .ui-property-viewer-display')?.textContent === "—", "empty values should render fallback");
     assert(host.querySelector('[data-property-id="details"] .ui-property-viewer-display')?.textContent.includes('"source"'), "object values should render JSON text");
-    assert(host.querySelectorAll(".ui-property-viewer-copy").length === 1, "only property-level copy buttons should show by default");
+    assert(host.querySelectorAll(".ui-property-viewer-copy").length === 2, "only explicitly copyable properties should show copy by default");
     assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy [data-icon="actions.copy"]'), "copy button should use shared actions.copy icon");
     assert(host.querySelector('[data-property-id="name"] .ui-property-viewer-copy')?.getAttribute("aria-label") === "Copy practitioner name", "property copy label should override the default accessible label");
     assert(!host.querySelector('[data-property-id="secret"] .ui-property-viewer-copy'), "property-level copyable false should hide copy for sensitive rows");
+    assert(!host.querySelector('[data-property-id="secret-default"] .ui-property-viewer-copy'), "password rows should not inherit global copy behavior by default");
+    assert(host.querySelector('[data-property-id="secret-copy"] .ui-property-viewer-copy'), "password rows should allow an explicit copy opt-in");
     host.querySelector('[data-property-id="name"] .ui-property-viewer-copy')?.click();
 
     viewer.update({}, { showCopyButtons: true });
     assert(host.querySelector('[data-property-id="role"] .ui-property-viewer-copy')?.getAttribute("aria-label") === "Copy", "global copy default should use default accessible label");
     assert(!host.querySelector('[data-property-id="secret"] .ui-property-viewer-copy'), "property-level copyable false should override the global default");
+    assert(!host.querySelector('[data-property-id="secret-default"] .ui-property-viewer-copy'), "global copy should not expose an implicit password copy control");
+    assert(host.querySelector('[data-property-id="secret-copy"] .ui-property-viewer-copy'), "explicit password copy opt-in should remain available");
     host.querySelector('[data-property-id="role"] .ui-property-viewer-copy')?.click();
     host.querySelector('[data-property-id="audit"] .ui-property-viewer-actions .ui-button')?.click();
     assert(events.some((event) => event.type === "copy" && event.propertyId === "name" && event.value === "Maria Santos <maria@example.test>"), "copy handler should receive property copyValue payload");
