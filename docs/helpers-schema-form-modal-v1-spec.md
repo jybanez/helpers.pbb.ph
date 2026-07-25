@@ -250,7 +250,11 @@ V1 row behavior is strict.
 
 - render equal-width two-column layout
 
-### More than two items in a row
+### Three items in a row
+
+- render equal-width three-column layout only when the modal explicitly sets `columns: 3`
+
+### More visible items than `columns` allows
 
 Recommended behavior:
 
@@ -258,7 +262,7 @@ Recommended behavior:
 
 Acceptable fallback:
 
-- normalize conservatively to stacked layout
+- render the first allowed visible items only
 
 But this should not silently create arbitrary multi-column layouts.
 

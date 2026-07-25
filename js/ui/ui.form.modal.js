@@ -24,6 +24,7 @@ const DEFAULT_OPTIONS = {
   ariaLabel: "Form dialog",
   context: null,
   rows: [],
+  columns: 2,
   initialValues: null,
   mode: "",
   extraActions: [],
@@ -143,8 +144,10 @@ export function createFormModal(options = {}) {
         });
         return;
       }
+      const maxColumns = currentOptions.columns;
+      const rowColumnCount = resolveRowColumnCount(visibleItems, maxColumns);
       const rowEl = createElement("div", {
-        className: `ui-form-modal-row is-items-${Math.min(visibleItems.length, 2) || 1}`,
+        className: `ui-form-modal-row is-items-${rowColumnCount}`,
       });
       let warned = false;
       let renderedVisibleCount = 0;
@@ -163,9 +166,9 @@ export function createFormModal(options = {}) {
         const isVisible = true;
         if (isVisible) {
           renderedVisibleCount += 1;
-          if (renderedVisibleCount > 2) {
+          if (renderedVisibleCount > maxColumns) {
             if (!warned) {
-              console.warn(`[createFormModal] Row ${rowIndex + 1} has ${visibleItems.length} visible items; current implementation supports at most 2. Rendering first 2 visible items only.`);
+              console.warn(`[createFormModal] Row ${rowIndex + 1} has ${visibleItems.length} visible items; current options allow at most ${maxColumns}. Rendering first ${maxColumns} visible items only.`);
               warned = true;
             }
             return;
@@ -1103,6 +1106,7 @@ export function createFormModal(options = {}) {
     return {
       ...modal.getState(),
       mode: currentOptions.mode,
+      columns: currentOptions.columns,
       values: getValues(),
     };
   }
@@ -1241,6 +1245,7 @@ function normalizeOptions(options = {}) {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
     rows: normalizeRows(options.rows),
+    columns: normalizeColumns(options.columns),
     initialValues: options.initialValues && typeof options.initialValues === "object" ? { ...options.initialValues } : null,
     context: options.context ?? null,
     mode: String(options.mode || "").trim(),
@@ -1304,6 +1309,21 @@ function normalizeRows(rows) {
   return rows
     .map((row) => (Array.isArray(row) ? row.filter(Boolean) : []))
     .filter((row) => row.length);
+}
+
+function resolveRowColumnCount(items, maxColumns) {
+  const visibleCount = Array.isArray(items) ? items.length : 0;
+  const largestSpan = Math.max(1, ...(items || []).map((item) => normalizeSpan(item?.span)));
+  const totalSpan = (items || []).reduce((sum, item) => sum + normalizeSpan(item?.span), 0);
+  return Math.min(Math.max(visibleCount, largestSpan, Math.min(totalSpan || 1, maxColumns)), maxColumns);
+}
+
+function normalizeColumns(value) {
+  const columns = Number(value);
+  if (columns === 1 || columns === 2 || columns === 3) {
+    return columns;
+  }
+  return DEFAULT_OPTIONS.columns;
 }
 
 function normalizeOptionsList(options) {
@@ -1380,7 +1400,11 @@ function normalizeBrandingTone(value) {
 }
 
 function normalizeSpan(value) {
-  return Number(value) === 2 ? 2 : 1;
+  const span = Number(value);
+  if (span === 2 || span === 3) {
+    return span;
+  }
+  return 1;
 }
 
 function normalizeTypeClass(value) {
@@ -1413,6 +1437,9 @@ function getItemClassName(baseClassName, item) {
   const classes = [baseClassName];
   if (normalizeSpan(item?.span) === 2) {
     classes.push("is-span-2");
+  }
+  if (normalizeSpan(item?.span) === 3) {
+    classes.push("is-span-3");
   }
   if (item?.rowClassName) {
     classes.push(String(item.rowClassName).trim());
