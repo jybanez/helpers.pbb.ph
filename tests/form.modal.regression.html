@@ -362,6 +362,45 @@
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove mode/rules modal from DOM");
 
+    const prescriptionModal = createFormModal({
+      title: "Prescription Composer",
+      columns: 3,
+      submitLabel: "Add Medicine",
+      rows: [
+        [
+          { type: "input", input: "number", name: "dose_quantity", label: "Dose quantity", value: "1" },
+          { type: "select", name: "dose_unit", label: "Dose unit", value: "tablet", options: ["tablet", "capsule"] },
+          { type: "select", name: "frequency", label: "Frequency", value: "once_daily", options: [{ label: "Once daily", value: "once_daily" }] },
+        ],
+        [
+          { type: "input", input: "number", name: "duration_value", label: "Duration value", value: "5" },
+          { type: "select", name: "duration_unit", label: "Duration unit", value: "days", options: ["days", "weeks"] },
+          { type: "input", input: "number", name: "quantity_to_dispense", label: "Quantity to dispense", value: "5" },
+        ],
+        [
+          { type: "input", input: "text", name: "indication", label: "Indication", span: 2 },
+          { type: "input", input: "number", name: "refills_allowed", label: "Refills", value: "0" },
+        ],
+        [{ type: "textarea", name: "directions", label: "Directions", value: "Take 1 tablet by oral once daily for 5 days.", span: 3 }],
+      ],
+    });
+
+    prescriptionModal.open();
+    await wait(100);
+
+    const prescriptionRows = Array.from(document.querySelectorAll(".ui-form-modal-rows > .ui-form-modal-row"));
+    assert(prescriptionModal.getState().columns === 3, "getState should expose configured form column count");
+    assert(prescriptionRows[0]?.classList.contains("is-items-3"), "columns: 3 should allow three visible fields in one row");
+    assert(prescriptionRows[0]?.querySelectorAll(".ui-form-modal-field").length === 3, "three-column rows should render all three visible fields");
+    const indicationField = document.querySelector('input[name="indication"]')?.closest(".ui-form-modal-field");
+    assert(indicationField?.classList.contains("is-span-2"), "span: 2 should be preserved in three-column rows");
+    assert(indicationField?.closest(".ui-form-modal-row")?.classList.contains("is-items-3"), "a two-item row with span: 2 should still use a three-column grid");
+    assert(document.querySelector('textarea[name="directions"]')?.closest(".ui-form-modal-field")?.classList.contains("is-span-3"), "span: 3 should render a full-width three-column row");
+
+    prescriptionModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove three-column modal from DOM");
+
     let conditionalSubmitValues = null;
     const conditionalModal = createFormModal({
       title: "Conditional Fields",

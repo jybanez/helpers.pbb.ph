@@ -398,7 +398,8 @@ If changing callback signatures or removing methods, plan a major version.
 - `createFormModal(...)` V1 should keep a strict row model:
   - one item => full width
   - two items => equal columns
-  - more than two items => reject or normalize conservatively
+  - three items => equal columns only when the modal explicitly sets `columns: 3`
+  - more visible items than the configured `columns` allows => reject or normalize conservatively
 - Modal-form validation should stay split:
   - helper owns required/basic validation
   - app owns domain/business validation

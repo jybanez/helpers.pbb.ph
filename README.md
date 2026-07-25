@@ -3608,6 +3608,7 @@ Options:
 |---|---|---:|---|---|
 | Safe modal options | inherited | inherited | no | Accepts modal-shell options such as `title`, `size`, `className`, `showCloseButton`, `closeOnBackdrop`, `closeOnEscape`, `busyMessage`, and `renderTarget`. |
 | `rows` | `Array<Array<FormItem>>` | `[]` | yes | Strict V1 row model for form body layout. |
+| `columns` | `1 \| 2 \| 3` | `2` | no | Maximum visible columns allowed per row. Use `3` only for dense operational forms that have enough modal width, such as prescription composers. |
 | `initialValues` | `object` | `{}` | no | Initial field values keyed by field name. |
 | `context` | `{ badge?, summary?, kind? }` | `null` | no | Narrow top-level context strip for acceptance-target flows such as geodata-driven hub editing. |
 | `mode` | `string` | `""` | no | Declarative form mode used by first-pass rule evaluation. |
@@ -3735,11 +3736,13 @@ Row model:
 |---|---|
 | 1 item | Full-width row |
 | 2 items | Equal-width two-column row |
-| More than 2 items | Rejected or normalized conservatively in V1 |
+| 3 items with `columns: 3` | Equal-width three-column row |
+| More visible items than `columns` allows | Warns and renders the first allowed visible items only |
 
 Layout notes:
 
-- `span: 2` allows an item to span both row columns while preserving the narrow two-column model.
+- `span: 2` spans two columns when `columns: 3` is active, and remains full-width in one/two-column rows.
+- `span: 3` makes an item full-width in three-column forms.
 - `hidden` items do not count toward the visible row-column layout.
 
 Events / callbacks:

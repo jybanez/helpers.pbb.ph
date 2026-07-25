@@ -296,6 +296,42 @@
           <div class="demo-stack__row demo-stack__row--live">
             <div class="demo-stack__header">
               <div>
+                <h2>Prescription Three Columns</h2>
+                <p>Dense prescription composer rows can opt into <code>columns: 3</code> while longer text fields still span the full row.</p>
+              </div>
+              <button id="prescriptionColumnsDemoBtn" class="ui-button ui-button-primary" type="button">Open Prescription Composer</button>
+            </div>
+            <div class="demo-stack__meta">
+              <span class="demo-chip">columns: 3</span>
+              <span class="demo-chip">span: 2</span>
+              <span class="demo-chip">span: 3</span>
+              <span class="demo-chip">responsive collapse</span>
+            </div>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-code">createFormModal({
+  title: "Add Live Test Paracetamol",
+  size: "md",
+  columns: 3,
+  rows: [
+    [
+      { type: "input", input: "number", name: "dose_quantity" },
+      { type: "select", name: "dose_unit", options: doseUnits },
+      { type: "select", name: "frequency", options: frequencies },
+    ],
+    [{ type: "textarea", name: "directions", span: 3 }],
+  ],
+});</pre>
+          </div>
+          <div class="demo-stack__row">
+            <pre class="demo-log" data-log-prefix="formModal.prescriptionColumns">No prescription events yet.</pre>
+          </div>
+        </article>
+
+        <article class="demo-stack">
+          <div class="demo-stack__row demo-stack__row--live">
+            <div class="demo-stack__header">
+              <div>
                 <h2>Account Footer Actions</h2>
                 <p>Additive footer composition for cases such as the HQ account modal where a helper-owned form still needs a third footer action.</p>
               </div>
@@ -608,7 +644,8 @@ const payload = {
               <tr><td><code>title</code></td><td><code>""</code></td><td>Modal title.</td></tr>
               <tr><td><code>mode</code></td><td><code>"create"</code></td><td>Lightweight form mode surfaced to rules and state. Allowed values: <code>create</code>, <code>edit</code>.</td></tr>
               <tr><td><code>context</code></td><td><code>null</code></td><td>Narrow top strip for acceptance-proof flows such as geodata hub add.</td></tr>
-              <tr><td><code>rows</code></td><td><code>[]</code></td><td>Row-based field schema. One or two items per row; hidden-only rows do not render visible gaps.</td></tr>
+              <tr><td><code>rows</code></td><td><code>[]</code></td><td>Row-based field schema. One or two items per row by default; three visible items are allowed when <code>columns: 3</code> is set. Hidden-only rows do not render visible gaps.</td></tr>
+              <tr><td><code>columns</code></td><td><code>2</code></td><td>Maximum visible columns per row. Allowed values: <code>1</code>, <code>2</code>, <code>3</code>. Three-column rows should be reserved for dense operational forms with enough modal width.</td></tr>
               <tr><td><code>rows[].type</code></td><td><code>""</code></td><td>Supported field/content types include <code>input</code>, <code>textarea</code>, <code>select</code>, <code>checkbox</code>, <code>ui.select</code>, <code>ui.treeSelect</code>, <code>number-stepper</code>, <code>hidden</code>, <code>display</code>, <code>text</code>, <code>alert</code>, and <code>divider</code>. Alias <code>number_stepper</code> is accepted.</td></tr>
               <tr><td><code>rows[].className</code></td><td><code>""</code></td><td>Optional custom class added to the rendered row item. Alias for <code>rowClassName</code>; use modal-level <code>className</code> only for the outer modal shell.</td></tr>
               <tr><td><code>number-stepper</code></td><td><code>null</code></td><td>Hosted <code>ui.number.stepper</code> field. Supports <code>min</code>, <code>max</code>, <code>step</code>, <code>decimals</code>, <code>allowEmpty</code>, <code>prefixText</code>, <code>suffixText</code>, validation/errors, focus, disabled/readOnly state, <code>getValues()</code>, and <code>setValues(...)</code>.</td></tr>
@@ -1277,6 +1314,57 @@ const payload = {
       });
     }
 
+    function openPrescriptionColumnsModal(source = "formModal.prescriptionColumns") {
+      const formModal = createFormModal({
+        title: "Add Live Test Paracetamol",
+        size: "md",
+        columns: 3,
+        busyMessage: "Adding medicine...",
+        submitLabel: "Add medicine",
+        rows: [
+          [{ type: "display", name: "summary", value: "Live Test Paracetamol - SeedPara - 500 mg - tablet - oral", span: 3 }],
+          [
+            { type: "input", input: "text", name: "medicine", label: "Medicine", value: "Live Test Paracetamol", required: true },
+            { type: "input", input: "text", name: "form_route", label: "Form and route", value: "SeedPara - 500 mg - tablet - oral", required: true, span: 2 },
+          ],
+          [
+            { type: "input", input: "number", name: "dose_quantity", label: "Dose quantity", value: "1", min: 0, step: 0.5, required: true },
+            { type: "select", name: "dose_unit", label: "Dose unit", value: "tablet", options: ["tablet", "capsule", "mL"], required: true },
+            { type: "select", name: "frequency", label: "Frequency", value: "once_daily", options: [{ label: "Once daily", value: "once_daily" }, { label: "Twice daily", value: "twice_daily" }], required: true },
+          ],
+          [
+            { type: "input", input: "number", name: "duration_value", label: "Duration value", value: "5", min: 1, step: 1, required: true },
+            { type: "select", name: "duration_unit", label: "Duration unit", value: "days", options: ["days", "weeks"], required: true },
+            { type: "input", input: "number", name: "quantity_to_dispense", label: "Quantity to dispense", value: "5", min: 1, step: 1 },
+          ],
+          [
+            { type: "input", input: "number", name: "refills_allowed", label: "Refills allowed", value: "0", min: 0, step: 1 },
+            { type: "input", input: "text", name: "indication", label: "Indication", span: 2 },
+          ],
+          [{ type: "textarea", name: "patient_instruction", label: "Patient instruction", span: 3 }],
+          [{ type: "textarea", name: "directions", label: "Directions", value: "Take 1 tablet by oral once daily for 5 days.", span: 3 }],
+        ],
+        onChange(values, ctx) {
+          writeLog(`${source}.change`, {
+            changedFieldName: ctx.changedFieldName,
+            values,
+          });
+        },
+        async onSubmit(values) {
+          writeLog(`${source}.submit`, { values });
+          return false;
+        },
+        onClose(meta) {
+          writeLog(`${source}.close`, meta || {});
+        },
+      });
+      formModal.open();
+      writeLog(`${source}.open`, {
+        columns: formModal.getState().columns,
+        values: formModal.getValues(),
+      });
+    }
+
     function openConditionalVisibilityModal(source = "formModal.conditionalVisibility") {
       const formModal = createFormModal({
         title: "Incident Field Definition",
@@ -1393,6 +1481,7 @@ const payload = {
     document.getElementById("uplinkDemoBtn").addEventListener("click", () => openAddUplinkStyleModal());
     document.getElementById("resourceTreeDemoBtn").addEventListener("click", () => openResourceTreeStyleModal());
     document.getElementById("numberStepperDemoBtn").addEventListener("click", () => openNumberStepperModal());
+    document.getElementById("prescriptionColumnsDemoBtn").addEventListener("click", () => openPrescriptionColumnsModal());
     document.getElementById("conditionalVisibilityDemoBtn").addEventListener("click", () => openConditionalVisibilityModal());
   </script>
 </body>

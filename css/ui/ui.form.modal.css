@@ -61,10 +61,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.ui-form-modal-field.is-span-2,
-.ui-form-modal-text.is-span-2,
-.ui-form-modal-alert.is-span-2,
-.ui-form-modal-divider.is-span-2 {
+.ui-form-modal-row.is-items-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ui-form-modal-row.is-items-3 > .ui-form-modal-field.is-span-2,
+.ui-form-modal-row.is-items-3 > .ui-form-modal-text.is-span-2,
+.ui-form-modal-row.is-items-3 > .ui-form-modal-alert.is-span-2,
+.ui-form-modal-row.is-items-3 > .ui-form-modal-divider.is-span-2 {
+  grid-column: span 2;
+}
+
+.ui-form-modal-row:not(.is-items-3) > .ui-form-modal-field.is-span-2,
+.ui-form-modal-row:not(.is-items-3) > .ui-form-modal-text.is-span-2,
+.ui-form-modal-row:not(.is-items-3) > .ui-form-modal-alert.is-span-2,
+.ui-form-modal-row:not(.is-items-3) > .ui-form-modal-divider.is-span-2,
+.ui-form-modal-field.is-span-3,
+.ui-form-modal-text.is-span-3,
+.ui-form-modal-alert.is-span-3,
+.ui-form-modal-divider.is-span-3 {
   grid-column: 1 / -1;
 }
 
@@ -313,7 +328,15 @@
 }
 
 @media (max-width: 720px) {
-  .ui-form-modal-row.is-items-2 {
+  .ui-form-modal-row.is-items-2,
+  .ui-form-modal-row.is-items-3 {
     grid-template-columns: 1fr;
+  }
+
+  .ui-form-modal-field.is-span-2,
+  .ui-form-modal-text.is-span-2,
+  .ui-form-modal-alert.is-span-2,
+  .ui-form-modal-divider.is-span-2 {
+    grid-column: 1 / -1;
   }
 }
