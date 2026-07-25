@@ -4775,6 +4775,8 @@ Options:
 | `min` | `Date \| string \| null` | `null` | no | Minimum selectable date. |
 | `max` | `Date \| string \| null` | `null` | no | Maximum selectable date. |
 | `disabledDates` | `(date) => boolean` | `null` | no | Custom date-disable callback. |
+| `panelParent` | `"auto" \| "self" \| "body" \| HTMLElement` | `"auto"` | no | Controls where the picker panel mounts. Auto portals out of modal or overflow ancestors to avoid clipping. |
+| `appendTo` | `"auto" \| "self" \| "body" \| HTMLElement \| selector` | `undefined` | no | Alias for `panelParent` when `panelParent` is not supplied. |
 | `locale` | `string` | browser default | no | Locale for formatting. |
 | `placeholder` | `string` | `""` | no | Input placeholder. |
 | `className` | `string` | `""` | no | Extra container class. |
@@ -4808,11 +4810,15 @@ const range = createDatepicker(rangeContainer, {
   showTime: true,
   closeOnSelect: false,
 });
+
+const modalPicker = createDatepicker(modalContainer, {
+  panelParent: "auto", // default; portals out of clipping modal bodies when needed
+});
 ```
 
 Related demos:
 
-- `demos/demo.kanban.html`
+- `demos/demo.datepicker.html`
 
 ### `createTimeline(container, items, options)` (`js/ui/ui.timeline.js`)
 

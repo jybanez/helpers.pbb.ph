@@ -7,10 +7,30 @@
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.calendar.css">
   <link rel="stylesheet" href="../css/ui/ui.datepicker.css">
+  <style>
+    #modalShell {
+      width: 340px;
+      height: 120px;
+      margin-top: 16px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--ui-border, #2f4e85);
+    }
+
+    #modalDatepickerHost {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 8px;
+    }
+  </style>
 </head>
 <body data-status="pending">
   <div id="calendarHost"></div>
   <div id="datepickerHost"></div>
+  <div id="modalShell" class="ui-modal">
+    <div id="modalDatepickerHost"></div>
+  </div>
   <pre id="result">Running...</pre>
   <script type="module">
     import { createCalendar } from "../js/ui/ui.calendar.js";
@@ -56,6 +76,20 @@
     assert(Boolean(document.querySelector("#datepickerHost .ui-calendar")), "datepicker should compose the shared calendar primitive");
     assert(document.querySelector("#datepickerHost .ui-calendar-day.is-selected")?.textContent === "24", "datepicker calendar should preserve selected state");
 
+    const modalPicker = createDatepicker(document.getElementById("modalDatepickerHost"), {
+      value: "2026-07-24",
+      closeOnSelect: false,
+    });
+    document.querySelector("#modalDatepickerHost .ui-datepicker-trigger")?.click();
+    const portaledPanel = Array.from(document.querySelectorAll(".ui-datepicker-panel.is-portaled")).find((node) => node.parentElement === document.body);
+    assert(Boolean(portaledPanel), "datepicker should portal out of modal or overflow ancestors by default");
+    assert(getComputedStyle(portaledPanel).position === "fixed", "portaled datepicker panel should use fixed positioning");
+    assert(Number.parseInt(getComputedStyle(portaledPanel).zIndex || "0", 10) >= 1600, "portaled datepicker panel should use a modal-safe layer");
+    assert(portaledPanel?.getBoundingClientRect().bottom <= window.innerHeight, "portaled datepicker panel should fit inside the viewport");
+    document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    assert(!document.querySelector(".ui-datepicker-panel.is-portaled"), "outside clicks should close a portaled datepicker panel");
+
+    modalPicker.destroy();
     picker.destroy();
     calendar.destroy();
 

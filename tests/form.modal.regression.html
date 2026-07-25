@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <link rel="stylesheet" href="../css/ui/ui.modal.css">
   <link rel="stylesheet" href="../css/ui/ui.form.modal.css">
+  <link rel="stylesheet" href="../css/ui/ui.calendar.css">
+  <link rel="stylesheet" href="../css/ui/ui.datepicker.css">
   <link rel="stylesheet" href="../css/ui/ui.select.css">
   <link rel="stylesheet" href="../css/ui/ui.tree.select.css">
   <style>
@@ -30,6 +32,7 @@
 
   <script type="module">
     import { createFormModal } from "../js/ui/ui.form.modal.js";
+    import { createDatepicker } from "../js/ui/ui.datepicker.js";
 
     const results = document.getElementById("results");
     const failures = [];
@@ -400,6 +403,43 @@
     prescriptionModal.destroy();
     await wait(80);
     assert(document.querySelector(".ui-modal-root") === null, "destroy should remove three-column modal from DOM");
+
+    const datepickerModal = createFormModal({
+      title: "Datepicker Portal",
+      submitLabel: "Save",
+      rows: [
+        [{ type: "input", input: "text", name: "name", label: "Name", value: "Operator One" }],
+      ],
+    });
+
+    datepickerModal.open();
+    await wait(100);
+    const datepickerHost = document.createElement("div");
+    datepickerHost.id = "formModalDatepickerHost";
+    document.querySelector(".ui-modal-body")?.appendChild(datepickerHost);
+    const modalDatepicker = createDatepicker(datepickerHost, {
+      value: "2026-07-24",
+      closeOnSelect: false,
+    });
+    datepickerHost.querySelector(".ui-datepicker-trigger")?.click();
+    await wait(120);
+
+    const datepickerModalRoot = document.querySelector(".ui-modal-root");
+    const modalPortalPanel = document.querySelector(".ui-datepicker-panel.is-portaled");
+    assert(Boolean(modalPortalPanel), "datepicker inside form modal should portal out of modal clipping ancestors");
+    assert(modalPortalPanel?.dataset.uiModalPortalOwner === datepickerModalRoot?.dataset.uiModalId, "portaled datepicker should declare the owning modal id");
+    assert(Number.parseInt(getComputedStyle(modalPortalPanel).zIndex || "0", 10) > Number.parseInt(getComputedStyle(datepickerModalRoot).zIndex || "0", 10), "portaled datepicker should layer above the active modal root");
+
+    const firstCalendarFocus = modalPortalPanel?.querySelector(".ui-calendar-day:not(.is-disabled), .ui-calendar-nav, .ui-calendar-select");
+    firstCalendarFocus?.focus();
+    const tabEvent = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    document.dispatchEvent(tabEvent);
+    assert(tabEvent.defaultPrevented === false, "modal focus trap should treat owned datepicker portals as inside the focus boundary");
+
+    modalDatepicker.destroy();
+    datepickerModal.destroy();
+    await wait(80);
+    assert(document.querySelector(".ui-modal-root") === null, "destroy should remove datepicker portal modal from DOM");
 
     let conditionalSubmitValues = null;
     const conditionalModal = createFormModal({

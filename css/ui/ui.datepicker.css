@@ -57,6 +57,14 @@
   gap: 8px;
 }
 
+.ui-datepicker-panel.is-portaled {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--ui-z-modal-popover, 1600);
+  overflow: auto;
+}
+
 .ui-datepicker-time {
   border-top: 1px solid var(--ui-border-soft, #243657);
   padding-top: 8px;
