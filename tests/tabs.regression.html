@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tabs Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.tabs.css">
+</head>
+<body data-status="pending">
+  <div id="tabsHost"></div>
+  <pre id="result">Running...</pre>
+  <script type="module">
+    import { createTabs } from "../js/ui/ui.tabs.js";
+
+    const host = document.getElementById("tabsHost");
+    const result = document.getElementById("result");
+    const failures = [];
+    let renderCalls = 0;
+
+    const nodeContent = document.createElement("div");
+    nodeContent.className = "node-content";
+    nodeContent.textContent = "DOM node content";
+
+    const fragmentContent = document.createDocumentFragment();
+    const fragmentNode = document.createElement("strong");
+    fragmentNode.className = "fragment-content";
+    fragmentNode.textContent = "Fragment content";
+    fragmentContent.append("Prefix ", fragmentNode);
+
+    const arrayNode = document.createElement("em");
+    arrayNode.className = "array-content";
+    arrayNode.textContent = "Array node";
+
+    const renderNode = document.createElement("span");
+    renderNode.className = "ignored-content";
+    renderNode.textContent = "Ignored content";
+
+    const tabs = createTabs(host, {
+      activeId: "text",
+      tabs: [
+        { id: "text", label: "Text", content: "Text content" },
+        { id: "node", label: "Node", content: nodeContent },
+        { id: "fragment", label: "Fragment", content: fragmentContent },
+        { id: "array", label: "Array", content: ["Array text ", arrayNode, 7, null] },
+        {
+          id: "render",
+          label: "Render",
+          content: renderNode,
+          render(panel, tab) {
+            renderCalls += 1;
+            panel.append(`Rendered ${tab.id}`);
+          },
+        },
+      ],
+    });
+
+    assert(panelText() === "Text content", "string content should render as text");
+
+    tabs.setActive("node", false);
+    assert(!panelText().includes("[object HTMLDivElement]"), "DOM node content should not be stringified");
+    assert(document.querySelector(".node-content") === nodeContent, "DOM node content should be appended");
+    assert(nodeContent.parentElement === currentPanel(), "DOM node content should be inside the active panel");
+
+    tabs.setActive("text", false);
+    tabs.setActive("node", false);
+    assert(document.querySelector(".node-content") === nodeContent, "DOM node content should reattach after switching away and back");
+    assert(nodeContent.parentElement === currentPanel(), "reattached DOM node content should be inside the active panel");
+
+    tabs.setActive("fragment", false);
+    assert(panelText() === "Prefix Fragment content", "DocumentFragment content should append its child nodes");
+    assert(document.querySelector(".fragment-content") === fragmentNode, "DocumentFragment element child should be preserved");
+
+    tabs.setActive("text", false);
+    tabs.setActive("fragment", false);
+    assert(panelText() === "Prefix Fragment content", "DocumentFragment content should reattach after switching away and back");
+    assert(document.querySelector(".fragment-content") === fragmentNode, "DocumentFragment child node should be reused on reattach");
+
+    tabs.setActive("array", false);
+    assert(panelText() === "Array text Array node7", "array content should append text, nodes, and primitive values in order");
+    assert(document.querySelector(".array-content") === arrayNode, "array DOM node content should be appended");
+
+    tabs.setActive("render", false);
+    assert(panelText() === "Rendered render", "render(panel, tab) should take precedence over content");
+    assert(renderCalls === 1, "render callback should run for active render tab");
+    assert(!document.querySelector(".ignored-content"), "content should not be appended when render is provided");
+
+    const updatedNode = document.createElement("span");
+    updatedNode.className = "updated-node";
+    updatedNode.textContent = "Updated node";
+    tabs.update([
+      { id: "updated", label: "Updated", content: updatedNode },
+      { id: "plain", label: "Plain", content: { value: 1 } },
+    ], { activeId: "updated" });
+    assert(document.querySelector(".updated-node") === updatedNode, "update() should render new DOM node content");
+    tabs.setActive("plain", false);
+    assert(panelText() === "[object Object]", "non-node object content should preserve existing stringification behavior");
+
+    tabs.destroy();
+    assert(host.children.length === 0, "destroy() should clear the host");
+
+    if (failures.length) {
+      document.body.dataset.status = "fail";
+      result.textContent = `FAIL\n${failures.map((line) => `- ${line}`).join("\n")}`;
+    } else {
+      document.body.dataset.status = "pass";
+      result.textContent = "PASS";
+    }
+
+    function currentPanel() {
+      return document.querySelector(".ui-tabpanel");
+    }
+
+    function panelText() {
+      return currentPanel()?.textContent || "";
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>

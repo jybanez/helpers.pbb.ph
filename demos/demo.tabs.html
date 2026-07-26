@@ -33,12 +33,12 @@
         "Do not use it for deep route navigation or large page-level sections.",
         "Do not use it when all content should be visible at once."
       ],
-      description: "This demo covers a simple three-tab composition and logs active-tab changes through the shared callback.",
-      defaultSampleCode: `createTabs(host, {\n  activeId: "one",\n  tabs: [\n    { id: "one", label: "Tab One", content: "Tab one content." },\n    { id: "two", label: "Tab Two", content: "Tab two content." },\n  ],\n  onChange(tab, id) {\n    writeLog("tabs.change", { id, label: tab?.label });\n  },\n});`,
+      description: "This demo covers text, DOM-node, and render-callback tab content and logs active-tab changes through the shared callback.",
+      defaultSampleCode: `const summary = document.createElement("div");\nsummary.textContent = "DOM node content.";\n\ncreateTabs(host, {\n  activeId: "one",\n  tabs: [\n    { id: "one", label: "Tab One", content: "Tab one content." },\n    { id: "two", label: "Tab Two", content: summary },\n    { id: "three", label: "Tab Three", render(panel) { panel.textContent = "Rendered content."; } },\n  ],\n  onChange(tab, id) {\n    writeLog("tabs.change", { id, label: tab?.label });\n  },\n});`,
       constructor: [{ factory: "<code>createTabs(container, options)</code>", arguments: "<code>container</code>, tabs <code>options</code>", returns: "Tabs instance" }],
       options: [
         { option: "<code>activeId</code>", default: "first tab", description: "Initial active tab id." },
-        { option: "<code>tabs</code>", default: "<code>[]</code>", description: "Tab definitions with id, label, and content." },
+        { option: "<code>tabs</code>", default: "<code>[]</code>", description: "Tab definitions with id, label, content, or render callback. <code>render(panel, tab)</code> takes precedence. <code>content</code> accepts text, DOM nodes, DocumentFragments, and arrays of nodes/text." },
         { option: "<code>onChange</code>", default: "<code>null</code>", description: "Callback when the active tab changes." }
       ],
       propertiesText: "No stable public instance properties are documented for tabs.",
@@ -66,12 +66,15 @@
       <h2 class="ui-title">Tab Switching</h2>
       <p class="muted">Switch tabs and watch change events emit into the local log.</p>
       <div id="tabsHost"></div>
-      <pre>createTabs(host, {
+      <pre>const nodeContent = document.createElement("div");
+nodeContent.textContent = "DOM node content.";
+
+createTabs(host, {
   activeId: "one",
   tabs: [
     { id: "one", label: "Tab One", content: "Tab one content." },
-    { id: "two", label: "Tab Two", content: "Tab two content." },
-    { id: "three", label: "Tab Three", content: "Tab three content." },
+    { id: "two", label: "Tab Two", content: nodeContent },
+    { id: "three", label: "Tab Three", render(panel) { panel.textContent = "Rendered content."; } },
   ],
   onChange(tab, id) {
     writeLog("tabs.change", { id, label: tab?.label });
@@ -95,12 +98,14 @@
       page.dataset.theme = next;
       writeLog("theme.toggle", { theme: next });
     });
+    const nodeContent = document.createElement("div");
+    nodeContent.textContent = "DOM node content.";
     createTabs(document.getElementById("tabsHost"), {
       activeId: "one",
       tabs: [
         { id: "one", label: "Tab One", content: "Tab one content." },
-        { id: "two", label: "Tab Two", content: "Tab two content." },
-        { id: "three", label: "Tab Three", content: "Tab three content." },
+        { id: "two", label: "Tab Two", content: nodeContent },
+        { id: "three", label: "Tab Three", render(panel) { panel.textContent = "Rendered content."; } },
       ],
       onChange(tab, id) {
         writeLog("tabs.change", { id, label: tab?.label });
