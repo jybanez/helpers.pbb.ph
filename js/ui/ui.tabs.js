@@ -5,6 +5,7 @@ export function createTabs(container, options = {}) {
   const events = createEventBag();
   const tabs = Array.isArray(options.tabs) ? options.tabs : [];
   const onChange = typeof options.onChange === "function" ? options.onChange : null;
+  const fragmentChildren = new WeakMap();
   let activeId = String(options.activeId ?? tabs[0]?.id ?? "");
   const tabsetId = `ui-tabs-${Math.random().toString(36).slice(2, 10)}`;
   let root = null;
@@ -109,7 +110,7 @@ export function createTabs(container, options = {}) {
     if (active && typeof active.render === "function") {
       active.render(panel, active);
     } else if (active) {
-      panel.textContent = String(active.content ?? "");
+      appendTabContent(panel, active.content);
     }
 
     root.append(tablist, panel);
@@ -143,4 +144,33 @@ export function createTabs(container, options = {}) {
       panel = null;
     },
   };
+
+  function appendTabContent(target, value) {
+    if (value === undefined || value === null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((entry) => appendTabContent(target, entry));
+      return;
+    }
+    if (isDocumentFragment(value)) {
+      const children = fragmentChildren.get(value) || Array.from(value.childNodes);
+      fragmentChildren.set(value, children);
+      children.forEach((child) => appendTabContent(target, child));
+      return;
+    }
+    if (isNodeLike(value)) {
+      target.appendChild(value);
+      return;
+    }
+    target.appendChild(document.createTextNode(String(value)));
+  }
+}
+
+function isDocumentFragment(value) {
+  return Boolean(value && value.nodeType === 11);
+}
+
+function isNodeLike(value) {
+  return Boolean(value && typeof value === "object" && typeof value.nodeType === "number");
 }

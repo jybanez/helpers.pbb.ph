@@ -390,7 +390,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.file.uploader.js`
   - `createFileUploader(container, options)` drag/drop file queue with validation, progress, retry/cancel/remove, and adapter upload hook
 - `ui.tabs.js`
-  - `createTabs(container, options)` accessible tablist + panel component
+  - `createTabs(container, options)` accessible tablist + panel component. `tab.render(panel, tab)` is the recommended lifecycle hook and takes precedence; `tab.content` accepts text, DOM nodes, DocumentFragments, and arrays of nodes/text for simple composition.
 - `ui.strips.js`
   - `createStrip(container, items, options)` selectable pill-strip component (single/multi)
 - `ui.media.strip.js`

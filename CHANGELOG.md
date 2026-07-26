@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Improved `ui.tabs` content rendering so `tab.render(panel, tab)` remains highest precedence, while `tab.content` can now safely append DOM nodes, document fragments, and arrays of nodes/text without stringifying them as `[object HTMLDivElement]`. Primitive and plain-object stringification remains unchanged. Added `UI_TABS_REV` and bumped `UI_BUNDLE_REV`.
 - Added explicit `columns: 1 | 2 | 3` support to `createFormModal(...)` so dense operational forms can render three visible fields in a row while preserving the default two-column contract and responsive mobile collapse. Bumped `UI_OVERLAY_ROUTING_REV` and `UI_BUNDLE_REV`.
 - Fixed `ui.datepicker` overlay behavior so panels auto-portal out of modal or overflow ancestors, layer above active Helper modals, participate in modal-owned focus trapping, reposition on viewport/scroll changes, remain outside-click/Escape dismissible, and avoid clipping in Helper modal bodies. Added `panelParent`/`appendTo` mounting controls and bumped `UI_DATE_REV`, `UI_OVERLAY_ROUTING_REV`, and `UI_BUNDLE_REV`.
 - Added `ui.property.viewer` with `createPropertyViewer(...)` for read-only inspector-style property panels, including grouped sections, option-label resolution, plain read-only value styling, masked password display with focus-preserving show/hide controls, chips, safe custom value renderers, safe opt-in copy controls, complete neutral/success/info/warning/danger tones, copy/action callbacks, demo, spec, and regression coverage.
