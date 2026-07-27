@@ -52,6 +52,14 @@
     }
 
     const footer = createElement("div", { className: "ui-inline" });
+    const secondary = createElement("div", { className: "ui-inline" });
+    const secondaryLabel = createElement("strong", { text: "Patient Context" });
+    const secondaryButton = createElement("button", {
+      className: "ui-button ui-button-ghost",
+      text: "Update Context",
+      attrs: { type: "button" }
+    });
+    secondary.append(secondaryLabel, secondaryButton);
     const cancel = createElement("button", {
       className: "ui-button ui-button-ghost",
       text: "Cancel",
@@ -68,6 +76,7 @@
       title: "Busy Regression",
       ownerTitle: "Regression Fixture",
       content,
+      secondaryHeader: secondary,
       footer,
       showCloseButton: false,
       closeOnBackdrop: false,
@@ -82,6 +91,7 @@
     const root = document.querySelector(".ui-modal-root");
     const panel = document.querySelector(".ui-modal");
     const header = document.querySelector(".ui-modal-header");
+    const secondaryHeader = document.querySelector(".ui-modal-secondary-header");
     const ownerTitle = document.querySelector(".ui-modal-owner-title");
     const body = document.querySelector(".ui-modal-body");
     const footerEl = document.querySelector(".ui-modal-footer");
@@ -95,6 +105,10 @@
     assert(root.classList.contains("is-open"), "modal should remain open after open");
     assert(ownerTitle?.textContent === "Regression Fixture", "owner title should render below the modal title when provided");
     assert(header?.tagName === "DIV", "modal title bar should not render as a native header/banner landmark");
+    assert(Boolean(secondaryHeader), "modal secondary header should render when provided");
+    assert(secondaryHeader.hidden === false, "modal secondary header should be visible when it has content");
+    assert(secondaryHeader.textContent.includes("Patient Context"), "modal secondary header should render supplied slot content");
+    assert(modal.refs.secondaryHeader === secondaryHeader, "modal refs should expose the secondary header element");
     assert(header.classList.contains("is-draggable"), "modal header should expose draggable affordance by default");
     assert(panel.classList.contains("is-draggable"), "modal panel should expose draggable state by default");
     assert(getComputedStyle(header).cursor === "move", "draggable modal headers should expose move cursor styling");
@@ -102,11 +116,16 @@
     assert(getComputedStyle(panel).overflow === "hidden", "modal shell should not scroll directly");
     assert(getComputedStyle(body).overflowY === "auto", "modal body should own vertical scrolling");
     assert(body.scrollHeight > body.clientHeight, "long modal content should overflow within the body");
+    if (window.innerWidth <= 640) {
+      assert(Math.abs(panel.getBoundingClientRect().height - window.innerHeight) < 2, "mobile modal should stay bounded to the viewport height");
+    }
     const initialHeaderTop = header.getBoundingClientRect().top;
+    const initialSecondaryTop = secondaryHeader.getBoundingClientRect().top;
     const initialFooterTop = footerEl.getBoundingClientRect().top;
     body.scrollTop = 120;
     await new Promise((resolve) => setTimeout(resolve, 240));
     assert(Math.abs(header.getBoundingClientRect().top - initialHeaderTop) < 1, "header should stay fixed while body scrolls");
+    assert(Math.abs(secondaryHeader.getBoundingClientRect().top - initialSecondaryTop) < 1, "secondary header should stay fixed while body scrolls");
     assert(Math.abs(footerEl.getBoundingClientRect().top - initialFooterTop) < 1, "footer should stay fixed while body scrolls");
     assert(getCloseButton().hidden === true, "close button should remain hidden when showCloseButton is false");
     assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should not be displayed");
@@ -126,6 +145,7 @@
     assert(getBusyCancelButton().hidden === true, "busy cancel button should stay hidden when cancelBusy is not configured");
     assert(cancel.disabled === true, "footer actions should be disabled during busy state");
     assert(save.disabled === true, "footer actions should be disabled during busy state");
+    assert(secondaryButton.disabled === true, "secondary header controls should be disabled during busy state");
     assert(input.disabled === true, "body inputs should be disabled during busy state");
 
     modal.setBusy(false);
@@ -140,7 +160,16 @@
     assert(getComputedStyle(getCloseButton()).display === "none", "hidden close button should remain visually hidden after leaving busy state");
     assert(cancel.disabled === false, "footer actions should be restored after busy state");
     assert(save.disabled === false, "footer actions should be restored after busy state");
+    assert(secondaryButton.disabled === false, "secondary header controls should be restored after busy state");
     assert(input.disabled === false, "body inputs should be restored after busy state");
+
+    modal.setSecondaryHeader(null);
+    await new Promise((resolve) => setTimeout(resolve, 32));
+    assert(secondaryHeader.hidden === true, "secondary header should hide when cleared through setSecondaryHeader");
+    modal.update({ secondaryHeader: [createElement("span", { text: "Updated context" })] });
+    await new Promise((resolve) => setTimeout(resolve, 32));
+    assert(secondaryHeader.hidden === false, "secondary header should show when update supplies content");
+    assert(secondaryHeader.textContent.includes("Updated context"), "secondary header should update through modal.update");
 
     let busyCancelCalls = 0;
     let busyCancelCtx = null;
@@ -169,6 +198,7 @@
     assert(getBusyLayer().hidden === true, "busy layer should hide after busy cancel resolves");
     assert(cancel.disabled === false, "footer actions should be restored after busy cancel");
     assert(save.disabled === false, "footer actions should be restored after busy cancel");
+    assert(secondaryButton.disabled === false, "cleared secondary header controls should not remain busy-disabled after busy cancel");
     assert(input.disabled === false, "body inputs should be restored after busy cancel");
 
     modal.destroy();
