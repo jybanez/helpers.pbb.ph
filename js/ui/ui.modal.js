@@ -9,6 +9,7 @@ const DEFAULT_OPTIONS = {
   ariaLabel: "Modal dialog",
   content: null,
   headerActions: null,
+  secondaryHeader: null,
   footer: null,
   showHeader: true,
   showCloseButton: true,
@@ -80,6 +81,10 @@ export function createModal(options = {}) {
     attrs: { type: "button", "aria-label": "Close modal", title: "Close" },
     html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   });
+  const secondaryHeader = createElement("div", {
+    className: "ui-modal-secondary-header",
+    attrs: { hidden: "hidden" },
+  });
   const body = createElement("div", { className: "ui-modal-body" });
   const footer = createElement("footer", { className: "ui-modal-footer" });
   const busyLayer = createElement("div", {
@@ -115,7 +120,7 @@ export function createModal(options = {}) {
   header.append(titleBlock, headerActions, closeButton);
   busyActions.appendChild(busyCancelButton);
   busyLayer.append(busyOverlay, busySpinner, busyMessage, busyActions);
-  panel.append(header, body, footer, busyLayer);
+  panel.append(header, secondaryHeader, body, footer, busyLayer);
   root.append(backdrop, panel);
 
   events.on(backdrop, "click", () => {
@@ -178,6 +183,8 @@ export function createModal(options = {}) {
     ownerTitleEl.hidden = !ownerTitleText;
     setSlot(headerActions, currentOptions.headerActions);
     headerActions.hidden = !headerActions.childNodes.length;
+    setSlot(secondaryHeader, currentOptions.secondaryHeader);
+    secondaryHeader.hidden = !secondaryHeader.childNodes.length;
 
     header.hidden = !showHeader;
     closeButton.hidden = !showHeader || !showCloseButton;
@@ -605,6 +612,7 @@ export function createModal(options = {}) {
 
   function syncBusyInteractivity(busy) {
     toggleBusyDisabled(headerActions.querySelectorAll("button, input, select, textarea"), busy);
+    toggleBusyDisabled(secondaryHeader.querySelectorAll("button, input, select, textarea"), busy);
     toggleBusyDisabled(footer.querySelectorAll("button, input, select, textarea"), busy);
     toggleBusyDisabled(body.querySelectorAll("button, input, select, textarea"), busy);
 
@@ -686,7 +694,7 @@ export function createModal(options = {}) {
       root.classList.add("is-open");
       focusInitial();
     });
-    currentOptions.onOpen?.({ panel, body, footer, header, headerActions, closeButton });
+    currentOptions.onOpen?.({ panel, body, footer, header, headerActions, secondaryHeader, closeButton });
     return true;
   }
 
@@ -777,6 +785,9 @@ export function createModal(options = {}) {
     setHeaderActions(nextHeaderActions) {
       update({ headerActions: nextHeaderActions });
     },
+    setSecondaryHeader(nextSecondaryHeader) {
+      update({ secondaryHeader: nextSecondaryHeader });
+    },
     setTitle(nextTitle) {
       update({ title: nextTitle });
     },
@@ -800,6 +811,7 @@ export function createModal(options = {}) {
       panel,
       header,
       headerActions,
+      secondaryHeader,
       ownerTitle: ownerTitleEl,
       title: titleEl,
       body,

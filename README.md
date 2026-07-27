@@ -285,7 +285,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
   - includes operational/SITREP categories for shared report sections, hazards, population groups, routes, resources, teams, maps, alerts, and data-quality cues
 - `ui.modal.js`
-  - `createModal(options)` general-purpose modal shell (content/header/footer, sizing, focus trap, backdrop/escape close)
+  - `createModal(options)` general-purpose modal shell (content/header/secondaryHeader/footer, sizing, focus trap, backdrop/escape close)
   - `createActionModal(options)` modal wrapper with declarative header/footer actions (`headerActions[]`, `actions[]`)
 - `ui.window.js`
   - `createWindowManager(options)` desktop-style window manager with draggable/resizable stacked windows, configurable taskbar modes, and maximize/restore behavior
@@ -3032,6 +3032,7 @@ Options:
 | `ownerTitle` | `string` | `""` | no | Optional secondary ownership/context text rendered below the main title. Useful for Workspace-bridged parent-owned modals. |
 | `content` | `string \| HTMLElement \| (() => HTMLElement)` | `""` | no | Body content source. |
 | `headerActions` | `string \| HTMLElement \| HTMLElement[] \| (() => HTMLElement)` | `null` | no | Custom header action content. |
+| `secondaryHeader` | `string \| HTMLElement \| HTMLElement[] \| (() => HTMLElement)` | `null` | no | Optional fixed context row rendered between the title header and scrollable modal body. |
 | `footer` | `string \| HTMLElement \| (() => HTMLElement)` | `null` | no | Custom footer content. |
 | `size` | `"sm" \| "md" \| "lg" \| "xl" \| "full"` | `"md"` | no | Modal width preset. |
 | `position` | `"center" \| "top"` | `"center"` | no | Vertical placement. |
@@ -3072,6 +3073,7 @@ Returned API:
 | `update` | `nextOptions?` | `void` | Updates modal options without remounting. |
 | `setContent` | `content` | `void` | Replaces body content. |
 | `setHeaderActions` | `headerActions` | `void` | Replaces header actions. |
+| `setSecondaryHeader` | `secondaryHeader` | `void` | Replaces or clears the fixed secondary context header. |
 | `setFooter` | `footer` | `void` | Replaces footer content. |
 | `setTitle` | `title` | `void` | Updates header title. |
 | `setBusy` | `isBusy, { message?, cancelBusy? }` | `void` | Toggles helper-owned busy lock state and optionally configures the busy-overlay cancel action for that busy run. |
@@ -3089,6 +3091,7 @@ Returned refs:
 - `panel`
 - `body`
 - `header`
+- `secondaryHeader`
 - `title`
 - `ownerTitle`
 - `closeButton`
@@ -3100,7 +3103,8 @@ Busy-state behavior:
 - modal headers are draggable by default; drag starts only from the header itself, not from close buttons or other interactive header controls
 - on phone-sized viewports (`<= 640px`), modal shells switch to a fullscreen presentation with no border or rounded corners, and header dragging is disabled
 - `ownerTitle` renders as a secondary ownership line below the main title when provided
-- long modal content now scrolls inside the body region only; the header stays fixed at the top of the shell and the footer stays fixed at the bottom
+- `secondaryHeader` renders as an optional fixed row between the title header and body, hides when empty, and can be updated through `setSecondaryHeader(...)` or `update({ secondaryHeader })`
+- long modal content now scrolls inside the body region only; the header, secondary header, and footer stay fixed inside the shell
 - when a trusted same-origin Workspace host is installed, modal-family helpers now prefer mounting into the parent Workspace overlay surface automatically
 - `setBusy(true, { message, cancelBusy })`:
   - sets `aria-busy="true"` on the modal panel
@@ -3125,6 +3129,7 @@ const modal = createModal({
   ownerTitle: "PBB HQ",
   draggable: true,
   size: "md",
+  secondaryHeader: "Optional context row",
   content: "Hello from modal body",
   headerActions: [
     Object.assign(document.createElement("button"), { className: "ui-button ui-button-ghost", type: "button", textContent: "Refresh" }),

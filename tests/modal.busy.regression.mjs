@@ -28,24 +28,35 @@ if (!browserPath) {
 const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "modal.busy.regression.html");
 const htmlUrl = pathToFileURL(htmlPath).href;
 
-const { stdout, stderr } = await execFileAsync(browserPath, [
-  "--headless=new",
-  "--disable-gpu",
-  "--allow-file-access-from-files",
-  "--virtual-time-budget=3000",
-  "--dump-dom",
-  htmlUrl,
-], { maxBuffer: 1024 * 1024 * 4 });
+let failed = false;
+await runFixture("desktop", ["--window-size=1024,768"]);
+await runFixture("mobile", ["--window-size=390,844"]);
 
-const output = `${stdout}\n${stderr}`;
-if (/data-status="pass"/.test(output) && /\bPASS\b/.test(output)) {
+if (!failed) {
   console.log("Modal busy regression test passed.");
-} else {
-  console.error("Modal busy regression test failed.");
-  console.error(output);
-  process.exitCode = 1;
 }
 
 function requireExists(targetPath) {
   return Boolean(fs.existsSync(targetPath));
+}
+
+async function runFixture(label, viewportArgs = []) {
+  const { stdout, stderr } = await execFileAsync(browserPath, [
+    "--headless=new",
+    "--disable-gpu",
+    "--allow-file-access-from-files",
+    ...viewportArgs,
+    "--virtual-time-budget=3000",
+    "--dump-dom",
+    htmlUrl,
+  ], { maxBuffer: 1024 * 1024 * 4 });
+
+  const output = `${stdout}\n${stderr}`;
+  if (/data-status="pass"/.test(output) && /\bPASS\b/.test(output)) {
+    return;
+  }
+  failed = true;
+  console.error(`Modal busy regression test failed in ${label} viewport.`);
+  console.error(output);
+  process.exitCode = 1;
 }
