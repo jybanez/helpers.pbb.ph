@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Splitter Theme Regression Test</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.splitter.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--ui-bg);
+      color: var(--ui-text);
+      font-family: var(--ui-font);
+    }
+
+    .host {
+      width: 520px;
+      height: 260px;
+      margin-bottom: 16px;
+    }
+
+    #results {
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body data-theme="care-light" data-status="pending">
+  <div id="horizontalHost" class="host"></div>
+  <div id="verticalHost" class="host"></div>
+  <pre id="results">Running...</pre>
+
+  <script type="module">
+    import { createSplitter } from "../js/ui/ui.splitter.js";
+
+    const failures = [];
+    const rootStyles = getComputedStyle(document.body);
+    const tokenBgSoft = toColor(rootStyles.getPropertyValue("--ui-bg-soft"));
+    const tokenBorder = toColor(rootStyles.getPropertyValue("--ui-border"));
+    const tokenBorderStrong = toColor(rootStyles.getPropertyValue("--ui-border-strong"));
+
+    createSplitter(document.getElementById("horizontalHost"), {
+      paneA: "Queue",
+      paneB: "Details",
+    });
+
+    createSplitter(document.getElementById("verticalHost"), {
+      orientation: "vertical",
+      paneA: "Top",
+      paneB: "Bottom",
+    });
+
+    const horizontal = document.querySelector("#horizontalHost .ui-splitter");
+    const vertical = document.querySelector("#verticalHost .ui-splitter");
+    assertSplitterTheme(horizontal, "horizontal");
+    assertSplitterTheme(vertical, "vertical");
+    assertInteractionRulesExist();
+    assertDragStateChangesDivider(horizontal);
+
+    const passed = failures.length === 0;
+    document.body.dataset.status = passed ? "pass" : "fail";
+    document.getElementById("results").textContent = `${passed ? "PASS" : "FAIL"}\n${passed ? "Splitter theme regression test passed." : failures.join("\n")}`;
+
+    function assertSplitterTheme(splitter, label) {
+      assert(!!splitter, `${label} splitter should render`);
+      const splitterStyles = getComputedStyle(splitter);
+      assertSameColor(splitterStyles.backgroundColor, tokenBgSoft, `${label} root background should use --ui-bg-soft`);
+      assertSameColor(splitterStyles.borderTopColor, tokenBorder, `${label} root border should use --ui-border`);
+
+      const paneA = splitter.querySelector(".ui-splitter-pane.is-a");
+      const paneStyles = getComputedStyle(paneA);
+      if (label === "vertical") {
+        assertSameColor(paneStyles.borderBottomColor, tokenBorder, "vertical pane border should use --ui-border");
+      } else {
+        assertSameColor(paneStyles.borderRightColor, tokenBorder, "horizontal pane border should use --ui-border");
+      }
+
+      const divider = splitter.querySelector(".ui-splitter-divider");
+      const dividerStyles = getComputedStyle(divider);
+      assertSameColor(dividerStyles.borderTopColor, tokenBorderStrong, `${label} divider border should use --ui-border-strong`);
+      assert(!/43,\s*60,\s*92|56,\s*82,\s*129|11,\s*18,\s*32/.test(dividerStyles.backgroundImage), `${label} divider should not retain hardcoded dark colors`);
+      assert(/linear-gradient/.test(dividerStyles.backgroundImage), `${label} divider should keep a gradient handle`);
+    }
+
+    function assertInteractionRulesExist() {
+      const selectors = new Set();
+      for (const sheet of Array.from(document.styleSheets)) {
+        for (const rule of Array.from(sheet.cssRules || [])) {
+          if (rule.selectorText) {
+            selectors.add(rule.selectorText);
+          }
+        }
+      }
+      assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter-divider:hover")), "divider hover styling should exist");
+      assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter-divider:focus-visible")), "divider focus-visible styling should exist");
+      assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter.is-dragging .ui-splitter-divider")), "divider drag styling should exist");
+    }
+
+    function assertDragStateChangesDivider(splitter) {
+      const divider = splitter.querySelector(".ui-splitter-divider");
+      const before = getComputedStyle(divider).backgroundImage;
+      divider.dispatchEvent(new PointerEvent("pointerdown", {
+        bubbles: true,
+        pointerId: 1,
+        clientX: 260,
+        clientY: 100,
+      }));
+      const during = getComputedStyle(divider).backgroundImage;
+      assert(splitter.classList.contains("is-dragging"), "splitter should expose is-dragging while pointer drag is active");
+      assert(during !== before, "drag state should alter divider background");
+      window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      assert(!splitter.classList.contains("is-dragging"), "splitter should clear is-dragging after pointerup");
+    }
+
+    function toColor(value) {
+      const probe = document.createElement("span");
+      probe.style.color = value.trim();
+      document.body.appendChild(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }
+
+    function assertSameColor(actual, expected, message) {
+      assert(toColor(actual) === expected, `${message}. Expected ${expected}, got ${actual}`);
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        failures.push(message);
+      }
+    }
+  </script>
+</body>
+</html>
