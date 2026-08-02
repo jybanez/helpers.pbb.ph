@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed `ui.datepicker` datetime behavior so changing visible time inputs immediately updates the selected start/end timestamps, emitted value payload, and trigger display text. Bumped `UI_DATE_REV` and `UI_BUNDLE_REV`.
 - Fixed `ui.splitter` root, pane borders, divider/drag handle styling, and demo wrapper surfaces so horizontal and vertical splitters use shared theme tokens under light presets instead of retaining hardcoded dark chrome. Added `UI_SPLITTER_REV` and bumped `UI_BUNDLE_REV`.
 - Added a generic fixed `secondaryHeader` slot to `createModal(...)` and inherited action/form modal usage, rendered between the title header and scrollable body. The slot hides when empty, updates through `modal.update({ secondaryHeader })` / `setSecondaryHeader(...)`, is exposed through refs/open callbacks, stays fixed with the header/footer while only `.ui-modal-body` scrolls, participates in busy-state control disabling, and remains viewport-bounded on mobile. Bumped `UI_OVERLAY_ROUTING_REV` and `UI_BUNDLE_REV`.
 - Improved `ui.tabs` content rendering so `tab.render(panel, tab)` remains highest precedence, while `tab.content` can now safely append DOM nodes, document fragments, and arrays of nodes/text without stringifying them as `[object HTMLDivElement]`. Primitive and plain-object stringification remains unchanged. Added `UI_TABS_REV` and bumped `UI_BUNDLE_REV`.

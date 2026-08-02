@@ -28,6 +28,8 @@
 <body data-status="pending">
   <div id="calendarHost"></div>
   <div id="datepickerHost"></div>
+  <div id="timeDatepickerHost"></div>
+  <div id="rangeTimeDatepickerHost"></div>
   <div id="modalShell" class="ui-modal">
     <div id="modalDatepickerHost"></div>
   </div>
@@ -76,6 +78,45 @@
     assert(Boolean(document.querySelector("#datepickerHost .ui-calendar")), "datepicker should compose the shared calendar primitive");
     assert(document.querySelector("#datepickerHost .ui-calendar-day.is-selected")?.textContent === "24", "datepicker calendar should preserve selected state");
 
+    const timePicker = createDatepicker(document.getElementById("timeDatepickerHost"), {
+      value: "2026-08-12T12:00:00+08:00",
+      showTime: true,
+      closeOnSelect: false,
+      onChange(value, state) {
+        selectedPayload = { value, state };
+      },
+    });
+    document.querySelector("#timeDatepickerHost .ui-datepicker-trigger")?.click();
+    const timeInput = document.querySelector("#timeDatepickerHost .ui-datepicker-time input");
+    timeInput.value = "13:30";
+    timeInput.dispatchEvent(new Event("input", { bubbles: true }));
+    assert(selectedPayload?.state?.startTime === "13:30", "single datepicker time input should update state startTime");
+    assert(isLocalTime(timePicker.getValue(), 13, 30), "single datepicker time input should update getValue timestamp");
+    assert(/1:30|13:30/.test(document.querySelector("#timeDatepickerHost .ui-datepicker-value")?.textContent || ""), "single datepicker trigger text should update after time input");
+
+    const rangeTimePicker = createDatepicker(document.getElementById("rangeTimeDatepickerHost"), {
+      value: {
+        start: "2026-08-12T09:00:00+08:00",
+        end: "2026-08-13T17:00:00+08:00",
+      },
+      mode: "range",
+      showTime: true,
+      closeOnSelect: false,
+      onChange(value, state) {
+        viewPayload = { value, state };
+      },
+    });
+    document.querySelector("#rangeTimeDatepickerHost .ui-datepicker-trigger")?.click();
+    const [rangeStartInput, rangeEndInput] = Array.from(document.querySelectorAll("#rangeTimeDatepickerHost .ui-datepicker-time input"));
+    rangeStartInput.value = "10:15";
+    rangeStartInput.dispatchEvent(new Event("input", { bubbles: true }));
+    rangeEndInput.value = "18:45";
+    rangeEndInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const rangeValue = rangeTimePicker.getValue();
+    assert(viewPayload?.state?.startTime === "10:15" && viewPayload?.state?.endTime === "18:45", "range datepicker time inputs should update state times");
+    assert(isLocalTime(rangeValue.start, 10, 15), "range datepicker start time input should update start timestamp");
+    assert(isLocalTime(rangeValue.end, 18, 45), "range datepicker end time input should update end timestamp");
+
     const modalPicker = createDatepicker(document.getElementById("modalDatepickerHost"), {
       value: "2026-07-24",
       closeOnSelect: false,
@@ -90,6 +131,8 @@
     assert(!document.querySelector(".ui-datepicker-panel.is-portaled"), "outside clicks should close a portaled datepicker panel");
 
     modalPicker.destroy();
+    rangeTimePicker.destroy();
+    timePicker.destroy();
     picker.destroy();
     calendar.destroy();
 
@@ -110,6 +153,11 @@
     function isLocalDate(value, year, month, day) {
       const date = new Date(value);
       return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
+    }
+
+    function isLocalTime(value, hours, minutes) {
+      const date = new Date(value);
+      return date.getHours() === hours && date.getMinutes() === minutes;
     }
   </script>
 </body>
