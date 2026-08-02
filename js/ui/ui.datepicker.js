@@ -228,7 +228,11 @@ export function createDatepicker(container, options = {}) {
       input.value = startTime;
       events.on(input, "input", () => {
         startTime = normalizeTime(input.value);
+        if (start) {
+          start = atTime(start, startTime);
+        }
         emitChange();
+        updateTriggerValue();
       });
       wrap.appendChild(input);
     } else {
@@ -237,7 +241,11 @@ export function createDatepicker(container, options = {}) {
       startInput.value = startTime;
       events.on(startInput, "input", () => {
         startTime = normalizeTime(startInput.value);
+        if (start) {
+          start = atTime(start, startTime);
+        }
         emitChange();
+        updateTriggerValue();
       });
 
       const endLabel = createElement("label", { className: "ui-datepicker-time-label", text: "End Time" });
@@ -245,7 +253,11 @@ export function createDatepicker(container, options = {}) {
       endInput.value = endTime;
       events.on(endInput, "input", () => {
         endTime = normalizeTime(endInput.value);
+        if (end) {
+          end = atTime(end, endTime);
+        }
         emitChange();
+        updateTriggerValue();
       });
 
       wrap.append(startLabel, startInput, endLabel, endInput);
@@ -300,6 +312,13 @@ export function createDatepicker(container, options = {}) {
     const s = start ? formatValue(start, currentOptions.locale, currentOptions.showTime) : "";
     const e = end ? formatValue(end, currentOptions.locale, currentOptions.showTime) : "";
     return e ? `${s} - ${e}` : `${s} -`;
+  }
+
+  function updateTriggerValue() {
+    const valueNode = trigger?.querySelector?.(".ui-datepicker-value");
+    if (valueNode) {
+      valueNode.textContent = getDisplayValue();
+    }
   }
 
   function hydrateValue(value) {
