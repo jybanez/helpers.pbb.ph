@@ -124,6 +124,7 @@ Stable namespaced ids:
 - `actions.search`
 - `actions.settings`
 - `actions.sort`
+- `actions.tools`
 - `actions.view`
 
 ### Navigation

@@ -142,6 +142,7 @@
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
       assert(names.includes("actions.options"), "icons registry should include actions.options");
+      assert(names.includes("actions.tools"), "icons registry should include actions.tools");
       assert(names.includes("actions.lock"), "icons registry should include actions.lock");
       assert(names.includes("actions.unlock"), "icons registry should include actions.unlock");
       assert(names.includes("actions.volume"), "icons registry should include actions.volume");
@@ -195,6 +196,7 @@
       const viewIcon = createIcon("actions.view");
       const hideIcon = createIcon("actions.hide");
       const settingsIcon = createIcon("actions.settings");
+      const toolsIcon = createIcon("actions.tools");
       const lockIcon = createIcon("actions.lock");
       const unlockIcon = createIcon("actions.unlock");
       const volumeIcon = createIcon("actions.volume");
@@ -212,11 +214,13 @@
       const userAllowedIcon = createIcon("people.userAllowed");
       const notificationsMutedIcon = createIcon("notifications.muted");
       const notificationsUnmutedIcon = createIcon("notifications.unmuted");
-      host.append(viewIcon, hideIcon, settingsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopePlusIcon, envelopeMinusIcon, envelopeOpenIcon, userBlockedIcon, userAllowedIcon, notificationsMutedIcon, notificationsUnmutedIcon);
+      host.append(viewIcon, hideIcon, settingsIcon, toolsIcon, lockIcon, unlockIcon, volumeIcon, mutedIcon, soundOnIcon, soundOffIcon, rotateLeftIcon, rotateRightIcon, gamepadIcon, envelopeIcon, envelopePlusIcon, envelopeMinusIcon, envelopeOpenIcon, userBlockedIcon, userAllowedIcon, notificationsMutedIcon, notificationsUnmutedIcon);
       assert(viewIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.view should render a valid outline path");
       assert(hideIcon.querySelector("path")?.getAttribute("d")?.length > 0, "actions.hide should render a valid outline path");
       assert(settingsIcon.querySelector('path[d*="h-.44"]'), "actions.settings should render a lobed gear outline path");
       assert(!settingsIcon.querySelector('circle[r="7"]'), "actions.settings should not render the old bearing-style outer circle");
+      assert(toolsIcon.querySelector('path[d*="l3.8-3.8"]'), "actions.tools should render a clear open wrench jaw");
+      assert(toolsIcon.querySelector('path[stroke-width="2.4"]'), "actions.tools should render with a stronger wrench stroke");
       assert(lockIcon.querySelector('rect[x="5"][y="10"]'), "actions.lock should render a lock body");
       assert(lockIcon.querySelector('path[d="M8 10V7a4 4 0 0 1 8 0v3"]'), "actions.lock should render a closed shackle");
       assert(unlockIcon.querySelector('path[d="M8 10V7a4 4 0 0 1 7.5-1.9"]'), "actions.unlock should render an open shackle");

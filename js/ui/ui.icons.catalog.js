@@ -52,6 +52,9 @@ export const ICON_DEFINITIONS = {
     line(4, 17, 20, 17),
     circle(11, 17, 1.6),
   ]),
+  "actions.tools": icon("actions", [
+    path("M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z", { "stroke-width": 2.4 }),
+  ]),
   "actions.view": icon("actions", [
     path("M2 12Q5.5 6 12 6Q18.5 6 22 12Q18.5 18 12 18Q5.5 18 2 12Z"),
     circle(12, 12, 2.5),
@@ -638,8 +641,8 @@ function alias(category, sourceName) {
   return icon(category, source.nodes);
 }
 
-function path(d) {
-  return { tag: "path", attrs: { d } };
+function path(d, attrs = {}) {
+  return { tag: "path", attrs: { d, ...attrs } };
 }
 
 function line(x1, y1, x2, y2) {
