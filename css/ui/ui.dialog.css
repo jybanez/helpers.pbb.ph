@@ -173,8 +173,10 @@
 .ui-dialog-footer-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--ui-space-2, 8px);
-  width: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 @media (max-width: 640px) {
