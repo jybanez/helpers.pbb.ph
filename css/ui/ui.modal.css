@@ -34,9 +34,10 @@
   position: relative;
   width: min(92vw, 560px);
   max-height: min(88vh, 920px);
+  min-height: 0;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--ui-border, #2b3750);
   border-radius: var(--ui-radius-md, 10px);
   background: var(--ui-bg, #0d1523);
@@ -88,6 +89,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-space-2, 8px);
+  flex: 0 0 auto;
   min-height: 0;
   padding: var(--ui-space-3, 12px) var(--ui-space-4, 16px) var(--ui-space-2, 8px);
   border-bottom: 1px solid var(--ui-border, #2b3750);
@@ -140,6 +142,7 @@
 }
 
 .ui-modal-secondary-header {
+  flex: 0 0 auto;
   min-height: 0;
   padding: var(--ui-space-2, 8px) var(--ui-space-4, 16px);
   border-bottom: 1px solid var(--ui-border, #2b3750);
@@ -219,6 +222,7 @@
 }
 
 .ui-modal-body {
+  flex: 1 1 auto;
   padding: var(--ui-space-3, 12px) var(--ui-space-4, 16px);
   display: grid;
   gap: var(--ui-space-2, 8px);
@@ -234,23 +238,31 @@
 
 .ui-modal-footer {
   display: none;
-  min-height: 0;
+  flex: 0 0 auto;
 }
 
 .ui-modal-footer:not([hidden]) {
   padding: var(--ui-space-2, 8px) var(--ui-space-4, 16px) var(--ui-space-3, 12px);
   border-top: 1px solid var(--ui-border, #2b3750);
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: var(--ui-space-2, 8px);
+  background: var(--ui-bg, #0d1523);
+  position: relative;
+  z-index: 1;
 }
 
 .ui-dialog-footer-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--ui-space-2, 8px);
-  width: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .ui-action-modal-button.is-footer-split-start {
@@ -411,11 +423,15 @@
   .ui-modal.is-size-full {
     width: 100vw;
     max-width: none;
-    height: 100dvh;
+    height: auto;
     max-height: 100dvh;
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .ui-modal.is-size-full {
+    height: 100dvh;
   }
 
   .ui-modal,
