@@ -85,7 +85,7 @@
         "Do not use it when a single browser audio element is sufficient."
       ],
       description: "The generic timeline accepts tracks[] with arbitrary ids and labels. Each track contains segments with srcUrl/path/src, startOffsetMs, durationMs, and optional processing state. Pending processing segments render a preparing notice and are excluded from playback until update(...) supplies a source URL.",
-      defaultSampleCode: `const timeline = createAudioTimeline(host, {\n  durationMs: 24000,\n  tracks: [\n    {\n      id: "caller",\n      label: "Caller",\n      segments: [{ id: "caller-1", srcUrl: callerUrl, startOffsetMs: 0, durationMs: 12000 }],\n    },\n    {\n      id: "operator",\n      label: "Operator",\n      segments: [{ id: "operator-1", srcUrl: operatorUrl, startOffsetMs: 1600, durationMs: 10000 }],\n    },\n    {\n      id: "radio-net",\n      label: "Radio Net",\n      segments: [{ id: "radio-pending", processing: true, processingLabel: "Preparing radio channel..." }],\n    },\n  ],\n}, {\n  trackStyles: { "radio-net": "dots" },\n});`,
+      defaultSampleCode: `const timeline = createAudioTimeline(host, {\n  durationMs: 24000,\n  tracks: [\n    {\n      id: "caller",\n      label: "Caller",\n      segments: [{ id: "caller-1", srcUrl: callerUrl, startOffsetMs: 0, durationMs: 12000 }],\n    },\n    {\n      id: "operator",\n      label: "Operator",\n      segments: [{ id: "operator-1", srcUrl: operatorUrl, startOffsetMs: 1600, durationMs: 10000 }],\n    },\n    {\n      id: "radio-net",\n      label: "Radio Net",\n      segments: [{ id: "radio-pending", processing: true, processingLabel: "Preparing radio channel..." }],\n    },\n  ],\n}, {\n  trackStyles: { "radio-net": "dots" },\n  transparentBackground: false,\n});`,
       constructor: [
         { factory: "<code>createAudioTimeline(container, data, options)</code>", arguments: "<code>container</code>, timeline <code>data</code>, <code>options</code>", returns: "Audio-timeline instance" }
       ],
@@ -97,6 +97,7 @@
         { option: "<code>trackStyles</code>", default: '<code>{}</code>', description: "Per-track graph style override keyed by track id." },
         { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Audiograph sensitivity multiplier." },
         { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows per-track mute controls on playable graph tracks." },
+        { option: "<code>transparentBackground</code>", default: '<code>false</code>', description: "Removes the audio graph shell and canvas fill so tracks sit directly on the parent surface." },
         { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build when at least one playable segment exists." },
         { option: "<code>onError(error)</code>", default: '<code>null</code>', description: "Receives recoverable build or metadata-load errors." },
         { option: "<code>onStateChange(state)</code>", default: '<code>null</code>', description: "Receives playback, duration, track, pending, and playable state snapshots." }
@@ -147,6 +148,10 @@
         <label for="sensitivityRange">Sensitivity</label>
         <input id="sensitivityRange" type="range" min="1" max="6" step="0.1" value="3.4">
         <code id="sensitivityValue">3.4x</code>
+        <label>
+          <input id="transparentBackgroundToggle" type="checkbox">
+          Transparent background
+        </label>
       </div>
     </section>
 
@@ -182,6 +187,7 @@
   ],
 }, {
   trackStyles: { "radio-net": "dots" },
+  transparentBackground: false,
 });
 
 timeline.update({
@@ -212,6 +218,7 @@ timeline.update({
     const themeSelect = document.getElementById("themeSelect");
     const sensitivityRange = document.getElementById("sensitivityRange");
     const sensitivityValue = document.getElementById("sensitivityValue");
+    const transparentBackgroundToggle = document.getElementById("transparentBackgroundToggle");
     const host = document.getElementById("audioHost");
     const eventLog = document.getElementById("eventLog");
     const audioUrl = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
@@ -266,6 +273,7 @@ timeline.update({
         trackStyles: { "radio-net": "dots" },
         sensitivity: getSensitivity(),
         showMute: true,
+        transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
           addEvent("timeline.error", { message: error?.message || "Unknown error" });
@@ -319,6 +327,11 @@ timeline.update({
     sensitivityRange.addEventListener("input", () => {
       updateSensitivityLabel();
       mountTimeline(audioApi?.getState()?.hasPending !== false);
+    });
+
+    transparentBackgroundToggle.addEventListener("change", () => {
+      mountTimeline(audioApi?.getState()?.hasPending !== false);
+      addEvent("timeline.transparentBackground", { enabled: transparentBackgroundToggle.checked });
     });
   </script>
 </body>
