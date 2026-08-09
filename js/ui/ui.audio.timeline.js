@@ -8,6 +8,7 @@ const DEFAULT_OPTIONS = {
   autoplay: false,
   baseUrl: "",
   audiographStyle: "vu",
+  transparentBackground: false,
   sensitivity: 3.4,
   trackStyles: {},
   showMute: true,
@@ -112,6 +113,7 @@ export function createAudioTimeline(container, data = {}, options = {}) {
         {
           ariaLabel: `${track.label} audio graph`,
           style: currentOptions.trackStyles[track.id] || currentOptions.audiographStyle,
+          transparentBackground: currentOptions.transparentBackground,
           sensitivity: currentOptions.sensitivity,
           showMute: Boolean(currentOptions.showMute && track.hasPlayable),
           onToggleMute(nextMuted) {
