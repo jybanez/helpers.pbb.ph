@@ -574,6 +574,49 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     });
   }
 
+  function patchNote(identifier, noteIdentifier, patch = {}, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const notes = getAssignmentNotes(match.item);
+    const noteIndex = findAssignmentNoteIndex(notes, noteIdentifier);
+    if (noteIndex === -1) {
+      return false;
+    }
+    const nextNote = {
+      ...notes[noteIndex],
+      ...(patch && typeof patch === "object" ? patch : { note: patch }),
+    };
+    const nextNotes = notes.map((note, index) => index === noteIndex ? nextNote : note);
+    return patchItem(match.key, withUpdatedAssignmentNotes(match.item, nextNotes), {
+      reason: "note-patch",
+      note: cloneData(nextNote),
+      noteIndex,
+      ...meta,
+    });
+  }
+
+  function deleteNote(identifier, noteIdentifier, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const notes = getAssignmentNotes(match.item);
+    const noteIndex = findAssignmentNoteIndex(notes, noteIdentifier);
+    if (noteIndex === -1) {
+      return false;
+    }
+    const deletedNote = notes[noteIndex];
+    const nextNotes = notes.filter((_, index) => index !== noteIndex);
+    return patchItem(match.key, withUpdatedAssignmentNotes(match.item, nextNotes), {
+      reason: "note-delete-patch",
+      note: cloneData(deletedNote),
+      noteIndex,
+      ...meta,
+    });
+  }
+
   function findListItem(identifier) {
     const selector = normalizeIdentifier(identifier);
     for (let index = 0; index < listItems.length; index += 1) {
@@ -651,6 +694,8 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     setList,
     patchItem,
     patchContact,
+    patchNote,
+    deleteNote,
     getData() {
       if (!orderKeys.length) {
         return cloneData(listItems);
@@ -679,6 +724,64 @@ function getAssignments(source) {
     return source.map((item) => normalizeAssignmentItem(item));
   }
   return safeArray(source?.team_assignments).map((item) => normalizeAssignmentItem(item));
+}
+
+function getAssignmentNotes(item) {
+  return safeArray(item?.notes_log || item?.notes_thread || item?.notes).map((note) => ({ ...note }));
+}
+
+function withUpdatedAssignmentNotes(item, notes) {
+  if (Array.isArray(item?.notes_log)) {
+    return { notes_log: notes };
+  }
+  if (Array.isArray(item?.notes_thread)) {
+    return { notes_thread: notes };
+  }
+  return { notes };
+}
+
+function findAssignmentNoteIndex(notes, identifier) {
+  const selector = normalizeNoteIdentifier(identifier);
+  if (selector.index !== null && selector.index >= 0 && selector.index < notes.length) {
+    return selector.index;
+  }
+  for (let index = 0; index < notes.length; index += 1) {
+    const note = notes[index];
+    if (
+      selector.key === getAssignmentNoteKey(note, index) ||
+      selector.id === String(note?.id ?? note?.note_id ?? note?.assignment_note_id ?? "")
+    ) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function normalizeNoteIdentifier(identifier) {
+  if (identifier && typeof identifier === "object") {
+    return {
+      key: String(identifier.key ?? identifier.noteKey ?? "").trim(),
+      id: String(identifier.id ?? identifier.note_id ?? identifier.assignment_note_id ?? "").trim(),
+      index: Number.isInteger(identifier.index) ? identifier.index : null,
+    };
+  }
+  if (Number.isInteger(identifier)) {
+    return { key: "", id: String(identifier), index: null };
+  }
+  const value = String(identifier ?? "").trim();
+  return { key: value, id: value, index: null };
+}
+
+function getAssignmentNoteKey(note, index) {
+  const id = note?.id ?? note?.note_id ?? note?.assignment_note_id ?? null;
+  if (id !== null && id !== undefined && String(id).trim()) {
+    return `id:${id}`;
+  }
+  const createdAt = note?.created_at || note?.createdAt || "";
+  if (createdAt) {
+    return `created:${createdAt}:${index}`;
+  }
+  return `index:${index}`;
 }
 
 function normalizeStatus(status) {

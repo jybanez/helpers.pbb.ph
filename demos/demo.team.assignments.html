@@ -116,6 +116,10 @@
         { option: "<code>onDelete</code>", default: "<code>undefined</code>", description: "Editable-only hook when an assignment is deleted." },
         { option: "<code>onContactChange</code>", default: "<code>undefined</code>", description: "Editable-only hook when the contact person changes." },
         { option: "<code>onNoteAdd</code>", default: "<code>undefined</code>", description: "Editable-only hook for adding assignment notes." },
+        { option: "<code>noteActions</code>", default: "<code>false</code>", description: "Set <code>true</code> or <code>{ edit, delete }</code> to show inline edit/delete icon buttons on existing notes. Note callbacks also enable their matching action." },
+        { option: "<code>confirmNoteDelete</code>", default: "<code>window.confirm(...)</code>", description: "Optional confirmation gate before deleting an existing note." },
+        { option: "<code>onNoteEdit</code>", default: "<code>undefined</code>", description: "Editable-only hook when an existing note is saved from inline edit mode." },
+        { option: "<code>onNoteDelete</code>", default: "<code>undefined</code>", description: "Editable-only hook when an existing note is deleted." },
         { option: "<code>onAllocateChange</code>", default: "<code>undefined</code>", description: "Editable-only hook for team resource allocation changes." }
       ],
       events: [
@@ -129,6 +133,8 @@
         { event: "<code>onDelete(assignmentId)</code>", arguments: "assignment id", returns: "<code>void</code>" },
         { event: "<code>onContactChange(assignmentId, value)</code>", arguments: "assignment id and next contact-person value", returns: "<code>void</code>" },
         { event: "<code>onNoteAdd(assignmentId, note)</code>", arguments: "assignment id and note payload", returns: "<code>void</code>" },
+        { event: "<code>onNoteEdit(assignmentId, note, nextText, meta)</code>", arguments: "assignment id, previous note object, next note text, and note metadata", returns: "<code>void</code>" },
+        { event: "<code>onNoteDelete(assignmentId, note, meta)</code>", arguments: "assignment id, deleted note object, and note metadata", returns: "<code>void</code>" },
         { event: "<code>onAllocateChange(assignmentId, resourceTypeId, allocated)</code>", arguments: "assignment id, resource type id, and next allocated quantity", returns: "<code>void</code>" }
       ],
       propertiesText: "The instance tracks normalized assignment <code>list</code> data, merged <code>options</code>, current <code>drawerState</code>, and <code>busyAssignments</code>. Individual assignment cards keep domain details such as dispatch status, contact person, notes, cancellation metadata, resource allocations, and optional item-level busy fields. Aggregate state is available through <code>getData()</code> and <code>getState()</code>. Unsaved rows retain a stable <code>_client_key</code> for host-side reconciliation.",
@@ -136,6 +142,8 @@
         { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement assignment data and optional option patch", returns: "<code>void</code>" },
         { method: "<code>patchItem(identifier, patch, meta)</code>", arguments: "assignment id, <code>_client_key</code>, item object, or list key plus a shallow item patch", returns: "<code>true</code> when an assignment was patched" },
         { method: "<code>patchContact(identifier, value, meta)</code>", arguments: "assignment identifier and canonical contact-person value", returns: "<code>true</code> when the contact value was patched" },
+        { method: "<code>patchNote(identifier, noteIdentifier, patch, meta)</code>", arguments: "assignment identifier, note id/key/index, and a shallow note patch", returns: "<code>true</code> when a note was patched" },
+        { method: "<code>deleteNote(identifier, noteIdentifier, meta)</code>", arguments: "assignment identifier and note id/key/index", returns: "<code>true</code> when a note was removed" },
         { method: "<code>setItemBusy(assignmentId, busy, options)</code>", arguments: "assignment key plus optional <code>{ action, message }</code>", returns: "<code>void</code>" },
         { method: "<code>clearItemBusy(assignmentId)</code>", arguments: "assignment key", returns: "<code>void</code>" },
         { method: "<code>setList(items)</code>", arguments: "replacement assignment array", returns: "<code>void</code>" },
@@ -298,6 +306,7 @@
           categories: incidentCategories,
           teams,
           editable: true,
+          noteActions: true,
           headerText: "Dispatch Details (Editable)",
           drawerHeaderText: "Select Teams to Dispatch",
           noticeAlreadyExist(team) {
@@ -353,6 +362,9 @@
           confirmDelete() {
             return window.confirm("Confirm delete assignment?");
           },
+          confirmNoteDelete(assignmentId, note) {
+            return window.confirm(`Delete note from assignment ${assignmentId}?\n\n${note?.note || ""}`);
+          },
           onStatusNext(assignmentId, toStatus) {
             const patch = { status: toStatus };
             if (toStatus === "accepted") patch.accepted_at = nowIso();
@@ -400,6 +412,32 @@
             });
             updateListItem(assignmentId, { notes_log: notes });
             addEvent("incidentTeamsAssignmentsEditor.onNoteAdd", { assignmentId, note });
+            syncColumns();
+          },
+          onNoteEdit(assignmentId, note, nextText, meta) {
+            const item = listState.find((row) => row.id === assignmentId) || {};
+            const notes = Array.isArray(item.notes_log) ? [...item.notes_log] : [];
+            const noteIndex = Number.isInteger(meta?.noteIndex)
+              ? meta.noteIndex
+              : notes.findIndex((entry) => String(entry.id) === String(note?.id));
+            if (noteIndex >= 0) {
+              notes[noteIndex] = { ...notes[noteIndex], note: nextText };
+              updateListItem(assignmentId, { notes_log: notes });
+            }
+            addEvent("incidentTeamsAssignmentsEditor.onNoteEdit", { assignmentId, note, nextText, meta });
+            syncColumns();
+          },
+          onNoteDelete(assignmentId, note, meta) {
+            const item = listState.find((row) => row.id === assignmentId) || {};
+            const notes = Array.isArray(item.notes_log) ? [...item.notes_log] : [];
+            const noteIndex = Number.isInteger(meta?.noteIndex)
+              ? meta.noteIndex
+              : notes.findIndex((entry) => String(entry.id) === String(note?.id));
+            if (noteIndex >= 0) {
+              notes.splice(noteIndex, 1);
+              updateListItem(assignmentId, { notes_log: notes });
+            }
+            addEvent("incidentTeamsAssignmentsEditor.onNoteDelete", { assignmentId, note, meta });
             syncColumns();
           },
           onAllocateChange(assignmentId, resourceTypeId, allocated) {

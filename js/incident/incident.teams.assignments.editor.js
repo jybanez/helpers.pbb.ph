@@ -1,4 +1,5 @@
 import { createRoot, normalizeIncidentOptions, safeArray } from "./incident.base.js";
+import { createIcon } from "../ui/ui.icons.js";
 
 const REQUIRED_OPTION_KEYS = ["incident_id", "team_id", "assigned_by_operator_id"];
 const TIMELINE_STEPS = ["requested", "accepted", "en_route", "on_scene"];
@@ -38,6 +39,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
   let rootEl = null;
   let lastStructureSignature = "";
   let contactInputEl = null;
+  let editingNoteKey = "";
 
   function getBusyState() {
     const itemBusy = currentData?.busy || currentData?.busy_state;
@@ -102,6 +104,42 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       reason,
       ...meta,
     });
+  }
+
+  function getNoteActions() {
+    const actionOptions = currentOptions.noteActions;
+    const explicit = actionOptions && typeof actionOptions === "object" && !Array.isArray(actionOptions);
+    return {
+      edit: Boolean(
+        currentOptions.editable &&
+          (currentOptions.onNoteEdit ||
+            actionOptions === true ||
+            explicitNoteAction(explicit, actionOptions, "edit"))
+      ),
+      delete: Boolean(
+        currentOptions.editable &&
+          (currentOptions.onNoteDelete ||
+            actionOptions === true ||
+            explicitNoteAction(explicit, actionOptions, "delete"))
+      ),
+    };
+  }
+
+  function explicitNoteAction(explicit, actionOptions, key) {
+    if (!explicit) {
+      return false;
+    }
+    return actionOptions[key] !== false;
+  }
+
+  async function confirmNoteDelete(note, meta) {
+    if (typeof currentOptions.confirmNoteDelete === "function") {
+      return currentOptions.confirmNoteDelete(currentData?.id, cloneData(note), meta) !== false;
+    }
+    if (typeof window !== "undefined" && typeof window.confirm === "function") {
+      return window.confirm("Delete this note?");
+    }
+    return true;
   }
 
   function showGuardMessage(message) {
@@ -324,11 +362,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     });
 
     if (notes.length) {
-      notes.forEach((note) => {
-        const row = document.createElement("p");
-        row.className = "hh-row";
-        row.textContent = `${note?.note || ""}`;
-        list.appendChild(row);
+      const noteActions = getNoteActions();
+      notes.forEach((note, index) => {
+        list.appendChild(renderNoteRow(note, index, noteActions));
       });
       notesWrap.appendChild(list);
     }
@@ -384,6 +420,167 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     inputWrap.append(noteInput, addButton);
     notesWrap.appendChild(inputWrap);
     root.appendChild(notesWrap);
+  }
+
+  function renderNoteRow(note, index, noteActions) {
+    const noteKey = getNoteKey(note, index);
+    const row = document.createElement("div");
+    row.className = "hh-note-row";
+    row.dataset.noteKey = noteKey;
+
+    if (editingNoteKey === noteKey) {
+      renderInlineNoteEditor(row, note, index, noteKey);
+      return row;
+    }
+
+    const text = document.createElement("p");
+    text.className = "hh-row hh-note-text";
+    text.textContent = `${note?.note || ""}`;
+    row.appendChild(text);
+
+    if (noteActions.edit || noteActions.delete) {
+      const actions = document.createElement("div");
+      actions.className = "hh-note-actions";
+      if (noteActions.edit) {
+        actions.appendChild(createNoteActionButton("actions.edit", "Edit note", () => {
+          if (isBusy()) {
+            return;
+          }
+          editingNoteKey = noteKey;
+          renderFull();
+        }));
+      }
+      if (noteActions.delete) {
+        actions.appendChild(createNoteActionButton("actions.delete", "Delete note", async () => {
+          if (isBusy()) {
+            return;
+          }
+          const meta = { noteIndex: index, noteKey };
+          const confirmed = await confirmNoteDelete(note, meta);
+          if (!confirmed) {
+            return;
+          }
+          applyNoteDelete(note, index, noteKey);
+        }, "is-danger"));
+      }
+      row.appendChild(actions);
+    }
+
+    return row;
+  }
+
+  function renderInlineNoteEditor(row, note, index, noteKey) {
+    row.classList.add("is-editing");
+    const input = document.createElement("textarea");
+    input.className = "hh-input ui-input hh-note-edit-input";
+    input.value = `${note?.note || ""}`;
+    input.placeholder = "Edit note";
+
+    const actions = document.createElement("div");
+    actions.className = "hh-note-edit-actions";
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "hh-button ui-button";
+    save.textContent = "Save";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "hh-button ui-button";
+    cancel.textContent = "Cancel";
+
+    bind(input, "input", () => {
+      save.disabled = !String(input.value || "").trim();
+    });
+    bind(input, "keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        editingNoteKey = "";
+        renderFull();
+        return;
+      }
+      if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      if (!save.disabled) {
+        save.click();
+      }
+    });
+    bind(save, "click", () => {
+      const nextText = String(input.value || "").trim();
+      if (!nextText || isBusy()) {
+        return;
+      }
+      applyNoteEdit(note, index, noteKey, nextText);
+    });
+    bind(cancel, "click", () => {
+      editingNoteKey = "";
+      renderFull();
+    });
+
+    save.disabled = !String(input.value || "").trim();
+    actions.append(save, cancel);
+    row.append(input, actions);
+    setTimeout(() => input.focus(), 0);
+  }
+
+  function createNoteActionButton(iconName, label, onClick, extraClass = "") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `hh-note-action ui-button ${extraClass}`.trim();
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.appendChild(createIcon(iconName, { size: 16, decorative: true }));
+    bind(button, "click", onClick);
+    return button;
+  }
+
+  function applyNoteEdit(note, index, noteKey, nextText) {
+    const notes = resolveNotes(currentData);
+    const noteIndex = findNoteIndex(notes, note, index, noteKey);
+    if (noteIndex === -1) {
+      return;
+    }
+    const previousNote = { ...notes[noteIndex] };
+    const nextNote = { ...previousNote, note: nextText };
+    const nextNotes = notes.map((item, itemIndex) => itemIndex === noteIndex ? nextNote : item);
+    currentData = withUpdatedNotes(currentData, nextNotes);
+    editingNoteKey = "";
+    currentOptions.onNoteEdit?.(currentData?.id, cloneData(previousNote), nextText, {
+      noteIndex,
+      noteKey,
+      nextNote: cloneData(nextNote),
+    });
+    emitItemChange("note-edit", {
+      note: cloneData(nextNote),
+      previousNote: cloneData(previousNote),
+      noteIndex,
+      noteKey,
+    });
+    renderFull();
+  }
+
+  function applyNoteDelete(note, index, noteKey) {
+    const notes = resolveNotes(currentData);
+    const noteIndex = findNoteIndex(notes, note, index, noteKey);
+    if (noteIndex === -1) {
+      return;
+    }
+    const deletedNote = { ...notes[noteIndex] };
+    const nextNotes = notes.filter((_, itemIndex) => itemIndex !== noteIndex);
+    currentData = withUpdatedNotes(currentData, nextNotes);
+    if (editingNoteKey === noteKey) {
+      editingNoteKey = "";
+    }
+    currentOptions.onNoteDelete?.(currentData?.id, cloneData(deletedNote), {
+      noteIndex,
+      noteKey,
+    });
+    emitItemChange("note-delete", {
+      note: cloneData(deletedNote),
+      noteIndex,
+      noteKey,
+    });
+    renderFull();
   }
 
   function renderResources(root) {
@@ -817,6 +1014,46 @@ function cloneData(value) {
 
 function resolveNotes(data) {
   return safeArray(data?.notes_log || data?.notes_thread || data?.notes);
+}
+
+function withUpdatedNotes(data, notes) {
+  if (Array.isArray(data?.notes_log)) {
+    return { ...data, notes_log: notes };
+  }
+  if (Array.isArray(data?.notes_thread)) {
+    return { ...data, notes_thread: notes };
+  }
+  return { ...data, notes };
+}
+
+function getNoteKey(note, index) {
+  const id = note?.id ?? note?.note_id ?? note?.assignment_note_id ?? null;
+  if (id !== null && id !== undefined && String(id).trim()) {
+    return `id:${id}`;
+  }
+  const createdAt = note?.created_at || note?.createdAt || "";
+  if (createdAt) {
+    return `created:${createdAt}:${index}`;
+  }
+  return `index:${index}`;
+}
+
+function findNoteIndex(notes, note, fallbackIndex, noteKey = "") {
+  const noteId = note?.id ?? note?.note_id ?? note?.assignment_note_id ?? null;
+  if (noteId !== null && noteId !== undefined && String(noteId).trim()) {
+    const found = notes.findIndex((item) => String(item?.id ?? item?.note_id ?? item?.assignment_note_id ?? "") === String(noteId));
+    if (found !== -1) {
+      return found;
+    }
+  }
+  const createdAt = note?.created_at || note?.createdAt || "";
+  if (createdAt) {
+    const found = notes.findIndex((item, index) => getNoteKey(item, index) === noteKey);
+    if (found !== -1) {
+      return found;
+    }
+  }
+  return fallbackIndex >= 0 && fallbackIndex < notes.length ? fallbackIndex : -1;
 }
 
 function buildAllocationMap(data) {

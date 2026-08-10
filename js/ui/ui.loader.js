@@ -15,7 +15,7 @@ const UI_TABS_REV = "0.21.1";
 const UI_SPLITTER_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.162";
+const UI_BUNDLE_REV = "0.21.163";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -672,10 +672,11 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       UI_COMPONENTS_CSS,
       INCIDENT_BASE_CSS,
       "../../css/incident/incident.base.css",
+      "../../css/ui/ui.icons.css",
       "../../css/incident/incident.teams.assignments.css",
       "../../css/incident/incident.teams.assignments.editor.css",
     ],
-    deps: ["incident.base"],
+    deps: ["incident.base", "ui.icons"],
     export: "incidentTeamsAssignmentsEditor",
   },
   "incident.teams.assignments.viewer": {
@@ -698,11 +699,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       UI_COMPONENTS_CSS,
       INCIDENT_BASE_CSS,
       "../../css/incident/incident.base.css",
+      "../../css/ui/ui.icons.css",
       "../../css/incident/incident.teams.assignments.css",
       "../../css/incident/incident.teams.assignments.editor.css",
       "../../css/incident/incident.teams.assignments.viewer.css",
     ],
-    deps: ["incident.base", "incident.teams.assignments.editor", "incident.teams.assignments.viewer"],
+    deps: ["incident.base", "ui.icons", "incident.teams.assignments.editor", "incident.teams.assignments.viewer"],
     export: "incidentTeamsAssignments",
   },
   "incident.types.details.editor": {
