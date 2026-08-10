@@ -203,6 +203,11 @@
   gap: 8px;
 }
 
+.hh-incident-teams-assignments-editor .hh-note-row + .hh-note-row {
+  border-top: 1px solid var(--hh-border);
+  padding-top: 8px;
+}
+
 .hh-incident-teams-assignments-editor .hh-note-row.is-editing {
   grid-template-columns: 1fr;
 }

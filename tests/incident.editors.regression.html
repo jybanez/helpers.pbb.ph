@@ -412,9 +412,11 @@
     assert(contactInputNode.value === "Blurred canonical contact", "team assignment patchContact should update unfocused contact DOM");
 
     const firstNoteRow = document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:501"]');
+    const secondNoteRow = document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:502"]');
     assert(Boolean(firstNoteRow?.querySelector('[aria-label="Edit note"]')), "team assignment notes should show edit action when noteActions is enabled");
     assert(Boolean(firstNoteRow?.querySelector('[aria-label="Delete note"]')), "team assignment notes should show delete action when noteActions is enabled");
     assert(getComputedStyle(firstNoteRow?.querySelector(".hh-note-text")).whiteSpace === "pre-wrap", "team assignment note text should preserve multiline note breaks");
+    assert(getComputedStyle(secondNoteRow).borderTopStyle === "solid", "team assignment note rows should render separators between notes");
     firstNoteRow.querySelector('[aria-label="Edit note"]').click();
     await wait(0);
     const noteEditInput = document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:501"] .hh-note-edit-input');
