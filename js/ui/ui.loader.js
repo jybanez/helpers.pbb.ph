@@ -15,7 +15,7 @@ const UI_TABS_REV = "0.21.1";
 const UI_SPLITTER_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.163";
+const UI_BUNDLE_REV = "0.21.164";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -975,6 +975,7 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
       await Promise.all(entry.deps.map((depName) => ensureStyles(depName, options)));
     }
     if (bundle) {
+      assertBundleCanServeStyles(name, entry, bundle);
       await Promise.all(bundle.css.map((path) => ensureStyleHref(path, parent, { bundleId: bundle.id })));
       debugLog("ensureStyles.bundle", { name, bundle: bundle.id, cssCount: bundle.css.length });
       return entry;
@@ -1028,6 +1029,7 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
       }
       const bundle = resolveBundle(name, entry, options);
       if (bundle) {
+        assertBundleCanServeModule(name, entry, bundle);
         const module = await importBundleComponent(bundle, entry);
         failedModules.delete(name);
         debugLog("import.bundle", { name, bundle: bundle.id, export: entry.export || null });
@@ -1062,6 +1064,20 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
       throw new Error(`uiLoader bundle "${bundle.id}" is missing module "${bundleKey}".`);
     }
     return module;
+  }
+
+  function assertBundleCanServeStyles(name, entry, bundle) {
+    if (!entry.css.length || bundle.css.length) {
+      return;
+    }
+    throw new Error(`uiLoader bundle "${bundle.id}" is selected for "${name}" but does not declare bundle CSS.`);
+  }
+
+  function assertBundleCanServeModule(name, entry, bundle) {
+    if (bundle.js) {
+      return;
+    }
+    throw new Error(`uiLoader bundle "${bundle.id}" is selected for "${name}" but does not declare bundle JavaScript.`);
   }
 
   async function ensureBundleModuleMap(bundle) {

@@ -140,20 +140,21 @@
       useWhen: [
         "Use it when a downstream app wants fewer helper network requests while keeping the source tree modular in the upstream repo.",
         "Use it when the app already relies heavily on `ui.*` helpers such as icons, modals, selects, and device-primer flows.",
-        "Use it when the app also mounts `incident.*` helpers and wants to avoid source-mode fallback for their shared `ui.*` dependencies.",
+        "Use it when production packaging should use `ui.loader.js` plus generated `dist/` bundles, with individual `js/**` and `css/**` component files treated as dev-source only.",
+        "Use it when the app also mounts `incident.*` helpers and must avoid source-mode fallback for their helper modules and styles.",
         "Use the game bundle when a page needs `ui.game.*` helpers without making every non-game page carry game code."
       ],
       avoidWhen: [
         "Do not treat it as a mandatory replacement for the default loader path. The modular loader remains the default contract.",
         "Do not assume bundle preference removes the need to refresh vendored helper assets. The bundle is still a generated release artifact."
       ],
-      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js/css` and `dist/helpers.game.bundle.min.js/css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`. The general bundle covers non-game `ui.*` plus `incident.*`; the game bundle covers `ui.game.*`.",
+      description: "The bundle path is additive: generate `dist/helpers.ui.bundle.min.js/css` and `dist/helpers.game.bundle.min.js/css`, then opt into bundle-backed loading through `createUiLoader(..., { preferBundles: true })` or `uiLoader.setPreferBundles(true)`. The general bundle covers non-game `ui.*` plus `incident.*`; the game bundle covers `ui.game.*`. In bundle-preferred mode, matching registry entries are strict bundle loads and do not fall back to individual component source files.",
       defaultSampleCode: `npm run build:ui-bundle\n\nconst loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {\n  preferBundles: true,\n});\n\nconst createFormModal = await loader.get(\"ui.form.modal\");`,
       constructor: [
         { factory: "<code>createUiLoader(DEFAULT_COMPONENT_REGISTRY, config)</code>", arguments: "registry and loader config", returns: "isolated loader instance" }
       ],
       options: [
-        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in bundle preference. When true, matching entries load through generated bundle maps instead of per-module imports." },
+        { option: "<code>preferBundles</code>", default: "<code>false</code>", description: "Opt-in strict bundle preference. When true, matching entries load through generated bundle maps and bundle CSS instead of per-module imports or per-component stylesheets." },
         { option: "<code>bundles</code>", default: "<code>{ game, ui }</code>", description: "Optional bundle registry override. Built-ins point to `dist/helpers.game.bundle.min.js/css` for `ui.game.*` and `dist/helpers.ui.bundle.min.js/css` for non-game UI and incident helpers." },
         { option: "<code>debug</code>", default: "<code>false</code>", description: "Enables loader debug logging for CSS/module/bundle resolution." }
       ],
@@ -181,7 +182,7 @@
 
     <section class="panel">
       <h2>Build And Opt-In</h2>
-      <p class="muted">The source tree stays modular. The build step produces a general UI bundle and an optional game bundle for downstream apps that want fewer helper requests.</p>
+      <p class="muted">The source tree stays modular. The build step produces a general UI bundle and an optional game bundle for downstream apps that want fewer helper requests. Production bundle-preferring apps should ship the generated bundle files and treat individual component source files as dev-source only.</p>
       <pre>npm run build:ui-bundle
 
 import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
