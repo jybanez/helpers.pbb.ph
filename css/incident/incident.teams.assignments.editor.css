@@ -209,6 +209,8 @@
 
 .hh-incident-teams-assignments-editor .hh-note-text {
   min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .hh-incident-teams-assignments-editor .hh-note-actions,
