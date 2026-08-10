@@ -55,6 +55,9 @@
     const assignmentEvents = [];
     const confirmCancelCalls = [];
     const cancelCalls = [];
+    const noteEditCalls = [];
+    const noteDeleteCalls = [];
+    const confirmNoteDeleteCalls = [];
     window.onerror = (message, source, lineno, colno) => {
       document.body.dataset.status = "fail";
       results.textContent = `FAIL\n- ${message} at ${lineno}:${colno}`;
@@ -318,6 +321,11 @@
         return true;
       },
       confirmDelete() { return true; },
+      noteActions: true,
+      confirmNoteDelete(assignmentId, note, meta) {
+        confirmNoteDeleteCalls.push({ assignmentId, note, meta });
+        return true;
+      },
       requestCancelReason() {
         return Promise.resolve({
           reasonCode: "other",
@@ -326,6 +334,12 @@
       },
       onCancel(assignmentId, fromStatus, reasonCode, reasonNote) {
         cancelCalls.push({ assignmentId, fromStatus, reasonCode, reasonNote });
+      },
+      onNoteEdit(assignmentId, note, nextText, meta) {
+        noteEditCalls.push({ assignmentId, note, nextText, meta });
+      },
+      onNoteDelete(assignmentId, note, meta) {
+        noteDeleteCalls.push({ assignmentId, note, meta });
       },
       onItemChange(nextItem, meta) {
         assignmentEvents.push({ kind: "item", nextItem, meta });
@@ -346,6 +360,18 @@
       status: "requested",
       contact_person: "",
       team: { id: 91, name: "Responder One", category: { name: "Medical" } },
+      notes_log: [
+        {
+          id: 501,
+          note: "Initial dispatch note",
+          created_at: "2026-07-01T08:00:00.000Z",
+        },
+        {
+          id: 502,
+          note: "Second dispatch note",
+          created_at: "2026-07-01T09:00:00.000Z",
+        },
+      ],
     }]);
 
     const assignmentData = assignmentsApi.getData();
@@ -384,6 +410,30 @@
     await wait(0);
     assignmentsApi.patchContact(focusedAssignmentData._client_key, "Blurred canonical contact");
     assert(contactInputNode.value === "Blurred canonical contact", "team assignment patchContact should update unfocused contact DOM");
+
+    const firstNoteRow = document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:501"]');
+    assert(Boolean(firstNoteRow?.querySelector('[aria-label="Edit note"]')), "team assignment notes should show edit action when noteActions is enabled");
+    assert(Boolean(firstNoteRow?.querySelector('[aria-label="Delete note"]')), "team assignment notes should show delete action when noteActions is enabled");
+    firstNoteRow.querySelector('[aria-label="Edit note"]').click();
+    await wait(0);
+    const noteEditInput = document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:501"] .hh-note-edit-input');
+    assert(Boolean(noteEditInput), "team assignment note edit should stay inline in the same note row");
+    noteEditInput.value = "Edited dispatch note";
+    noteEditInput.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:501"] .hh-note-edit-actions .hh-button').click();
+    await wait(0);
+    assert(noteEditCalls[0]?.nextText === "Edited dispatch note", "team assignment note edit should call onNoteEdit with next text");
+    assert(assignmentsApi.getData()[0]?.notes_log?.[0]?.note === "Edited dispatch note", "team assignment note edit should update local note data");
+    assert(assignmentEvents.some((entry) => entry.kind === "item" && entry.meta?.reason === "note-edit"), "team assignment note edit should emit an item change");
+    assert(assignmentsApi.patchNote(focusedAssignmentData._client_key, 501, { note: "Server note patch" }), "team assignment patchNote should update an existing note by id");
+    assert(assignmentsApi.getData()[0]?.notes_log?.[0]?.note === "Server note patch", "team assignment patchNote should update note data");
+    document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:502"] [aria-label="Delete note"]').click();
+    await wait(0);
+    assert(confirmNoteDeleteCalls[0]?.note?.id === 502, "team assignment note delete should pass through confirmNoteDelete");
+    assert(noteDeleteCalls[0]?.note?.id === 502, "team assignment note delete should call onNoteDelete");
+    assert(!assignmentsApi.getData()[0]?.notes_log?.some((note) => note.id === 502), "team assignment note delete should remove local note data");
+    assert(assignmentsApi.deleteNote(focusedAssignmentData._client_key, 501), "team assignment deleteNote should remove an existing note by id");
+    assert(assignmentsApi.getData()[0]?.notes_log?.length === 0, "team assignment deleteNote should update note data");
 
     const nextStatusButton = document.querySelector("#assignmentsHost .hh-actions .hh-button");
     nextStatusButton.click();

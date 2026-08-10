@@ -196,6 +196,57 @@
   gap: 4px;
 }
 
+.hh-incident-teams-assignments-editor .hh-note-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.hh-incident-teams-assignments-editor .hh-note-row.is-editing {
+  grid-template-columns: 1fr;
+}
+
+.hh-incident-teams-assignments-editor .hh-note-text {
+  min-width: 0;
+}
+
+.hh-incident-teams-assignments-editor .hh-note-actions,
+.hh-incident-teams-assignments-editor .hh-note-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.hh-incident-teams-assignments-editor .hh-note-action {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--hh-border);
+  border-radius: 7px;
+  background: var(--hh-bg);
+  color: var(--hh-text);
+  cursor: pointer;
+}
+
+.hh-incident-teams-assignments-editor .hh-note-action:hover {
+  border-color: var(--hh-accent);
+  color: var(--hh-accent);
+}
+
+.hh-incident-teams-assignments-editor .hh-note-action.is-danger {
+  border-color: color-mix(in srgb, var(--hh-danger) 45%, var(--hh-border));
+  color: color-mix(in srgb, var(--hh-danger) 65%, var(--hh-text));
+}
+
+.hh-incident-teams-assignments-editor .hh-note-edit-input {
+  min-height: 72px;
+}
+
 .hh-incident-teams-assignments-editor .hh-note-input {
   display: grid;
   grid-template-columns: 1fr auto;
