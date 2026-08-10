@@ -29,6 +29,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
   let listItems = getAssignments(currentData);
   let childMap = new Map(); // key -> { instance, li, mode }
   let orderKeys = [];
+  let focusedChildKey = "";
 
   let drawerState = { open: false, category: "all", search: "" };
   let headerEvents = createEventBag();
@@ -360,6 +361,16 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     const mount = document.createElement("div");
     mount.className = "hh-item-viewer";
     li.appendChild(mount);
+    li.addEventListener("focusin", () => {
+      focusedChildKey = key;
+    });
+    li.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!isElementOrDescendantFocused(li) && focusedChildKey === key) {
+          focusedChildKey = "";
+        }
+      }, 0);
+    });
 
     const mode = itemMode();
     const itemOptions = buildChildOptions(item, key);
@@ -407,7 +418,11 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       const existing = childMap.get(key);
       if (existing && existing.mode === mode) {
         existing.li.setAttribute("data-assignment-anchor", getAssignmentAnchor(item, index));
-        existing.instance.update(item, buildChildOptions(item, key));
+        if ((focusedChildKey === key || isElementOrDescendantFocused(existing.li)) && typeof existing.instance.setData === "function") {
+          existing.instance.setData(item, buildChildOptions(item, key));
+        } else {
+          existing.instance.update(item, buildChildOptions(item, key));
+        }
       } else {
         if (existing) {
           existing.instance.destroy?.();
@@ -520,6 +535,63 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     renderFull();
   }
 
+  function patchItem(identifier, patch = {}, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const nextItem = normalizeAssignmentItem({
+      ...match.item,
+      ...(patch && typeof patch === "object" ? patch : {}),
+    });
+    replaceListItemByKey(match.key, nextItem);
+    const existing = childMap.get(match.key);
+    if (
+      existing &&
+      (focusedChildKey === match.key || isElementOrDescendantFocused(existing.li)) &&
+      typeof existing.instance.setData === "function"
+    ) {
+      existing.instance.setData(nextItem, buildChildOptions(nextItem, match.key));
+    } else {
+      existing?.instance?.update?.(nextItem, buildChildOptions(nextItem, match.key));
+    }
+    emitNormalizedChange(nextItem, {
+      reason: meta.reason || "patch",
+      patch: cloneData(patch),
+      localStateChanged: true,
+      ...meta,
+      key: match.key,
+      nextList: cloneData(listItems),
+    });
+    return true;
+  }
+
+  function patchContact(identifier, value, meta = {}) {
+    return patchItem(identifier, { contact_person: value }, {
+      reason: "contact-patch",
+      value,
+      ...meta,
+    });
+  }
+
+  function findListItem(identifier) {
+    const selector = normalizeIdentifier(identifier);
+    for (let index = 0; index < listItems.length; index += 1) {
+      const item = listItems[index];
+      const key = getItemKey(item, index);
+      if (
+        selector.key === key ||
+        selector.id === String(item?.id ?? "") ||
+        selector.clientKey === String(item?._client_key ?? item?.client_key ?? "") ||
+        selector.teamAssignmentId === String(item?.team_assignment_id ?? "") ||
+        selector.teamId === String(item?.team_id ?? "")
+      ) {
+        return { item, index, key };
+      }
+    }
+    return null;
+  }
+
   function setItemBusy(assignmentId, busy = true, options = {}) {
     const key = String(assignmentId ?? "").trim();
     if (!key) {
@@ -562,6 +634,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
       headerEl = null;
       bodyEl = null;
       listEl = null;
+      focusedChildKey = "";
       headerEvents = createEventBag();
     },
     update(nextData, nextOptions = {}) {
@@ -576,6 +649,8 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     setItemBusy,
     clearItemBusy,
     setList,
+    patchItem,
+    patchContact,
     getData() {
       if (!orderKeys.length) {
         return cloneData(listItems);
@@ -773,7 +848,35 @@ function findElementByDataAttribute(root, attribute, value) {
   ) || null;
 }
 
+function isElementOrDescendantFocused(element) {
+  if (!element || typeof document === "undefined") {
+    return false;
+  }
+  const active = document.activeElement;
+  return Boolean(active && (active === element || element.contains?.(active)));
+}
+
 function createAssignmentClientKey() {
   assignmentClientKeySeed += 1;
   return `assignment-${assignmentClientKeySeed}`;
+}
+
+function normalizeIdentifier(identifier) {
+  if (identifier && typeof identifier === "object") {
+    return {
+      key: String(identifier.key ?? ""),
+      id: String(identifier.id ?? ""),
+      clientKey: String(identifier._client_key ?? identifier.client_key ?? ""),
+      teamAssignmentId: String(identifier.team_assignment_id ?? ""),
+      teamId: String(identifier.team_id ?? ""),
+    };
+  }
+  const value = String(identifier ?? "");
+  return {
+    key: value,
+    id: value,
+    clientKey: value,
+    teamAssignmentId: value,
+    teamId: value,
+  };
 }

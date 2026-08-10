@@ -55,6 +55,10 @@
     const assignmentEvents = [];
     const confirmCancelCalls = [];
     const cancelCalls = [];
+    window.onerror = (message, source, lineno, colno) => {
+      document.body.dataset.status = "fail";
+      results.textContent = `FAIL\n- ${message} at ${lineno}:${colno}`;
+    };
 
     const typeApi = incidentTypes(document.getElementById("incidentTypesHost"), [], {
       editable: true,
@@ -244,6 +248,41 @@
     assert(resourceItemEvent?.nextItem?.resources_needed?.[0]?.quantity_needed === 1, "incident type resource stepping should emit the updated item quantity");
     assert(resourceListEvent?.nextList?.[0]?.resources_needed?.[0]?.quantity_needed === 1, "incident type resource stepping should emit the updated list quantity");
 
+    const focusedTypeData = typeApi.getData()[0];
+    const focusedTypeInput = document.querySelector('#incidentTypesHost [data-field-key="structure"] .hh-input');
+    focusedTypeInput.click();
+    focusedTypeInput.focus();
+    focusedTypeInput.dispatchEvent(new Event("focusin", { bubbles: true }));
+    await wait(0);
+    focusedTypeInput.value = "Local draft";
+    focusedTypeInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const focusedTypeInputNode = focusedTypeInput;
+    const canonicalTypeData = {
+      ...focusedTypeData,
+      detail_entries: [
+        ...focusedTypeData.detail_entries.filter((entry) => entry.field_key !== "structure"),
+        {
+          incident_id: focusedTypeData.incident_id,
+          incident_type_id: focusedTypeData.incident_type_id,
+          field_key: "structure",
+          field_label: "Structure",
+          field_value: "Server echo",
+        },
+      ],
+    };
+    typeApi.update([canonicalTypeData]);
+    assert(document.querySelector('#incidentTypesHost [data-field-key="structure"] .hh-input') === focusedTypeInputNode && focusedTypeInputNode.isConnected, "incident type same-key update should preserve focused scalar field node");
+    assert(focusedTypeInputNode.value === "Local draft", "incident type same-key update should not overwrite focused scalar field draft");
+    assert(typeApi.patchField(focusedTypeData._client_key, "structure", "Canonical patch"), "incident type patchField should update an existing item by client key");
+    assert(document.querySelector('#incidentTypesHost [data-field-key="structure"] .hh-input') === focusedTypeInputNode && focusedTypeInputNode.isConnected, "incident type patchField should preserve focused scalar field node");
+    focusedTypeInputNode.blur();
+    focusedTypeInputNode.dispatchEvent(new Event("focusout", { bubbles: true }));
+    await wait(0);
+    typeApi.patchField(focusedTypeData._client_key, "structure", "Blurred canonical");
+    assert(focusedTypeInputNode.value === "Blurred canonical", "incident type patchField should update unfocused scalar field DOM");
+    assert(typeApi.patchResource(focusedTypeData._client_key, 501, 3), "incident type patchResource should update an existing resource by client key");
+    assert(typeApi.getData()[0]?.resources_needed?.find((entry) => String(entry.resource_type_id) === "501")?.quantity_needed === 3, "incident type patchResource should update resource quantity data");
+
     const removeButton = document.querySelector("#incidentTypesHost .hh-remove");
     removeButton.click();
     const removeListEvent = typeEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "remove");
@@ -323,6 +362,28 @@
     const contactListEvent = assignmentEvents.find((entry) => entry.kind === "list" && entry.meta?.reason === "contact");
     assert(contactItemEvent?.nextItem?.contact_person === "Ana", "team assignments onItemChange should emit the updated item after contact edits");
     assert(contactListEvent?.nextList?.[0]?.contact_person === "Ana", "team assignments onChange should emit the updated list after contact edits");
+
+    const focusedAssignmentData = assignmentsApi.getData()[0];
+    contactInput.click();
+    contactInput.focus();
+    contactInput.dispatchEvent(new Event("focusin", { bubbles: true }));
+    await wait(0);
+    contactInput.value = "Local contact draft";
+    contactInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const contactInputNode = contactInput;
+    assignmentsApi.update([{
+      ...focusedAssignmentData,
+      contact_person: "Server contact echo",
+    }]);
+    assert(document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input") === contactInputNode && contactInputNode.isConnected, "team assignment same-key update should preserve focused contact input node");
+    assert(contactInputNode.value === "Local contact draft", "team assignment same-key update should not overwrite focused contact draft");
+    assert(assignmentsApi.patchContact(focusedAssignmentData._client_key, "Canonical contact"), "team assignment patchContact should update by client key");
+    assert(document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input") === contactInputNode && contactInputNode.isConnected, "team assignment patchContact should preserve focused contact input node");
+    contactInputNode.blur();
+    contactInputNode.dispatchEvent(new Event("focusout", { bubbles: true }));
+    await wait(0);
+    assignmentsApi.patchContact(focusedAssignmentData._client_key, "Blurred canonical contact");
+    assert(contactInputNode.value === "Blurred canonical contact", "team assignment patchContact should update unfocused contact DOM");
 
     const nextStatusButton = document.querySelector("#assignmentsHost .hh-actions .hh-button");
     nextStatusButton.click();
