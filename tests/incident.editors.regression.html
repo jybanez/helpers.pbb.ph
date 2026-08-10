@@ -437,6 +437,21 @@
     assert(!assignmentsApi.getData()[0]?.notes_log?.some((note) => note.id === 502), "team assignment note delete should remove local note data");
     assert(assignmentsApi.deleteNote(focusedAssignmentData._client_key, 501), "team assignment deleteNote should remove an existing note by id");
     assert(assignmentsApi.getData()[0]?.notes_log?.length === 0, "team assignment deleteNote should update note data");
+    const focusedContactAfterNotes = document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input");
+    focusedContactAfterNotes.focus();
+    focusedContactAfterNotes.dispatchEvent(new Event("focusin", { bubbles: true }));
+    await wait(0);
+    assignmentsApi.update([{
+      ...assignmentsApi.getData()[0],
+      notes_log: [
+        {
+          id: 503,
+          note: "Server-added note",
+          created_at: "2026-07-01T10:00:00.000Z",
+        },
+      ],
+    }]);
+    assert(Boolean(document.querySelector('#assignmentsHost .hh-note-row[data-note-key="id:503"]')), "team assignment focused canonical update should render newly added server notes");
 
     const nextStatusButton = document.querySelector("#assignmentsHost .hh-actions .hh-button");
     nextStatusButton.click();
