@@ -79,7 +79,7 @@
         "Do not use it when simple browser audio controls are enough."
       ],
       description: "The call-session helper reads incident.media[] audio rows, maps metadata.recording_role or peer_role into role tracks, and delegates rendering/playback to the generic audio timeline internally. Playable rows use metadata.recording_role; pending rows may use the same field or fall back to peer_role plus a timestamp field such as created_at.",
-      defaultSampleCode: `const session = createAudioCallSession(host, {\n  caller: { name: "PBB Caller" },\n  operator: { name: "Operator Reyes" },\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    processing: true,\n    processingLabel: "Preparing caller audio...",\n    peer_role: "caller",\n    peer_label: "PBB Caller",\n    created_at: "2026-04-29T00:00:00Z",\n    metadata: { processing: true, track_kind: "audio" },\n  }],\n}, {\n  baseUrl: "..",\n});\n\nsession.update({\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    path: "samples/caller-final.wav",\n    duration_seconds: 18,\n    metadata: {\n      recording_role: "caller-166-2026-04-29T00-00-00Z",\n      track_kind: "audio",\n    },\n  }],\n});`,
+      defaultSampleCode: `const session = createAudioCallSession(host, {\n  caller: { name: "PBB Caller" },\n  operator: { name: "Operator Reyes" },\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    processing: true,\n    processingLabel: "Preparing caller audio...",\n    peer_role: "caller",\n    peer_label: "PBB Caller",\n    created_at: "2026-04-29T00:00:00Z",\n    metadata: { processing: true, track_kind: "audio" },\n  }],\n}, {\n  baseUrl: "..",\n  transparentBackground: false,\n});\n\nsession.update({\n  media: [{\n    id: "caller-audio",\n    type: "audio",\n    path: "samples/caller-final.wav",\n    duration_seconds: 18,\n    metadata: {\n      recording_role: "caller-166-2026-04-29T00-00-00Z",\n      track_kind: "audio",\n    },\n  }],\n});`,
       constructor: [
         { factory: "<code>createAudioCallSession(container, incident, options)</code>", arguments: "<code>container</code>, incident payload, <code>options</code>", returns: "Audio-session adapter instance" }
       ],
@@ -92,6 +92,7 @@
         { option: "<code>roleStyles</code>", default: '<code>{}</code>', description: "Per-role graph style override keyed by role, falling back to audiographStyle." },
         { option: "<code>sensitivity</code>", default: '<code>3.4</code>', description: "Audiograph sensitivity multiplier." },
         { option: "<code>showMute</code>", default: '<code>true</code>', description: "Shows per-role mute controls on the graph tracks." },
+        { option: "<code>transparentBackground</code>", default: '<code>false</code>', description: "Removes the audio graph shell and canvas fill so role tracks sit directly on the parent surface." },
         { option: "<code>autoplay</code>", default: '<code>false</code>', description: "Starts playback automatically after build when at least one playable segment exists." },
         { option: "<code>onError(error)</code>", default: '<code>null</code>', description: "Receives recoverable build or metadata-load errors." },
         { option: "<code>onStateChange(state)</code>", default: '<code>null</code>', description: "Receives playback, duration, role, pending, and playable state snapshots." }
@@ -144,6 +145,10 @@
         <label for="sensitivityRange">Sensitivity</label>
         <input id="sensitivityRange" type="range" min="1" max="6" step="0.1" value="3.4">
         <code id="sensitivityValue">3.4x</code>
+        <label>
+          <input id="transparentBackgroundToggle" type="checkbox">
+          Transparent background
+        </label>
       </div>
     </section>
 
@@ -173,6 +178,7 @@
   }],
 }, {
   baseUrl: "..",
+  transparentBackground: false,
 });
 
 session.update({
@@ -207,6 +213,7 @@ session.update({
     const themeSelect = document.getElementById("themeSelect");
     const sensitivityRange = document.getElementById("sensitivityRange");
     const sensitivityValue = document.getElementById("sensitivityValue");
+    const transparentBackgroundToggle = document.getElementById("transparentBackgroundToggle");
     const host = document.getElementById("audioHost");
     const eventLog = document.getElementById("eventLog");
     const sampleCandidates = [
@@ -305,6 +312,7 @@ session.update({
         audiographStyle: styleSelect.value,
         sensitivity: getSensitivity(),
         showMute: true,
+        transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
           addEvent("audio.error", { message: error?.message || "Unknown error" });
@@ -369,6 +377,7 @@ session.update({
         audiographStyle: styleSelect.value,
         sensitivity: getSensitivity(),
         showMute: true,
+        transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
           addEvent("audio.error", { message: error?.message || "Unknown error" });
@@ -424,6 +433,17 @@ session.update({
         console.error(error);
         addEvent("audio.sensitivity.error", { sensitivity: getSensitivity(), message: error.message });
       });
+    });
+
+    transparentBackgroundToggle.addEventListener("change", () => {
+      mountSelectedSample().catch((error) => {
+        console.error(error);
+        addEvent("audio.transparentBackground.error", {
+          enabled: transparentBackgroundToggle.checked,
+          message: error.message
+        });
+      });
+      addEvent("audio.transparentBackground", { enabled: transparentBackgroundToggle.checked });
     });
   </script>
 </body>
