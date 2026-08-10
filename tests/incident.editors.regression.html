@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="../css/incident/incident.types.details.viewer.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.editor.css">
+  <link rel="stylesheet" href="../css/incident/incident.teams.assignments.viewer.css">
   <style>
     body {
       margin: 0;
@@ -41,6 +42,7 @@
       <div id="incidentTypesHost"></div>
       <div id="incidentTypesViewerHost"></div>
       <div id="assignmentsHost"></div>
+      <div id="assignmentsViewerHost"></div>
     </div>
   <pre id="results">Running...</pre>
 
@@ -379,6 +381,22 @@
     const teamListHeader = document.querySelector("#assignmentsHost .hh-team-list-header");
     assert(getComputedStyle(teamListHeader).position === "sticky", "team assignments list header should stay sticky inside scroll containers");
     assert(getComputedStyle(teamListHeader).top === "0px", "team assignments sticky header should anchor to the top of its scroll container by default");
+
+    const assignmentsViewerApi = incidentTeamsAssignments(document.getElementById("assignmentsViewerHost"), assignmentData, {
+      theme: "care-light",
+      editable: false,
+      incident_id: 30,
+      operator_id: 7,
+      categories: [{ id: 2, name: "Medical" }],
+      teams: [],
+      noticeAlreadyExist() {},
+    });
+    const viewerFirstNoteRow = document.querySelector('#assignmentsViewerHost .hh-note-row[data-note-key="id:501"]');
+    const viewerSecondNoteRow = document.querySelector('#assignmentsViewerHost .hh-note-row[data-note-key="id:502"]');
+    assert(getComputedStyle(viewerFirstNoteRow?.querySelector(".hh-note-text")).whiteSpace === "pre-wrap", "read-only team assignment note text should preserve multiline note breaks");
+    assert(getComputedStyle(viewerSecondNoteRow).borderTopStyle === "solid", "read-only team assignment note rows should render separators between notes");
+    assert(!viewerFirstNoteRow?.querySelector('[aria-label="Edit note"], [aria-label="Delete note"]'), "read-only team assignment notes should not render note action buttons");
+    assignmentsViewerApi.destroy();
 
     const contactInput = document.querySelector("#assignmentsHost .hh-contact-wrap .hh-input");
     contactInput.value = "Ana";

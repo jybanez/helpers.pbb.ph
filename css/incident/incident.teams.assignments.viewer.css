@@ -135,6 +135,24 @@
   gap: 4px;
 }
 
+.hh-incident-teams-assignments-viewer .hh-note-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+
+.hh-incident-teams-assignments-viewer .hh-note-row + .hh-note-row {
+  border-top: 1px solid var(--hh-border);
+  padding-top: 8px;
+}
+
+.hh-incident-teams-assignments-viewer .hh-note-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .hh-incident-teams-assignments-viewer .hh-allocations {
   display: grid;
   gap: 8px;

@@ -217,13 +217,22 @@ export function incidentTeamsAssignmentsViewer(container, data, options = {}) {
 
     const notesWrap = document.createElement("div");
     notesWrap.className = "hh-notes";
+    const title = document.createElement("h5");
+    title.className = "hh-subtitle ui-title";
+    title.textContent = "Notes";
+    notesWrap.appendChild(title);
+
     const list = document.createElement("div");
     list.className = "hh-notes-list";
 
-    notes.forEach((note) => {
-      const row = document.createElement("p");
-      row.className = "hh-row";
-      row.textContent = note?.note || "";
+    notes.forEach((note, index) => {
+      const row = document.createElement("div");
+      row.className = "hh-note-row";
+      row.dataset.noteKey = getNoteKey(note, index);
+      const text = document.createElement("p");
+      text.className = "hh-row hh-note-text";
+      text.textContent = note?.note || "";
+      row.appendChild(text);
       list.appendChild(row);
     });
 
@@ -299,6 +308,18 @@ function buildAllocationMap(data) {
 
 function resolveNotes(data) {
   return safeArray(data?.notes_log || data?.notes_thread || data?.notes);
+}
+
+function getNoteKey(note, index) {
+  const id = note?.id ?? note?.note_id ?? note?.assignment_note_id ?? null;
+  if (id !== null && id !== undefined && String(id).trim()) {
+    return `id:${id}`;
+  }
+  const createdAt = note?.created_at || note?.createdAt || "";
+  if (createdAt) {
+    return `created:${createdAt}:${index}`;
+  }
+  return `index:${index}`;
 }
 
 function cloneData(value) {

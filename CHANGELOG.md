@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed read-only `incident.teams.assignments` note rendering so multiline text, note spacing, and row dividers match editable assignment cards without exposing edit/delete actions. Bumped `UI_BUNDLE_REV`.
 - Fixed `incident.teams.assignments.editor` focused `setData(...)` refreshes so server-canonical note additions, deletions, and other structure changes render while the parent preserves focused child instances for same-key updates. Bumped `UI_BUNDLE_REV`.
 - Tightened `ui.loader.js` bundle preference so bundled components fail loudly when a selected bundle is missing required CSS or module exports, and added regression coverage proving `preferBundles: true` does not request `css/incident/**` source styles for `incident.*`. Bumped `UI_BUNDLE_REV`.
 - Added `actions.tools` as a dedicated shared tools icon for utility, maintenance, and tool-surface actions. Bumped `UI_ICONS_REV` and `UI_BUNDLE_REV`.
