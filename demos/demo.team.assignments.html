@@ -134,6 +134,8 @@
       propertiesText: "The instance tracks normalized assignment <code>list</code> data, merged <code>options</code>, current <code>drawerState</code>, and <code>busyAssignments</code>. Individual assignment cards keep domain details such as dispatch status, contact person, notes, cancellation metadata, resource allocations, and optional item-level busy fields. Aggregate state is available through <code>getData()</code> and <code>getState()</code>. Unsaved rows retain a stable <code>_client_key</code> for host-side reconciliation.",
       methods: [
         { method: "<code>update(nextData, nextOptions)</code>", arguments: "replacement assignment data and optional option patch", returns: "<code>void</code>" },
+        { method: "<code>patchItem(identifier, patch, meta)</code>", arguments: "assignment id, <code>_client_key</code>, item object, or list key plus a shallow item patch", returns: "<code>true</code> when an assignment was patched" },
+        { method: "<code>patchContact(identifier, value, meta)</code>", arguments: "assignment identifier and canonical contact-person value", returns: "<code>true</code> when the contact value was patched" },
         { method: "<code>setItemBusy(assignmentId, busy, options)</code>", arguments: "assignment key plus optional <code>{ action, message }</code>", returns: "<code>void</code>" },
         { method: "<code>clearItemBusy(assignmentId)</code>", arguments: "assignment key", returns: "<code>void</code>" },
         { method: "<code>setList(items)</code>", arguments: "replacement assignment array", returns: "<code>void</code>" },

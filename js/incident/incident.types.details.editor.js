@@ -12,7 +12,11 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   let currentOptions = normalizeIncidentOptions(options);
   const listeners = [];
   const hostedInstances = [];
+  const fieldControls = new Map();
+  const resourceSteppers = new Map();
   let missingRequired = false;
+  let rootEl = null;
+  let lastStructureSignature = "";
 
   function bind(el, event, handler) {
     el.addEventListener(event, handler);
@@ -22,6 +26,8 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
   function cleanupListeners() {
     listeners.splice(0).forEach((off) => off());
     hostedInstances.splice(0).forEach((instance) => instance?.destroy?.());
+    fieldControls.clear();
+    resourceSteppers.clear();
   }
 
   function validateRequired() {
@@ -331,6 +337,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       const labelWrap = createFieldLabelWrap(field);
 
       const input = createFieldInput(field, getFieldValue(field));
+      fieldControls.set(getFieldKey(field), { row, input, field });
       if (isRequiredField(field) && getFieldType(field) !== "multiselect") {
         input.required = true;
       }
@@ -399,7 +406,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
 
       const stepperHost = document.createElement("div");
       stepperHost.className = "hh-resource-stepper";
-      createNumberStepper(stepperHost, {
+      const stepper = createNumberStepper(stepperHost, {
         value: getResourceQuantity(resourceTypeId),
         min: 0,
         step: 1,
@@ -417,6 +424,8 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
           });
         },
       });
+      hostedInstances.push(stepper);
+      resourceSteppers.set(String(resourceTypeId), stepper);
 
       row.append(label, stepperHost);
       grid.appendChild(row);
@@ -426,11 +435,12 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     root.appendChild(section);
   }
 
-  function render() {
+  function renderFull() {
     const root = createRoot(container, "hh-incident-types-details-editor", currentOptions);
     if (!root) {
       return;
     }
+    rootEl = root;
 
     cleanupListeners();
     missingRequired = !validateRequired();
@@ -441,6 +451,57 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     renderHeader(root);
     renderFieldsSection(root);
     renderResourcesSection(root);
+    lastStructureSignature = getStructureSignature(currentData, currentOptions);
+  }
+
+  function patchExistingControls() {
+    if (!rootEl) {
+      return false;
+    }
+    rootEl.dataset.theme = currentOptions.theme;
+    rootEl.className = "hh-incident-types-details-editor";
+    if (currentOptions.className) {
+      rootEl.classList.add(currentOptions.className);
+    }
+
+    safeArray(currentData.fields).forEach((field) => {
+      const fieldKey = getFieldKey(field);
+      const control = fieldControls.get(fieldKey);
+      if (!control) {
+        return;
+      }
+      const nextValue = getFieldValue(field);
+      if (!isElementOrDescendantFocused(control.input)) {
+        setInputValue(control.input, field, nextValue);
+      }
+      applyFieldValidationState(
+        control.row,
+        control.input,
+        field,
+        getInputValue(control.input, field)
+      );
+    });
+
+    safeArray(currentData.resources).forEach((resource) => {
+      const resourceTypeId = resource?.id ?? resource?.resource_type_id;
+      const stepper = resourceSteppers.get(String(resourceTypeId));
+      if (!stepper) {
+        return;
+      }
+      const nextValue = getResourceQuantity(resourceTypeId);
+      if (!isElementOrDescendantFocused(stepper.root)) {
+        stepper.update({ value: nextValue });
+      }
+    });
+    return true;
+  }
+
+  function render() {
+    const nextSignature = getStructureSignature(currentData, currentOptions);
+    if (rootEl && nextSignature === lastStructureSignature && patchExistingControls()) {
+      return;
+    }
+    renderFull();
   }
 
   function validate() {
@@ -502,11 +563,17 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       if (container && container.nodeType === 1) {
         container.innerHTML = "";
       }
+      rootEl = null;
+      lastStructureSignature = "";
     },
     update(nextData, nextOptions = {}) {
       currentData = normalizeIncidentTypeData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
       render();
+    },
+    setData(nextData, nextOptions = {}) {
+      currentData = normalizeIncidentTypeData(nextData);
+      currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
     },
     getData() {
       return cloneData(currentData);
@@ -603,6 +670,59 @@ function applyFieldValidationState(row, input, field, value) {
     badge.hidden = !message;
     badge.title = message;
     badge.setAttribute("aria-label", message || "");
+  }
+}
+
+function getStructureSignature(data, options = {}) {
+  return JSON.stringify({
+    theme: options.theme,
+    className: options.className || "",
+    id: data?.id ?? null,
+    incidentTypeId: data?.incident_type_id ?? null,
+    name: data?.name || "",
+    description: data?.description || "",
+    category: data?.incident_type_category_name || "",
+    fields: safeArray(data?.fields).map((field) => ({
+      key: getFieldKey(field),
+      label: getFieldLabel(field, getFieldKey(field)),
+      type: getFieldType(field),
+      required: isRequiredField(field),
+      sort: field?.sort_order ?? null,
+      options: safeArray(field?.options),
+      config_json: field?.config_json ?? "",
+    })),
+    resources: safeArray(data?.resources).map((resource) => ({
+      id: resource?.id ?? resource?.resource_type_id ?? null,
+      name: resource?.name || resource?.resource_type?.name || "",
+      sort: resource?.sort_order ?? null,
+    })),
+  });
+}
+
+function isElementOrDescendantFocused(element) {
+  if (!element || typeof document === "undefined") {
+    return false;
+  }
+  const active = document.activeElement;
+  return Boolean(active && (active === element || element.contains?.(active)));
+}
+
+function setInputValue(input, field, value) {
+  const inputType = getFieldType(field);
+  if (inputType === "multiselect") {
+    const selected = new Set(
+      String(value || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    );
+    Array.from(input?.querySelectorAll?.('input[type="checkbox"]') || []).forEach((checkbox) => {
+      checkbox.checked = selected.has(String(checkbox.value));
+    });
+    return;
+  }
+  if (input && "value" in input) {
+    input.value = value;
   }
 }
 

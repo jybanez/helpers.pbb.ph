@@ -35,6 +35,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
   let isContactOverrideEditing = false;
   let contactDraft = String(currentData?.contact_person || "");
   const listeners = [];
+  let rootEl = null;
+  let lastStructureSignature = "";
+  let contactInputEl = null;
 
   function getBusyState() {
     const itemBusy = currentData?.busy || currentData?.busy_state;
@@ -53,6 +56,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
 
   function destroyListeners() {
     listeners.splice(0).forEach((off) => off());
+    contactInputEl = null;
   }
 
   function bind(el, event, handler) {
@@ -132,6 +136,25 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     root.appendChild(row);
   }
 
+  function syncBusyState(root) {
+    if (!root) {
+      return;
+    }
+    const existing = root.querySelector(".hh-assignment-busy");
+    existing?.remove();
+    root.classList.remove("is-busy");
+    root.removeAttribute("aria-busy");
+    delete root.dataset.busyAction;
+    root.querySelectorAll("button, input, textarea, select").forEach((control) => {
+      if (control.dataset.hhBusyDisabled === "true") {
+        control.disabled = false;
+        delete control.dataset.hhBusyDisabled;
+      }
+    });
+    renderBusyState(root);
+    applyBusyState(root);
+  }
+
   function applyBusyState(root) {
     const busyState = getBusyState();
     if (!busyState.busy || !root) {
@@ -143,6 +166,9 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       root.dataset.busyAction = String(busyState.action);
     }
     root.querySelectorAll("button, input, textarea, select").forEach((control) => {
+      if (!control.disabled) {
+        control.dataset.hhBusyDisabled = "true";
+      }
       control.disabled = true;
     });
   }
@@ -546,11 +572,12 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     root.appendChild(actions);
   }
 
-  function render() {
+  function renderFull() {
     const root = createRoot(container, "hh-incident-teams-assignments-editor", currentOptions);
     if (!root) {
       return;
     }
+    rootEl = root;
 
     destroyListeners();
     allocationMap = buildAllocationMap(currentData);
@@ -583,6 +610,33 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
 
     root.appendChild(body);
     applyBusyState(root);
+    lastStructureSignature = getStructureSignature(currentData, currentOptions);
+  }
+
+  function patchExisting() {
+    if (!rootEl) {
+      return false;
+    }
+    rootEl.dataset.theme = currentOptions.theme;
+    rootEl.className = "hh-incident-teams-assignments-editor";
+    if (currentOptions.className) {
+      rootEl.classList.add(currentOptions.className);
+    }
+
+    if (contactInputEl && !isElementOrDescendantFocused(contactInputEl)) {
+      contactInputEl.value = String(currentData?.contact_person || "");
+      contactDraft = contactInputEl.value;
+    }
+    syncBusyState(rootEl);
+    return true;
+  }
+
+  function render() {
+    const nextSignature = getStructureSignature(currentData, currentOptions);
+    if (rootEl && nextSignature === lastStructureSignature && patchExisting()) {
+      return;
+    }
+    renderFull();
   }
 
   render();
@@ -593,6 +647,8 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       if (container && container.nodeType === 1) {
         container.innerHTML = "";
       }
+      rootEl = null;
+      lastStructureSignature = "";
     },
     update(nextData, nextOptions = {}) {
       const prevStatus = String(currentData?.status || "");
@@ -604,6 +660,11 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
         isContactOverrideEditing = false;
       }
       render();
+    },
+    setData(nextData, nextOptions = {}) {
+      currentData = normalizeAssignmentData(nextData);
+      currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
+      contactDraft = String(currentData?.contact_person || "");
     },
     getData() {
       return cloneData(currentData);
@@ -674,6 +735,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       input.type = "text";
       input.placeholder = "Enter contact person";
       input.value = isContactOverrideEditing ? contactDraft : String(currentData?.contact_person || "");
+      contactInputEl = input;
 
       bind(input, "input", () => {
         if (isBusy()) {
@@ -853,4 +915,55 @@ function normalizeCancelReasonResult(result) {
     return null;
   }
   return { reasonCode, reasonNote };
+}
+
+function getStructureSignature(data, options = {}) {
+  const normalizedStatus = normalizeStatus(data?.status || "assigned");
+  return JSON.stringify({
+    theme: options.theme,
+    className: options.className || "",
+    id: data?.id ?? null,
+    teamId: data?.team_id ?? null,
+    operatorId: data?.assigned_by_operator_id ?? null,
+    status: normalizedStatus,
+    teamName: data?.team?.name || "",
+    teamCategory: data?.team?.category?.name || "",
+    allowContactEditAfterDispatch: Boolean(options.allowContactEditAfterDispatch),
+    contactLocked: isContactLockedStatus(normalizedStatus),
+    canShowResources: canShowResourcesForData(data),
+    resources: getTeamResourcesForData(data).map((resource) => ({
+      id: resource?.resource_type_id ?? resource?.resource_type?.id ?? null,
+      name: resource?.resource_type?.name || "",
+      available: resource?.quantity_available ?? null,
+    })),
+    notes: resolveNotes(data).map((note) => ({
+      id: note?.id ?? null,
+      note: note?.note || "",
+      created_at: note?.created_at || "",
+    })),
+    cancelReason: data?.cancel_reason_code || "",
+    cancelNote: data?.cancel_reason_note || "",
+  });
+}
+
+function getTeamResourcesForData(data) {
+  const direct = safeArray(data?.team?.resources);
+  if (direct.length) {
+    return direct;
+  }
+  return safeArray(data?.team?.resource_inventories);
+}
+
+function canShowResourcesForData(data) {
+  const status = String(data?.status || "assigned");
+  const allow = ["accepted", "en_route", "on_scene", "completed"].includes(status);
+  return allow && getTeamResourcesForData(data).length > 0;
+}
+
+function isElementOrDescendantFocused(element) {
+  if (!element || typeof document === "undefined") {
+    return false;
+  }
+  const active = document.activeElement;
+  return Boolean(active && (active === element || element.contains?.(active)));
 }

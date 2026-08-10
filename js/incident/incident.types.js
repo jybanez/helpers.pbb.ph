@@ -26,6 +26,7 @@ export function incidentTypes(container, data, options = {}) {
   let list = getIncidentTypeItems(currentData, currentOptions);
   let childMap = new Map(); // key -> { instance, li, mode }
   let orderKeys = [];
+  let focusedChildKey = "";
   let rootEl = null;
   let headerEl = null;
   let bodyEl = null;
@@ -344,14 +345,8 @@ export function incidentTypes(container, data, options = {}) {
     return list.some((item) => String(item?.incident_type_id) === String(incidentTypeId));
   }
 
-  function createChild(item, key, index) {
-    const li = document.createElement("li");
-    li.className = "hh-item";
-    li.setAttribute("data-incident-type-anchor", getIncidentTypeAnchor(item, index));
-    const mount = document.createElement("div");
-    mount.className = "hh-item-viewer";
-    li.appendChild(mount);
-    const childOptions = {
+  function buildChildOptions(key) {
+    return {
       ...currentOptions,
       removeIncidentType: (incidentTypeData) => currentOptions.removeIncidentType?.(incidentTypeData),
       onFieldChange: (...args) => currentOptions.onFieldChange?.(...args),
@@ -378,6 +373,26 @@ export function incidentTypes(container, data, options = {}) {
         });
       },
     };
+  }
+
+  function createChild(item, key, index) {
+    const li = document.createElement("li");
+    li.className = "hh-item";
+    li.setAttribute("data-incident-type-anchor", getIncidentTypeAnchor(item, index));
+    const mount = document.createElement("div");
+    mount.className = "hh-item-viewer";
+    li.appendChild(mount);
+    li.addEventListener("focusin", () => {
+      focusedChildKey = key;
+    });
+    li.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!isElementOrDescendantFocused(li) && focusedChildKey === key) {
+          focusedChildKey = "";
+        }
+      }, 0);
+    });
+    const childOptions = buildChildOptions(key);
     const mode = itemMode();
     const instance = mode === "editor"
       ? incidentTypesDetailsEditor(mount, item, childOptions)
@@ -423,12 +438,11 @@ export function incidentTypes(container, data, options = {}) {
       const existing = childMap.get(key);
       if (existing && existing.mode === mode) {
         existing.li.setAttribute("data-incident-type-anchor", getIncidentTypeAnchor(item, index));
-        existing.instance.update(item, {
-          ...currentOptions,
-          removeIncidentType: (incidentTypeData) => currentOptions.removeIncidentType?.(incidentTypeData),
-          onFieldChange: (...args) => currentOptions.onFieldChange?.(...args),
-          onResourceChange: (...args) => currentOptions.onResourceChange?.(...args),
-        });
+        if ((focusedChildKey === key || isElementOrDescendantFocused(existing.li)) && typeof existing.instance.setData === "function") {
+          existing.instance.setData(item, buildChildOptions(key));
+        } else {
+          existing.instance.update(item, buildChildOptions(key));
+        }
       } else {
         if (existing) {
           existing.instance.destroy?.();
@@ -504,6 +518,119 @@ export function incidentTypes(container, data, options = {}) {
     renderFull();
   }
 
+  function patchItem(identifier, patch = {}, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const nextItem = normalizeIncidentTypeItem({
+      ...match.item,
+      ...(patch && typeof patch === "object" ? patch : {}),
+    }, currentOptions);
+    replaceListItemByKey(match.key, nextItem);
+    const existing = childMap.get(match.key);
+    if (
+      existing &&
+      (focusedChildKey === match.key || isElementOrDescendantFocused(existing.li)) &&
+      typeof existing.instance.setData === "function"
+    ) {
+      existing.instance.setData(nextItem, buildChildOptions(match.key));
+    } else {
+      existing?.instance?.update?.(nextItem, buildChildOptions(match.key));
+    }
+    emitNormalizedChange(nextItem, {
+      reason: meta.reason || "patch",
+      patch: cloneData(patch),
+      localStateChanged: true,
+      ...meta,
+      key: match.key,
+      nextList: cloneData(list),
+    });
+    return true;
+  }
+
+  function patchField(identifier, fieldKey, value, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const nextItem = cloneData(match.item);
+    const key = String(fieldKey || "");
+    const entries = safeArray(nextItem.detail_entries).map((entry) => ({ ...entry }));
+    const field = safeArray(nextItem.fields).find((item) => getFieldKey(item) === key);
+    const index = entries.findIndex((entry) => String(entry?.field_key || "") === key);
+    if (index >= 0) {
+      entries[index] = {
+        ...entries[index],
+        field_key: key,
+        field_label: entries[index]?.field_label || getFieldLabel(field, key),
+        field_value: value,
+      };
+    } else {
+      entries.push({
+        incident_id: nextItem.incident_id,
+        incident_type_id: nextItem.incident_type_id,
+        field_key: key,
+        field_label: getFieldLabel(field, key),
+        field_value: value,
+      });
+    }
+    return patchItem(identifier, { detail_entries: entries }, {
+      reason: "field-patch",
+      fieldKey: key,
+      value,
+      ...meta,
+    });
+  }
+
+  function patchResource(identifier, resourceTypeId, quantityNeeded, meta = {}) {
+    const match = findListItem(identifier);
+    if (!match) {
+      return false;
+    }
+    const nextItem = cloneData(match.item);
+    const key = String(resourceTypeId ?? "");
+    const entries = safeArray(nextItem.resources_needed).map((entry) => ({ ...entry }));
+    const index = entries.findIndex((entry) => String(entry?.resource_type_id ?? "") === key);
+    if (index >= 0) {
+      entries[index] = {
+        ...entries[index],
+        resource_type_id: resourceTypeId,
+        quantity_needed: quantityNeeded,
+      };
+    } else {
+      entries.push({
+        incident_id: nextItem.incident_id,
+        incident_type_id: nextItem.incident_type_id,
+        resource_type_id: resourceTypeId,
+        quantity_needed: quantityNeeded,
+      });
+    }
+    return patchItem(identifier, { resources_needed: entries }, {
+      reason: "resource-patch",
+      resourceTypeId,
+      quantityNeeded,
+      ...meta,
+    });
+  }
+
+  function findListItem(identifier) {
+    const selector = normalizeIdentifier(identifier);
+    for (let index = 0; index < list.length; index += 1) {
+      const item = list[index];
+      const key = getItemKey(item, index);
+      if (
+        selector.key === key ||
+        selector.id === String(item?.id ?? "") ||
+        selector.clientKey === String(item?._client_key ?? item?.client_key ?? "") ||
+        selector.incidentTypeId === String(item?.incident_type_id ?? "")
+      ) {
+        return { item, index, key };
+      }
+    }
+    return null;
+  }
+
   renderFull();
 
   return {
@@ -519,6 +646,7 @@ export function incidentTypes(container, data, options = {}) {
       bodyEl = null;
       listEl = null;
       lastShellSignature = "";
+      focusedChildKey = "";
       headerEvents = createEventBag();
     },
     update(nextData, nextOptions = {}) {
@@ -528,6 +656,9 @@ export function incidentTypes(container, data, options = {}) {
       renderFull();
     },
     setList,
+    patchItem,
+    patchField,
+    patchResource,
     getData() {
       if (!orderKeys.length) {
         return cloneData(list);
@@ -692,6 +823,14 @@ function resolveCategoryName(categoryId, options) {
   return found?.name || "";
 }
 
+function getFieldKey(field) {
+  return String(field?.field_key ?? field?.key ?? "");
+}
+
+function getFieldLabel(field, fallback = "Field") {
+  return String(field?.field_label ?? field?.label ?? fallback);
+}
+
 function getItemKey(item, index) {
   if (item?.id !== undefined && item?.id !== null) {
     return `id:${item.id}`;
@@ -807,7 +946,33 @@ function findElementByDataAttribute(root, attribute, value) {
   ) || null;
 }
 
+function isElementOrDescendantFocused(element) {
+  if (!element || typeof document === "undefined") {
+    return false;
+  }
+  const active = document.activeElement;
+  return Boolean(active && (active === element || element.contains?.(active)));
+}
+
 function createIncidentTypeClientKey() {
   incidentTypeClientKeySeed += 1;
   return `incident-type-${incidentTypeClientKeySeed}`;
+}
+
+function normalizeIdentifier(identifier) {
+  if (identifier && typeof identifier === "object") {
+    return {
+      key: String(identifier.key ?? ""),
+      id: String(identifier.id ?? ""),
+      clientKey: String(identifier._client_key ?? identifier.client_key ?? ""),
+      incidentTypeId: String(identifier.incident_type_id ?? ""),
+    };
+  }
+  const value = String(identifier ?? "");
+  return {
+    key: value,
+    id: value,
+    clientKey: value,
+    incidentTypeId: value,
+  };
 }
