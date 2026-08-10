@@ -862,6 +862,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
       currentData = normalizeAssignmentData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
       contactDraft = String(currentData?.contact_person || "");
+      render();
     },
     getData() {
       return cloneData(currentData);
