@@ -34,6 +34,7 @@
     const host = document.getElementById("host");
     const events = [];
     const originalMatchMedia = window.matchMedia?.bind(window);
+    const avatarIcon = '<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%2212%22 fill=%22%23243b63%22/%3E%3Ccircle cx=%2212%22 cy=%229%22 r=%224%22 fill=%22%23d7e0f4%22/%3E%3Cpath d=%22M5 21a7 7 0 0114 0%22 fill=%22%23d7e0f4%22/%3E%3C/svg%3E" alt="">';
 
     window.addEventListener("error", (event) => {
       failures.push(`error: ${event.message}`);
@@ -115,8 +116,14 @@
         ],
         actions: [
           {
+            id: "install",
+            label: "Install App",
+            className: "ui-button-borderless test-install-action",
+          },
+          {
             id: "profile",
             label: "Profile",
+            icon: avatarIcon,
             className: "ui-button-borderless test-profile-action",
             menuItems: [
               { id: "logout", label: "Logout" },
@@ -134,6 +141,9 @@
         },
         onActionMenuSelect(action, menuItem, meta) {
           events.push({ type: "action-menu-select", actionId: action.id, menuItemId: menuItem.id, source: meta.source });
+        },
+        onAction(action, meta = {}) {
+          events.push({ type: "action", actionId: action.id, source: meta.source || "direct" });
         },
       });
 
@@ -196,9 +206,13 @@
         "grouped menu selection should include group metadata"
       );
 
-      const actionButton = host.querySelector(".ui-navbar-action");
+      const actionButton = host.querySelector(".test-profile-action");
       assert(actionButton.classList.contains("ui-button-borderless"), "navbar actions should accept shared button utility classes through action.className");
       assert(actionButton.classList.contains("test-profile-action"), "navbar actions should preserve app-provided className");
+      const actionImage = actionButton.querySelector(".ui-nav-icon img");
+      assert(Boolean(actionImage), "navbar action buttons should preserve image icon markup");
+      assert(getComputedStyle(actionImage).width === "24px", "navbar action image icons should be constrained by helper CSS");
+      assert(getComputedStyle(actionImage).borderRadius !== "0px", "navbar action image icons should render as avatar/media icons");
       actionButton.click();
       await wait(50);
       const logoutMenuButton = Array.from(document.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.includes("Logout"));
@@ -240,7 +254,7 @@
       const mobileMenuLabels = Array.from(mobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
       assert(!mobileMenuLabels.includes("Syncing 3 calls"), "persistent status content should not duplicate into the mobile hamburger menu");
       assert(
-        mobileMenuLabels.slice(0, 16).join("|") === [
+        mobileMenuLabels.slice(0, 17).join("|") === [
           "Operations",
           "Realtime Connected",
           "Region 7",
@@ -255,6 +269,7 @@
           "Releases",
           "Builds",
           "Approvals",
+          "Install App",
           "Profile",
           "Logout",
         ].join("|"),
@@ -305,6 +320,9 @@
         const menu = getMobileMenu();
         return menu && isMobileMenuOpen() ? menu : null;
       });
+      const mobileProfileImage = Array.from(mobileLogoutMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Profile")?.querySelector(".ui-menu-item-icon img");
+      assert(getComputedStyle(mobileProfileImage).width === "24px", "mobile collapsed menu image icons should be constrained by helper CSS");
+      assert(getComputedStyle(mobileProfileImage).borderRadius !== "0px", "mobile collapsed menu image icons should render as avatar/media icons");
       const mobileLogout = Array.from(mobileLogoutMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Logout");
       mobileLogout.click();
       await waitFor(() => {
@@ -314,6 +332,63 @@
       assert(
         events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout" && event.source === "mobile-menu"),
         "mobile menu should flatten menu-backed actions and emit action selection callbacks"
+      );
+
+      navbar.update({}, {
+        mobileCollapseGroups: "separate",
+        actions: [
+          {
+            id: "install",
+            label: "Install App",
+            className: "ui-button-borderless test-install-action",
+          },
+          {
+            id: "profile",
+            label: "Profile",
+            icon: avatarIcon,
+            iconOnly: true,
+            mobileCollapse: false,
+            className: "ui-button-borderless test-profile-action",
+            menuItems: [
+              { id: "logout", label: "Logout" },
+            ],
+          },
+        ],
+      });
+      await wait(20);
+      const separatedMobileToggle = host.querySelector(".ui-navbar-mobile-toggle");
+      const standaloneProfile = host.querySelector(".ui-navbar-mobile-actions .test-profile-action");
+      assert(Boolean(standaloneProfile), "mobileCollapse:false actions should render as standalone mobile action buttons");
+      assert(Boolean(standaloneProfile?.querySelector("img")), "standalone mobile action should preserve image icon markup");
+      assert(getComputedStyle(standaloneProfile.querySelector(".ui-nav-icon img")).width === "24px", "standalone mobile action image icons should be constrained by helper CSS");
+      separatedMobileToggle.click();
+      const separatedMobileMenu = await waitFor(() => {
+        const menuId = separatedMobileToggle.getAttribute("aria-controls");
+        const menu = menuId ? document.getElementById(menuId) : null;
+        return menu && separatedMobileToggle.getAttribute("aria-expanded") === "true" ? menu : null;
+      });
+      const separatedLabels = Array.from(separatedMobileMenu.querySelectorAll(".ui-menu-item .ui-menu-item-label")).map((node) => node.textContent.trim());
+      assert(separatedLabels.includes("Navigation"), "separate mobile collapse should render a navigation section label");
+      assert(separatedLabels.includes("Actions"), "separate mobile collapse should render an actions section label");
+      assert(separatedLabels.includes("Install App"), "separate mobile collapse should keep normal actions inside the actions section");
+      assert(!separatedLabels.includes("Profile"), "mobileCollapse:false menu-backed action should opt out of the hamburger menu");
+      const installLabelIndex = separatedLabels.indexOf("Install App");
+      const actionsLabelIndex = separatedLabels.indexOf("Actions");
+      assert(actionsLabelIndex !== -1 && installLabelIndex > actionsLabelIndex, "normal actions should stay under the actions section");
+      separatedMobileToggle.click();
+      await waitFor(() => separatedMobileToggle.getAttribute("aria-expanded") !== "true");
+      standaloneProfile.click();
+      const standaloneProfileMenu = await waitFor(() => {
+        const menuId = standaloneProfile.getAttribute("aria-controls");
+        const menu = menuId ? document.getElementById(menuId) : null;
+        return menu && standaloneProfile.getAttribute("aria-expanded") === "true" ? menu : null;
+      });
+      const standaloneLogout = Array.from(standaloneProfileMenu.querySelectorAll(".ui-menu-item")).find((node) => node.textContent.trim() === "Logout");
+      standaloneLogout.click();
+      await waitFor(() => standaloneProfile.getAttribute("aria-expanded") !== "true");
+      assert(
+        events.some((event) => event.type === "action-menu-select" && event.actionId === "profile" && event.menuItemId === "logout" && event.source === "mobile-standalone-menu"),
+        "standalone mobile action menus should emit action menu selection callbacks with mobile standalone source"
       );
 
       if (originalMatchMedia) {

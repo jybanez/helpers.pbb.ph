@@ -20,6 +20,7 @@ const DEFAULT_OPTIONS = {
   statusContentLabel: "Status",
   sticky: false,
   mobileCollapse: true,
+  mobileCollapseGroups: "mixed",
   mobileLayout: "auto",
   activeId: "",
   iconPosition: "start", // start | end
@@ -176,6 +177,32 @@ export function createNavbar(container, data = {}, options = {}) {
     console.warn(`ui.navbar item \"${owner?.id || owner?.label || "unknown"}\" supplied both menuGroups and menuItems. menuGroups will be used.`);
   }
 
+  function shouldSeparateMobileCollapseGroups() {
+    return String(currentOptions.mobileCollapseGroups || "mixed").trim().toLowerCase() === "separate";
+  }
+
+  function shouldCollapseAction(action) {
+    return action?.mobileCollapse !== false && action?.collapseMobile !== false;
+  }
+
+  function getStandaloneMobileActions() {
+    return (Array.isArray(currentOptions.actions) ? currentOptions.actions : [])
+      .filter((action) => action && !shouldCollapseAction(action));
+  }
+
+  function pushMobileSection(entries, id, label) {
+    if (!shouldSeparateMobileCollapseGroups()) {
+      return;
+    }
+    entries.push({
+      id: `mobile-section:${id}`,
+      label,
+      disabled: true,
+      className: "ui-navbar-mobile-menu-section",
+      __mobileKind: "section-label",
+    });
+  }
+
   function pushMobileGroupedEntries(entries, owner, ownerKind) {
     const groups = getMenuGroups(owner);
     if (!groups.length) {
@@ -227,22 +254,32 @@ export function createNavbar(container, data = {}, options = {}) {
       });
     };
 
-    pushEntries(normalizeMobileContentEntries(
+    const contentEntries = [
+      ...normalizeMobileContentEntries(
       currentOptions.contentStartMobile ?? currentOptions.contentStart,
       "start"
-    ));
-    pushEntries(normalizeMobileContentEntries(
+      ),
+      ...normalizeMobileContentEntries(
       currentOptions.contentCenterMobile ?? currentOptions.contentCenter,
       "center"
-    ));
-    pushEntries(normalizeMobileContentEntries(
+      ),
+      ...normalizeMobileContentEntries(
       currentOptions.contentEndMobile ?? currentOptions.contentEnd,
       "end"
-    ));
+      ),
+    ];
+    if (contentEntries.length) {
+      pushMobileSection(entries, "content", "Content");
+      pushEntries(contentEntries);
+    }
 
+    const itemEntriesStart = entries.length;
     (Array.isArray(currentOptions.items) ? currentOptions.items : []).forEach((item) => {
       if (!item) {
         return;
+      }
+      if (entries.length === itemEntriesStart) {
+        pushMobileSection(entries, "navigation", "Navigation");
       }
       if (pushMobileGroupedEntries(entries, item, "item")) {
         return;
@@ -282,7 +319,25 @@ export function createNavbar(container, data = {}, options = {}) {
       });
     });
 
-    (Array.isArray(currentOptions.actions) ? currentOptions.actions : []).forEach((action) => {
+    const actions = (Array.isArray(currentOptions.actions) ? currentOptions.actions : [])
+      .filter(shouldCollapseAction);
+    const separateGroups = shouldSeparateMobileCollapseGroups();
+    const pushPlainAction = (action) => {
+      if (!action) {
+        return;
+      }
+      entries.push({
+        id: action.id || `action:${entries.length}`,
+        label: action.label ?? String(action.id ?? "Action"),
+        icon: action.icon || "",
+        disabled: Boolean(action.disabled),
+        danger: Boolean(action.danger),
+        __mobileKind: "action",
+        __action: action,
+      });
+    };
+
+    const pushMenuAction = (action) => {
       if (!action) {
         return;
       }
@@ -314,18 +369,81 @@ export function createNavbar(container, data = {}, options = {}) {
         });
         return;
       }
-      entries.push({
-        id: action.id || `action:${entries.length}`,
-        label: action.label ?? String(action.id ?? "Action"),
-        icon: action.icon || "",
-        disabled: Boolean(action.disabled),
-        danger: Boolean(action.danger),
-        __mobileKind: "action",
-        __action: action,
-      });
-    });
+      pushPlainAction(action);
+    };
+
+    if (!separateGroups) {
+      actions.forEach(pushMenuAction);
+      return entries;
+    }
+
+    const plainActions = actions.filter((action) => !getMenuGroups(action).length && !getFlatMenuItems(action).length);
+    const menuActions = actions.filter((action) => getMenuGroups(action).length || getFlatMenuItems(action).length);
+    if (plainActions.length) {
+      pushMobileSection(entries, "actions", "Actions");
+    }
+    plainActions.forEach(pushPlainAction);
+
+    if (menuActions.length) {
+      pushMobileSection(entries, "action-menus", "Action menus");
+    }
+    menuActions.forEach(pushMenuAction);
 
     return entries;
+  }
+
+  function createActionButton(action, options = {}) {
+    const buttonClass = options.className || "";
+    const btn = createElement("button", {
+      className: [
+        "ui-button",
+        "ui-navbar-action",
+        buttonClass,
+        action?.className || "",
+      ].filter(Boolean).join(" "),
+      attrs: { type: "button", ...(action?.disabled ? { disabled: "disabled" } : {}) },
+    });
+    appendIconLabel(btn, options.iconOnly == null ? action : { ...action, iconOnly: options.iconOnly });
+    const menuGroups = getMenuGroups(action);
+    const menuItems = getFlatMenuItems(action);
+    if (menuGroups.length || menuItems.length) {
+      const grouped = menuGroups.length > 0;
+      const menuOptions = (action?.menuOptions && typeof action.menuOptions === "object") ? action.menuOptions : {};
+      const menuApi = createMenu(btn, grouped ? menuGroups : menuItems, {
+        placement: options.placement || "bottom-end",
+        ...menuOptions,
+        mode: grouped ? "mega" : menuOptions.mode,
+        className: [grouped ? "ui-navbar-mega-menu" : "", menuOptions.className].filter(Boolean).join(" "),
+        onSelect: (item, meta) => {
+          currentOptions.onActionMenuSelect?.(action, item, options.source ? { ...meta, source: options.source } : meta);
+        },
+        onOpenChange: (open) => {
+          currentOptions.onActionMenuOpenChange?.(action, open);
+        },
+      });
+      navMenus.push(menuApi);
+    } else {
+      events.on(btn, "click", () => currentOptions.onAction?.(action, options.source ? { source: options.source } : undefined));
+    }
+    return btn;
+  }
+
+  function renderStandaloneMobileActions() {
+    const standaloneActions = getStandaloneMobileActions();
+    if (!standaloneActions.length) {
+      return null;
+    }
+    const wrap = createElement("div", { className: "ui-navbar-mobile-actions" });
+    standaloneActions.forEach((action) => {
+      const mobileIconOnly = action?.mobileIconOnly ?? action?.iconOnly ?? Boolean(action?.icon);
+      wrap.appendChild(createActionButton(action, {
+        className: "ui-navbar-mobile-action",
+        placement: "bottom-end",
+        iconOnly: mobileIconOnly,
+        source: "mobile-standalone-menu",
+      }));
+    });
+    return wrap.childNodes.length ? wrap : null;
   }
 
   function renderSlot(slotName, value) {
@@ -467,37 +585,7 @@ export function createNavbar(container, data = {}, options = {}) {
       if (!actions) {
         actions = createElement("div", { className: "ui-navbar-actions" });
       }
-      const btn = createElement("button", {
-        className: [
-          "ui-button",
-          "ui-navbar-action",
-          action?.className || "",
-        ].filter(Boolean).join(" "),
-        attrs: { type: "button", ...(action?.disabled ? { disabled: "disabled" } : {}) },
-      });
-      appendIconLabel(btn, action);
-      const menuGroups = getMenuGroups(action);
-      const menuItems = getFlatMenuItems(action);
-      if (menuGroups.length || menuItems.length) {
-        const grouped = menuGroups.length > 0;
-        const menuOptions = (action?.menuOptions && typeof action.menuOptions === "object") ? action.menuOptions : {};
-        const menuApi = createMenu(btn, grouped ? menuGroups : menuItems, {
-          placement: "bottom-end",
-          ...menuOptions,
-          mode: grouped ? "mega" : menuOptions.mode,
-          className: [grouped ? "ui-navbar-mega-menu" : "", menuOptions.className].filter(Boolean).join(" "),
-          onSelect: (item, meta) => {
-            currentOptions.onActionMenuSelect?.(action, item, meta);
-          },
-          onOpenChange: (open) => {
-            currentOptions.onActionMenuOpenChange?.(action, open);
-          },
-        });
-        navMenus.push(menuApi);
-      } else {
-        events.on(btn, "click", () => currentOptions.onAction?.(action));
-      }
-      actions.appendChild(btn);
+      actions.appendChild(createActionButton(action));
     });
 
     const start = createElement("div", { className: "ui-navbar-start" });
@@ -515,6 +603,7 @@ export function createNavbar(container, data = {}, options = {}) {
     const statusContent = renderStatusContent();
 
     let mobileToggle = null;
+    const standaloneMobileActions = mobileLayout === "collapse" ? renderStandaloneMobileActions() : null;
     const mobileMenuItems = mobileLayout === "collapse" ? buildMobileMenuItems() : [];
     if (mobileMenuItems.length) {
       mobileToggle = createElement("button", {
@@ -613,6 +702,9 @@ export function createNavbar(container, data = {}, options = {}) {
     }
     if (mobileToggle) {
       root.appendChild(mobileToggle);
+    }
+    if (standaloneMobileActions) {
+      root.appendChild(standaloneMobileActions);
     }
     if (end.childNodes.length) {
       root.appendChild(end);
