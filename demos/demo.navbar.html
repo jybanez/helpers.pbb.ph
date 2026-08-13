@@ -38,8 +38,8 @@
         "Do not use it for side navigation or breadcrumbs; use the dedicated helpers for those surfaces.",
         "Do not push page-specific layout or content rendering into the navbar helper."
       ],
-      description: "The navbar helper owns brand, primary items, right-side actions, a single persistent status region, and additive slots. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, persistent non-menu content through <code>statusContent</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can collapse content, items, and actions into a viewport-aware hamburger menu, preserve legacy stacked rows, or keep compact app chrome in one horizontally scrollable row through <code>mobileLayout</code>.",
-      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileLayout: \"collapse\",\n  statusContentLabel: \"System status\",\n  statusContent: () => {\n    const status = document.createElement(\"span\");\n    status.className = \"demo-nav-status\";\n    status.innerHTML = '<span class=\"demo-nav-status-dot\"></span>Syncing 3 calls';\n    return status;\n  },\n  contentStart: \"Operations\",\n  contentCenter: () => {\n    const pill = document.createElement(\"span\");\n    pill.className = \"demo-nav-pill\";\n    pill.textContent = \"Realtime Connected\";\n    return pill;\n  },\n  contentEnd: \"Region 7\",\n  contentCenterMobile: { id: \"status\", label: \"Realtime Connected\", disabled: true },\n  contentEndMobile: { id: \"region\", label: \"Region 7\", disabled: true },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    {\n      id: \"profile\",\n      label: \"Profile\",\n      icon: iconUser,\n      menuItems: [\n        { id: \"manage\", label: \"Manage\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
+      description: "The navbar helper owns brand, primary items, right-side actions, a single persistent status region, and additive slots. Both primary items and right-side actions can either trigger direct callbacks or open a shared menu through <code>menuItems</code>. The brand region can render muted subtitle metadata through <code>brandSubtitle</code>, optional media through <code>brandMedia</code>, persistent non-menu content through <code>statusContent</code>, and additive slot content through <code>contentStart</code>, <code>contentCenter</code>, and <code>contentEnd</code>. On narrow screens the helper can collapse content, items, and actions into a viewport-aware hamburger menu, keep collapsed sections separated through <code>mobileCollapseGroups</code>, let individual actions opt out through <code>action.mobileCollapse: false</code>, preserve legacy stacked rows, or keep compact app chrome in one horizontally scrollable row through <code>mobileLayout</code>.",
+      defaultSampleCode: "const navbar = createNavbar(host, {}, {\n  brandText: \"Hotline UI\",\n  brandSubtitle: \"Build app-DWv_LvMM\",\n  brandMedia: '<svg viewBox=\"0 0 24 24\"><path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z\"/></svg>',\n  mobileLayout: \"collapse\",\n  mobileCollapseGroups: \"separate\",\n  statusContentLabel: \"System status\",\n  statusContent: () => {\n    const status = document.createElement(\"span\");\n    status.className = \"demo-nav-status\";\n    status.innerHTML = '<span class=\"demo-nav-status-dot\"></span>Syncing 3 calls';\n    return status;\n  },\n  activeId: \"dashboard\",\n  items: [\n    { id: \"dashboard\", label: \"Dashboard\", icon: iconGrid },\n    {\n      id: \"apps\",\n      label: \"Apps\",\n      icon: iconAlert,\n      menuItems: [\n        { id: \"app:relay\", label: \"Relay\" },\n        { id: \"app:workspace\", label: \"Workspace\" },\n      ],\n    },\n  ],\n  actions: [\n    { id: \"install\", label: \"Install App\" },\n    {\n      id: \"profile\",\n      label: \"Account\",\n      icon: avatarIcon,\n      iconOnly: true,\n      mobileCollapse: false,\n      menuItems: [\n        { id: \"manage\", label: \"Manage Account\" },\n        { id: \"change-password\", label: \"Change Password\" },\n        { id: \"logout\", label: \"Logout\", danger: true },\n      ],\n    },\n  ],\n});",
       constructor: [
         { factory: "<code>createNavbar(container, data, options)</code>", arguments: "target container, unused data object, navbar options", returns: "Navbar instance" }
       ],
@@ -50,12 +50,13 @@
         { option: "<code>brandSubtitle</code>", default: "<code>\"\"</code>", description: "Optional muted second line under the brand text for compact shell metadata such as build stamps." },
         { option: "<code>brandMedia</code>", default: "<code>null</code>", description: "Optional brand icon/logo content. Accepts an HTML string, DOM node, array, or render callback." },
         { option: "<code>items</code>", default: "<code>[]</code>", description: "Primary navigation items. Each item supports <code>id</code>, <code>label</code>, <code>icon</code>, <code>iconPosition</code>, <code>iconOnly</code>, <code>disabled</code>, plus optional <code>menuItems</code> and <code>menuOptions</code>." },
-        { option: "<code>actions</code>", default: "<code>[]</code>", description: "Right-side actions. Items may also provide <code>menuItems</code> and optional <code>menuOptions</code>." },
+        { option: "<code>actions</code>", default: "<code>[]</code>", description: "Right-side actions. Items may also provide <code>menuItems</code>, optional <code>menuOptions</code>, <code>mobileCollapse: false</code> to remain a standalone button beside the mobile hamburger, and <code>mobileIconOnly</code> for compact standalone mobile rendering." },
         { option: "<code>statusContent</code>", default: "<code>null</code>", description: "Persistent inline status content rendered once in the navbar. It remains visible next to the mobile hamburger and is not copied into the hamburger menu. Accepts text, DOM nodes, arrays, or a render callback." },
         { option: "<code>statusContentLabel</code>", default: "<code>\"Status\"</code>", description: "Accessible group label for the persistent status content." },
         { option: "<code>contentStart</code>, <code>contentCenter</code>, <code>contentEnd</code>", default: "<code>null</code>", description: "Additive navbar slots for custom content. Each accepts text, DOM nodes, arrays, or a render callback." },
         { option: "<code>mobileCollapse</code>", default: "<code>true</code>", description: "On narrow screens, keep the brand visible and flatten content, items, and actions into a hamburger menu. The hamburger path activates only inside the mobile breakpoint and is suppressed again on desktop widths.", values: ["true", "false"] },
         { option: "<code>mobileLayout</code>", default: "<code>\"auto\"</code>", description: "Narrow-screen layout mode. <code>\"auto\"</code> preserves legacy <code>mobileCollapse</code> behavior, <code>\"collapse\"</code> forces the hamburger path, <code>\"stack\"</code> keeps visible stacked rows, and <code>\"scroll\"</code> keeps the navbar in one horizontally scrollable row.", values: ["auto", "collapse", "stack", "scroll"] },
+        { option: "<code>mobileCollapseGroups</code>", default: "<code>\"mixed\"</code>", description: "Collapsed-menu grouping behavior. Use <code>\"separate\"</code> to add Helper-owned section labels between content, navigation, plain actions, and action-menu entries.", values: ["mixed", "separate"] },
         { option: "<code>contentStartMobile</code>, <code>contentCenterMobile</code>, <code>contentEndMobile</code>", default: "<code>null</code>", description: "Optional structured hamburger-menu entries for the slot regions. When omitted, the helper falls back to the text content of the matching slot before listing items and actions. Mobile ordering is content entries first, then items, then actions, and menu-backed entries stay grouped under their parent label." },
         { option: "<code>sticky</code>", default: "<code>false</code>", description: "Adds the shared sticky class to the bar.", values: ["true", "false"] },
         { option: "<code>activeId</code>", default: "<code>\"\"</code>", description: "Marks the active primary item." },
@@ -151,13 +152,16 @@
   ],
   actions: [
     { id: "help", label: "Help", icon: iconHelp },
+    { id: "install", label: "Install App" },
     {
       id: "profile",
-      label: "Profile",
-      icon: iconUser,
+      label: "Account",
+      icon: avatarIcon,
+      iconOnly: true,
+      mobileCollapse: false,
       menuItems: [
-        { id: "manage", label: "Manage" },
-        { id: "clear-cache", label: "Clear Cache" },
+        { id: "manage", label: "Manage Account" },
+        { id: "change-password", label: "Change Password" },
         { id: "logout", label: "Logout", danger: true },
       ],
     },
@@ -178,8 +182,8 @@
     const iconAlert = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3l9-16zm0 5v5m0 4h.01"/></svg>';
     const iconBookmark = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4z"/></svg>';
     const iconHelp = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18h.01M9.09 9a3 3 0 115.82 1c0 2-3 2-3 4"/></svg>';
-    const iconUser = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"/></svg>';
     const iconShield = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v5.5c0 4.5-3 6.9-8 8-5-1.1-8-3.5-8-8V7.5L12 3zm0 4.2a2.2 2.2 0 100 4.4 2.2 2.2 0 000-4.4zm0 11.2c2.05-.58 3.38-1.43 4.18-2.69.24-.38.08-.89-.36-1.01-1.13-.31-2.42-.46-3.82-.46s-2.69.15-3.82.46c-.44.12-.6.63-.36 1.01.8 1.26 2.13 2.11 4.18 2.69z"/></svg>';
+    const avatarIcon = '<img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23f5d08c%22/%3E%3Cstop offset=%221%22 stop-color=%22%23243b63%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2248%22 height=%2248%22 rx=%2224%22 fill=%22url(%23g)%22/%3E%3Ccircle cx=%2224%22 cy=%2219%22 r=%228%22 fill=%22%23fff2df%22/%3E%3Cpath d=%22M10 42c2.8-8.2 9.2-12 14-12s11.2 3.8 14 12%22 fill=%22%23fff2df%22/%3E%3Cpath d=%22M15 20c2-8 15-10 20-2-3-1-8 1-11-3-2 3-5 4-9 5z%22 fill=%22%23201816%22/%3E%3C/svg%3E" alt="">';
 
     let activeId = "dashboard";
     let sticky = false;
@@ -187,6 +191,7 @@
     let brandSubtitle = "Build app-DWv_LvMM";
     let showCustomContent = true;
     let mobileLayout = "collapse";
+    let mobileCollapseGroups = "separate";
     const items = [
       { id: "dashboard", label: "Dashboard", icon: iconGrid },
       {
@@ -245,16 +250,19 @@
       contentEnd: renderEndContent,
       activeId,
       items,
+      mobileCollapseGroups,
       actions: [
         { id: "help", label: "Help", icon: iconHelp, iconOnly: actionIconOnly },
+        { id: "install", label: "Install App" },
         {
           id: "profile",
-          label: "Profile",
-          icon: iconUser,
-          iconOnly: actionIconOnly,
+          label: "Account",
+          icon: avatarIcon,
+          iconOnly: true,
+          mobileCollapse: false,
           menuItems: [
-            { id: "manage", label: "Manage" },
-            { id: "clear-cache", label: "Clear Cache" },
+            { id: "manage", label: "Manage Account" },
+            { id: "change-password", label: "Change Password" },
             { id: "logout", label: "Logout", danger: true },
           ],
         },
@@ -299,16 +307,19 @@
         items,
         sticky,
         mobileLayout,
+        mobileCollapseGroups,
         actions: [
           { id: "help", label: "Help", icon: iconHelp, iconOnly: actionIconOnly },
+          { id: "install", label: "Install App" },
           {
             id: "profile",
-            label: "Profile",
-            icon: iconUser,
-            iconOnly: actionIconOnly,
+            label: "Account",
+            icon: avatarIcon,
+            iconOnly: true,
+            mobileCollapse: false,
             menuItems: [
-              { id: "manage", label: "Manage" },
-              { id: "clear-cache", label: "Clear Cache" },
+              { id: "manage", label: "Manage Account" },
+              { id: "change-password", label: "Change Password" },
               { id: "logout", label: "Logout", danger: true },
             ],
           },

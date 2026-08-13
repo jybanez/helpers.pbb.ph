@@ -191,6 +191,27 @@
   height: 18px;
 }
 
+.ui-nav-icon img {
+  width: 24px;
+  height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+}
+
+.ui-navbar-mobile-actions {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.ui-navbar-mobile-action {
+  flex: 0 0 auto;
+}
+
 .ui-navbar-slot {
   display: inline-flex;
   align-items: center;
@@ -390,6 +411,10 @@
   .ui-navbar.is-mobile-collapsible.is-mobile-active .ui-navbar-mobile-toggle {
     display: inline-flex;
     margin-left: 0;
+  }
+
+  .ui-navbar.is-mobile-collapsible.is-mobile-active .ui-navbar-mobile-actions {
+    display: inline-flex;
   }
 }
 
@@ -667,8 +692,21 @@
   color: var(--ui-text-muted, #9fb2d8);
 }
 
+.ui-menu-item.ui-navbar-mobile-menu-section {
+  margin-top: 6px;
+  padding: 6px 10px 3px;
+  opacity: 1;
+  color: var(--ui-accent, #8abaff);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .ui-menu-item.ui-navbar-mobile-menu-group:hover,
-.ui-menu-item.ui-navbar-mobile-menu-group.is-active {
+.ui-menu-item.ui-navbar-mobile-menu-group.is-active,
+.ui-menu-item.ui-navbar-mobile-menu-section:hover,
+.ui-menu-item.ui-navbar-mobile-menu-section.is-active {
   background: transparent;
   border-color: transparent;
 }
@@ -694,6 +732,17 @@
   width: 14px;
   height: 14px;
   fill: currentColor;
+}
+
+.ui-menu-item-icon img,
+.ui-menu-group-icon img {
+  width: 24px;
+  height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
 }
 
 .ui-menu-item-shortcut {
