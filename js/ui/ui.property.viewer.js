@@ -115,6 +115,7 @@ export function createPropertyViewer(container, data = {}, options = {}) {
     const row = createElement("div", {
       className: [
         "ui-property-viewer-row",
+        property.kind === "password" ? "is-sensitive" : "",
         property.mixed ? "is-mixed" : "",
         property.tone ? `is-${property.tone}` : "",
       ].filter(Boolean).join(" "),

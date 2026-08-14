@@ -6,7 +6,8 @@ const UI_AUDIO_REV = "0.21.62";
 const UI_ICONS_REV = "0.21.118";
 const UI_FILE_INPUT_REV = "0.21.108";
 const UI_CHAT_REV = "0.21.120";
-const UI_PASSWORD_REV = "0.21.65";
+const UI_PASSWORD_REV = "0.21.66";
+const UI_PROPERTY_VIEWER_REV = "0.21.1";
 const UI_DATE_REV = "0.21.3";
 const UI_NAV_REV = "0.21.3";
 const UI_MEDIA_REV = "0.21.3";
@@ -15,7 +16,7 @@ const UI_TABS_REV = "0.21.1";
 const UI_SPLITTER_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.168";
+const UI_BUNDLE_REV = "0.21.169";
 const UI_GAME_BUNDLE_REV = "0.21.119";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -282,8 +283,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createPropertyEditor",
   },
   "ui.property.viewer": {
-    js: "./ui.property.viewer.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.property.viewer.css"],
+    js: `./ui.property.viewer.js?v=${UI_PROPERTY_VIEWER_REV}`,
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.property.viewer.css?v=${UI_PROPERTY_VIEWER_REV}`],
     deps: [],
     export: "createPropertyViewer",
   },
