@@ -35,7 +35,7 @@
           { id: "role", label: "Role", kind: "select", value: "doctor", options: [{ value: "doctor", label: "Doctor" }, { value: "nurse", label: "Nurse" }] },
           { id: "programs", label: "Programs", kind: "ui.select", value: ["mch", "tb"], options: [{ value: "mch", label: "Maternal Care" }, { value: "tb", label: "TB DOTS" }] },
           { id: "active", label: "Active", kind: "toggle", value: true, tone: "success" },
-          { id: "secret", label: "Token", kind: "password", value: "super-secret", copyable: false },
+          { id: "secret", label: "Token", kind: "password", value: "super-secret-token-value-with-enough-length-to-test-inline-wrapping", copyable: false },
           { id: "secret-default", label: "Signing Secret", kind: "password", value: "implicit-secret" },
           { id: "secret-copy", label: "Recovery Code", kind: "password", value: "explicit-secret", copyable: true },
           { id: "neutral", label: "Neutral State", kind: "display", value: "Neutral", tone: "neutral" },
@@ -89,12 +89,14 @@
     assert(Array.from(host.querySelectorAll('[data-property-id="programs"] .ui-property-viewer-chip')).map((node) => node.textContent).join("|") === "Maternal Care|TB DOTS", "array values should render as option-label chips");
     assert(host.querySelector('[data-property-id="active"] .ui-property-viewer-display')?.textContent === "Yes", "boolean values should render yes/no labels");
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "••••••••", "password values should be masked by default");
+    assert(host.querySelector('[data-property-id="secret"]')?.classList.contains("is-sensitive"), "password rows should expose sensitive layout class");
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle [data-icon="actions.view"]'), "password rows should render a reveal icon by default");
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.getAttribute("aria-label") === "Show value", "password reveal button should expose an accessible label");
     host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
-    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "super-secret", "password reveal should show the actual value");
+    assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "super-secret-token-value-with-enough-length-to-test-inline-wrapping", "password reveal should show the actual value");
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle [data-icon="actions.hide"]'), "revealed password rows should render a hide icon");
     assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password reveal should preserve focus on the replacement toggle");
+    assert(getComputedStyle(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')).wordBreak === "break-all", "sensitive display values should break before reaching action controls");
     host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle')?.click();
     assert(host.querySelector('[data-property-id="secret"] .ui-property-viewer-display')?.textContent === "••••••••", "password hide should restore the masked value");
     assert(document.activeElement === host.querySelector('[data-property-id="secret"] .ui-property-viewer-sensitive-toggle'), "password hide should preserve focus on the replacement toggle");

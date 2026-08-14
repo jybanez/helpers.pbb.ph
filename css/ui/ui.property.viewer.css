@@ -29,13 +29,17 @@
 .ui-property-viewer-selection-value,
 .ui-property-viewer-display {
   min-width: 0;
+  max-width: 100%;
   min-height: 24px;
   padding: 2px 0;
   color: var(--ui-text, #d7e0f4);
-  display: flex;
-  align-items: center;
+  display: block;
   overflow-wrap: anywhere;
   line-height: 1.45;
+}
+
+.ui-property-viewer-row.is-sensitive .ui-property-viewer-display {
+  word-break: break-all;
 }
 
 .ui-property-viewer-section {

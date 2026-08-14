@@ -10,6 +10,7 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed password reveal spacing so long masked or visible values do not collide with show/hide icons across editable `ui.password` fields and read-only `ui.property.viewer` sensitive rows. Bumped `UI_PASSWORD_REV`, `UI_PROPERTY_VIEWER_REV`, and `UI_BUNDLE_REV`.
 - Added mobile navbar collapse controls for separated collapsed sections and per-action standalone mobile buttons, constrained image/avatar icons inside navbar buttons and floating menus, and expanded the navbar demo with the Beta-style Install App plus avatar account menu pattern. Bumped `UI_NAV_REV` and `UI_BUNDLE_REV`.
 - Fixed read-only `incident.teams.assignments` note rendering so multiline text, note spacing, and row dividers match editable assignment cards without exposing edit/delete actions. Bumped `UI_BUNDLE_REV`.
 - Fixed `incident.teams.assignments.editor` focused `setData(...)` refreshes so server-canonical note additions, deletions, and other structure changes render while the parent preserves focused child instances for same-key updates. Bumped `UI_BUNDLE_REV`.
