@@ -13,6 +13,9 @@
     .back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
     .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
     .host { border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; }
+    .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .demo-swatch { border: 1px solid #2b3750; border-radius: 8px; padding: 12px; background: #0b1220; display: grid; gap: 10px; align-content: start; }
+    .demo-swatch h3 { margin: 0; font-size: 14px; color: #d7e0f4; }
     .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
     .log { color: #b2c2e5; min-height: 180px; }
   </style>
@@ -32,17 +35,25 @@
         "Do not use it for mutually exclusive sets; use <code>createToggleGroup(...)</code> instead.",
         "Do not fake toggle state with plain buttons and app-local class toggles."
       ],
-      description: "This page focuses on one standalone toggle button, including helper-owned pressed-state styling and change callbacks.",
-      defaultSampleCode: "createToggleButton(host, {\n  id: \"terrain\",\n  label: \"Terrain\",\n  pressed: true,\n  variant: \"pill\",\n  tone: \"success\",\n  leadingDot: true,\n  onChange(payload) {\n    writeLog(\"toggle.button.change\", payload);\n  },\n});",
+      description: "This page focuses on one standalone toggle button, including helper-owned pressed-state styling, icon rendering, tones, variants, and change callbacks.",
+      defaultSampleCode: "createToggleButton(host, {\n  id: \"terrain\",\n  label: \"Terrain\",\n  pressed: true,\n  variant: \"pill\",\n  tone: \"success\",\n  leadingDot: true,\n  icon: '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 17l5-6 4 3 4-6 5 9\"/></svg>',\n  iconPosition: \"start\",\n  onChange(payload) {\n    writeLog(\"toggle.button.change\", payload);\n  },\n});",
       constructor: [
         { factory: "<code>createToggleButton(container, options)</code>", arguments: "host node, toggle options", returns: "Toggle-button instance" }
       ],
       options: [
         { option: "<code>pressed</code>", default: "<code>false</code>", description: "Initial pressed state.", values: ["true", "false"] },
-        { option: "<code>variant</code>", default: "<code>\"default\"</code>", description: "Shared visual treatment.", values: ["default", "pill", "chip", "segmented"] },
+        { option: "<code>variant</code>", default: "<code>\"pill\"</code>", description: "Shared visual treatment.", values: ["pill", "chip", "icon", "ghost", "segmented"] },
         { option: "<code>tone</code>", default: "<code>\"neutral\"</code>", description: "Visual emphasis tone.", values: ["neutral", "success", "info", "warning", "danger"] },
+        { option: "<code>icon</code>", default: "<code>\"\"</code>", description: "Optional leading or trailing icon HTML string or HTMLElement. Icon-only toggles require <code>ariaLabel</code>." },
+        { option: "<code>iconPosition</code>", default: "<code>\"start\"</code>", description: "Icon placement when a label is present.", values: ["start", "end"] },
         { option: "<code>leadingDot</code>", default: "<code>false</code>", description: "Shows a leading status dot.", values: ["true", "false"] },
         { option: "<code>count</code>", default: "<code>null</code>", description: "Optional numeric badge count." },
+        { option: "<code>size</code>", default: "<code>\"md\"</code>", description: "Button size.", values: ["sm", "md", "lg"] },
+        { option: "<code>quiet</code>", default: "<code>false</code>", description: "Removes unpressed background chrome while preserving pressed styling.", values: ["true", "false"] },
+        { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables the toggle.", values: ["true", "false"] },
+        { option: "<code>loading</code>", default: "<code>false</code>", description: "Shows a spinner and disables the toggle while work is pending.", values: ["true", "false"] },
+        { option: "<code>ariaLabel</code>", default: "<code>\"\"</code>", description: "Accessible label. Required when the toggle has an icon but no visible label." },
+        { option: "<code>tooltip</code>", default: "<code>\"\"</code>", description: "Optional title text for hover/focus context." },
         { option: "<code>onChange</code>", default: "<code>null</code>", description: "Fires when pressed state changes." }
       ],
       methods: [
@@ -69,11 +80,55 @@
   variant: "pill",
   tone: "success",
   leadingDot: true,
+  icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 4-6 5 9"/></svg>',
+  iconPosition: "start",
   onChange(payload) {
     writeLog("toggle.button.change", payload);
   },
 });</pre>
       <pre id="log" class="log">No events yet.</pre>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Variants</h2>
+      <p class="muted">Each variant uses the same pressed-state contract with a different shell treatment. Compare off and on states to see where quiet variants differ.</p>
+      <div id="variantGrid" class="demo-grid"></div>
+      <pre>["pill", "chip", "icon", "ghost", "segmented"].forEach((variant) => {
+  ["off", "on"].forEach((state) => {
+    createToggleButton(host, {
+      id: `variant-${variant}-${state}`,
+      label: variant === "icon" ? "" : state,
+      ariaLabel: variant === "icon" ? `Icon variant ${state}` : "",
+      variant,
+      tone: "info",
+      pressed: state === "on",
+      icon,
+    });
+  });
+});</pre>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Tones</h2>
+      <p class="muted">Tones communicate semantic emphasis only while the toggle is pressed.</p>
+      <div id="toneGrid" class="demo-grid"></div>
+      <pre>["neutral", "success", "info", "warning", "danger"].forEach((tone) => {
+  createToggleButton(host, {
+    id: `tone-${tone}`,
+    label: tone,
+    variant: "pill",
+    tone,
+    pressed: true,
+    leadingDot: true,
+    count: tone === "warning" ? 3 : null,
+  });
+});</pre>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">States And Icon Placement</h2>
+      <div id="stateGrid" class="demo-grid"></div>
+      <pre>createToggleButton(host, { label: "End Icon", icon, iconPosition: "end" });
+createToggleButton(host, { label: "Quiet", quiet: true });
+createToggleButton(host, { label: "Disabled", disabled: true });
+createToggleButton(host, { label: "Loading", loading: true });</pre>
     </section>
   </main>
   <script type="module">
@@ -86,6 +141,22 @@
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
       log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
     }
+    const iconTerrain = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 4-6 5 9"/></svg>';
+    const iconSignal = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-4M10 20v-8M15 20v-12M20 20V4"/></svg>';
+    const iconCheck = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6"/></svg>';
+
+    function createSwatch(parent, title) {
+      const swatch = document.createElement("div");
+      swatch.className = "demo-swatch";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      const host = document.createElement("div");
+      host.className = "row";
+      swatch.append(heading, host);
+      parent.appendChild(swatch);
+      return host;
+    }
+
     document.getElementById("themeToggle").addEventListener("click", () => {
       const next = page.dataset.theme === "dark" ? "light" : "dark";
       page.dataset.theme = next;
@@ -98,7 +169,7 @@
       variant: "pill",
       tone: "success",
       leadingDot: true,
-      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 4-6 5 9"/></svg>',
+      icon: iconTerrain,
       onChange(payload) { writeLog("toggle.button.change", payload); },
     });
     document.getElementById("setPressedBtn").addEventListener("click", () => {
@@ -108,6 +179,44 @@
     document.getElementById("togglePressedBtn").addEventListener("click", () => {
       toggleApi.setPressed(!toggleApi.isPressed());
       writeLog("toggle.button.togglePressed", { pressed: toggleApi.isPressed() });
+    });
+
+    ["pill", "chip", "icon", "ghost", "segmented"].forEach((variant) => {
+      const swatchHost = createSwatch(document.getElementById("variantGrid"), variant);
+      ["off", "on"].forEach((state) => {
+        createToggleButton(swatchHost, {
+          id: `variant-${variant}-${state}`,
+          label: variant === "icon" ? "" : state,
+          ariaLabel: variant === "icon" ? `Icon variant ${state}` : "",
+          variant,
+          tone: "info",
+          pressed: state === "on",
+          icon: variant === "icon" ? iconSignal : iconTerrain,
+        });
+      });
+    });
+
+    ["neutral", "success", "info", "warning", "danger"].forEach((tone) => {
+      createToggleButton(createSwatch(document.getElementById("toneGrid"), tone), {
+        id: `tone-${tone}`,
+        label: tone,
+        variant: "pill",
+        tone,
+        pressed: true,
+        leadingDot: true,
+        count: tone === "warning" ? 3 : null,
+      });
+    });
+
+    [
+      { title: "Icon End", options: { id: "icon-end", label: "End Icon", icon: iconTerrain, iconPosition: "end", pressed: true, tone: "info" } },
+      { title: "Quiet", options: { id: "quiet", label: "Quiet", icon: iconCheck, quiet: true, tone: "success" } },
+      { title: "Disabled", options: { id: "disabled", label: "Disabled", icon: iconCheck, disabled: true, pressed: true, tone: "neutral" } },
+      { title: "Loading", options: { id: "loading", label: "Loading", loading: true, pressed: true, tone: "warning" } },
+      { title: "Small", options: { id: "small", label: "Small", size: "sm", variant: "chip", tone: "success", pressed: true } },
+      { title: "Large", options: { id: "large", label: "Large", size: "lg", variant: "pill", tone: "danger", pressed: true } },
+    ].forEach((entry) => {
+      createToggleButton(createSwatch(document.getElementById("stateGrid"), entry.title), entry.options);
     });
   </script>
 </body>
