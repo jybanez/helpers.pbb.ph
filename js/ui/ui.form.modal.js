@@ -799,6 +799,7 @@ export function createFormModal(options = {}) {
     if (!validation.valid) {
       applyErrors(validation.errors);
       focusFirstInvalid(validation.firstInvalidField);
+      requestInvalidFocus(validation.firstInvalidField);
       return false;
     }
     if (typeof currentOptions.onSubmit !== "function") {
@@ -904,6 +905,21 @@ export function createFormModal(options = {}) {
     if (focusTarget && typeof focusTarget.focus === "function") {
       focusTarget.focus();
     }
+  }
+
+  function requestInvalidFocus(name) {
+    if (!name) {
+      return;
+    }
+    const schedule = typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame.bind(window)
+      : (callback) => setTimeout(callback, 0);
+    schedule(() => {
+      if (destroyed || !modal?.getState?.().open) {
+        return;
+      }
+      focusFirstInvalid(name);
+    });
   }
 
   function applyErrors(errors = {}) {
