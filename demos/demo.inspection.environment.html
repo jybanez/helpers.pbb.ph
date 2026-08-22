@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Environment Inspection Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <link rel="stylesheet" href="../css/demo/demo.inspection.preset.css">
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    window.__inspectionDemoLoader = loader;
+    window.__demoLoaderReady = loader.loadMany(["ui.inspection.core", "ui.field.group"]);
+  </script>
+  <script src="../js/demo/demo.inspection.meta.js"></script>
+  <script>
+    window.inspectionPresetDemo = {
+      title: "Environment Inspection",
+      presetId: "environmentInspection",
+      factory: "createEnvironmentInspectionFieldGroupPreset",
+      name: "environment_inspections",
+      overview: "Repeatable area observations combining environmental status, optional readings, thresholds, and mitigation.",
+      useWhen: ["Use this preset for air, water, noise, temperature, or other application-defined environmental observations.", "Configure observation types and measurement units for the application."],
+      avoidWhen: ["Use Inspection Measurement for standalone readings without area status, observation, or mitigation fields."],
+      description: "Captures area identity, observation type, status, severity, measured value and unit, threshold assessment, mitigation requirement, observation, and action.",
+      fieldsDescription: "Area identity, caller-defined observation type and unit, status, reading, threshold, mitigation, observation, and recommendation fields.",
+      validationsDescription: "Requires severity for adverse status, a unit for measured values, mitigation decisions for adverse observations, and explanatory observations when needed.",
+      valueLabel: "environment inspection",
+      overrides: { fields: {
+        observation_type: { options: [{ value: "air_quality", label: "Air quality" }, { value: "water_quality", label: "Water quality" }, { value: "noise", label: "Noise" }] },
+        measurement_unit: { options: [{ value: "ppm", label: "ppm" }, { value: "celsius", label: "°C" }, { value: "decibel", label: "dB" }] }
+      } },
+      initialValue: [{ area_code: "SHELTER-A", area_name: "Evacuation shelter kitchen", observation_type: "air_quality", status: "attention_required", severity: "medium", measured_value: 12.4, measurement_unit: "ppm", threshold_assessment: "outside_range", mitigation_required: "yes", observation: "Ventilation is insufficient while cooking equipment is active.", recommended_action: "Increase extraction and repeat the reading." }],
+      sampleValue: [{ area_code: "WELL-01", area_name: "Community well", observation_type: "water_quality", status: "acceptable", threshold_assessment: "within_range", mitigation_required: "no" }],
+      sampleCode: `const overrides = {
+  fields: {
+    observation_type: { options: [{ value: "air_quality", label: "Air quality" }] },
+    measurement_unit: { options: [{ value: "ppm", label: "ppm" }] }
+  }
+};
+
+const group = createFieldGroup(host, {
+  name: "environment_inspections",
+  ...createEnvironmentInspectionFieldGroupPreset(overrides),
+  value: [{
+    area_name: "Evacuation shelter kitchen",
+    observation_type: "air_quality",
+    status: "attention_required",
+    measured_value: 12.4,
+    measurement_unit: "ppm"
+  }]
+});`
+    };
+    window.demoMeta = window.createInspectionDemoMeta(window.inspectionPresetDemo);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel"><div class="row"><a class="back" href="./index.html">Back to Home</a></div><h1 class="ui-title">Environment Inspection Demo</h1><p class="muted">Environmental observations and mitigation checks loaded through the optional inspection bundle.</p></section>
+    <section class="panel">
+      <h2 class="ui-title">Demo Output</h2>
+      <div class="demo-output"><div id="presetHost"></div><div class="row">
+        <button id="sampleBtn" class="ui-button" type="button">Set Sample</button><button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button><button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button><button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+      </div><p class="snapshot" id="presetSnapshot" role="status">Resolving schema snapshot…</p></div>
+      <pre id="presetLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.inspection.preset.js"></script>
+</body>
+</html>

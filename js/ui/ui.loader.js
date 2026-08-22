@@ -16,12 +16,15 @@ const UI_TABS_REV = "0.21.1";
 const UI_SPLITTER_REV = "0.21.1";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
-const UI_BUNDLE_REV = "0.21.170";
+const UI_INSPECTION_REV = "0.21.1";
+const UI_BUNDLE_REV = "0.21.171";
 const UI_GAME_BUNDLE_REV = "0.21.119";
+const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
 const UI_GAME_BUNDLE_JS = `../../dist/helpers.game.bundle.min.js?v=${UI_GAME_BUNDLE_REV}`;
 const UI_GAME_BUNDLE_CSS = `../../dist/helpers.game.bundle.min.css?v=${UI_GAME_BUNDLE_REV}`;
+const UI_INSPECTION_BUNDLE_JS = `../../dist/helpers.inspection.bundle.min.js?v=${UI_INSPECTION_BUNDLE_REV}`;
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.dom": {
@@ -203,6 +206,30 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [],
     deps: [],
     export: "fieldGroupPresets",
+  },
+  "ui.field.group.schema": {
+    js: "./ui.field.group.schema.js",
+    css: [],
+    deps: [],
+    export: null,
+  },
+  "ui.inspection.core": {
+    js: `./ui.inspection.js?v=${UI_INSPECTION_REV}`,
+    css: [],
+    deps: ["ui.field.group", "ui.field.group.schema"],
+    export: null,
+  },
+  "ui.inspection.presets": {
+    js: `./ui.inspection.js?v=${UI_INSPECTION_REV}`,
+    css: [],
+    deps: ["ui.field.group", "ui.field.group.schema"],
+    export: "inspectionFieldGroupPresets",
+  },
+  "ui.inspection.snapshot": {
+    js: `./ui.inspection.js?v=${UI_INSPECTION_REV}`,
+    css: [],
+    deps: ["ui.field.group.schema"],
+    export: "resolveInspectionPresetSnapshot",
   },
   "ui.device.primer": {
     js: `./ui.device.primer.js?v=${UI_DEVICE_PRIMER_REV}`,
@@ -847,6 +874,11 @@ export const DEFAULT_COMPONENT_GROUPS = {
     "ui.game.effects",
     "ui.game.state.chrome",
   ],
+  inspection: [
+    "ui.inspection.core",
+    "ui.inspection.presets",
+    "ui.inspection.snapshot",
+  ],
   workflow: [
     "ui.command.palette",
     "ui.tree",
@@ -874,6 +906,12 @@ const DEFAULT_LOADER_OPTIONS = {
       js: UI_GAME_BUNDLE_JS,
       css: [UI_GAME_BUNDLE_CSS],
       globalName: "__PBB_HELPER_GAME_BUNDLE__",
+    },
+    inspection: {
+      prefixes: ["ui.inspection."],
+      js: UI_INSPECTION_BUNDLE_JS,
+      css: [],
+      globalName: "__PBB_HELPER_INSPECTION_BUNDLE__",
     },
     ui: {
       prefixes: ["ui.", "incident."],
@@ -1094,7 +1132,7 @@ export function createUiLoader(initialRegistry = DEFAULT_COMPONENT_REGISTRY, con
     }
     const promise = import(toAbsoluteUrl(bundle.js))
       .then((module) => {
-        const exportsMap = module?.helperGameBundleModules || module?.helperUiBundleModules || module?.default || null;
+        const exportsMap = module?.helperInspectionBundleModules || module?.helperGameBundleModules || module?.helperUiBundleModules || module?.default || null;
         if (!exportsMap || typeof exportsMap !== "object") {
           throw new Error(`uiLoader bundle "${bundle.id}" did not expose a module map.`);
         }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infrastructure Inspection Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <link rel="stylesheet" href="../css/demo/demo.inspection.preset.css">
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    window.__inspectionDemoLoader = loader;
+    window.__demoLoaderReady = loader.loadMany(["ui.inspection.core", "ui.field.group"]);
+  </script>
+  <script src="../js/demo/demo.inspection.meta.js"></script>
+  <script>
+    window.inspectionPresetDemo = {
+      title: "Infrastructure Inspection",
+      presetId: "infrastructureInspection",
+      factory: "createInfrastructureInspectionFieldGroupPreset",
+      name: "infrastructure_inspections",
+      overview: "Repeatable fixed-asset inspections covering condition, serviceability, defects, access, findings, and actions.",
+      useWhen: ["Use this preset for buildings, roads, bridges, utilities, facilities, and their inspected components.", "Configure <code>defect_types</code> for the asset domain."],
+      avoidWhen: ["Use Equipment Inspection for operational machinery and Environment Inspection for area observations or readings."],
+      description: "Captures asset identity, component, condition, serviceability, caller-defined defects, severity, access restriction, finding, and recommended action.",
+      fieldsDescription: "Asset and component identity plus condition, serviceability, defect, severity, access, finding, and recommendation fields.",
+      validationsDescription: "Requires severity and a finding when condition is poor or critical, or serviceability is restricted or unserviceable.",
+      valueLabel: "infrastructure inspection",
+      overrides: { fields: { defect_types: { options: [
+        { value: "crack", label: "Crack" }, { value: "corrosion", label: "Corrosion" }, { value: "deformation", label: "Deformation" }
+      ] } } },
+      initialValue: [{ asset_code: "BLDG-01", asset_name: "Barangay hall", component_name: "Main entrance", condition: "poor", serviceability: "restricted", defect_types: ["crack"], severity: "high", access_restriction: "partial", finding: "Diagonal cracking beside the door frame.", recommended_action: "Install a temporary brace pending engineering review." }],
+      sampleValue: [{ asset_code: "BRG-02", asset_name: "North Creek Bridge", component_name: "East bearing", condition: "fair", serviceability: "serviceable", defect_types: ["corrosion"], access_restriction: "none" }],
+      sampleCode: `const overrides = {
+  fields: {
+    defect_types: {
+      options: [
+        { value: "crack", label: "Crack" },
+        { value: "corrosion", label: "Corrosion" }
+      ]
+    }
+  }
+};
+
+const group = createFieldGroup(host, {
+  name: "infrastructure_inspections",
+  ...createInfrastructureInspectionFieldGroupPreset(overrides),
+  value: [{
+    asset_name: "Barangay hall",
+    component_name: "Main entrance",
+    condition: "poor",
+    serviceability: "restricted",
+    severity: "high",
+    finding: "Diagonal cracking beside the door frame."
+  }]
+});`
+    };
+    window.demoMeta = window.createInspectionDemoMeta(window.inspectionPresetDemo);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a></div>
+      <h1 class="ui-title">Infrastructure Inspection Demo</h1>
+      <p class="muted">Fixed-asset condition and serviceability checks loaded through the optional inspection bundle.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Demo Output</h2>
+      <div class="demo-output"><div id="presetHost"></div><div class="row">
+        <button id="sampleBtn" class="ui-button" type="button">Set Sample</button><button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button><button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button><button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+      </div><p class="snapshot" id="presetSnapshot" role="status">Resolving schema snapshot…</p></div>
+      <pre id="presetLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.inspection.preset.js"></script>
+</body>
+</html>

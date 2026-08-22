@@ -11,7 +11,7 @@ await mkdir(path.join(repoRoot, "dist"), { recursive: true });
 
 await buildBundle({
   entries: Object.entries(DEFAULT_COMPONENT_REGISTRY)
-    .filter(([name, entry]) => (name.startsWith("ui.") || name.startsWith("incident.")) && !name.startsWith("ui.game.") && entry?.js),
+    .filter(([name, entry]) => (name.startsWith("ui.") || name.startsWith("incident.")) && !name.startsWith("ui.game.") && !name.startsWith("ui.inspection.") && entry?.js),
   fileBaseName: "helpers.ui.bundle.min",
   globalName: "__PBB_HELPER_UI_BUNDLE__",
   namedExport: "helperUiBundleModules",
@@ -27,7 +27,16 @@ await buildBundle({
   sourceFile: "scripts/build.game.bundle.entry.js",
 });
 
-console.log("Built dist/helpers.ui.bundle.min.js/css and dist/helpers.game.bundle.min.js/css");
+await buildBundle({
+  entries: Object.entries(DEFAULT_COMPONENT_REGISTRY)
+    .filter(([name, entry]) => name.startsWith("ui.inspection.") && entry?.js),
+  fileBaseName: "helpers.inspection.bundle.min",
+  globalName: "__PBB_HELPER_INSPECTION_BUNDLE__",
+  namedExport: "helperInspectionBundleModules",
+  sourceFile: "scripts/build.inspection.bundle.entry.js",
+});
+
+console.log("Built main UI, optional game, and optional inspection bundles in dist/");
 
 async function buildBundle({ entries, fileBaseName, globalName, namedExport, sourceFile }) {
   const jsModuleKeys = unique(entries.map(([, entry]) => stripQuery(entry.js)));

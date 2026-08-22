@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Inspection Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <link rel="stylesheet" href="../css/demo/demo.inspection.preset.css">
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    window.__inspectionDemoLoader = loader;
+    window.__demoLoaderReady = loader.loadMany(["ui.inspection.core", "ui.field.group"]);
+  </script>
+  <script src="../js/demo/demo.inspection.meta.js"></script>
+  <script>
+    window.inspectionPresetDemo = {
+      title: "Equipment Inspection",
+      presetId: "equipmentInspection",
+      factory: "createEquipmentInspectionFieldGroupPreset",
+      name: "equipment_inspections",
+      overview: "Repeatable equipment checks covering operational state, physical condition, safety devices, and maintenance.",
+      useWhen: ["Use this preset for machinery, generators, pumps, vehicles, or other equipment with operational and safety checks."],
+      avoidWhen: ["Use Infrastructure Inspection for fixed structural assets and Inspection Measurement for readings without equipment findings."],
+      description: "Captures equipment identity, component, operational status, physical condition, safety-device status, maintenance requirement, severity, finding, and action.",
+      fieldsDescription: "Equipment identity plus operational, physical, safety, maintenance, severity, finding, and recommendation fields.",
+      validationsDescription: "Requires severity and a finding when equipment is limited, not operational, unsafe, or needs maintenance.",
+      valueLabel: "equipment inspection",
+      overrides: {},
+      initialValue: [{ equipment_code: "GEN-02", equipment_name: "Standby generator", component_name: "Cooling system", operational_status: "limited", physical_condition: "fair", safety_device_status: "pass", maintenance_required: "yes", severity: "medium", finding: "Coolant level drops during extended operation.", recommended_action: "Inspect hoses and pressure-test the cooling loop." }],
+      sampleValue: [{ equipment_code: "PUMP-04", equipment_name: "Transfer pump", operational_status: "operational", physical_condition: "good", safety_device_status: "pass", maintenance_required: "no" }],
+      sampleCode: `const group = createFieldGroup(host, {
+  name: "equipment_inspections",
+  ...createEquipmentInspectionFieldGroupPreset(),
+  value: [{
+    equipment_name: "Standby generator",
+    operational_status: "limited",
+    maintenance_required: "yes",
+    severity: "medium",
+    finding: "Coolant level drops during extended operation."
+  }]
+});`
+    };
+    window.demoMeta = window.createInspectionDemoMeta(window.inspectionPresetDemo);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a></div>
+      <h1 class="ui-title">Equipment Inspection Demo</h1>
+      <p class="muted">Equipment condition and safety checks loaded through the optional inspection bundle.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Demo Output</h2>
+      <div class="demo-output">
+        <div id="presetHost"></div>
+        <div class="row">
+          <button id="sampleBtn" class="ui-button" type="button">Set Sample</button>
+          <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button>
+          <button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button>
+          <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+        </div>
+        <p class="snapshot" id="presetSnapshot" role="status">Resolving schema snapshot…</p>
+      </div>
+      <pre id="presetLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.inspection.preset.js"></script>
+</body>
+</html>

@@ -134,7 +134,7 @@ Run `npm run build:ui-bundle` when changing:
 
 Commit generated `dist/` files only when they have real content changes. If a rebuild touches unrelated game or CSS bundle files only through line-ending churn, restore those files before committing.
 
-Game helpers are additive. Keep `ui.game.*` changes in the game bundle path and avoid pulling game helper code into the main UI bundle.
+Game and inspection helpers are additive. Keep `ui.game.*` and `ui.inspection.*` changes in their optional bundle paths and avoid pulling either component family into the main UI bundle.
 
 ## Version And Cache Revisions
 
@@ -145,6 +145,8 @@ Bump cache revisions when the browser must fetch fresh assets:
 - `UI_ICONS_REV` when icon catalog/imported icon visuals change
 - `UI_BUNDLE_REV` when main UI bundle JS/CSS changes
 - `UI_GAME_BUNDLE_REV` when game bundle JS/CSS changes
+- `UI_INSPECTION_REV` when inspection source-module contracts change
+- `UI_INSPECTION_BUNDLE_REV` when the optional inspection bundle changes
 - feature-specific revision constants when a module already has one
 
 Keep revision bumps scoped to the assets affected by the change.

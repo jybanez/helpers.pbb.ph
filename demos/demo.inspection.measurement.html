@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspection Measurement Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <link rel="stylesheet" href="../css/demo/demo.inspection.preset.css">
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    window.__inspectionDemoLoader = loader;
+    window.__demoLoaderReady = loader.loadMany(["ui.inspection.core", "ui.field.group"]);
+  </script>
+  <script src="../js/demo/demo.inspection.meta.js"></script>
+  <script>
+    window.inspectionPresetDemo = {
+      title: "Inspection Measurement",
+      presetId: "inspectionMeasurement",
+      factory: "createInspectionMeasurementFieldGroupPreset",
+      name: "inspection_measurements",
+      overview: "Repeatable inspection readings with caller-defined units, expected ranges, assessment, and notes.",
+      useWhen: ["Use this preset for numeric readings that need an expected range and assessment.", "Configure <code>unit</code> choices for the measuring instrument or domain."],
+      avoidWhen: ["Use Environment Inspection when the reading belongs to a broader area observation with status and mitigation."],
+      description: "Captures measurement identity, numeric value, caller-defined unit, expected minimum and maximum, assessment, and note.",
+      fieldsDescription: "Measurement identity, numeric value, caller-defined unit, expected range, assessment, and note fields.",
+      validationsDescription: "Requires a unit when a value is provided and ensures expected minimum does not exceed expected maximum.",
+      valueLabel: "inspection measurement",
+      overrides: { fields: { unit: { options: [{ value: "celsius", label: "°C" }, { value: "ppm", label: "ppm" }, { value: "percent", label: "%" }] } } },
+      initialValue: [{ measurement_code: "TEMP-01", measurement_name: "Cold-storage temperature", value: 7.2, unit: "celsius", expected_min: 2, expected_max: 5, assessment: "above_range", note: "Reading taken after the door remained closed for 20 minutes." }],
+      sampleValue: [{ measurement_code: "HUM-02", measurement_name: "Storage humidity", value: 58, unit: "percent", expected_min: 40, expected_max: 60, assessment: "within_range" }],
+      sampleCode: `const overrides = {
+  fields: {
+    unit: {
+      options: [
+        { value: "celsius", label: "°C" },
+        { value: "percent", label: "%" }
+      ]
+    }
+  }
+};
+
+const group = createFieldGroup(host, {
+  name: "inspection_measurements",
+  ...createInspectionMeasurementFieldGroupPreset(overrides),
+  value: [{
+    measurement_name: "Cold-storage temperature",
+    value: 7.2,
+    unit: "celsius",
+    expected_min: 2,
+    expected_max: 5,
+    assessment: "above_range"
+  }]
+});`
+    };
+    window.demoMeta = window.createInspectionDemoMeta(window.inspectionPresetDemo);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel"><div class="row"><a class="back" href="./index.html">Back to Home</a></div><h1 class="ui-title">Inspection Measurement Demo</h1><p class="muted">Numeric inspection readings loaded through the optional inspection bundle.</p></section>
+    <section class="panel">
+      <h2 class="ui-title">Demo Output</h2>
+      <div class="demo-output"><div id="presetHost"></div><div class="row">
+        <button id="sampleBtn" class="ui-button" type="button">Set Sample</button><button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button><button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button><button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+      </div><p class="snapshot" id="presetSnapshot" role="status">Resolving schema snapshot…</p></div>
+      <pre id="presetLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.inspection.preset.js"></script>
+</body>
+</html>

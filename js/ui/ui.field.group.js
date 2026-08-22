@@ -2,6 +2,7 @@ import { createCheckbox } from "./ui.checkbox.js";
 import { createCheckboxGroup } from "./ui.checkbox.group.js";
 import { createCombobox } from "./ui.combobox.js";
 import { fieldGroupPresets } from "./ui.field.group.presets.js";
+import { FieldGroupSchemaError, validateFieldGroupSchema } from "./ui.field.group.schema.js";
 import { createIcon } from "./ui.icons.js";
 import { createNumberStepper } from "./ui.number.stepper.js";
 
@@ -18,6 +19,14 @@ const DEFAULT_OPTIONS = {
   addLabel: "",
   removeLabel: "Remove",
   emptyItem: null,
+  entryKey: "",
+  preserveEntryKeys: false,
+  createEntryKey: null,
+  minItems: 0,
+  maxItems: null,
+  allowRemove: true,
+  allowReorder: false,
+  strictSchema: false,
   onChange: null,
 };
 
@@ -39,6 +48,7 @@ export function createFieldGroup(container, options = {}) {
     label: document.createElement("div"),
     required: document.createElement("span"),
     body: document.createElement("div"),
+    live: document.createElement("div"),
   };
 
   refs.root.className = "ui-field-group";
@@ -47,8 +57,11 @@ export function createFieldGroup(container, options = {}) {
   refs.required.className = "ui-field-group-required";
   refs.required.textContent = "Required";
   refs.body.className = "ui-field-group-body";
+  refs.live.className = "ui-field-group-live";
+  refs.live.setAttribute("aria-live", "polite");
+  refs.live.setAttribute("aria-atomic", "true");
   refs.labelRow.append(refs.label, refs.required);
-  refs.root.append(refs.labelRow, refs.body);
+  refs.root.append(refs.labelRow, refs.body, refs.live);
   container.appendChild(refs.root);
 
   render();
@@ -86,6 +99,15 @@ export function createFieldGroup(container, options = {}) {
     validate() {
       return getCurrentValidation();
     },
+    addItem(item = null, meta = {}) {
+      return addItem(item, meta);
+    },
+    removeItem(index, meta = {}) {
+      return removeItem(index, meta);
+    },
+    moveItem(fromIndex, toIndex, meta = {}) {
+      return moveItem(fromIndex, toIndex, meta);
+    },
     destroy() {
       clearListeners();
       refs.root.remove();
@@ -118,10 +140,10 @@ export function createFieldGroup(container, options = {}) {
       add.type = "button";
       add.className = "ui-field-group-add";
       add.textContent = currentOptions.addLabel || `Add ${currentOptions.label || "Entry"}`;
+      add.disabled = hasReachedMaxItems();
+      add.setAttribute("aria-disabled", add.disabled ? "true" : "false");
       on(add, "click", () => {
-        value = [...safeArray(value), createEmptyItem(currentOptions)];
-        render();
-        emitChange();
+        addItem();
       });
       refs.body.appendChild(add);
     }
@@ -154,7 +176,15 @@ export function createFieldGroup(container, options = {}) {
       warning.title = itemIssues.map((item) => item.message || item.warning || item.error).filter(Boolean).join("\n");
 
       header.append(title, warning);
-      if (index > 0) {
+      if (currentOptions.allowReorder && itemCount > 1) {
+        const reorder = document.createElement("span");
+        reorder.className = "ui-field-group-reorder";
+        const moveUp = createMoveButton(index, -1, itemCount);
+        const moveDown = createMoveButton(index, 1, itemCount);
+        reorder.append(moveUp, moveDown);
+        header.appendChild(reorder);
+      }
+      if (canRemoveItem(itemCount, index)) {
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "ui-field-group-remove";
@@ -162,9 +192,7 @@ export function createFieldGroup(container, options = {}) {
         remove.title = `${currentOptions.removeLabel} #${index + 1}`;
         remove.appendChild(createIcon("actions.delete", { size: 16 }));
         on(remove, "click", () => {
-          value = safeArray(value).filter((_, itemIndex) => itemIndex !== index);
-          render();
-          emitChange();
+          removeItem(index);
         });
         header.appendChild(remove);
       }
@@ -200,6 +228,98 @@ export function createFieldGroup(container, options = {}) {
     });
     itemEl.appendChild(rows);
     return itemEl;
+  }
+
+  function createMoveButton(index, direction, itemCount) {
+    const destination = index + direction;
+    const label = direction < 0 ? "Move up" : "Move down";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `ui-field-group-move ui-field-group-move-${direction < 0 ? "up" : "down"}`;
+    button.disabled = destination < 0 || destination >= itemCount;
+    button.setAttribute("aria-label", `${label} #${index + 1}`);
+    button.title = `${label} #${index + 1}`;
+    button.appendChild(createIcon(direction < 0 ? "navigation.chevron-up" : "navigation.chevron-down", { size: 16 }));
+    on(button, "click", () => moveItem(index, destination, { focus: true }));
+    return button;
+  }
+
+  function addItem(item = null, meta = {}) {
+    if (!currentOptions.repeatable || hasReachedMaxItems()) {
+      return false;
+    }
+    const nextItem = item && typeof item === "object" && !Array.isArray(item)
+      ? normalizeItem(item, currentOptions)
+      : createEmptyItem(currentOptions);
+    value = [...safeArray(value), nextItem];
+    render();
+    announce(`Added ${currentOptions.label || "entry"} #${value.length}.`);
+    if (meta.emit !== false) {
+      emitChange();
+    }
+    return true;
+  }
+
+  function removeItem(index, meta = {}) {
+    const items = safeArray(value);
+    if (!currentOptions.repeatable || !canRemoveItem(items.length, index) || index < 0 || index >= items.length) {
+      return false;
+    }
+    value = items.filter((_, itemIndex) => itemIndex !== index);
+    render();
+    announce(`Removed ${currentOptions.label || "entry"} #${index + 1}.`);
+    if (meta.emit !== false) {
+      emitChange();
+    }
+    return true;
+  }
+
+  function moveItem(fromIndex, toIndex, meta = {}) {
+    const items = [...safeArray(value)];
+    if (
+      !currentOptions.repeatable
+      || !currentOptions.allowReorder
+      || fromIndex < 0
+      || toIndex < 0
+      || fromIndex >= items.length
+      || toIndex >= items.length
+      || fromIndex === toIndex
+    ) {
+      return false;
+    }
+    const [item] = items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, item);
+    value = items;
+    render();
+    announce(`Moved ${currentOptions.label || "entry"} from position ${fromIndex + 1} to ${toIndex + 1}.`);
+    if (meta.focus) {
+      refs.body.querySelectorAll(".ui-field-group-item")[toIndex]?.querySelector(".ui-field-group-move:not([disabled])")?.focus();
+    }
+    if (meta.emit !== false) {
+      emitChange();
+    }
+    return true;
+  }
+
+  function canRemoveItem(itemCount, index) {
+    if (!currentOptions.allowRemove) {
+      return false;
+    }
+    if (!currentOptions.itemBoundsConfigured) {
+      return index > 0;
+    }
+    return itemCount > currentOptions.minItems;
+  }
+
+  function hasReachedMaxItems() {
+    return currentOptions.maxItems != null && safeArray(value).length >= currentOptions.maxItems;
+  }
+
+  function announce(message) {
+    refs.live.textContent = "";
+    requestAnimationFrame(() => {
+      refs.live.textContent = String(message || "");
+    });
   }
 
   function isBreakdownOpen(key, breakdown) {
@@ -274,12 +394,14 @@ export function createFieldGroup(container, options = {}) {
     if (!control) {
       return row;
     }
+    associateFieldLabel(label, control, type, index, childKey);
 
     if (type === "checkbox" || type === "checkbox-group") {
       row.appendChild(control);
     } else {
       row.append(labelNode, control);
     }
+    applyControlIssueAria(row, fieldIssues, index, childKey);
 
     const updateValue = () => {
       const previousItem = currentOptions.repeatable
@@ -292,6 +414,7 @@ export function createFieldGroup(container, options = {}) {
         nextItems[index] = {};
       }
       nextItems[index][childKey] = getControlValue(control, field);
+      applyHiddenValuePolicy(previousItem, nextItems[index], currentOptions.fields);
       const shouldRender = applyComputedValues(nextItems[index], currentOptions.fields, childKey);
       const shouldRefreshVisibility = visibilitySignature(previousItem, currentOptions.fieldRows) !== visibilitySignature(nextItems[index], currentOptions.fieldRows);
       value = currentOptions.repeatable ? nextItems : nextItems[0];
@@ -314,6 +437,27 @@ export function createFieldGroup(container, options = {}) {
     }
 
     return row;
+  }
+
+  function associateFieldLabel(label, control, type, index, childKey) {
+    if (["checkbox", "checkbox-group", "notice", "message"].includes(type)) {
+      return;
+    }
+    const idBase = `ui-field-group-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}`;
+    if (type === "multiselect") {
+      label.id = `${idBase}-label`;
+      control.setAttribute("role", "group");
+      control.setAttribute("aria-labelledby", label.id);
+      return;
+    }
+    const target = control.matches("input, select, textarea, [role='spinbutton']")
+      ? control
+      : control.querySelector("input, select, textarea, [role='spinbutton']");
+    if (!target) {
+      return;
+    }
+    target.id ||= idBase;
+    label.htmlFor = target.id;
   }
 
   function renderFieldPlaceholder() {
@@ -376,6 +520,13 @@ export function createFieldGroup(container, options = {}) {
 
   function createControl(field, rawValue) {
     const type = getFieldType(field);
+    if (requiresConfiguredOptions(field) && !normalizeOptionsList(field?.options).length) {
+      const unconfigured = document.createElement("div");
+      unconfigured.className = "ui-field-group-unsupported is-unconfigured";
+      unconfigured.setAttribute("role", "status");
+      unconfigured.textContent = String(field?.unconfiguredLabel || "This field requires application-provided choices.");
+      return unconfigured;
+    }
     if (type === "notice" || type === "message") {
       const notice = document.createElement("div");
       notice.className = [
@@ -490,7 +641,7 @@ export function createFieldGroup(container, options = {}) {
       const numberStepper = createNumberStepper(host, {
         name: getFieldKey(field),
         value: rawValue,
-        min: field?.min ?? 0,
+        min: field?.min ?? null,
         max: field?.max,
         step: field?.step ?? 1,
         decimals: field?.decimals ?? 0,
@@ -509,6 +660,14 @@ export function createFieldGroup(container, options = {}) {
       });
       host.__uiNumberStepperInstance = numberStepper;
       return host;
+    }
+
+    if (!isSupportedControlType(type)) {
+      const unsupported = document.createElement("div");
+      unsupported.className = "ui-field-group-unsupported";
+      unsupported.setAttribute("role", "alert");
+      unsupported.textContent = `Unsupported field type: ${type || "unknown"}`;
+      return unsupported;
     }
 
     const input = document.createElement("input");
@@ -642,6 +801,7 @@ export function createFieldGroup(container, options = {}) {
       row.classList.toggle("has-warning", hasIssues);
       row.classList.toggle("has-error", hasErrors);
       row.querySelectorAll(":scope .ui-field-group-warning-badge").forEach((badge) => badge.remove());
+      applyControlIssueAria(row, fieldIssues, index, childKey);
       const badge = renderIssueBadge(fieldIssues);
       if (!badge) {
         return;
@@ -653,6 +813,41 @@ export function createFieldGroup(container, options = {}) {
       }
       const label = row.querySelector(":scope > .ui-label");
       label?.appendChild(badge);
+    });
+  }
+
+  function applyControlIssueAria(row, issues, index, childKey) {
+    row.querySelector(":scope > .ui-field-group-field-issues")?.remove();
+    const descriptionId = `ui-field-group-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}-issues`;
+    const controls = row.matches("input, select, textarea")
+      ? [row]
+      : Array.from(row.querySelectorAll("input, select, textarea, [role='spinbutton']"));
+    const hasErrors = safeArray(issues).some((issue) => issue.severity === "error");
+    controls.forEach((control) => {
+      const describedBy = String(control.getAttribute("aria-describedby") || "").split(/\s+/).filter((id) => id && id !== descriptionId);
+      if (describedBy.length) {
+        control.setAttribute("aria-describedby", describedBy.join(" "));
+      } else {
+        control.removeAttribute("aria-describedby");
+      }
+      if (hasErrors) {
+        control.setAttribute("aria-invalid", "true");
+      } else {
+        control.removeAttribute("aria-invalid");
+      }
+    });
+    if (!issues.length) {
+      return;
+    }
+    const description = document.createElement("span");
+    description.id = descriptionId;
+    description.className = "ui-field-group-field-issues";
+    description.textContent = issues.map((issue) => issue.message || issue.error || issue.warning).filter(Boolean).join(" ");
+    row.appendChild(description);
+    controls.forEach((control) => {
+      const ids = new Set(String(control.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+      ids.add(descriptionId);
+      control.setAttribute("aria-describedby", [...ids].join(" "));
     });
   }
 
@@ -690,13 +885,17 @@ export function createFieldGroup(container, options = {}) {
   }
 }
 
+function toDomId(value) {
+  return String(value || "value").replace(/[^a-z0-9_-]+/gi, "-");
+}
+
 export function normalizeFieldGroupValue(field, rawValue) {
   return normalizeValue(rawValue, normalizeOptions(field));
 }
 
 export function validateFieldGroup(field, rawValue) {
   const options = normalizeOptions(field);
-  return validateGroup(options, normalizeValue(rawValue, options));
+  return validateGroup(options, normalizeValue(rawValue, options, { clampNumbers: false }));
 }
 
 export function serializeFieldGroupValue(field, rawValue) {
@@ -735,8 +934,54 @@ function validateGroup(options, rawValue) {
   const warnings = [];
   const items = options.repeatable ? safeArray(rawValue) : [rawValue && typeof rawValue === "object" ? rawValue : {}];
 
+  const schemaValidation = validateFieldGroupSchema({
+    repeatable: options.repeatable,
+    ...(options.entryKey ? { entryKey: options.entryKey } : {}),
+    minItems: options.minItems,
+    maxItems: options.maxItems,
+    fields: options.rawFields,
+    validations: options.validations,
+  }, { allowPersistence: !options.strictSchema });
+  schemaValidation.errors.forEach((issue) => {
+    const normalizedIssue = toValidationIssue(issue, options.name);
+    if (options.strictSchema) {
+      errors.push(normalizedIssue);
+    } else {
+      warnings.push({ ...normalizedIssue, severity: "warning", message: normalizedIssue.error });
+    }
+  });
+
+  if (options.repeatable && items.length < options.minItems) {
+    errors.push(createValidationIssue(
+      "FIELD_GROUP_MIN_ITEMS",
+      options.name,
+      `At least ${options.minItems} ${options.minItems === 1 ? "entry is" : "entries are"} required.`
+    ));
+  }
+  if (options.repeatable && options.maxItems != null && items.length > options.maxItems) {
+    errors.push(createValidationIssue(
+      "FIELD_GROUP_MAX_ITEMS",
+      options.name,
+      `No more than ${options.maxItems} ${options.maxItems === 1 ? "entry is" : "entries are"} allowed.`
+    ));
+  }
+  if (options.repeatable && options.entryKey) {
+    const identities = new Map();
+    items.forEach((item, index) => {
+      const identity = String(item?.[options.entryKey] ?? "").trim();
+      const path = `${options.name}.${index}.${options.entryKey}`;
+      if (!identity) {
+        errors.push(createValidationIssue("FIELD_GROUP_ENTRY_KEY_MISSING", path, "Repeatable entry identity is missing."));
+      } else if (identities.has(identity)) {
+        errors.push(createValidationIssue("FIELD_GROUP_ENTRY_KEY_DUPLICATE", path, `Repeatable entry identity "${identity}" is duplicated.`));
+      } else {
+        identities.set(identity, index);
+      }
+    });
+  }
+
   if (options.required && (!items.length || items.every((item) => isEmptyItem(item, options.fields)))) {
-    errors.push({ field_key: options.name, error: "Required group entry is missing" });
+    errors.push(createValidationIssue("FIELD_GROUP_REQUIRED", options.name, "Required group entry is missing"));
   }
 
   items.forEach((item, index) => {
@@ -750,19 +995,47 @@ function validateGroup(options, rawValue) {
       const nestedKey = options.repeatable ? `${options.name}.${index}.${childKey}` : `${options.name}.${childKey}`;
 
       if (isRequiredField(field) && !trimmed) {
-        errors.push({ field_key: nestedKey, error: "Required value is missing" });
+        errors.push(createValidationIssue("FIELD_GROUP_REQUIRED", nestedKey, "Required value is missing"));
+      }
+
+      const typeIssue = validateFieldValueType(field, childValue, nestedKey);
+      if (typeIssue) {
+        errors.push(typeIssue);
+      }
+
+      const optionIssue = validateFieldOptionMembership(field, childValue, nestedKey);
+      if (optionIssue) {
+        errors.push(optionIssue);
+      }
+
+      if (typeof childValue === "string") {
+        if (field?.minlength != null && childValue.length < Number(field.minlength)) {
+          errors.push(createValidationIssue("FIELD_GROUP_STRING_TOO_SHORT", nestedKey, `Value must contain at least ${field.minlength} characters.`));
+        }
+        if (field?.maxlength != null && childValue.length > Number(field.maxlength)) {
+          errors.push(createValidationIssue("FIELD_GROUP_STRING_TOO_LONG", nestedKey, `Value must contain no more than ${field.maxlength} characters.`));
+        }
+        if (field?.pattern) {
+          try {
+            if (!new RegExp(String(field.pattern)).test(childValue)) {
+              errors.push(createValidationIssue("FIELD_GROUP_PATTERN_MISMATCH", nestedKey, "Value does not match the required pattern."));
+            }
+          } catch (_) {
+            errors.push(createValidationIssue("FIELD_GROUP_PATTERN_INVALID", nestedKey, "Configured validation pattern is invalid."));
+          }
+        }
       }
 
       if (isNumberFieldType(field) && trimmed) {
         const numeric = Number(trimmed);
         if (!Number.isFinite(numeric)) {
-          errors.push({ field_key: nestedKey, error: "Value must be a valid number" });
+          errors.push(createValidationIssue("FIELD_GROUP_NUMBER_INVALID", nestedKey, "Value must be a valid number"));
         } else {
           if (field?.min !== null && field?.min !== undefined && field?.min !== "" && numeric < Number(field.min)) {
-            errors.push({ field_key: nestedKey, error: `Value must be >= ${field.min}` });
+            errors.push(createValidationIssue("FIELD_GROUP_NUMBER_BELOW_MIN", nestedKey, `Value must be >= ${field.min}`));
           }
           if (field?.max !== null && field?.max !== undefined && field?.max !== "" && numeric > Number(field.max)) {
-            errors.push({ field_key: nestedKey, error: `Value must be <= ${field.max}` });
+            errors.push(createValidationIssue("FIELD_GROUP_NUMBER_ABOVE_MAX", nestedKey, `Value must be <= ${field.max}`));
           }
         }
       }
@@ -776,9 +1049,13 @@ function validateGroup(options, rawValue) {
         return;
       }
       if (result.severity === "error") {
-        errors.push({ field_key: result.field_key, error: result.message, related_fields: result.related_fields });
+        errors.push(createValidationIssue(result.code || "FIELD_GROUP_RULE_FAILED", result.field_key, result.message, result.related_fields));
       } else {
-        warnings.push({ field_key: result.field_key, message: result.message, related_fields: result.related_fields });
+        warnings.push({
+          ...createValidationIssue(result.code || "FIELD_GROUP_RULE_WARNING", result.field_key, result.message, result.related_fields),
+          severity: "warning",
+          message: result.message,
+        });
       }
     });
   });
@@ -798,7 +1075,13 @@ function normalizeOptions(options = {}) {
   const rawFields = hasUsableFields(candidateFields) ? candidateFields : preset?.fields ?? candidateFields;
   const fieldRows = normalizeChildFieldRows({ fields: rawFields });
   const fields = flattenFieldRows(fieldRows);
-  return {
+  const strictSchema = parseBoolean(options?.strictSchema ?? options?.strict_schema ?? config?.strictSchema ?? config?.strict_schema ?? preset?.strictSchema ?? false);
+  const itemBoundsConfigured = Object.prototype.hasOwnProperty.call(options, "itemBoundsConfigured")
+    ? Boolean(options.itemBoundsConfigured)
+    : [options, config, preset].some((source) => source && ["minItems", "min_items"].some((key) => Object.prototype.hasOwnProperty.call(source, key)));
+  const minItems = normalizeItemBound(options?.minItems ?? options?.min_items ?? config?.minItems ?? config?.min_items ?? preset?.minItems ?? DEFAULT_OPTIONS.minItems, DEFAULT_OPTIONS.minItems);
+  const maxItems = normalizeItemBound(options?.maxItems ?? options?.max_items ?? config?.maxItems ?? config?.max_items ?? preset?.maxItems ?? DEFAULT_OPTIONS.maxItems, null);
+  const normalized = {
     ...DEFAULT_OPTIONS,
     ...(preset || {}),
     ...(options || {}),
@@ -808,11 +1091,37 @@ function normalizeOptions(options = {}) {
     required: isRequiredField(options),
     chrome: options?.chrome !== false,
     autoValidate: parseBoolean(options?.autoValidate ?? options?.validateOnChange ?? config?.autoValidate ?? config?.validateOnChange ?? preset?.autoValidate ?? true),
+    entryKey: String(options?.entryKey ?? options?.entry_key ?? config?.entryKey ?? config?.entry_key ?? preset?.entryKey ?? "").trim(),
+    preserveEntryKeys: parseBoolean(options?.preserveEntryKeys ?? options?.preserve_entry_keys ?? config?.preserveEntryKeys ?? config?.preserve_entry_keys ?? preset?.preserveEntryKeys ?? false),
+    createEntryKey: typeof options?.createEntryKey === "function" ? options.createEntryKey : typeof options?.entryKeyFactory === "function" ? options.entryKeyFactory : null,
+    minItems,
+    itemBoundsConfigured,
+    maxItems: maxItems == null ? null : Math.max(minItems, maxItems),
+    allowRemove: parseBoolean(options?.allowRemove ?? options?.allow_remove ?? config?.allowRemove ?? config?.allow_remove ?? preset?.allowRemove ?? true),
+    allowReorder: parseBoolean(options?.allowReorder ?? options?.allow_reorder ?? config?.allowReorder ?? config?.allow_reorder ?? preset?.allowReorder ?? false),
+    strictSchema,
     rawFields: cloneFieldDefinitions(rawFields),
     fieldRows,
     fields: flattenFieldDefinitions(fields),
     validations: cloneValidations(options?.validations ?? preset?.validations ?? config?.validations ?? []),
   };
+  if (strictSchema) {
+    const schemaValidation = validateFieldGroupSchema({
+      repeatable: normalized.repeatable,
+      ...(normalized.entryKey ? { entryKey: normalized.entryKey } : {}),
+      minItems: normalized.minItems,
+      maxItems: normalized.maxItems,
+      fields: normalized.rawFields,
+      validations: normalized.validations,
+    }, { allowPersistence: false });
+    if (!schemaValidation.status) {
+      throw new FieldGroupSchemaError(
+        `Invalid Field Group schema: ${schemaValidation.errors[0]?.message || "schema validation failed"}`,
+        schemaValidation.errors
+      );
+    }
+  }
+  return normalized;
 }
 
 function evaluateValidationRule(rule, item, options, index) {
@@ -841,6 +1150,7 @@ function evaluateValidationRule(rule, item, options, index) {
       message: rule.message || `${getHumanFieldLabel(options, field)} is required.`,
       related_fields: [...new Set([field, ...Object.keys(when || {}), ...relatedFields].filter(Boolean))],
       severity,
+      code: "FIELD_GROUP_REQUIRED_WHEN",
     };
   }
 
@@ -854,6 +1164,7 @@ function evaluateValidationRule(rule, item, options, index) {
       message: rule.message || `${getHumanFieldLabel(options, field)} should be empty.`,
       related_fields: [...new Set([field, ...Object.keys(when || {}), ...relatedFields].filter(Boolean))],
       severity,
+      code: "FIELD_GROUP_FORBIDDEN_WHEN",
     };
   }
 
@@ -868,6 +1179,7 @@ function evaluateValidationRule(rule, item, options, index) {
       message: rule.message || `${getHumanFieldLabel(options, field)} should not exceed ${getRuleMaxLabel(rule, options)}.`,
       related_fields: [...new Set([field, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
       severity,
+      code: "FIELD_GROUP_NUMBER_RELATION_INVALID",
     };
   }
 
@@ -882,6 +1194,7 @@ function evaluateValidationRule(rule, item, options, index) {
       message: rule.message || `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should not exceed ${getRuleMaxLabel(rule, options)}.`,
       related_fields: [...new Set([...fields, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
       severity,
+      code: "FIELD_GROUP_SUM_ABOVE_MAX",
     };
   }
 
@@ -896,6 +1209,24 @@ function evaluateValidationRule(rule, item, options, index) {
       message: rule.message || `${fields.map((key) => getHumanFieldLabel(options, key)).join(" + ")} should equal ${getRuleMaxLabel(rule, options)}.`,
       related_fields: [...new Set([...fields, String(rule.maxField || rule.max_field || "").trim(), ...relatedFields].filter(Boolean))],
       severity,
+      code: "FIELD_GROUP_SUM_NOT_EQUAL",
+    };
+  }
+
+  if (type === "min_lte_max") {
+    const minField = String(rule.minField ?? rule.min_field ?? fields[0] ?? "").trim();
+    const maxField = String(rule.maxField ?? rule.max_field ?? fields[1] ?? "").trim();
+    const minValue = getItemValue(item, minField);
+    const maxValue = getItemValue(item, maxField);
+    if (!minField || !maxField || isEmptyFieldValue(minValue) || isEmptyFieldValue(maxValue) || Number(minValue) <= Number(maxValue)) {
+      return null;
+    }
+    return {
+      field_key: buildNestedFieldKey(options, index, maxField),
+      message: rule.message || `${getHumanFieldLabel(options, maxField)} must be greater than or equal to ${getHumanFieldLabel(options, minField)}.`,
+      related_fields: [minField, maxField],
+      severity,
+      code: "FIELD_GROUP_MIN_MAX_RELATION_INVALID",
     };
   }
 
@@ -1102,6 +1433,9 @@ function resolvePresetOptions(options = {}, config = {}) {
   const presetName = String(options?.preset ?? options?.field_preset ?? config?.preset ?? "").trim();
   const presetFactory = presetName ? fieldGroupPresets[presetName] : null;
   if (typeof presetFactory !== "function") {
+    if (presetName && parseBoolean(options?.strictSchema ?? options?.strict_schema ?? config?.strictSchema ?? config?.strict_schema ?? false)) {
+      throw new Error(`Unknown Field Group preset "${presetName}".`);
+    }
     return null;
   }
 
@@ -1168,41 +1502,51 @@ function parseBoolean(value) {
   return Boolean(value);
 }
 
-function normalizeValue(rawValue, options) {
+function normalizeValue(rawValue, options, meta = {}) {
   if (options.repeatable) {
     if (Array.isArray(rawValue)) {
-      return rawValue.map((item) => normalizeItem(item, options));
+      return rawValue.map((item) => normalizeItem(item, options, meta));
     }
     if (rawValue && typeof rawValue === "object") {
-      return [normalizeItem(rawValue, options)];
+      return [normalizeItem(rawValue, options, meta)];
     }
     return [];
   }
-  return normalizeItem(rawValue, options);
+  return normalizeItem(rawValue, options, meta);
 }
 
-function normalizeItem(rawValue, options) {
+function normalizeItem(rawValue, options, meta = {}) {
   const source = rawValue && typeof rawValue === "object" && !Array.isArray(rawValue) ? rawValue : {};
   const item = options.fields.reduce((acc, field) => {
     const key = getFieldKey(field);
     if (key && !isComputedField(field)) {
-      acc[key] = normalizeFieldValue(field, source[key] ?? field?.default_value ?? "");
+      acc[key] = normalizeFieldValue(field, source[key] ?? field?.default_value ?? "", meta);
     }
     return acc;
   }, {});
+  if (options.entryKey && options.repeatable) {
+    const existingKey = source[options.entryKey];
+    item[options.entryKey] = existingKey != null && String(existingKey).trim()
+      ? existingKey
+      : createRepeatableEntryKey(options);
+  }
   applyComputedValues(item, options.fields, "", source);
   return item;
 }
 
-function normalizeFieldValue(field, value) {
+function normalizeFieldValue(field, value, meta = {}) {
   const type = getFieldType(field);
   if (type === "number-stepper" || type === "number_stepper") {
+    const allowEmpty = field?.allowEmpty ?? !isRequiredField(field);
     if (value == null || value === "") {
-      return field?.allowEmpty === false || isRequiredField(field) ? Number(field?.min ?? 0) : null;
+      return allowEmpty ? null : Number(field?.min ?? 0);
     }
     const number = Number(value);
     if (!Number.isFinite(number)) {
-      return field?.allowEmpty === false || isRequiredField(field) ? Number(field?.min ?? 0) : null;
+      return meta.clampNumbers === false ? value : allowEmpty ? null : Number(field?.min ?? 0);
+    }
+    if (meta.clampNumbers === false) {
+      return number;
     }
     let next = number;
     if (field?.min !== null && field?.min !== undefined && field?.min !== "") {
@@ -1260,6 +1604,18 @@ function matchesVisibleWhen(rule, item) {
   if (!rule || typeof rule !== "object" || Array.isArray(rule)) {
     return true;
   }
+  if (Object.prototype.hasOwnProperty.call(rule, "all")) {
+    return safeArray(rule.all).every((condition) => matchesVisibleWhen(condition, item));
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "any")) {
+    return safeArray(rule.any).some((condition) => matchesVisibleWhen(condition, item));
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "not") && Object.keys(rule).length === 1) {
+    return !matchesVisibleWhen(rule.not, item);
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "field")) {
+    return matchesFieldCondition(rule, item);
+  }
   return Object.keys(rule).every((key) => {
     const expected = rule[key];
     const actual = item && typeof item === "object" ? item[key] : undefined;
@@ -1276,6 +1632,41 @@ function matchesVisibleWhen(rule, item) {
       }
     }
     return String(actual ?? "") === String(expected);
+  });
+}
+
+function matchesFieldCondition(rule, item) {
+  const key = String(rule?.field || "");
+  const actual = item && typeof item === "object" ? item[key] : undefined;
+  if (Object.prototype.hasOwnProperty.call(rule, "eq")) {
+    return String(actual ?? "") === String(rule.eq ?? "");
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "in")) {
+    return safeArray(rule.in).map(String).includes(String(actual ?? ""));
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "notIn")) {
+    return !safeArray(rule.notIn).map(String).includes(String(actual ?? ""));
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "present")) {
+    return Boolean(rule.present) === Object.prototype.hasOwnProperty.call(item || {}, key);
+  }
+  if (Object.prototype.hasOwnProperty.call(rule, "notEmpty")) {
+    return Boolean(rule.notEmpty) === !isEmptyFieldValue(actual);
+  }
+  return false;
+}
+
+function applyHiddenValuePolicy(previousItem, nextItem, fields) {
+  safeArray(fields).forEach((field) => {
+    const key = getFieldKey(field);
+    if (!key || !parseBoolean(field?.clearWhenHidden ?? field?.clear_when_hidden ?? false)) {
+      return;
+    }
+    const wasVisible = isFieldVisibleForItem(field, previousItem);
+    const isVisible = isFieldVisibleForItem(field, nextItem);
+    if (wasVisible && !isVisible) {
+      nextItem[key] = normalizeFieldValue(field, field?.default_value ?? "");
+    }
   });
 }
 
@@ -1341,6 +1732,19 @@ function createEmptyItem(options) {
     return normalizeItem(options.emptyItem, options);
   }
   return normalizeItem({}, options);
+}
+
+function createRepeatableEntryKey(options) {
+  if (typeof options?.createEntryKey === "function") {
+    const generated = options.createEntryKey();
+    if (generated != null && String(generated).trim()) {
+      return generated;
+    }
+  }
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `entry-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function getFieldKey(field) {
@@ -1478,6 +1882,104 @@ function getControlValue(control, field) {
 function isNumberFieldType(field) {
   const type = getFieldType(field);
   return type === "number" || type === "number-stepper" || type === "number_stepper";
+}
+
+function isSupportedControlType(type) {
+  return [
+    "text",
+    "textarea",
+    "number",
+    "number-stepper",
+    "number_stepper",
+    "select",
+    "multiselect",
+    "checkbox",
+    "checkbox-group",
+    "combobox",
+    "suggest",
+    "local-history",
+    "notice",
+    "message",
+  ].includes(String(type || "").toLowerCase());
+}
+
+function requiresConfiguredOptions(field) {
+  return field?.requiresOptions === true || field?.requires_options === true;
+}
+
+function validateFieldValueType(field, value, path) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const type = getFieldType(field);
+  if (["checkbox-group", "multiselect"].includes(type) && !Array.isArray(value)) {
+    return createValidationIssue("FIELD_GROUP_ARRAY_REQUIRED", path, "Value must be an array.");
+  }
+  if (type === "checkbox" && typeof value !== "boolean" && !Object.prototype.hasOwnProperty.call(field, "checkedValue")) {
+    return createValidationIssue("FIELD_GROUP_BOOLEAN_REQUIRED", path, "Value must be a boolean.");
+  }
+  if (type === "number" && (typeof value === "object" || !Number.isFinite(Number(value)))) {
+    return createValidationIssue("FIELD_GROUP_NUMBER_INVALID", path, "Value must be a valid number.");
+  }
+  if (["text", "textarea", "select", "combobox", "suggest", "local-history"].includes(type) && typeof value === "object") {
+    return createValidationIssue("FIELD_GROUP_SCALAR_REQUIRED", path, "Value must be scalar.");
+  }
+  return null;
+}
+
+function validateFieldOptionMembership(field, value, path) {
+  const type = getFieldType(field);
+  if (!["select", "multiselect", "checkbox-group"].includes(type) || value == null || value === "") {
+    return null;
+  }
+  const allowed = new Set(normalizeOptionsList(field?.options).map((option) => String(option.value)));
+  if (!allowed.size) {
+    return requiresConfiguredOptions(field)
+      ? createValidationIssue("FIELD_GROUP_OPTIONS_REQUIRED", path, "Application-provided choices are required before this field can be used.")
+      : null;
+  }
+  const values = Array.isArray(value) ? value : [value];
+  if (values.some((item) => !allowed.has(String(item)))) {
+    return createValidationIssue("FIELD_GROUP_OPTION_NOT_ALLOWED", path, "Value must be one of the configured options.");
+  }
+  if (["multiselect", "checkbox-group"].includes(type)) {
+    if (field?.min != null && values.length < Number(field.min)) {
+      return createValidationIssue("FIELD_GROUP_SELECTION_BELOW_MIN", path, `Select at least ${field.min} options.`);
+    }
+    if (field?.max != null && values.length > Number(field.max)) {
+      return createValidationIssue("FIELD_GROUP_SELECTION_ABOVE_MAX", path, `Select no more than ${field.max} options.`);
+    }
+  }
+  return null;
+}
+
+function createValidationIssue(code, fieldKey, message, relatedFields = undefined) {
+  return {
+    code,
+    path: String(fieldKey || ""),
+    field_key: String(fieldKey || ""),
+    severity: "error",
+    message: String(message || ""),
+    error: String(message || ""),
+    ...(relatedFields ? { related_fields: relatedFields } : {}),
+  };
+}
+
+function toValidationIssue(issue, fallbackPath) {
+  const path = issue?.path && issue.path !== "$" ? issue.path : fallbackPath;
+  return createValidationIssue(
+    issue?.code || "FIELD_GROUP_SCHEMA_INVALID",
+    path,
+    issue?.message || issue?.error || "Field Group schema is invalid."
+  );
+}
+
+function normalizeItemBound(value, fallback) {
+  if (value == null || value === "") {
+    return fallback;
+  }
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : fallback;
 }
 
 function applyCommonAttrs(control, field) {
