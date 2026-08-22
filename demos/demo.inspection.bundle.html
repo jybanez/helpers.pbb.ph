@@ -3,64 +3,192 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inspection Bundle Demo</title>
+  <title>Inspection Components Demo</title>
   <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <style>
     body { margin: 0; padding: 24px; background: var(--ui-bg); color: var(--ui-text); font-family: system-ui, sans-serif; }
-    main { width: min(900px, 100%); margin: 0 auto; display: grid; gap: 16px; }
-    .demo-panel { border: 1px solid var(--ui-border); border-radius: 10px; padding: 16px; background: var(--ui-bg-soft); }
-    #snapshot { overflow-wrap: anywhere; color: var(--ui-muted); }
+    main { width: min(1080px, 100%); margin: 0 auto; display: grid; gap: 24px; }
+    h1, h2, p { margin-top: 0; }
+    .intro { color: var(--ui-muted); max-width: 72ch; }
+    .component-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    .component-nav a { border: 1px solid var(--ui-border); border-radius: 10px; padding: 14px; color: inherit; text-decoration: none; background: var(--ui-bg-soft); }
+    .component-nav strong, .component-nav small { display: block; }
+    .component-nav small { margin-top: 6px; color: var(--ui-muted); }
+    .demo-panel { scroll-margin-top: 16px; border: 1px solid var(--ui-border); border-radius: 12px; padding: 18px; background: var(--ui-bg-soft); }
+    .component-meta { margin-bottom: 16px; color: var(--ui-muted); }
+    .component-meta code { color: var(--ui-text); }
+    .snapshot { margin: 14px 0 0; overflow-wrap: anywhere; color: var(--ui-muted); font-size: 0.875rem; }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <h1>Optional Inspection Bundle</h1>
-      <p>Policy-neutral infrastructure inspection fields loaded through the dedicated inspection bundle route.</p>
+      <h1>Inspection Components</h1>
+      <p class="intro">Five policy-neutral Field Group presets loaded through the optional inspection bundle. Each component below has caller-configured choices, representative data, and its own schema snapshot.</p>
     </header>
-    <section class="demo-panel">
-      <div id="inspection"></div>
+
+    <nav class="component-nav" aria-label="Inspection components">
+      <a href="#inspection-observation"><strong>Inspection Observation</strong><small>General component findings and corrective actions</small></a>
+      <a href="#equipment-inspection"><strong>Equipment Inspection</strong><small>Operational, physical, and safety-device checks</small></a>
+      <a href="#infrastructure-inspection"><strong>Infrastructure Inspection</strong><small>Asset condition, defects, and serviceability</small></a>
+      <a href="#environment-inspection"><strong>Environment Inspection</strong><small>Area observations, readings, and mitigation</small></a>
+      <a href="#inspection-measurement"><strong>Inspection Measurement</strong><small>Measured values, expected ranges, and assessment</small></a>
+    </nav>
+
+    <section class="demo-panel" id="inspection-observation">
+      <h2>Inspection Observation</h2>
+      <p class="component-meta"><code>createInspectionObservationFieldGroupPreset()</code></p>
+      <div id="inspection-observation-host"></div>
+      <p class="snapshot" id="inspection-observation-snapshot" role="status">Resolving schema snapshot…</p>
     </section>
-    <p id="snapshot" role="status">Resolving schema snapshot…</p>
+
+    <section class="demo-panel" id="equipment-inspection">
+      <h2>Equipment Inspection</h2>
+      <p class="component-meta"><code>createEquipmentInspectionFieldGroupPreset()</code></p>
+      <div id="equipment-inspection-host"></div>
+      <p class="snapshot" id="equipment-inspection-snapshot" role="status">Resolving schema snapshot…</p>
+    </section>
+
+    <section class="demo-panel" id="infrastructure-inspection">
+      <h2>Infrastructure Inspection</h2>
+      <p class="component-meta"><code>createInfrastructureInspectionFieldGroupPreset()</code></p>
+      <div id="infrastructure-inspection-host"></div>
+      <p class="snapshot" id="infrastructure-inspection-snapshot" role="status">Resolving schema snapshot…</p>
+    </section>
+
+    <section class="demo-panel" id="environment-inspection">
+      <h2>Environment Inspection</h2>
+      <p class="component-meta"><code>createEnvironmentInspectionFieldGroupPreset()</code></p>
+      <div id="environment-inspection-host"></div>
+      <p class="snapshot" id="environment-inspection-snapshot" role="status">Resolving schema snapshot…</p>
+    </section>
+
+    <section class="demo-panel" id="inspection-measurement">
+      <h2>Inspection Measurement</h2>
+      <p class="component-meta"><code>createInspectionMeasurementFieldGroupPreset()</code></p>
+      <div id="inspection-measurement-host"></div>
+      <p class="snapshot" id="inspection-measurement-snapshot" role="status">Resolving schema snapshot…</p>
+    </section>
   </main>
 
+  <script>
+    window.addEventListener("error", (event) => {
+      document.body.dataset.demoStatus = "error";
+      document.body.dataset.demoError = event.message || "Unknown demo error";
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      document.body.dataset.demoStatus = "error";
+      document.body.dataset.demoError = event.reason?.message || String(event.reason || "Unknown demo rejection");
+    });
+  </script>
   <script type="module">
     import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
 
     const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
     const inspection = await loader.get("ui.inspection.core");
     const createFieldGroup = await loader.get("ui.field.group");
-    const preset = inspection.createInfrastructureInspectionFieldGroupPreset({
-      fields: {
-        defect_types: {
-          options: [
-            { value: "crack", label: "Crack" },
-            { value: "corrosion", label: "Corrosion" },
-            { value: "deformation", label: "Deformation" }
-          ]
-        }
+    const components = [
+      {
+        id: "inspection-observation",
+        presetId: "inspectionObservation",
+        factory: "createInspectionObservationFieldGroupPreset",
+        name: "inspection_observations",
+        overrides: { fields: { finding_category: { options: [
+          { value: "damage", label: "Damage" },
+          { value: "safety", label: "Safety" },
+          { value: "access", label: "Access" }
+        ] } } },
+        value: [{
+          component_code: "ENTRY-01", component_name: "Main entrance", inspection_result: "fail", condition: "poor",
+          severity: "high", finding_category: ["damage", "access"], observation: "Door frame cracking restricts safe access.",
+          corrective_action_required: "yes", corrective_action_note: "Restrict access and arrange structural review."
+        }]
+      },
+      {
+        id: "equipment-inspection",
+        presetId: "equipmentInspection",
+        factory: "createEquipmentInspectionFieldGroupPreset",
+        name: "equipment_inspections",
+        overrides: {},
+        value: [{
+          equipment_code: "GEN-02", equipment_name: "Standby generator", component_name: "Cooling system",
+          operational_status: "limited", physical_condition: "fair", safety_device_status: "pass", maintenance_required: "yes",
+          severity: "medium", finding: "Coolant level drops during extended operation.",
+          recommended_action: "Inspect hoses and pressure-test the cooling loop."
+        }]
+      },
+      {
+        id: "infrastructure-inspection",
+        presetId: "infrastructureInspection",
+        factory: "createInfrastructureInspectionFieldGroupPreset",
+        name: "infrastructure_inspections",
+        overrides: { fields: { defect_types: { options: [
+          { value: "crack", label: "Crack" },
+          { value: "corrosion", label: "Corrosion" },
+          { value: "deformation", label: "Deformation" }
+        ] } } },
+        value: [{
+          asset_code: "BLDG-01", asset_name: "Barangay hall", component_name: "Main entrance", condition: "poor",
+          serviceability: "restricted", defect_types: ["crack"], severity: "high", access_restriction: "partial",
+          finding: "Diagonal cracking beside the door frame.", recommended_action: "Install a temporary brace pending engineering review."
+        }]
+      },
+      {
+        id: "environment-inspection",
+        presetId: "environmentInspection",
+        factory: "createEnvironmentInspectionFieldGroupPreset",
+        name: "environment_inspections",
+        overrides: { fields: {
+          observation_type: { options: [
+            { value: "air_quality", label: "Air quality" },
+            { value: "water_quality", label: "Water quality" },
+            { value: "noise", label: "Noise" }
+          ] },
+          measurement_unit: { options: [
+            { value: "ppm", label: "ppm" },
+            { value: "celsius", label: "°C" },
+            { value: "decibel", label: "dB" }
+          ] }
+        } },
+        value: [{
+          area_code: "SHELTER-A", area_name: "Evacuation shelter kitchen", observation_type: "air_quality",
+          status: "attention_required", severity: "medium", measured_value: 12.4, measurement_unit: "ppm",
+          threshold_assessment: "outside_range", mitigation_required: "yes",
+          observation: "Ventilation is insufficient while cooking equipment is active.",
+          recommended_action: "Increase extraction and repeat the reading."
+        }]
+      },
+      {
+        id: "inspection-measurement",
+        presetId: "inspectionMeasurement",
+        factory: "createInspectionMeasurementFieldGroupPreset",
+        name: "inspection_measurements",
+        overrides: { fields: { unit: { options: [
+          { value: "celsius", label: "°C" },
+          { value: "ppm", label: "ppm" },
+          { value: "percent", label: "%" }
+        ] } } },
+        value: [{
+          measurement_code: "TEMP-01", measurement_name: "Cold-storage temperature", value: 7.2, unit: "celsius",
+          expected_min: 2, expected_max: 5, assessment: "above_range",
+          note: "Reading taken after the door remained closed for 20 minutes."
+        }]
       }
-    });
+    ];
 
-    createFieldGroup(document.getElementById("inspection"), {
-      name: "infrastructure_observations",
-      ...preset,
-      value: [{
-        asset_name: "Barangay hall",
-        component_name: "Main entrance",
-        condition: "poor",
-        serviceability: "restricted",
-        defect_types: ["crack"],
-        severity: "high",
-        finding: "Diagonal cracking beside the door frame."
-      }]
-    });
+    await Promise.all(components.map(async (component) => {
+      const preset = inspection[component.factory](component.overrides);
+      createFieldGroup(document.getElementById(`${component.id}-host`), {
+        name: component.name,
+        ...preset,
+        value: component.value
+      });
+      const snapshot = await inspection.resolveInspectionPresetSnapshot(component.presetId, component.overrides);
+      document.getElementById(`${component.id}-snapshot`).textContent = `Schema v${snapshot.schema_version} · ${snapshot.schema_digest}`;
+    }));
 
-    const snapshot = await inspection.resolveInspectionPresetSnapshot("infrastructureInspection", {
-      fields: { defect_types: { options: preset.fields.flat().find((field) => field?.key === "defect_types")?.options || [] } }
-    });
-    document.getElementById("snapshot").textContent = `Schema v${snapshot.schema_version} · ${snapshot.schema_digest}`;
+    document.body.dataset.demoStatus = "ready";
   </script>
 </body>
 </html>
