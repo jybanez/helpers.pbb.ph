@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inspection Bundle Demo</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--ui-bg); color: var(--ui-text); font-family: system-ui, sans-serif; }
+    main { width: min(900px, 100%); margin: 0 auto; display: grid; gap: 16px; }
+    .demo-panel { border: 1px solid var(--ui-border); border-radius: 10px; padding: 16px; background: var(--ui-bg-soft); }
+    #snapshot { overflow-wrap: anywhere; color: var(--ui-muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Optional Inspection Bundle</h1>
+      <p>Policy-neutral infrastructure inspection fields loaded through the dedicated inspection bundle route.</p>
+    </header>
+    <section class="demo-panel">
+      <div id="inspection"></div>
+    </section>
+    <p id="snapshot" role="status">Resolving schema snapshot…</p>
+  </main>
+
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    const inspection = await loader.get("ui.inspection.core");
+    const createFieldGroup = await loader.get("ui.field.group");
+    const preset = inspection.createInfrastructureInspectionFieldGroupPreset({
+      fields: {
+        defect_types: {
+          options: [
+            { value: "crack", label: "Crack" },
+            { value: "corrosion", label: "Corrosion" },
+            { value: "deformation", label: "Deformation" }
+          ]
+        }
+      }
+    });
+
+    createFieldGroup(document.getElementById("inspection"), {
+      name: "infrastructure_observations",
+      ...preset,
+      value: [{
+        asset_name: "Barangay hall",
+        component_name: "Main entrance",
+        condition: "poor",
+        serviceability: "restricted",
+        defect_types: ["crack"],
+        severity: "high",
+        finding: "Diagonal cracking beside the door frame."
+      }]
+    });
+
+    const snapshot = await inspection.resolveInspectionPresetSnapshot("infrastructureInspection", {
+      fields: { defect_types: { options: preset.fields.flat().find((field) => field?.key === "defect_types")?.options || [] } }
+    });
+    document.getElementById("snapshot").textContent = `Schema v${snapshot.schema_version} · ${snapshot.schema_digest}`;
+  </script>
+</body>
+</html>

@@ -513,13 +513,14 @@ Application integrations should use the registry loader.
 - Direct path imports are for internal library work only and should be avoided in consuming apps.
 - `uiLoader.loadManyGroup(...)` group names such as `core-shell`, `forms`, `communication`, `data`, `media`, `workflow`, and `incident` are retained as backward-compatible preload bundles.
 - Treat loader groups as runtime loading bundles, not as the public documentation taxonomy.
-- The source tree stays modular, but the repo now also supports generated distribution bundles: `dist/helpers.ui.bundle.min.js/css` for non-game UI and incident helpers, plus `dist/helpers.game.bundle.min.js/css` for `ui.game.*`.
+- The source tree stays modular, but the repo now also supports generated distribution bundles: `dist/helpers.ui.bundle.min.js/css` for general UI and incident helpers, `dist/helpers.game.bundle.min.js/css` for `ui.game.*`, and `dist/helpers.inspection.bundle.min.js` for `ui.inspection.*`.
 - Teams that want fewer helper requests can generate the bundle with `npm run build:ui-bundle` and then opt in at runtime with `uiLoader.setPreferBundles(true)` or `createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true })`.
-- The main UI bundle covers non-game `ui.*` and `incident.*` registry entries. The game bundle covers `ui.game.*` entries so non-game pages do not carry growing game helper code.
+- The main UI bundle covers general `ui.*` and `incident.*` registry entries. Optional game and inspection bundles cover `ui.game.*` and `ui.inspection.*` so unrelated pages do not carry those component families.
 - Production PBB apps should ship `ui.loader.js` plus the generated `dist/helpers.ui.bundle.min.js` and `dist/helpers.ui.bundle.min.css` when they enable `preferBundles: true`; individual `js/**` and `css/**` component files are dev-source and are not part of the bundle-preferring production contract.
-- In `preferBundles: true` mode, matching `ui.*`, `incident.*`, and `ui.game.*` entries are strict bundle loads. Missing bundle JavaScript exports or missing bundle CSS URLs fail loudly instead of falling back to per-component source files.
-- Default shared and game bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when new registry exports are added.
+- In `preferBundles: true` mode, matching `ui.*`, `incident.*`, `ui.game.*`, and `ui.inspection.*` entries are strict bundle loads. Missing bundle JavaScript exports or required bundle CSS URLs fail loudly instead of falling back to per-component source files.
+- Default shared, game, and inspection bundle URLs are version-tagged by `ui.loader.js`, so downstream vendor refreshes pull the matching bundle export table when registry exports change.
 - Game pages may optionally preload the game bundle with `<script type="module" src="/assets/helper/helpers.game.bundle.min.js"></script>`; `uiLoader` can reuse the preloaded `window.__PBB_HELPER_GAME_BUNDLE__` map when bundle preference is enabled.
+- Inspection pages may optionally preload `helpers.inspection.bundle.min.js`; `uiLoader` reuses `window.__PBB_HELPER_INSPECTION_BUNDLE__` when bundle preference is enabled. See `docs/ui-inspection-bundle-v1-spec.md`.
 - Current optional game modules include `ui.game.core`, `ui.game.objects`, `ui.game.grid`, `ui.game.audio`, `ui.game.effects`, and `ui.game.state.chrome`.
 - The README and demo catalog use stable component families for discovery so public categorization can improve without changing runtime group keys.
 - `chrome: false` is only exposed by components that own a real library-managed outer shell.

@@ -11,6 +11,7 @@ The source tree remains the source of truth. The files in `dist/` are generated 
 
 - `dist/helpers.ui.bundle.min.js`
 - `dist/helpers.ui.bundle.min.css`
+- `dist/helpers.inspection.bundle.min.js`
 
 Do not edit those files by hand. Regenerate them from source.
 
@@ -38,13 +39,15 @@ The current bundle behavior in `C:\wamp64\www\hotline-helpers` is:
 - build command: `npm run build:ui-bundle`
 - builder: `scripts/build.ui.bundle.mjs`
 - registry source: `js/ui/ui.loader.js`
-- main UI bundle scope: non-game `DEFAULT_COMPONENT_REGISTRY` entries whose names start with `ui.` or `incident.`
+- main UI bundle scope: non-game, non-inspection `DEFAULT_COMPONENT_REGISTRY` entries whose names start with `ui.` or `incident.`
 - game bundle scope: `DEFAULT_COMPONENT_REGISTRY` entries whose names start with `ui.game.`
+- inspection bundle scope: `DEFAULT_COMPONENT_REGISTRY` entries whose names start with `ui.inspection.`
 - outputs:
   - `dist/helpers.ui.bundle.min.js`
   - `dist/helpers.ui.bundle.min.css`
   - `dist/helpers.game.bundle.min.js`
   - `dist/helpers.game.bundle.min.css`
+  - `dist/helpers.inspection.bundle.min.js`
 
 The bundle is additive. Modular source loading remains the default path.
 
@@ -53,7 +56,7 @@ Apps opt in through either:
 - `createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true })`
 - `uiLoader.setPreferBundles(true)`
 
-With bundle preference enabled, `ui.game.*` resolves through the optional game bundle before the broader `ui` bundle. Keep game helpers out of the main UI bundle so non-game pages do not carry growing game code.
+With bundle preference enabled, `ui.game.*` and `ui.inspection.*` resolve through their optional bundles before the broader `ui` bundle. Keep both component families out of the main UI bundle so unrelated pages do not carry their code.
 
 ## Rebuild Rules
 
@@ -80,7 +83,7 @@ When the change falls inside bundle scope:
 
 1. Make the source change in modular files first.
 2. Rebuild with `npm run build:ui-bundle`.
-3. Commit regenerated `dist/helpers.ui.bundle.min.js`, `dist/helpers.ui.bundle.min.css`, `dist/helpers.game.bundle.min.js`, and `dist/helpers.game.bundle.min.css` when the build changes them.
+3. Commit regenerated main, game, and inspection artifacts when the build changes them. Restore unrelated game/inspection artifacts if they changed only through line-ending churn.
 4. Run the bundle contract test and the targeted regression tests for the changed helper.
 5. If the change affects how teams consume the loader or bundle, update docs and demo coverage.
 

@@ -8,6 +8,7 @@ const bundleJsPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.js");
 const bundleCssPath = path.join(repoRoot, "dist", "helpers.ui.bundle.min.css");
 const gameBundleJsPath = path.join(repoRoot, "dist", "helpers.game.bundle.min.js");
 const gameBundleCssPath = path.join(repoRoot, "dist", "helpers.game.bundle.min.css");
+const inspectionBundleJsPath = path.join(repoRoot, "dist", "helpers.inspection.bundle.min.js");
 const loaderSourcePath = path.join(repoRoot, "js", "ui", "ui.loader.js");
 
 if (!fs.existsSync(bundleJsPath)) {
@@ -26,14 +27,19 @@ if (!fs.existsSync(gameBundleCssPath)) {
   throw new Error("Missing dist/helpers.game.bundle.min.css");
 }
 
+if (!fs.existsSync(inspectionBundleJsPath)) {
+  throw new Error("Missing dist/helpers.inspection.bundle.min.js");
+}
+
 const loaderSource = fs.readFileSync(loaderSourcePath, "utf8");
 if (
   !loaderSource.includes("helpers.ui.bundle.min.js?v=") ||
   !loaderSource.includes("helpers.ui.bundle.min.css?v=") ||
   !loaderSource.includes("helpers.game.bundle.min.js?v=") ||
-  !loaderSource.includes("helpers.game.bundle.min.css?v=")
+  !loaderSource.includes("helpers.game.bundle.min.css?v=") ||
+  !loaderSource.includes("helpers.inspection.bundle.min.js?v=")
 ) {
-  throw new Error("ui.loader.js must version-tag shared and game bundle JS/CSS URLs.");
+  throw new Error("ui.loader.js must version-tag shared, game, and inspection bundle URLs.");
 }
 
 const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
@@ -58,6 +64,9 @@ const gameGrid = await loader.get("ui.game.grid", { css: false });
 const gameAudio = await loader.get("ui.game.audio", { css: false });
 const gameEffects = await loader.get("ui.game.effects", { css: false });
 const gameStateChrome = await loader.get("ui.game.state.chrome", { css: false });
+const inspectionCore = await loader.get("ui.inspection.core", { css: false });
+const inspectionPresets = await loader.get("ui.inspection.presets", { css: false });
+const resolveInspectionSnapshot = await loader.get("ui.inspection.snapshot", { css: false });
 const charts = await loader.get("ui.charts", { css: false });
 const createXyChart = await loader.get("ui.chart.xy", { css: false });
 const incidentTypes = await loader.get("incident.types", { css: false });
@@ -238,6 +247,23 @@ if (!Array.isArray(gameStateChrome?.GAME_SESSION_STATES) || !gameStateChrome.GAM
   throw new Error("Bundle-backed ui.game.state.chrome did not expose GAME_SESSION_STATES.");
 }
 
+if (typeof inspectionCore?.createInspectionObservationFieldGroupPreset !== "function") {
+  throw new Error("Bundle-backed ui.inspection.core did not expose inspection preset factories.");
+}
+
+if (typeof inspectionPresets?.environmentInspection !== "function") {
+  throw new Error("Bundle-backed ui.inspection.presets did not expose the inspection preset registry.");
+}
+
+if (typeof resolveInspectionSnapshot !== "function") {
+  throw new Error("Bundle-backed ui.inspection.snapshot did not resolve the snapshot factory.");
+}
+
+const inspectionSnapshot = await resolveInspectionSnapshot("inspectionObservation");
+if (!String(inspectionSnapshot?.schema_digest || "").startsWith("sha256:")) {
+  throw new Error("Bundle-backed inspection snapshot did not include a SHA-256 digest.");
+}
+
 if (typeof charts?.createChart !== "function") {
   throw new Error("Bundle-backed ui.charts did not expose createChart().");
 }
@@ -266,6 +292,10 @@ if (!diagnostics.loadedBundles.includes("game")) {
   throw new Error("Loader did not record the optional game bundle as loaded.");
 }
 
+if (!diagnostics.loadedBundles.includes("inspection")) {
+  throw new Error("Loader did not record the optional inspection bundle as loaded.");
+}
+
 if (
   !diagnostics.loadedModules.includes("ui.icons") ||
   !diagnostics.loadedModules.includes("ui.drawer") ||
@@ -287,6 +317,9 @@ if (
   !diagnostics.loadedModules.includes("ui.game.audio") ||
   !diagnostics.loadedModules.includes("ui.game.effects") ||
   !diagnostics.loadedModules.includes("ui.game.state.chrome") ||
+  !diagnostics.loadedModules.includes("ui.inspection.core") ||
+  !diagnostics.loadedModules.includes("ui.inspection.presets") ||
+  !diagnostics.loadedModules.includes("ui.inspection.snapshot") ||
   !diagnostics.loadedModules.includes("ui.charts") ||
   !diagnostics.loadedModules.includes("ui.chart.xy") ||
   !diagnostics.loadedModules.includes("incident.types")

@@ -48,6 +48,7 @@
     assertRepeatableHeader("initial");
     assert(group.getValue()[0]?.gender === "Female", "nested row field values should normalize into the same object");
     assert(Boolean(host.querySelector('[data-field-key="age"] .ui-number-stepper')), "number-stepper child fields should render the shared number stepper");
+    assert(host.querySelector('[data-field-key="age"] .ui-label')?.htmlFor === host.querySelector('[data-field-key="age"] .ui-number-stepper-input')?.id, "field labels should be associated with their rendered controls");
     host.querySelector('[data-field-key="age"] .ui-number-stepper-button-increment')?.click();
     assert(group.getValue()[0]?.age === 35, "number-stepper child fields should update group values");
 
@@ -133,6 +134,8 @@
     assert(requiredErrorsHost.querySelector(".ui-field-group-item-warning.is-error")?.textContent === "2 errors", "repeatable items should show blocking error counts");
     assert(Boolean(requiredErrorsHost.querySelector('[data-field-key="last_name"].has-error .ui-field-group-warning-badge.is-error')), "required child errors should show a field error badge");
     assert(Boolean(requiredErrorsHost.querySelector('[data-field-key="first_name"].has-error .ui-field-group-warning-badge.is-error')), "second required child errors should show a field error badge");
+    assert(requiredErrorsHost.querySelector('[data-field-key="last_name"] .ui-input')?.getAttribute("aria-invalid") === "true", "required child errors should set aria-invalid on the control");
+    assert(Boolean(requiredErrorsHost.querySelector('[data-field-key="last_name"] .ui-input')?.getAttribute("aria-describedby")), "required child errors should describe the control with accessible issue text");
 
     const conditionalHost = document.createElement("div");
     document.body.appendChild(conditionalHost);
@@ -291,6 +294,51 @@
       "closed road access warning should explain that the route is not passable"
     );
 
+    const platformHost = document.createElement("div");
+    document.body.appendChild(platformHost);
+    let generatedKey = 0;
+    const platformGroup = createFieldGroup(platformHost, {
+      name: "inspection_rows",
+      label: "Inspection rows",
+      repeatable: true,
+      entryKey: "_entry_key",
+      preserveEntryKeys: true,
+      createEntryKey: () => `generated-${++generatedKey}`,
+      minItems: 0,
+      maxItems: 2,
+      allowReorder: true,
+      value: [
+        { _entry_key: "row-a", status: "bad", detail: "Cracked" },
+        { _entry_key: "row-b", status: "ok", detail: "" }
+      ],
+      fields: [
+        { key: "status", label: "Status", type: "select", options: [{ value: "ok", label: "OK" }, { value: "bad", label: "Bad" }] },
+        { key: "detail", label: "Detail", type: "textarea", visibleWhen: { any: [{ field: "status", eq: "bad" }] }, clearWhenHidden: true }
+      ]
+    });
+    assert(platformGroup.getValue().map((item) => item._entry_key).join(",") === "row-a,row-b", "repeatable identity should preserve caller-supplied keys");
+    assert(platformHost.querySelectorAll(".ui-field-group-move").length === 4, "reorder-enabled rows should render keyboard-operable move controls");
+    assert(platformGroup.moveItem(0, 1, { emit: false }) === true, "moveItem should reorder repeatable entries");
+    assert(platformGroup.getValue().map((item) => item._entry_key).join(",") === "row-b,row-a", "moveItem should preserve stable entry keys");
+    assert(platformGroup.removeItem(0, { emit: false }) === true, "minItems zero should allow removing the first stored entry");
+    assert(platformGroup.getValue()[0]?._entry_key === "row-a", "removeItem should remove only the selected stable entry");
+    assert(platformGroup.addItem({ status: "ok" }, { emit: false }) === true, "addItem should create a bounded repeatable entry");
+    assert(platformGroup.getValue()[1]?._entry_key === "generated-1", "new entries should receive a stable key from the runtime factory");
+    assert(platformHost.querySelector(".ui-field-group-add")?.disabled === true, "Add should disable at maxItems");
+    platformGroup.setValue([{ _entry_key: "row-c", status: "bad", detail: "Remove me" }], { emit: false });
+    const platformStatus = platformHost.querySelector('[data-field-key="status"] .ui-input');
+    platformStatus.value = "ok";
+    platformStatus.dispatchEvent(new Event("change", { bubbles: true }));
+    assert(platformGroup.getValue()[0]?.detail === "", "clearWhenHidden should clear a value on a visible-to-hidden transition");
+
+    const unsupportedHost = document.createElement("div");
+    document.body.appendChild(unsupportedHost);
+    const unsupportedGroup = createFieldGroup(unsupportedHost, {
+      name: "unsupported",
+      fields: [{ key: "custom", label: "Custom", type: "unknown-control" }]
+    });
+    assert(Boolean(unsupportedHost.querySelector('.ui-field-group-unsupported[role="alert"]')), "unknown controls should render an explicit unsupported state instead of a text input");
+
     chromeLess.destroy();
     presetGroup.destroy();
     presetHost.remove();
@@ -304,6 +352,10 @@
     narrowStepperHost.remove();
     roadAccessGroup.destroy();
     roadAccessHost.remove();
+    platformGroup.destroy();
+    platformHost.remove();
+    unsupportedGroup.destroy();
+    unsupportedHost.remove();
     group.destroy();
     assert(host.innerHTML.trim() === "", "destroy should remove field group markup");
     assert(chromeLessHost.innerHTML.trim() === "", "destroy should remove chrome-less field group markup");
