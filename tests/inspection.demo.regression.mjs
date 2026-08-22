@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const index = fs.readFileSync(path.join(root, "demos", "index.html"), "utf8");
 const shell = fs.readFileSync(path.join(root, "js", "demo", "demo.shell.js"), "utf8");
-const overview = fs.readFileSync(path.join(root, "demos", "demo.inspection.bundle.html"), "utf8");
+const removedOverview = path.join(root, "demos", "demo.inspection.bundle.html");
 const components = [
   { file: "demo.inspection.observation.html", label: "Inspection Observation", factory: "createInspectionObservationFieldGroupPreset" },
   { file: "demo.inspection.equipment.html", label: "Equipment Inspection", factory: "createEquipmentInspectionFieldGroupPreset" },
@@ -17,8 +17,14 @@ const components = [
   { file: "demo.inspection.measurement.html", label: "Inspection Measurement", factory: "createInspectionMeasurementFieldGroupPreset" },
 ];
 
-if (!overview.includes('class="demo-shell-sidebar"') || !overview.includes("window.demoMeta")) {
-  throw new Error("Inspection bundle overview is missing the standard demo shell and reference metadata.");
+if (fs.existsSync(removedOverview)) throw new Error("Inspection components must not have a separate bundle overview demo.");
+if (index.includes("demo.inspection.bundle.html") || shell.includes("demo.inspection.bundle.html")) {
+  throw new Error("Inspection navigation must point directly to individual component demos.");
+}
+const inspectionGroup = shell.match(/label: "Inspection",\s*items: \[([\s\S]*?)\]\s*,\s*},/)?.[1] || "";
+const inspectionGroupLinks = inspectionGroup.match(/href:/g) || [];
+if (inspectionGroupLinks.length !== components.length) {
+  throw new Error(`Shared Inspection navigation must contain exactly ${components.length} component links.`);
 }
 
 for (const component of components) {
@@ -30,7 +36,6 @@ for (const component of components) {
   if (!source.includes(component.factory)) throw new Error(`${component.label} is missing its preset factory.`);
   if (!index.includes(`href="./${component.file}"`)) throw new Error(`Demo index is missing ${component.label}.`);
   if (!shell.includes(`href: "./${component.file}"`)) throw new Error(`Shared demo navigation is missing ${component.label}.`);
-  if (!overview.includes(`href="./${component.file}"`)) throw new Error(`Inspection overview is missing ${component.label}.`);
 }
 
 const browserCandidates = [

@@ -97,7 +97,6 @@ const DEMO_GROUPS = [
   {
     label: "Inspection",
     items: [
-      { href: "./demo.inspection.bundle.html", label: "Overview" },
       { href: "./demo.inspection.observation.html", label: "Inspection Observation" },
       { href: "./demo.inspection.equipment.html", label: "Equipment Inspection" },
       { href: "./demo.inspection.infrastructure.html", label: "Infrastructure Inspection" },
