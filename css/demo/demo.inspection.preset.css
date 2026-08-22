@@ -1,0 +1,9 @@
+body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+.page { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+.panel { border: 1px solid #263146; border-radius: 8px; background: #111826; padding: 14px; display: grid; gap: 12px; }
+.row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.back { color: #b2c2e5; text-decoration: none; font-size: 13px; }
+.muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
+.demo-output { display: grid; gap: 12px; }
+.snapshot { margin: 0; overflow-wrap: anywhere; color: #9fb2d8; font-size: 12px; line-height: 1.45; }
+.log { margin: 0; min-height: 180px; white-space: pre-wrap; font: 12px/1.45 Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; color: #b2c2e5; }

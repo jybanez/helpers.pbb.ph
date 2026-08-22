@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspection Observation Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <link rel="stylesheet" href="../css/demo/demo.inspection.preset.css">
+  <script type="module">
+    import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from "../js/ui/ui.loader.js";
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true });
+    window.__inspectionDemoLoader = loader;
+    window.__demoLoaderReady = loader.loadMany(["ui.inspection.core", "ui.field.group"]);
+  </script>
+  <script src="../js/demo/demo.inspection.meta.js"></script>
+  <script>
+    window.inspectionPresetDemo = {
+      title: "Inspection Observation",
+      presetId: "inspectionObservation",
+      factory: "createInspectionObservationFieldGroupPreset",
+      name: "inspection_observations",
+      overview: "General-purpose repeatable inspection findings with conditional severity and corrective-action details.",
+      useWhen: ["Use this preset for a result and observation tied to a named component.", "Configure <code>finding_category</code> choices for the application domain."],
+      avoidWhen: ["Use the equipment, infrastructure, environment, or measurement preset when its specialized fields match the inspection."],
+      description: "Captures the inspected component, result, condition, severity, application-owned finding categories, observations, and corrective action.",
+      fieldsDescription: "Component identity, result, condition, severity, finding category, observation, and corrective-action fields.",
+      validationsDescription: "Requires severity for failures, observations for failed or uninspected results, and notes when corrective action is required.",
+      valueLabel: "inspection observation",
+      overrides: { fields: { finding_category: { options: [
+        { value: "damage", label: "Damage" }, { value: "safety", label: "Safety" }, { value: "access", label: "Access" }
+      ] } } },
+      initialValue: [{ component_code: "ENTRY-01", component_name: "Main entrance", inspection_result: "fail", condition: "poor", severity: "high", finding_category: ["damage", "access"], observation: "Door frame cracking restricts safe access.", corrective_action_required: "yes", corrective_action_note: "Restrict access and arrange structural review." }],
+      sampleValue: [{ component_code: "ROOF-03", component_name: "Roof drainage", inspection_result: "pass", condition: "good", corrective_action_required: "no" }],
+      sampleCode: `const overrides = {
+  fields: {
+    finding_category: {
+      options: [
+        { value: "damage", label: "Damage" },
+        { value: "safety", label: "Safety" },
+        { value: "access", label: "Access" }
+      ]
+    }
+  }
+};
+
+const group = createFieldGroup(host, {
+  name: "inspection_observations",
+  ...createInspectionObservationFieldGroupPreset(overrides),
+  value: [{
+    component_name: "Main entrance",
+    inspection_result: "fail",
+    severity: "high",
+    observation: "Door frame cracking restricts safe access."
+  }]
+});`
+    };
+    window.demoMeta = window.createInspectionDemoMeta(window.inspectionPresetDemo);
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row"><a class="back" href="./index.html">Back to Home</a></div>
+      <h1 class="ui-title">Inspection Observation Demo</h1>
+      <p class="muted">General component findings loaded through the optional inspection bundle.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Demo Output</h2>
+      <div class="demo-output">
+        <div id="presetHost"></div>
+        <div class="row">
+          <button id="sampleBtn" class="ui-button" type="button">Set Sample</button>
+          <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear</button>
+          <button id="validateBtn" class="ui-button ui-button-ghost" type="button">Validate</button>
+          <button id="snapshotBtn" class="ui-button ui-button-ghost" type="button">Snapshot</button>
+        </div>
+        <p class="snapshot" id="presetSnapshot" role="status">Resolving schema snapshot…</p>
+      </div>
+      <pre id="presetLog" class="log">No events yet.</pre>
+    </section>
+  </main>
+  <script type="module" src="../js/demo/demo.inspection.preset.js"></script>
+</body>
+</html>
