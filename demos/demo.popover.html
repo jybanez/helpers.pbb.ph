@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Popover Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin: 0; padding: 24px; background: var(--demo-bg, var(--ui-bg, #0c1017)); color: var(--demo-text, var(--ui-text, #d7e0f4)); font-family: var(--ui-font, "Segoe UI", sans-serif); }
+    .page { max-width: 980px; margin: 0 auto; display: grid; gap: 14px; }
+    .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .back { color: var(--demo-muted, var(--ui-muted, #b2c2e5)); text-decoration: none; font-size: 13px; }
+    .muted { margin: 0; color: var(--demo-muted, var(--ui-muted, #9fb2d8)); font-size: 13px; line-height: 1.45; }
+    .preview { min-height: 300px; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 10px; padding: 18px; background: var(--demo-surface-bg, var(--ui-bg, #0b1220)); display: flex; justify-content: flex-end; align-items: flex-start; }
+    .popover-filter-form { width: 340px; max-width: 100%; display: grid; gap: 14px; }
+    .popover-filter-field { display: grid; gap: 6px; }
+    .popover-filter-field > span { color: var(--ui-muted, #9fb2d8); font-size: 12px; font-weight: 700; }
+    .popover-filter-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; border-top: 1px solid var(--ui-border, #2b3750); }
+    .log { margin: 0; min-height: 180px; white-space: pre-wrap; font: 12px/1.45 Consolas, monospace; border: 1px solid var(--demo-border, var(--ui-border, #2b3750)); border-radius: 8px; background: var(--demo-code-bg, var(--ui-bg, #0b1220)); color: var(--demo-code-text, var(--ui-text, #b2c2e5)); padding: 10px; overflow: auto; }
+  </style>
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.popover", "ui.toggle.group", "ui.select", "ui.datepicker"]);
+  </script>
+  <script>
+    window.demoMeta = {
+      title: "Popover",
+      overview: "Accessible anchored panel for composing arbitrary interactive controls without menu semantics.",
+      useWhen: [
+        "Use <code>createPopover(...)</code> for compact filters, settings, or inspectors anchored to a trigger.",
+        "Use it when the panel contains form controls or nested Helpers that do not belong in a menu."
+      ],
+      avoidWhen: [
+        "Use <code>ui.menu</code>, Dropdown, or Dropup for lists of selectable commands.",
+        "Use Modal or Drawer when the interaction needs blocking behavior or a responsive full-panel layout."
+      ],
+      description: "Popover owns trigger ARIA state, viewport-aware placement, dismissal, focus restoration, and content lifecycle. Content may be an existing HTMLElement or a mount callback. Nested portaled Select and Datepicker panels remain part of the parent interaction.",
+      defaultSampleCode: `const popover = createPopover(trigger, {
+  placement: "bottom-end",
+  ariaLabel: "Timeline filters",
+  content(host, context) {
+    const controls = mountTimelineFilters(host);
+    return {
+      update(options) { controls.update(options); },
+      destroy() { controls.destroy(); },
+    };
+  },
+  onOpenChange(open, meta) {
+    console.log(open, meta.reason);
+  },
+});`,
+      sectionSamples: {
+        "interactive filters": `const popover = createPopover(trigger, {
+  placement: "bottom-end",
+  ariaLabel: "Timeline filters",
+  content(host, context) {
+    const controls = mountTimelineFilters(host);
+    return {
+      update(options) { controls.update(options); },
+      destroy() { controls.destroy(); },
+    };
+  },
+  onOpenChange(open, meta) {
+    console.log(open, meta.reason);
+  },
+});`
+      },
+      constructor: [
+        { factory: "<code>createPopover(triggerEl, options)</code>", arguments: "trigger element and popover options", returns: "Popover instance" }
+      ],
+      options: [
+        { option: "<code>content</code>", default: "<code>null</code>", description: "Existing HTMLElement or <code>(host, context) =&gt; HTMLElement | lifecycle</code> mount callback." },
+        { option: "<code>placement</code>", default: "<code>\"bottom-start\"</code>", description: "Preferred placement; vertical placement flips when space is insufficient.", values: ["bottom-start", "bottom-end", "top-start", "top-end"] },
+        { option: "<code>offset</code>", default: "<code>8</code>", description: "Pixel gap between trigger and panel." },
+        { option: "<code>matchTriggerWidth</code>", default: "<code>false</code>", description: "Makes the panel exactly as wide as its trigger." },
+        { option: "<code>panelParent</code>", default: "<code>\"body\"</code>", description: "Panel mount target: body, trigger-parent, selector, or HTMLElement." },
+        { option: "<code>panelRole</code>", default: "<code>\"dialog\"</code>", description: "ARIA role applied to the interactive panel." },
+        { option: "<code>ariaLabel</code>", default: "<code>\"Popover\"</code>", description: "Accessible panel label." },
+        { option: "<code>initialFocus</code>", default: "<code>\"first\"</code>", description: "Initial focus target: first, panel, false, selector, element, or resolver function." },
+        { option: "<code>closeOnOutsideClick</code>", default: "<code>true</code>", description: "Closes on interaction outside the trigger, panel, and owned child portals." },
+        { option: "<code>closeOnEscape</code>", default: "<code>true</code>", description: "Closes on unhandled Escape." },
+        { option: "<code>restoreFocus</code>", default: "<code>true</code>", description: "Returns focus to the trigger when closed." },
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Additional class applied to the panel." },
+        { option: "<code>onOpenChange</code>", default: "<code>null</code>", description: "Receives open state and metadata including reason, placement, and refs." }
+      ],
+      properties: [
+        { property: "<code>context.close(meta?)</code>", type: "function", description: "Lets mounted controls close their containing popover." },
+        { property: "<code>context.panel</code>", type: "HTMLElement", description: "Current panel element supplied to content callbacks." },
+        { property: "<code>state.refs</code>", type: "object", description: "Trigger, panel, and content-host references." },
+        { property: "<code>state.placement</code>", type: "string", description: "Resolved placement after collision handling." }
+      ],
+      events: [
+        { event: "<code>onOpenChange</code>", arguments: "<code>(open, { reason, placement, refs })</code>", returns: "<code>void</code>" },
+        { event: "<code>content lifecycle update</code>", arguments: "<code>(options, context)</code>", returns: "Refreshes mounted content after <code>update()</code>." },
+        { event: "<code>content lifecycle destroy</code>", arguments: "none", returns: "Cleans up nested components when the popover is destroyed or content is replaced." }
+      ],
+      methods: [
+        { method: "<code>open(meta?)</code>", arguments: "optional reason metadata", returns: "boolean indicating a state change" },
+        { method: "<code>close(meta?)</code>", arguments: "optional reason and focus metadata", returns: "boolean indicating a state change" },
+        { method: "<code>toggle(meta?)</code>", arguments: "optional reason metadata", returns: "boolean indicating a state change" },
+        { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
+        { method: "<code>position()</code>", arguments: "none", returns: "Repositions an open panel." },
+        { method: "<code>getState()</code>", arguments: "none", returns: "open state, preferred/resolved placement, options, and refs" },
+        { method: "<code>getRefs()</code>", arguments: "none", returns: "trigger, panel, and content-host references" },
+        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page">
+    <section class="panel">
+      <div class="row">
+        <a class="back" href="./index.html">Back to Home</a>
+        <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
+      </div>
+      <h1 class="ui-title">Popover Demo</h1>
+      <p class="muted">An interactive anchored panel composed from existing Helper controls.</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="ui-title">Interactive Filters</h2>
+      <div class="preview">
+        <button id="filterTrigger" class="ui-button" type="button">Filters</button>
+      </div>
+      <div class="row">
+        <button id="openBtn" class="ui-button" type="button">Open</button>
+        <button id="placementBtn" class="ui-button ui-button-ghost" type="button">Toggle Placement</button>
+        <button id="widthBtn" class="ui-button ui-button-ghost" type="button">Toggle Match Width</button>
+      </div>
+      <pre id="log" class="log">No events yet.</pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    await window.__demoLoaderReady;
+    const [createPopover, createToggleGroup, createSelect, createDatepicker] = await Promise.all([
+      uiLoader.get("ui.popover"),
+      uiLoader.get("ui.toggle.group"),
+      uiLoader.get("ui.select"),
+      uiLoader.get("ui.datepicker"),
+    ]);
+
+    const page = document.querySelector("main.page");
+    const trigger = document.getElementById("filterTrigger");
+    const log = document.getElementById("log");
+    let placement = "bottom-end";
+    let matchTriggerWidth = false;
+
+    function writeLog(label, payload) {
+      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
+      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+    }
+
+    const popover = createPopover(trigger, {
+      placement,
+      matchTriggerWidth,
+      ariaLabel: "Timeline filters",
+      content(host, context) {
+        const form = document.createElement("div");
+        form.className = "popover-filter-form";
+        form.innerHTML = `
+          <div class="popover-filter-field"><span>Scope</span><div data-control="scope"></div></div>
+          <div class="popover-filter-field"><span>Sender</span><div data-control="sender"></div></div>
+          <div class="popover-filter-field"><span>Date range</span><div data-control="dates"></div></div>
+          <div class="popover-filter-actions">
+            <button class="ui-button ui-button-borderless" type="button" data-action="clear">Clear</button>
+            <button class="ui-button" type="button" data-action="done">Done</button>
+          </div>`;
+        host.appendChild(form);
+
+        const scope = createToggleGroup(form.querySelector('[data-control="scope"]'), {
+          variant: "segmented",
+          multi: false,
+          allowNone: false,
+          items: [
+            { id: "all", label: "All", pressed: true },
+            { id: "direct", label: "Direct" },
+            { id: "mentions", label: "Mentions" },
+          ],
+          onChange(value) { writeLog("filters.scope", value); },
+        });
+        const sender = createSelect(form.querySelector('[data-control="sender"]'), [
+          { value: "all", label: "All senders" },
+          { value: "chatviewer", label: "PBB Chatviewer" },
+          { value: "helper", label: "PBB Helper" },
+        ], { selected: "all", searchable: true, onChange(value) { writeLog("filters.sender", { value }); } });
+        const dates = createDatepicker(form.querySelector('[data-control="dates"]'), {
+          mode: "range",
+          panelParent: "body",
+          closeOnSelect: false,
+          onChange(value) { writeLog("filters.dates", value); },
+        });
+
+        form.querySelector('[data-action="clear"]').addEventListener("click", () => {
+          sender.setValue(null);
+          dates.setValue(null);
+          writeLog("filters.clear");
+        });
+        form.querySelector('[data-action="done"]').addEventListener("click", () => context.close({ reason: "done" }));
+
+        return { destroy() { scope.destroy(); sender.destroy(); dates.destroy(); } };
+      },
+      onOpenChange(open, meta) {
+        writeLog("popover.openChange", { open, reason: meta.reason, placement: meta.placement });
+      },
+    });
+
+    document.getElementById("openBtn").addEventListener("click", () => popover.open({ reason: "demo-control" }));
+    document.getElementById("placementBtn").addEventListener("click", () => {
+      placement = placement === "bottom-end" ? "top-start" : "bottom-end";
+      popover.update({ placement });
+      writeLog("popover.update", { placement });
+    });
+    document.getElementById("widthBtn").addEventListener("click", () => {
+      matchTriggerWidth = !matchTriggerWidth;
+      popover.update({ matchTriggerWidth });
+      writeLog("popover.update", { matchTriggerWidth });
+    });
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      page.dataset.theme = page.dataset.theme === "dark" ? "light" : "dark";
+    });
+
+    window.popoverDemo = popover;
+  </script>
+</body>
+</html>

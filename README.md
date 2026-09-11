@@ -81,6 +81,7 @@ css/
     ui.charts.css
     ui.chart.xy.css
     ui.nav.css
+    ui.popover.css
   incident/
     incident.css
     incident.base.css
@@ -152,6 +153,7 @@ js/
     ui.charts.js
     ui.chart.xy.js
     ui.menu.js
+    ui.popover.js
     ui.dropdown.js
     ui.dropup.js
     ui.navbar.js
@@ -204,6 +206,7 @@ demos/
   demo.breadcrumbs.html
   demo.dropdown.html
   demo.dropup.html
+  demo.popover.html
   demo.stepper.html
   demo.splitter.html
   demo.inspector.html
@@ -417,6 +420,9 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.menu.js`
   - `createMenu(triggerEl, items, options)` anchored popover menu primitive
   - item icon contract: `icon` (SVG/HTML string), `iconPosition: "start" | "end"`, `iconOnly: boolean`
+- `ui.popover.js`
+  - `createPopover(triggerEl, options)` accessible anchored panel for arbitrary interactive content
+  - supports viewport collision handling, focus restoration, custom mount parents, and nested portaled controls
 - `ui.dropdown.js`
   - `createDropdown(triggerEl, items, options)` preset wrapper for bottom placement
   - uses `ui.menu` item icon contract
@@ -595,7 +601,7 @@ Public component families:
 - Media and playback:
   - `ui.media.viewer`, `ui.pdf.viewer`, `ui.media.strip`, `ui.audio.player`, `ui.audio.audiograph`, `ui.audio.timeline`, `ui.audio.callSession`
 - Navigation and command surfaces:
-  - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`, `ui.menu`, `ui.dropdown`, `ui.dropup`, `ui.command.palette`, `ui.tabs`, `ui.strips`
+  - `ui.navbar`, `ui.sidebar`, `ui.breadcrumbs`, `ui.menu`, `ui.popover`, `ui.dropdown`, `ui.dropup`, `ui.command.palette`, `ui.tabs`, `ui.strips`
 - Workflow and layout:
   - `ui.drawer`, `ui.kanban`, `ui.stepper`, `ui.splitter`
 - Workspace and embedding:
@@ -1349,6 +1355,60 @@ Methods:
 
 ### Navigation/Menu Utilities
 
+#### `createPopover(triggerEl, options)`
+
+Purpose:
+
+- Reusable anchored panel for arbitrary interactive content such as filters, compact settings, and inspectors.
+- Unlike `createMenu`, the content is app-composed and may contain form controls or nested Helpers.
+
+Content can be an existing `HTMLElement` or a mount callback. A callback receives `(host, context)` and may return an element, a cleanup function, or a lifecycle object with `update(options, context)` and `destroy()` methods.
+
+```js
+import { createPopover } from "./js/ui/ui.popover.js";
+
+const popover = createPopover(document.getElementById("filtersBtn"), {
+  placement: "bottom-end",
+  ariaLabel: "Timeline filters",
+  content(host, context) {
+    const form = document.createElement("form");
+    form.innerHTML = '<button type="button">Apply filters</button>';
+    form.querySelector("button").addEventListener("click", () => {
+      context.close({ reason: "apply" });
+    });
+    host.appendChild(form);
+    return form;
+  },
+});
+```
+
+Options:
+
+- `content`: `HTMLElement` or `(host, context) => HTMLElement | cleanup | lifecycle`
+- `placement`: `"bottom-start" | "bottom-end" | "top-start" | "top-end"`
+- `offset`: number of pixels between trigger and panel (default `8`)
+- `matchTriggerWidth`: make the panel exactly as wide as the trigger
+- `panelParent`: `"body"`, `"trigger-parent"`, a selector, or an `HTMLElement`
+- `panelRole`: ARIA role for the panel (default `"dialog"`)
+- `ariaLabel`: accessible panel label
+- `initialFocus`: `"first"`, `"panel"`, `false`, a selector, an element, or a resolver function
+- `closeOnOutsideClick`, `closeOnEscape`, `restoreFocus`: dismissal and focus behavior
+- `className`: additional panel class
+- `onOpenChange(open, meta)`: receives the reason, resolved placement, and element refs
+
+Methods:
+
+- `open(meta?)`
+- `close(meta?)`
+- `toggle(meta?)`
+- `update(options)`
+- `position()`
+- `getState()`
+- `getRefs()`
+- `destroy()`
+
+The Helper flips and shifts the panel to remain in the viewport, repositions it on scroll/resize, owns `aria-expanded`/`aria-controls` on the trigger, closes on unhandled Escape or outside interaction, and restores focus after dismissal. Body-portaled `ui.select` and `ui.datepicker` panels mounted inside a popover are treated as owned child surfaces, so interacting with them does not dismiss the parent. Use Menu/Dropdown/Dropup for command lists, Modal for blocking tasks, and Drawer for persistent or responsive side panels.
+
 #### `createMenu(triggerEl, items, options)`
 
 Purpose:
@@ -1802,6 +1862,7 @@ Open from a local server (Apache/WAMP/Nginx):
 - `demos/demo.breadcrumbs.html` -> dedicated breadcrumbs manual/demo
 - `demos/demo.dropdown.html` -> dedicated dropdown manual/demo
 - `demos/demo.dropup.html` -> dedicated dropup manual/demo
+- `demos/demo.popover.html` -> dedicated interactive popover manual/demo
 - `demos/demo.stepper.html` -> dedicated stepper playground
   - workflow progression states
   - orientation toggle + step navigation

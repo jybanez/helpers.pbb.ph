@@ -86,6 +86,10 @@ export function createDatepicker(container, options = {}) {
 
     if (open) {
       panel = createElement("div", { className: "ui-datepicker-panel", attrs: { role: "dialog", id: panelId, "aria-label": currentOptions.ariaLabel } });
+      const ownerPopover = root.closest?.("[data-ui-popover-id]");
+      if (ownerPopover?.dataset?.uiPopoverId) {
+        panel.dataset.uiPopoverPortalOwner = ownerPopover.dataset.uiPopoverId;
+      }
       const calendarHost = createElement("div", { className: "ui-datepicker-calendar-host" });
       panel.appendChild(calendarHost);
       calendar = createCalendar(calendarHost, {
@@ -367,6 +371,7 @@ export function createDatepicker(container, options = {}) {
     });
     globalEvents.on(document, "keydown", (event) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         open = false;
         render();
         restoreFocus();
