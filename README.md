@@ -1380,8 +1380,6 @@ const popover = createPopover(document.getElementById("filtersBtn"), {
     return form;
   },
 });
-
-document.getElementById("filtersBtn").addEventListener("click", () => popover.toggle());
 ```
 
 Options:
