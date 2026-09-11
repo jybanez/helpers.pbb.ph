@@ -3062,6 +3062,7 @@ Action audio icons:
 Common state and launcher icons:
 
 - Use `actions.lock` and `actions.unlock` for locked/unlocked controls, rooms, or resources.
+- Use `people.agent` for small agent-identity badges; omit the badge for human identities.
 - Use `people.userBlocked` and `people.userAllowed` for direct-chat block and unblock actions.
 - Use `notifications.muted` and `notifications.unmuted` for muted/unmuted conversation notification states.
 - Use `comms.envelope` for pending message requests or closed inbox/request states.

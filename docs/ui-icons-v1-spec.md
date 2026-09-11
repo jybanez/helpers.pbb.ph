@@ -166,6 +166,7 @@ Stable namespaced ids:
 ### People
 
 - `people.account`
+- `people.agent`
 - `people.profile`
 - `people.user`
 - `people.users`

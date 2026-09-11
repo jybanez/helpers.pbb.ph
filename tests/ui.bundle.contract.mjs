@@ -89,6 +89,7 @@ const bundledIconNames = icons.listIcons();
   "actions.lock",
   "actions.unlock",
   "media.gamepad",
+  "people.agent",
 ].forEach((iconName) => {
   if (!bundledIconNames.includes(iconName)) {
     throw new Error(`Bundle-backed ui.icons is missing ${iconName}.`);

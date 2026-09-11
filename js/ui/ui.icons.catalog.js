@@ -268,6 +268,16 @@ export const ICON_DEFINITIONS = {
     line(14, 10, 17.5, 10),
     line(14, 13, 17.5, 13),
   ]),
+  "people.agent": icon("people", [
+    rect(4.5, 6.5, 15, 12, 3),
+    line(12, 3, 12, 6.5),
+    circle(12, 2.5, 0.8),
+    circle(9, 11.5, 1),
+    circle(15, 11.5, 1),
+    line(9, 15, 15, 15),
+    line(2.5, 10.5, 4.5, 10.5),
+    line(19.5, 10.5, 21.5, 10.5),
+  ]),
   "workflow.assigned": icon("workflow", [
     circle(12, 12, 5),
     circle(12, 12, 1.5),
