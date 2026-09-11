@@ -115,6 +115,10 @@ export function createSelect(container, items = [], options = {}) {
 
     if (open) {
       menu = createElement("div", { className: "ui-select-menu" });
+      const ownerPopover = root.closest?.("[data-ui-popover-id]");
+      if (ownerPopover?.dataset?.uiPopoverId) {
+        menu.dataset.uiPopoverPortalOwner = ownerPopover.dataset.uiPopoverId;
+      }
       if (currentOptions.searchable) {
         searchInput = createElement("input", {
           className: "ui-input ui-select-search",

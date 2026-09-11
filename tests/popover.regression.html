@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Popover Regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.popover.css">
+  <link rel="stylesheet" href="../css/ui/ui.select.css">
+  <link rel="stylesheet" href="../css/ui/ui.datepicker.css">
+  <link rel="stylesheet" href="../css/ui/ui.calendar.css">
+  <style>
+    body { min-height: 900px; }
+    #anchor { position: fixed; right: 6px; bottom: 6px; width: 180px; }
+    .test-form { width: 280px; min-height: 190px; display: grid; gap: 10px; }
+    #customParent { position: relative; }
+  </style>
+</head>
+<body data-status="running">
+  <button id="anchor" type="button">Filters</button>
+  <button id="outside" type="button">Outside</button>
+  <div id="customParent"></div>
+  <div id="elementOrigin"><span id="before"></span><div id="existingContent">Existing content</div><span id="after"></span></div>
+  <pre id="results">RUNNING</pre>
+  <script type="module">
+    import { createPopover } from "../js/ui/ui.popover.js";
+    import { createSelect } from "../js/ui/ui.select.js";
+    import { createDatepicker } from "../js/ui/ui.datepicker.js";
+
+    const failures = [];
+    const changes = [];
+    const assert = (condition, message) => { if (!condition) failures.push(message); };
+    const wait = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms));
+    const trigger = document.getElementById("anchor");
+    let select;
+    let datepicker;
+    let contentUpdates = 0;
+    let contentDestroyed = 0;
+
+    const popover = createPopover(trigger, {
+      placement: "bottom-end",
+      matchTriggerWidth: true,
+      ariaLabel: "Timeline filters",
+      content(host, context) {
+        const form = document.createElement("div");
+        form.className = "test-form";
+        const first = document.createElement("button");
+        first.type = "button";
+        first.className = "first-control";
+        first.textContent = "Scope";
+        const selectHost = document.createElement("div");
+        selectHost.id = "selectHost";
+        const dateHost = document.createElement("div");
+        dateHost.id = "dateHost";
+        const done = document.createElement("button");
+        done.type = "button";
+        done.textContent = "Done";
+        done.addEventListener("click", () => context.close({ reason: "done" }));
+        form.append(first, selectHost, dateHost, done);
+        host.appendChild(form);
+        select = createSelect(selectHost, [
+          { value: "all", label: "All senders" },
+          { value: "helper", label: "PBB Helper" },
+        ], { searchable: false });
+        datepicker = createDatepicker(dateHost, { mode: "range", panelParent: "body" });
+        return {
+          update() { contentUpdates += 1; },
+          destroy() {
+            contentDestroyed += 1;
+            select.destroy();
+            datepicker.destroy();
+          },
+        };
+      },
+      onOpenChange(open, meta) { changes.push({ open, reason: meta.reason }); },
+    });
+
+    assert(trigger.getAttribute("aria-expanded") === "false", "trigger starts collapsed");
+    assert(trigger.getAttribute("aria-haspopup") === "dialog", "trigger exposes dialog popup semantics");
+    assert(Boolean(trigger.getAttribute("aria-controls")), "trigger controls the panel id");
+
+    trigger.click();
+    await wait(220);
+    const panel = document.querySelector(".ui-popover");
+    assert(popover.getState().open, "trigger opens the popover");
+    assert(panel?.getAttribute("role") === "dialog", "panel uses the configured role");
+    assert(panel?.getAttribute("aria-label") === "Timeline filters", "panel uses its accessible label");
+    assert(panel?.dataset.placement === "top-end", "bottom collision flips the panel above the trigger");
+    assert(Math.abs(panel.getBoundingClientRect().width - trigger.getBoundingClientRect().width) <= 1, "matchTriggerWidth matches the trigger");
+    assert(document.activeElement?.classList.contains("first-control"), "opening focuses the first interactive control");
+    assert(popover.getRefs().panel === panel && popover.getState().refs.contentHost, "API exposes useful panel refs");
+    const rect = panel.getBoundingClientRect();
+    assert(rect.left >= 7 && rect.right <= innerWidth - 7 && rect.top >= 7 && rect.bottom <= innerHeight - 7, "collision handling keeps the panel in the viewport");
+
+    panel.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    assert(popover.getState().open, "interacting inside does not close the popover");
+
+    document.querySelector("#selectHost .ui-select-trigger").click();
+    await wait();
+    const selectMenu = document.querySelector("body > .ui-select-menu");
+    assert(selectMenu?.dataset.uiPopoverPortalOwner === panel.id, "nested select portal is owned by the popover");
+    const selectOption = selectMenu?.querySelector(".ui-select-option");
+    selectOption?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    selectOption?.click();
+    await wait();
+    assert(popover.getState().open, "using a portaled select does not close the popover");
+
+    document.querySelector("#dateHost .ui-datepicker-trigger").click();
+    await wait();
+    const datePanel = document.querySelector("body > .ui-datepicker-panel");
+    assert(datePanel?.dataset.uiPopoverPortalOwner === panel.id, "nested datepicker portal is owned by the popover");
+    const day = datePanel?.querySelector(".ui-calendar-day:not(.is-disabled)");
+    day?.focus();
+    day?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    await wait();
+    assert(!document.querySelector("body > .ui-datepicker-panel"), "first Escape closes the nested datepicker");
+    assert(popover.getState().open, "nested datepicker Escape does not close the parent popover");
+
+    document.querySelector(".first-control").focus();
+    document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    await wait();
+    assert(!popover.getState().open, "Escape closes the popover when no child portal handles it");
+    assert(document.activeElement === trigger, "closing restores focus to the trigger");
+
+    popover.open({ reason: "test-open" });
+    await wait();
+    popover.update({ placement: "top-start", matchTriggerWidth: false, className: "is-updated" });
+    assert(contentUpdates === 1, "update forwards option changes to mounted content lifecycle");
+    assert(popover.getRefs().panel.classList.contains("is-updated"), "update applies panel classes");
+    document.getElementById("outside").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    await wait();
+    assert(!popover.getState().open, "outside pointer interaction closes the popover");
+    assert(changes.some((entry) => entry.reason === "outside"), "open changes include a close reason");
+
+    popover.destroy();
+    assert(contentDestroyed === 1, "destroy cleans up mounted content once");
+    assert(!trigger.hasAttribute("aria-expanded") && !trigger.hasAttribute("aria-controls") && !trigger.hasAttribute("aria-haspopup"), "destroy restores trigger attributes");
+
+    const existingContent = document.getElementById("existingContent");
+    const existingTrigger = document.createElement("button");
+    existingTrigger.type = "button";
+    existingTrigger.textContent = "Existing";
+    document.getElementById("customParent").appendChild(existingTrigger);
+    const existingPopover = createPopover(existingTrigger, {
+      content: existingContent,
+      panelParent: document.getElementById("customParent"),
+      initialFocus: false,
+    });
+    existingPopover.open();
+    await wait();
+    assert(existingPopover.getRefs().panel.parentNode.id === "customParent", "custom panel parents are supported");
+    existingPopover.destroy();
+    assert(existingContent.parentNode.id === "elementOrigin" && existingContent.nextElementSibling?.id === "after", "destroy restores existing HTMLElement content");
+
+    if (failures.length) {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = failures.join("\n");
+    } else {
+      document.body.dataset.status = "pass";
+      document.getElementById("results").textContent = "PASS";
+    }
+  </script>
+</body>
+</html>
