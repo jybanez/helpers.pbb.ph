@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dropdown icon paint regression</title>
+<style>body { font: 16px system-ui; padding: 24px; } #results { white-space: pre-wrap; }</style>
+<h1>Dropdown icon paint regression</h1>
+<pre id="results">Running...</pre>
+<button id="trigger">Outlined and filled icons</button>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+import { createIcon } from '../js/ui/ui.icons.js';
+const bundled = new URLSearchParams(location.search).has('bundled');
+const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: bundled });
+const createDropdown = await loader.get('ui.dropdown');
+const items = ['people.users', 'people.agent', 'status.info', 'actions.edit', 'actions.hide'].map(name => ({ id: name, label: name, icon: createIcon(name).outerHTML }));
+items.push({id:'filled', label:'Filled danger icon', danger:true, icon:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="8"/></svg>'});
+items.push({id:'custom', label:'Custom red fill', icon:'<svg viewBox="0 0 24 24" fill="red"><path d="M2 2H22V22H2Z"/></svg>'});
+const dropdown = createDropdown(document.getElementById('trigger'), items, { closeOnSelect:false });
+dropdown.open();
+await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {})));
+const failures=[]; let count=0;
+function assert(ok, message) { count++; if (!ok) failures.push(message); }
+const rows = [...document.querySelectorAll('.ui-menu-item')];
+assert(rows.length === items.length, 'all items render');
+const labelLeft = rows[0].querySelector('.ui-menu-item-label').getBoundingClientRect().left;
+rows.forEach((row, index) => {
+  const slot = row.querySelector('.ui-menu-item-icon');
+  const svg = slot.querySelector('svg');
+  const paint = getComputedStyle(svg);
+  const r = slot.getBoundingClientRect(), s = svg.getBoundingClientRect();
+  assert(r.width === 24 && r.height === 24, 'fixed square icon slot');
+  assert(s.width === 14 && s.height === 14, 'existing SVG dimensions');
+  assert(Math.abs(r.left + r.width/2 - s.left - s.width/2) < 1 && Math.abs(r.top + r.height/2 - s.top - s.height/2) < 1, 'centered SVG');
+  assert(Math.abs(row.querySelector('.ui-menu-item-label').getBoundingClientRect().left-labelLeft) < 1, 'aligned labels');
+  if(index < 5) { assert(paint.fill === 'none', 'outlined glyph stays unfilled'); assert(paint.stroke === getComputedStyle(row).color, 'outline uses row color'); }
+  if(index === 5) { assert(paint.fill === getComputedStyle(row).color, 'filled glyph uses danger color'); assert(paint.stroke === 'none', 'filled glyph stays unstroked'); assert(getComputedStyle(row).color !== getComputedStyle(rows[0]).color, 'danger coloring distinct'); }
+  if(index === 6) assert(paint.fill === 'rgb(255, 0, 0)', 'custom fill preserved');
+});
+document.body.dataset.status = failures.length ? 'fail' : 'pass';
+document.getElementById('results').textContent = failures.length ? `FAIL\n${failures.join('\n')}` : `PASS: ${count} checks (${bundled ? 'bundled' : 'modular'})`;
+</script>

@@ -728,10 +728,18 @@
   border-color: transparent;
 }
 
+.ui-menu-item-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  line-height: 0;
+}
+
 .ui-menu-item-icon svg {
   width: 14px;
   height: 14px;
-  fill: currentColor;
 }
 
 .ui-menu-item-icon img,
