@@ -18,6 +18,14 @@
   grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr);
 }
 
+.ui-splitter--chromeless {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  min-height: 0;
+  height: 100%;
+}
+
 .ui-splitter--vertical {
   grid-template-rows: minmax(0, 1fr) 8px minmax(0, 1fr);
 }
@@ -33,7 +41,7 @@
   border-right: 1px solid var(--ui-border, #2b3750);
 }
 
-.ui-splitter--vertical .ui-splitter-pane.is-a {
+.ui-splitter--vertical > .ui-splitter-pane.is-a {
   border-right: 0;
   border-bottom: 1px solid var(--ui-border, #2b3750);
 }
@@ -53,7 +61,7 @@
 
 .ui-splitter-divider:hover,
 .ui-splitter-divider:focus-visible,
-.ui-splitter.is-dragging .ui-splitter-divider,
+.ui-splitter.is-dragging > .ui-splitter-divider,
 .ui-splitter-divider:active {
   border-color: color-mix(in srgb, var(--ui-accent, #6f9cff) 58%, var(--ui-border-strong, #344769));
   background: linear-gradient(180deg, var(--ui-splitter-divider-active-edge), var(--ui-splitter-divider-active-core));
@@ -64,7 +72,7 @@
   outline-offset: 2px;
 }
 
-.ui-splitter--vertical .ui-splitter-divider {
+.ui-splitter--vertical > .ui-splitter-divider {
   width: 100%;
   min-width: 0;
   height: 8px;
@@ -72,10 +80,10 @@
   cursor: row-resize;
 }
 
-.ui-splitter--vertical .ui-splitter-divider:hover,
-.ui-splitter--vertical .ui-splitter-divider:focus-visible,
-.ui-splitter--vertical.is-dragging .ui-splitter-divider,
-.ui-splitter--vertical .ui-splitter-divider:active {
+.ui-splitter--vertical > .ui-splitter-divider:hover,
+.ui-splitter--vertical > .ui-splitter-divider:focus-visible,
+.ui-splitter--vertical.is-dragging > .ui-splitter-divider,
+.ui-splitter--vertical > .ui-splitter-divider:active {
   background: linear-gradient(90deg, var(--ui-splitter-divider-active-edge), var(--ui-splitter-divider-active-core));
 }
 

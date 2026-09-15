@@ -3,6 +3,8 @@ import { createEventBag } from "./ui.events.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  panePadding: null,
+  chrome: true,
   orientation: "horizontal", // horizontal = left/right, vertical = top/bottom
   initialRatio: 0.5,
   minRatio: 0.2,
@@ -32,11 +34,15 @@ export function createSplitter(container, options = {}) {
       className: [
         "ui-splitter",
         `ui-splitter--${currentOptions.orientation}`,
+        currentOptions.chrome ? "" : "ui-splitter--chromeless",
         currentOptions.className || "",
       ].filter(Boolean).join(" "),
     });
     paneA = createElement("div", { className: "ui-splitter-pane is-a" });
     paneB = createElement("div", { className: "ui-splitter-pane is-b" });
+    for (const pane of [paneA, paneB]) {
+      if (currentOptions.panePadding !== null) pane.style.padding = `${currentOptions.panePadding}px`;
+    }
     divider = createElement("button", {
       className: "ui-splitter-divider",
       attrs: { type: "button", "aria-label": "Resize panes" },
@@ -252,6 +258,9 @@ function setSlot(target, value, fallback) {
 
 function normalizeOptions(options) {
   const next = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  next.panePadding = typeof next.panePadding === "number" && Number.isFinite(next.panePadding) && next.panePadding >= 0
+    ? next.panePadding : DEFAULT_OPTIONS.panePadding;
+  next.chrome = next.chrome !== false;
   next.orientation = String(next.orientation || "horizontal").toLowerCase() === "vertical"
     ? "vertical"
     : "horizontal";

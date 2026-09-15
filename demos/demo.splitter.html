@@ -25,8 +25,8 @@
       min-height: 340px;
       color: var(--demo-text, var(--ui-text, #d7e0f4));
     }
-    .multi-column-workspace .ui-splitter {
-      min-height: 340px;
+    .multi-column-workspace > div > .ui-splitter {
+      height: 340px;
     }
     .multi-column-fixed,
     .multi-column-pane {
@@ -98,7 +98,9 @@
       sectionSamples: {
         "horizontal": `createSplitter(host, {\n  orientation: "horizontal",\n  initialRatio: 0.35,\n});`,
         "vertical": `createSplitter(host, {\n  orientation: "vertical",\n  initialRatio: 0.5,\n});`,
-        "nested": `createSplitter(threeColumnHost, {\n  paneA: column1,\n  paneB: nestedHost,\n});\n\ncreateSplitter(nestedHost, {\n  paneA: column2,\n  paneB: column3,\n});`
+        "nested": `createSplitter(threeColumnHost, {
+  panePadding: 0,\n  paneA: column1,\n  paneB: nestedHost,\n});\n\ncreateSplitter(nestedHost, {
+  panePadding: 0, chrome: false,\n  paneA: column2,\n  paneB: column3,\n});`
       },
       constructor: [
         { factory: "<code>createSplitter(container, options)</code>", arguments: "container and splitter options", returns: "Splitter instance" }
@@ -149,8 +151,10 @@
 &lt;/style&gt;
 
 const nestedHost = document.createElement("div");
+nestedHost.style.cssText = "height: 100%; min-width: 0; min-height: 0";
 
 createSplitter(threeColumnHost, {
+  panePadding: 0,
   orientation: "horizontal",
   initialRatio: 0.28,
   minRatio: 0.18,
@@ -160,6 +164,7 @@ createSplitter(threeColumnHost, {
 });
 
 createSplitter(nestedHost, {
+  panePadding: 0, chrome: false,
   orientation: "horizontal",
   initialRatio: 0.48,
   minRatio: 0.25,
@@ -219,6 +224,7 @@ createSplitter(nestedHost, {
     const workspace = createElement("div", { className: "multi-column-workspace" });
     const threeColumnHost = createElement("div");
     const nestedHost = createElement("div");
+    nestedHost.style.cssText = "height: 100%; min-width: 0; min-height: 0";
     const fixedColumn = createElement("aside", {
       className: "multi-column-fixed",
       html: `
@@ -231,6 +237,7 @@ createSplitter(nestedHost, {
     multiHost.appendChild(workspace);
 
     createSplitter(threeColumnHost, {
+      panePadding: 0,
       orientation: "horizontal",
       initialRatio: 0.28,
       minRatio: 0.18,
@@ -242,6 +249,7 @@ createSplitter(nestedHost, {
       },
     });
     createSplitter(nestedHost, {
+      panePadding: 0, chrome: false,
       orientation: "horizontal",
       initialRatio: 0.48,
       minRatio: 0.25,

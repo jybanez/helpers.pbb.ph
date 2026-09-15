@@ -4532,7 +4532,6 @@ Options:
 | Option | Type | Default | Required | Description |
 |---|---|---:|---|---|
 | `data` | `{ root, externals?, links? }` | `null` | yes | Rooted hierarchy plus optional overlay relationships. |
-| `chrome` | `boolean` | `true` | no | Removes outer shell when `false`. |
 | `layout` | `"org"` | `"org"` | no | Current hierarchy layout mode. |
 | `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | no | Primary hierarchy direction. |
 | `nodeWidth` | `number` | component default | no | Node-card width. |
@@ -6488,6 +6487,9 @@ Options:
 | `maxRatio` | `number` | component default | no | Maximum allowed ratio. |
 | `paneA` | `HTMLElement \| string \| () => HTMLElement` | `null` | no | Pane A content source. |
 | `paneB` | `HTMLElement \| string \| () => HTMLElement` | `null` | no | Pane B content source. |
+| `panePadding` | `number \| null` | `null` (CSS: 10px) | no | Nonnegative pixel padding for this splitter's panes; `0` removes spacing, `null` preserves stylesheet padding. |
+| `chrome` | `boolean` | `true` | no | `false` removes the root frame/background and fills the host height with no minimum height. |
+
 
 Events / callbacks:
 
@@ -6506,6 +6508,7 @@ Returned API:
 
 Behavior notes:
 
+- For nested splitters, use `panePadding: 0` on the outer splitter and `panePadding: 0, chrome: false` on the inner one. Give the nested host `height: 100%; min-width: 0; min-height: 0`, and give the outer layout a definite height. Put spacing on column content. Use `update({ panePadding: null, chrome: true })` to restore defaults.
 - Use `minRatio` / `maxRatio` to prevent unusable pane sizes.
 - Pane content can be passed as elements, strings, or factories; keep heavy child components mounted outside if state retention matters.
 
