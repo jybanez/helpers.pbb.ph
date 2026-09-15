@@ -97,7 +97,7 @@
       }
       assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter-divider:hover")), "divider hover styling should exist");
       assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter-divider:focus-visible")), "divider focus-visible styling should exist");
-      assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter.is-dragging .ui-splitter-divider")), "divider drag styling should exist");
+      assert(Array.from(selectors).some((selector) => selector.includes(".ui-splitter.is-dragging > .ui-splitter-divider")), "divider drag styling should exist");
     }
 
     function assertDragStateChangesDivider(splitter) {

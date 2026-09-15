@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Nested splitter regression</title>
+<link rel="stylesheet" href="../css/ui/ui.splitter.css">
+<style>
+  * { box-sizing: border-box; }
+  body { font: 14px system-ui; }
+  .host { width: 720px; height: 300px; margin: 16px 0; }
+  .host > .ui-splitter { height: 100%; }
+  .nested-host { height: 100%; min-width: 0; min-height: 0; }
+</style>
+<h1>Nested splitter regression</h1>
+<pre id="results">Running...</pre>
+<script type="module">
+import { createSplitter } from '../js/ui/ui.splitter.js';
+const failures = [];
+let checks = 0;
+function assert(ok, message) { checks++; if (!ok) failures.push(message); }
+function near(a, b, message) { assert(Math.abs(a - b) < 1, `${message}: ${a} vs ${b}`); }
+function host() { const el = document.createElement('div'); el.className = 'host'; document.body.append(el); return el; }
+for (const orientation of ['horizontal', 'vertical']) {
+  const container = host();
+  const nested = document.createElement('div'); nested.className = 'nested-host';
+  const outer = createSplitter(container, { orientation, panePadding: 0, paneA: 'Outer', paneB: nested });
+  const inner = createSplitter(nested, { orientation, panePadding: 0, chrome: false, paneA: 'Inner A', paneB: 'Inner B' });
+  function check() {
+    const root = container.firstElementChild;
+    const a = root.children[1].getBoundingClientRect();
+    const b = nested.firstElementChild.children[1].getBoundingClientRect();
+    const edges = orientation === 'horizontal' ? ['top', 'bottom'] : ['left', 'right'];
+    edges.forEach(edge => near(a[edge], b[edge], `${orientation} divider ${edge}`));
+    near(nested.firstElementChild.getBoundingClientRect().height, nested.getBoundingClientRect().height, 'inner fills host height');
+    for (const split of [root, nested.firstElementChild]) {
+      assert(split.scrollWidth <= split.clientWidth + 1, 'no horizontal content overflow');
+      assert(split.scrollHeight <= split.clientHeight + 1, 'no vertical content overflow');
+    }
+  }
+  check(); outer.setRatio(.3); inner.setRatio(.65); check();
+  container.style.width = '480px'; check();
+  const oldWidth = nested.firstElementChild.children[0].getBoundingClientRect().width;
+  const oldHeight = nested.firstElementChild.children[0].getBoundingClientRect().height;
+  nested.firstElementChild.children[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+  assert(inner.getState().ratio < .65, 'keyboard resizes nested panes');
+  const resized = nested.firstElementChild.children[0].getBoundingClientRect();
+  assert(orientation === 'horizontal' ? resized.width < oldWidth : resized.height < oldHeight, 'content size follows ratio');
+  check();
+  inner.update({ panePadding: null, chrome: true });
+  assert(getComputedStyle(nested.firstElementChild.children[0]).paddingTop === '10px', 'restore default padding');
+  assert(getComputedStyle(nested.firstElementChild).borderTopWidth === '1px', 'restore frame');
+  inner.update({ orientation: orientation === 'vertical' ? 'horizontal' : 'vertical', panePadding: 0, chrome: false });
+  const divider = nested.firstElementChild.children[1];
+  assert(getComputedStyle(divider).cursor === (orientation === 'vertical' ? 'col-resize' : 'row-resize'), 'orientation isolated from ancestor');
+}
+const defaults = host();
+const normal = createSplitter(defaults);
+assert(getComputedStyle(defaults.firstElementChild.children[0]).paddingTop === '10px', 'default padding unchanged');
+assert(defaults.firstElementChild.children[0].style.padding === '', 'default leaves CSS overrides available');
+normal.update({ panePadding: -1 });
+assert(getComputedStyle(defaults.firstElementChild.children[0]).paddingTop === '10px', 'invalid padding falls back');
+normal.update({ panePadding: 4 });
+assert(getComputedStyle(defaults.firstElementChild.children[0]).paddingTop === '4px', 'custom numeric padding');
+document.body.dataset.status = failures.length ? 'fail' : 'pass';
+document.getElementById('results').textContent = failures.length ? `FAIL\n${failures.join('\n')}` : `PASS: ${checks} checks (alignment, sizing, resize, defaults, mixed orientation)`;
+</script>

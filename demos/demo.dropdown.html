@@ -112,15 +112,16 @@
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     const trigger = document.getElementById("dropdownTrigger");
-    const iconRefresh = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg>';
-    const iconDelete = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-7 0v14m6-14v14M5 6l1 14h12l1-14"/></svg>';
+    const { createIcon } = await import("../js/ui/ui.icons.js");
+    const iconRefresh = createIcon("actions.edit").outerHTML;
+    const iconDelete = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm2-4h8v2H8z"/></svg>';
     let align = "right";
     let matchTriggerWidth = false;
     let closeOnSelect = true;
     const items = [
-      { id: "refresh", label: "Refresh", icon: iconRefresh, shortcut: "R" },
+      { id: "refresh", label: "Edit (outlined)", icon: iconRefresh, shortcut: "R" },
       { id: "pin", label: "Pin Window", shortcut: "P" },
-      { id: "delete", label: "Delete", icon: iconDelete, danger: true },
+      { id: "delete", label: "Delete (filled)", icon: iconDelete, danger: true },
     ];
 
     function writeLog(label, payload) {
