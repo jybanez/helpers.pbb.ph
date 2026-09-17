@@ -95,7 +95,34 @@
     .feed-details { display: grid; gap: 10px; padding-top: 10px; }
     .feed-details[hidden], .feed-preview[hidden] { display: none; }
     .feed-details p, .feed-preview { margin: 0; font-size: 13px; line-height: 20px; }
-    .feed-preview { color: var(--ui-muted, #9fb2d8); margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    #timelineHostVirtual { overflow-x: auto; }
+    #timelineHostVirtual .ui-timeline-viewport { min-width: 620px; }
+    #timelineHostVirtual .ui-timeline-header { display: none; }
+    #timelineHostVirtual .ui-timeline-body { gap: 0; }
+    #timelineHostVirtual .ui-timeline-custom-content { margin: 0; }
+    .feed-message-header {
+      display: grid;
+      grid-template-columns: 110px 110px minmax(0, 1fr) 145px;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 13px;
+      line-height: 20px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .feed-message-header:focus-visible { outline: 2px solid var(--ui-accent, #7bb5ff); outline-offset: 4px; }
+    .feed-message-header:hover { color: var(--ui-accent, #7bb5ff); }
+    .feed-sender, .feed-addressed, .feed-preview { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .feed-sender { font-weight: 700; }
+    .feed-addressed, .feed-preview { color: var(--ui-muted, #9fb2d8); }
+    .feed-timestamp { grid-column: 4; font-size: 11px; white-space: nowrap; text-align: right; color: var(--ui-muted, #9fb2d8); }
     #timelineJumpId { width: 100px; }
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
   </style>
@@ -195,7 +222,7 @@
 
     <section class="panel" id="virtualized-feed">
       <h2 class="ui-title">Virtualized Feed</h2>
-      <p>Jump to event 120, then collapse or expand all details: the event you are reading stays in place. Individual toggles override the bulk mode; newer and older rows inherit it.</p>
+      <p>Click a message header to expand or collapse it. Collapsed messages show sender, addressed, a one-line preview, and timestamp. Jump to event 120 to try an offscreen message; new rows inherit the bulk display mode.</p>
       <div class="row">
         <button id="timelineCollapseBtn" class="ui-button" type="button">Collapse All</button>
         <button id="timelineExpandBtn" class="ui-button ui-button-ghost" type="button">Expand All</button>
@@ -330,12 +357,12 @@
         className: index % 11 === 0 ? "is-active" : "",
         timestamp,
         title: `Feed event ${index}`,
-        subtitle: index % 4 === 0 ? "Variable-height operational note" : "Status update",
+        sender: ["Operator Maya", "Dispatch", "Team Alpha"][Math.abs(index) % 3],
+        addressed: ["Team Alpha", "All responders", "Dispatch"][Math.abs(index) % 3],
         detail: index % 5 === 0
           ? "Responder assigned. Location verified and caller updated."
           : "Status confirmed with the assigned team.",
         status: index % 3 === 0 ? "completed" : "accepted",
-        meta: index % 6 === 0 ? ["Virtual", "Measured"] : ["Virtual"],
       };
     }
 
@@ -346,15 +373,30 @@
       enableVirtualization: true,
       virtualThreshold: 100,
       estimateItemHeight(item, { startsGroup }) {
-        return (isExpanded(item.id) ? 330 : 180) + (startsGroup ? 40 : 0);
+        return (isExpanded(item.id) ? 190 : 52) + (startsGroup ? 40 : 0);
       },
       mountItemContent(slot, item) {
         const toggle = document.createElement("button");
         toggle.type = "button";
-        toggle.className = "ui-button ui-button-ghost";
-        const preview = document.createElement("p");
+        toggle.className = "feed-message-header";
+        toggle.setAttribute("aria-label", `${item.title}: ${item.sender}, addressed to ${item.addressed}`);
+        const sender = document.createElement("span");
+        sender.className = "feed-sender";
+        sender.textContent = item.sender;
+        sender.title = item.sender;
+        const addressed = document.createElement("span");
+        addressed.className = "feed-addressed";
+        addressed.textContent = item.addressed;
+        addressed.title = `Addressed to ${item.addressed}`;
+        const preview = document.createElement("span");
         preview.className = "feed-preview";
         preview.textContent = item.detail;
+        preview.title = item.detail;
+        const timestamp = document.createElement("time");
+        timestamp.className = "feed-timestamp";
+        timestamp.dateTime = new Date(item.timestamp).toISOString();
+        timestamp.textContent = slot.parentElement.querySelector(".ui-timeline-time").textContent;
+        toggle.append(sender, addressed, preview, timestamp);
         const details = document.createElement("div");
         details.id = `details-${item.id}`;
         details.className = "feed-details";
@@ -372,11 +414,10 @@
           writeLog("timeline.virtual.followup", { id: item.id });
         });
         details.append(note, followup, action);
-        slot.append(toggle, preview, details);
+        slot.append(toggle, details);
         function update() {
           const expanded = isExpanded(item.id);
           if (!expanded && details.contains(document.activeElement)) toggle.focus({ preventScroll: true });
-          toggle.textContent = `${expanded ? "Collapse" : "Expand"} ${item.title}`;
           toggle.setAttribute("aria-expanded", String(expanded));
           details.hidden = !expanded;
           preview.hidden = expanded;
