@@ -279,6 +279,15 @@
 
 .ui-timeline--vertical .ui-timeline-marker {
   z-index: 1;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  /* Match the first title line after the card's border and top padding. */
+  margin-top: 11px;
+}
+
+.ui-timeline--vertical .ui-timeline-title {
+  line-height: 20px;
 }
 
 .ui-timeline--horizontal {
