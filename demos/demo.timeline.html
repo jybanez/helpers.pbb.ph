@@ -92,15 +92,21 @@
       color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       font-size: 13px;
     }
+    .feed-details { display: grid; gap: 10px; padding-top: 10px; }
+    .feed-details[hidden], .feed-preview[hidden] { display: none; }
+    .feed-details p, .feed-preview { margin: 0; font-size: 13px; line-height: 20px; }
+    .feed-preview { color: var(--ui-muted, #9fb2d8); margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    #timelineJumpId { width: 100px; }
+    #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.178";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
     window.demoMeta = {
       title: "Timeline",
-      overview: "Timeline helper for event chronology, horizontal milestones, grouped logs, lifecycle-managed custom item content, and measured-height virtual feeds.",
+      overview: "Timeline helper for event chronology, grouped logs, custom item content, and virtual feeds with expandable cards and offscreen navigation.",
       useWhen: [
         "Use <code>createTimeline(...)</code> for ordered event history.",
         "Use custom content slots when a timeline row needs to host a nested Helper or app component."
@@ -112,7 +118,7 @@
       description: "The timeline helper is meant for chronology, not generic record listing. This page covers event rendering, item actions, horizontal/vertical presentation, custom row content lifecycle, and opt-in variable-height virtualization for large vertical feeds.",
       sectionSamples: {
         "vertical (grouped)": `createTimeline(host, items, {\n  orientation: "vertical",\n  groupByDate: true,\n});`,
-        "virtualized feed": `const timeline = createTimeline(host, items, {\n  enableVirtualization: true,\n  virtualThreshold: 100,\n  virtualOverscan: 480,\n  onRangeChange(range) {\n    console.log(range.startId, range.endId);\n  },\n  onReachEnd(boundary) {\n    loadOlder(boundary.boundaryId);\n  },\n});`,
+        "virtualized feed": `// Presentation state belongs to the demo.\nlet expanded = true;\nconst overrides = new Map();\nconst isExpanded = id => overrides.get(id) ?? expanded;\n\n// Set estimateItemHeight from isExpanded(item.id).\n// Return update() from mountItemContent to refresh existing DOM.\n\n// Collapse all loaded records, including offscreen rows.\ntimeline.invalidateLayout(null, {\n  mutate() { expanded = false; overrides.clear(); },\n});\n\n// Expand an offscreen target before navigating to it.\ntimeline.invalidateLayout("feed-120", {\n  mutate() { overrides.set("feed-120", true); },\n});\nawait timeline.scrollToItem("feed-120", { focus: true });`,
         "horizontal": `createTimeline(host, items, {\n  orientation: "horizontal",\n});`,
         "custom content": `const timeline = createTimeline(host, items, {\n  mountItemContent(slot, item, context) {\n    if (item.type !== "call_session") return null;\n    const card = document.createElement("div");\n    slot.appendChild(card);\n    renderCallCard(card, item);\n    return {\n      update(nextItem) { renderCallCard(card, nextItem); },\n      destroy() { stopNestedPlayback(item.id); },\n    };\n  },\n});`
       },
@@ -130,6 +136,7 @@
         { option: "<code>enableVirtualization</code>", default: "<code>false</code>", description: "Enables measured-height windowing for large vertical timelines. Horizontal timelines keep their standard rendering." },
         { option: "<code>virtualThreshold</code>", default: "<code>120</code>", description: "Minimum visible item count before opt-in virtualization activates." },
         { option: "<code>virtualOverscan</code>", default: "<code>480</code>", description: "Extra pixels rendered above and below the viewport." },
+        { option: "<code>estimateItemHeight</code>", default: "<code>null</code>", description: "Optional (item, { startsGroup }) callback returning the full virtual unit height in pixels. Use presentation state for collapsed/expanded estimates; mounted rows are measured." },
         { option: "<code>endThreshold</code>", default: "<code>320</code>", description: "Distance in pixels from the end that triggers <code>onReachEnd</code>." },
         { option: "<code>topAnchorThreshold</code>", default: "<code>48</code>", description: "Distance from the top where prepending keeps the viewport pinned to the top." },
         { option: "<code>isLoading</code>", default: "<code>false</code>", description: "Suppresses end callbacks while the app is already loading." },
@@ -156,6 +163,8 @@
         { event: "<code>customHandle.destroy</code>", arguments: "none", returns: "Called when an item is removed, filtered out, remounted by <code>contentKey</code>, or the timeline is destroyed." }
       ],
       methods: [
+        { method: "<code>invalidateLayout(ids?, { mutate }?)</code>", arguments: "ID, ID array, or null for all; synchronous presentation update", returns: "Refreshes mounted content and offscreen height estimates while preserving the viewport anchor." },
+        { method: "<code>scrollToItem(id, { align, focus }?)</code>", arguments: "Loaded item ID; start/center/end alignment and optional focus", returns: "Promise resolving to { found, id } or { found: false, reason }. Does not fetch items." },
         { method: "<code>update(nextItems, nextOptions?)</code>", arguments: "timeline items and optional options", returns: "<code>void</code>" },
         { method: "<code>append(items)</code>", arguments: "items to add after the current list", returns: "<code>void</code>" },
         { method: "<code>prepend(items)</code>", arguments: "items to add before the current list", returns: "<code>void</code>" },
@@ -184,15 +193,24 @@
       <div id="timelineHostVertical"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="virtualized-feed">
       <h2 class="ui-title">Virtualized Feed</h2>
-      <p>Measured-height windowing keeps the DOM bounded while preserving the visible anchor as pages are appended or prepended.</p>
+      <p>Jump to event 120, then collapse or expand all details: the event you are reading stays in place. Individual toggles override the bulk mode; newer and older rows inherit it.</p>
+      <div class="row">
+        <button id="timelineCollapseBtn" class="ui-button" type="button">Collapse All</button>
+        <button id="timelineExpandBtn" class="ui-button ui-button-ghost" type="button">Expand All</button>
+        <label for="timelineJumpId">Event number</label>
+        <input id="timelineJumpId" class="ui-input" type="number" step="1" value="120">
+        <button id="timelineJumpBtn" class="ui-button" type="button">Jump to Event</button>
+      </div>
+      <p id="timelineVirtualStatus" role="status" aria-live="polite">160 events loaded. Details expanded. Try event 120 for an offscreen jump, or 999 for a missing event.</p>
       <div class="row">
         <button id="timelineVirtualPrependBtn" class="ui-button" type="button">Prepend Newer</button>
         <button id="timelineVirtualAppendBtn" class="ui-button ui-button-ghost" type="button">Append Older</button>
         <button id="timelineVirtualRetryBtn" class="ui-button ui-button-borderless" type="button">Retry End</button>
       </div>
       <div id="timelineHostVirtual"></div>
+      <p><a href="../docs/timeline-layout-navigation.md">Layout and navigation API guide</a> · Uses <code>invalidateLayout</code>, <code>estimateItemHeight</code>, and <code>scrollToItem</code>. Offscreen rows use estimates until mounted.</p>
     </section>
 
     <section class="panel">
@@ -217,7 +235,7 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.178";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
 
@@ -296,6 +314,13 @@
 
     let virtualNewest = 0;
     let virtualOldest = 159;
+    let detailsExpanded = true;
+    const expansionOverrides = new Map();
+    const isExpanded = id => expansionOverrides.get(String(id)) ?? detailsExpanded;
+    const virtualStatus = document.getElementById("timelineVirtualStatus");
+    function reportVirtual(message) {
+      virtualStatus.textContent = `${virtualItems.length} events loaded. ${message}`;
+    }
     let virtualItems = Array.from({ length: 160 }, (_, index) => buildVirtualItem(index));
 
     function buildVirtualItem(index) {
@@ -306,9 +331,9 @@
         timestamp,
         title: `Feed event ${index}`,
         subtitle: index % 4 === 0 ? "Variable-height operational note" : "Status update",
-        description: index % 5 === 0
-          ? "This deliberately longer description demonstrates measured rows without assuming a fixed item height. It can wrap over several lines as the demo width changes."
-          : "Short timeline detail.",
+        detail: index % 5 === 0
+          ? "Responder assigned. Location verified and caller updated."
+          : "Status confirmed with the assigned team.",
         status: index % 3 === 0 ? "completed" : "accepted",
         meta: index % 6 === 0 ? ["Virtual", "Measured"] : ["Virtual"],
       };
@@ -317,9 +342,54 @@
     const virtualTimeline = createTimeline(virtualHost, virtualItems, {
       ariaLabel: "Virtualized incident feed",
       orientation: "vertical",
-      groupByDate: true,
+      groupByDate: false,
       enableVirtualization: true,
       virtualThreshold: 100,
+      estimateItemHeight(item, { startsGroup }) {
+        return (isExpanded(item.id) ? 330 : 180) + (startsGroup ? 40 : 0);
+      },
+      mountItemContent(slot, item) {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "ui-button ui-button-ghost";
+        const preview = document.createElement("p");
+        preview.className = "feed-preview";
+        preview.textContent = item.detail;
+        const details = document.createElement("div");
+        details.id = `details-${item.id}`;
+        details.className = "feed-details";
+        toggle.setAttribute("aria-controls", details.id);
+        const note = document.createElement("p");
+        note.textContent = item.detail;
+        const followup = document.createElement("p");
+        followup.textContent = "Team review complete. Next step: contact the assigned responder and confirm the outcome.";
+        const action = document.createElement("button");
+        action.type = "button";
+        action.className = "ui-button ui-button-borderless";
+        action.textContent = "Log Follow-up";
+        action.addEventListener("click", () => {
+          reportVirtual(`Follow-up logged for ${item.id}.`);
+          writeLog("timeline.virtual.followup", { id: item.id });
+        });
+        details.append(note, followup, action);
+        slot.append(toggle, preview, details);
+        function update() {
+          const expanded = isExpanded(item.id);
+          if (!expanded && details.contains(document.activeElement)) toggle.focus({ preventScroll: true });
+          toggle.textContent = `${expanded ? "Collapse" : "Expand"} ${item.title}`;
+          toggle.setAttribute("aria-expanded", String(expanded));
+          details.hidden = !expanded;
+          preview.hidden = expanded;
+        }
+        toggle.addEventListener("click", () => {
+          virtualTimeline.invalidateLayout(item.id, {
+            mutate() { expansionOverrides.set(item.id, !isExpanded(item.id)); },
+          });
+          reportVirtual(`${item.title} ${isExpanded(item.id) ? "expanded" : "collapsed"}.`);
+        });
+        update();
+        return { update };
+      },
       onRangeChange(range) {
         writeLog("timeline.virtual.range", range);
       },
@@ -331,15 +401,52 @@
       },
     });
 
+    function setAllExpanded(expanded) {
+      virtualTimeline.invalidateLayout(null, {
+        mutate() {
+          detailsExpanded = expanded;
+          expansionOverrides.clear();
+        },
+      });
+      reportVirtual(`All details ${expanded ? "expanded" : "collapsed"}. New rows will use this mode.`);
+      writeLog("timeline.virtual.layout", { expanded, count: virtualItems.length });
+    }
+    document.getElementById("timelineCollapseBtn").addEventListener("click", () => setAllExpanded(false));
+    document.getElementById("timelineExpandBtn").addEventListener("click", () => setAllExpanded(true));
+    async function jumpToEvent() {
+      const input = document.getElementById("timelineJumpId");
+      const number = input.valueAsNumber;
+      if (!Number.isInteger(number)) {
+        reportVirtual("Enter a whole event number.");
+        input.focus();
+        return;
+      }
+      const id = `feed-${number}`;
+      if (virtualItems.some(item => item.id === id)) {
+        virtualTimeline.invalidateLayout(id, { mutate() { expansionOverrides.set(id, true); } });
+      }
+      const result = await virtualTimeline.scrollToItem(id, { align: "start", focus: true });
+      reportVirtual(result.found ? `Event ${number} expanded and focused.`
+        : result.reason === "not-loaded" ? `Event ${number} is not loaded. No extra rows were fetched.`
+        : `Jump did not finish: ${result.reason}.`);
+      writeLog("timeline.virtual.jump", result);
+    }
+    document.getElementById("timelineJumpBtn").addEventListener("click", jumpToEvent);
+    document.getElementById("timelineJumpId").addEventListener("keydown", event => {
+      if (event.key === "Enter") { event.preventDefault(); jumpToEvent(); }
+    });
+
     document.getElementById("timelineVirtualPrependBtn").addEventListener("click", () => {
       const incoming = Array.from({ length: 8 }, () => buildVirtualItem(--virtualNewest));
       virtualItems = incoming.concat(virtualItems);
       virtualTimeline.prepend(incoming);
+      reportVirtual("Added 8 newer events using the current display mode.");
     });
     document.getElementById("timelineVirtualAppendBtn").addEventListener("click", () => {
       const incoming = Array.from({ length: 12 }, () => buildVirtualItem(++virtualOldest));
       virtualItems = virtualItems.concat(incoming);
       virtualTimeline.append(incoming);
+      reportVirtual("Added 12 older events using the current display mode.");
     });
     document.getElementById("timelineVirtualRetryBtn").addEventListener("click", () => {
       virtualTimeline.resetReachEnd();
