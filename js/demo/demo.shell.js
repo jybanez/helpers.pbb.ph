@@ -76,6 +76,7 @@ const DEMO_GROUPS = [
       { href: "./demo.media.strip.html", label: "Media Strip" },
       { href: "./demo.media.viewer.html", label: "Media Viewer" },
       { href: "./demo.pdf.viewer.html", label: "PDF Viewer" },
+      { href: "./demo.h4.html", label: "QR & PNG" },
       { href: "./demo.timeline.html", label: "Timeline" },
       { href: "./demo.timeline.scrubber.html", label: "Timeline Scrubber" },
     ],

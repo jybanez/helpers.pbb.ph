@@ -1,11 +1,74 @@
 <!doctype html>
-<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Offline QR and PNG demo</title>
-<style>body{font:16px system-ui;max-width:46rem;margin:2rem auto;padding:1rem}label,button{display:block;margin:1rem 0}canvas{max-width:100%;height:auto}input{width:100%;box-sizing:border-box;padding:.7rem}button{padding:.7rem}#status{min-height:2rem}</style>
-<h1>Offline QR and PNG</h1><p>Synthetic composition demo. Generate a PNG, then use Save PNG to download it.</p>
-<label>Text to encode<input id="text" value="BP:CLAIM:SYNTHETIC-DEMO" autocomplete="off"></label>
-<button id="generate">Generate PNG</button><button id="save" disabled>Save PNG</button>
-<p id="status" role="status"></p><canvas id="voucher" width="600" height="500" aria-label="Synthetic voucher preview"></canvas>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QR &amp; PNG Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin:0; padding:24px; font:16px "Segoe UI",sans-serif; background:var(--demo-shell-bg,#0c1017); color:var(--demo-shell-text,#d7e0f4); }
+    .page { max-width:1180px; margin:auto; display:grid; gap:14px; min-width:0; }
+    .panel { padding:16px; border:1px solid var(--demo-shell-border,#263146); border-radius:10px; background:var(--demo-shell-surface-muted,#111826); display:grid; gap:12px; min-width:0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    h1,h2,p { margin:0; }
+    p { line-height:1.5; }
+    label { display:grid; gap:8px; }
+    input,button { box-sizing:border-box; padding:12px; font:inherit; border:1px solid var(--demo-shell-border,#263146); border-radius:8px; background:var(--demo-shell-control,#0b1220); color:inherit; }
+    input { width:100%; min-width:0; }
+    button { cursor:pointer; }
+    button:disabled { opacity:.5; cursor:default; }
+    a { color:var(--demo-shell-accent,#8db5ff); }
+    canvas { display:block; max-width:100%; height:auto; background:#fff; border-radius:6px; }
+    #status { min-height:1.5em; }
+  </style>
+  <script>
+    window.demoMeta = {
+      title: "QR & PNG",
+      overview: "Generate QR codes locally and export a composed canvas as a PNG image.",
+      useWhen: ["Encode text or links as QR codes.", "Prepare a voucher or other canvas image for a user-initiated PNG download."],
+      avoidWhen: ["This helper does not issue or validate redeemable vouchers."],
+      description: "QR generation and PNG export run locally. Your app owns the surrounding layout and asset readiness. This sample uses synthetic content.",
+      defaultSampleCode: `import { createQr, createCanvasPngExporter } from '../dist/helpers.h4.min.js';
+const qr = createQr({ text: 'https://pbb.ph/', scale: 4 });
+const exporter = createCanvasPngExporter();
+const png = await exporter.export(qr.canvas);
+// In a separate Save button click:
+exporter.download(png, { filename: 'qr.png' });`,
+      constructor: [
+        { factory: "createQr(options)", arguments: "text, scale, quietZone, maxVersion", returns: "canvas, update(), getState(), destroy()" },
+        { factory: "createCanvasPngExporter()", arguments: "optional document", returns: "export(), download(), cancel(), destroy()" }
+      ],
+      options: [
+        { option: "text", default: "required", description: "Nonempty Unicode text, up to 2048 UTF-8 bytes. The sample voucher layout has a smaller visual capacity." },
+        { option: "scale", default: "4", description: "Integer pixels per QR module, from 1 to 32." },
+        { option: "quietZone", default: "4", description: "White border in modules, from 4 to 32." }
+      ],
+      events: [],
+      methods: [
+        { method: "export(canvas)", arguments: "completed canvas", returns: "Promise of a PNG Blob" },
+        { method: "download(blob, { filename })", arguments: "prepared PNG, during a user click", returns: "Download initiated; browser controls saving" },
+        { method: "destroy()", arguments: "none", returns: "Disposes owned resources" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+<main class="page">
+  <section class="panel">
+    <a class="back" href="./index.html">← Back to Home</a>
+    <h1>QR &amp; PNG Demo</h1>
+    <p>Generate a QR code, compose it into a synthetic voucher, then save the PNG. Nothing entered here is sent to a server.</p>
+    <p><a href="../docs/h4/contract.md">API and lifecycle guide</a></p>
+  </section>
+  <section class="panel">
+    <h2>Try it</h2>
+    <label>Text to encode<input id="text" value="BP:CLAIM:SYNTHETIC-DEMO" autocomplete="off"></label>
+    <div class="row"><button id="generate" type="button">Generate PNG</button><button id="save" type="button" disabled>Save PNG</button></div>
+    <p id="status" role="status">Generate a preview to enable saving.</p>
+    <canvas id="voucher" width="600" height="500" aria-label="Synthetic voucher preview"></canvas>
+  </section>
+</main>
 <script type="module">
 import {createQr,createCanvasPngExporter} from '../dist/helpers.h4.min.js';
 const input=document.querySelector('#text'),save=document.querySelector('#save'),status=document.querySelector('#status'),canvas=document.querySelector('#voucher');
@@ -21,4 +84,6 @@ document.querySelector('#generate').onclick=async()=>{
 };
 save.onclick=()=>{try{exporter.download(blob,{filename:'synthetic-voucher.png'});status.textContent='Download initiated. Check your browser downloads.';}catch(e){status.textContent=`Could not start download (${e.code||'ERROR'}).`;}};
 addEventListener('pagehide',()=>{revision++;qr?.destroy();exporter.destroy();blob=null;},{once:true});
-</script></html>
+</script>
+</body>
+</html>
