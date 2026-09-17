@@ -22,29 +22,39 @@
     .icon-preview { display: flex; align-items: center; gap: 12px; color: var(--demo-shell-text, var(--ui-text, #f2f6ff)); }
     .icon-preview .ui-icon { width: 20px; height: 20px; }
     .icon-meta { font-size: 12px; color: var(--demo-shell-muted, var(--ui-muted, #9fb2d8)); font-family: Consolas, "Courier New", monospace; }
+    .icon-card { text-align: left; font: inherit; min-width: 0; }
+    .icon-meta { overflow-wrap: anywhere; }
+    .icon-swatch { display: inline-flex; padding: 8px; border-radius: 6px; }
+    .icon-swatch--light { background: #fff; color: #172033; }
+    .icon-swatch--dark { background: #172033; color: #fff; }
+    body.demo-shell-sidebar .icon-preview .icon-swatch .ui-icon { color: inherit !important; }
+    .panel a { color: var(--ui-accent, #8db5ff); }
+    .panel input, .panel select { max-width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-bg); color: var(--ui-text); }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.184";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.icons"]);
   </script>
   <script>
     window.demoMeta = {
       title: "Icons",
-      overview: "Shared SVG icon registry with one outline visual language, categorized namespaced ids, and direct SVGElement creation for helper and app use across actions, nav, people, and workflow states.",
+      overview: "Shared SVG icons with categorized namespaced IDs, theme-aware outlines, and optional file, social-brand, and AI-provider packs.",
       useWhen: [
         "Use <code>createIcon(...)</code> when a PBB project needs a shared button, status, or navigation icon without copying inline SVG.",
         "Use it when icon naming, sizing, and stroke style should remain consistent across helper demos and downstream apps."
       ],
       avoidWhen: [
         "Do not use it for illustrations or large marketing artwork.",
-        "Do not inject arbitrary project-local SVG into the shared registry contract in V1."
+        "Use trusted icon definitions; optional packs accept only supported SVG shapes and attributes."
       ],
-      description: "The icon registry stays narrow: one outline pack, stable namespaced ids, currentColor inheritance, and plain DOM/SVG output for shared helper and app-shell workflows.",
+      description: "Core icons load by default. Explicitly import and register optional packs for file formats, social brands, or AI providers. Names remain namespaced, SVGs inherit currentColor by default, and brand accents are opt-in. File icons describe formats, not Microsoft or Adobe product logos.",
       defaultSampleCode: `const closeIcon = createIcon(\"actions.close\", {\n  size: 16,\n  title: \"Close\",\n  decorative: false,\n});\n\nbutton.prepend(closeIcon);`,
       constructor: [
         { factory: "<code>createIcon(name, options)</code>", arguments: "icon id and icon options", returns: "<code>SVGElement</code>" }
       ],
       options: [
+        { option: "<code>variant</code>", default: '<code>"mono"</code>', description: 'Use "brand" for the supplied single brand accent where available. Multicolor logos remain monochrome; this is not a full-color gradient renderer.' },
+        { option: "<code>fallback</code>", default: "none", description: 'Registered fallback ID for unknown names, for example ai.generic. Without a fallback, unknown IDs still throw.' },
         { option: "<code>size</code>", default: "<code>16</code>", description: "Rendered icon width/height in pixels." },
         { option: "<code>title</code>", default: "<code>\"\"</code>", description: "Optional SVG title content for non-decorative use." },
         { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Additional class name(s) on the SVG root." },
@@ -55,6 +65,8 @@
       propertiesText: "The icon registry is definition-based. Use <code>getIconDefinition(...)</code>, <code>listIcons()</code>, and <code>listIconCategories()</code> for lookup rather than reading internal maps directly.",
       events: [],
       methods: [
+        { method: "<code>registerIconPack(definitions)</code>", arguments: "imported pack object", returns: "registered count; identical re-registration is safe; conflicting IDs throw" },
+        { method: "<code>getFileIconName(filename, mimeType?)</code>", arguments: "filename and optional MIME type (from files pack)", returns: "files.* ID; unknown formats return files.unknown" },
         { method: "<code>getIconDefinition(name)</code>", arguments: "icon id", returns: "icon definition or <code>null</code>" },
         { method: "<code>listIcons()</code>", arguments: "none", returns: "sorted icon id array" },
         { method: "<code>listIconCategories()</code>", arguments: "none", returns: "sorted category array" }
@@ -71,24 +83,46 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Icons Demo</h1>
-      <p class="muted">Dedicated catalog for the shared outline SVG icon registry, including the newer people and workflow icon groups.</p>
+      <p class="muted">Browse core icons plus optional file formats, social brands, and AI providers. Each card shows the icon on light and dark surfaces. Select a card to copy its stable ID.</p>
+      <p class="muted"><a href="../docs/ui-icon-packs.md">Pack setup and usage guide</a> · <a href="../docs/icon-packs-sources.json">Artwork sources and versions</a>. Brand marks remain their owners' trademarks; file-format artwork is original Helper artwork.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Curated Icon Pack</h2>
       <p class="muted">This catalog is generated from the live registry, so new shared icons appear here automatically as the pack expands.</p>
+      <div class="row">
+        <label>Search icons <input id="iconSearch" type="search" placeholder="pdf, github, claude…"></label>
+        <label>Category <select id="iconCategory"><option value="">All categories</option></select></label>
+        <label>Appearance <select id="iconVariant"><option value="mono">Theme / monochrome</option><option value="brand">Brand accent (when available)</option></select></label>
+      </div>
+      <p id="iconCount" role="status" class="muted"></p>
+      <label>Selected icon ID <input id="selectedIcon" readonly aria-label="Selected icon ID"></label>
       <div id="iconGroups" class="icon-groups"></div>
-      <pre>const icon = createIcon("actions.search", {
-  size: 18,
-  title: "Search",
-  decorative: false,
-});</pre>
+      <pre>import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.184";
+import { FILE_ICONS, getFileIconName } from "../js/ui/ui.icons.files.js";
+import { SOCIAL_ICONS } from "../js/ui/ui.icons.social.js";
+import { AI_ICONS } from "../js/ui/ui.icons.ai.js";
+await uiLoader.load("ui.icons");
+const { createIcon, registerIconPack } = await uiLoader.get("ui.icons");
+// Import/register only the packs your app needs.
+registerIconPack(FILE_ICONS);
+registerIconPack(SOCIAL_ICONS);
+registerIconPack(AI_ICONS);
+const attachment = createIcon(getFileIconName("report.pdf"), { title: "PDF" });
+const github = createIcon("social.github", { title: "GitHub" });
+const claude = createIcon("ai.claude", { variant: "brand", title: "Claude" });
+const unknown = createIcon("ai.future-provider", { fallback: "ai.generic" });
+document.getElementById("your-icon-host").append(attachment, github, claude, unknown);</pre>
       <pre id="log" class="log">No events yet.</pre>
     </section>
   </main>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.184";
     await window.__demoLoaderReady;
-    const { createIcon, listIcons, listIconCategories } = await uiLoader.get("ui.icons");
+    const { createIcon, listIcons, listIconCategories, registerIconPack, getIconDefinition } = await uiLoader.get("ui.icons");
+    const { FILE_ICONS } = await import("../js/ui/ui.icons.files.js");
+    const { SOCIAL_ICONS } = await import("../js/ui/ui.icons.social.js");
+    const { AI_ICONS } = await import("../js/ui/ui.icons.ai.js");
+    [FILE_ICONS, SOCIAL_ICONS, AI_ICONS].forEach(registerIconPack);
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     const groupsHost = document.getElementById("iconGroups");
@@ -106,7 +140,17 @@
 
     const names = listIcons();
     const categories = listIconCategories();
+    const categorySelect = document.getElementById("iconCategory");
+    categories.forEach(category => categorySelect.add(new Option(category, category)));
+    const search = document.getElementById("iconSearch");
+    const variant = document.getElementById("iconVariant");
+    function renderCatalog() {
+    groupsHost.replaceChildren();
+    let count = 0;
     categories.forEach((category) => {
+      if (categorySelect.value && categorySelect.value !== category) return;
+      const matches = names.filter(name => getIconDefinition(name).category === category && `${name} ${getIconDefinition(name).title || ""}`.toLowerCase().includes(search.value.trim().toLowerCase()));
+      if (!matches.length) return;
       const section = document.createElement("section");
       section.className = "icon-group";
       const title = document.createElement("h3");
@@ -114,12 +158,21 @@
       title.textContent = category;
       const grid = document.createElement("div");
       grid.className = "icon-grid";
-      names.filter((name) => name.startsWith(`${category}.`)).forEach((name) => {
-        const card = document.createElement("article");
+      matches.forEach((name) => {
+        count++;
+        const card = document.createElement("button");
+        card.type = "button";
+        card.setAttribute("aria-label", `Copy ${name}`);
         card.className = "icon-card";
         const preview = document.createElement("div");
         preview.className = "icon-preview";
-        preview.appendChild(createIcon(name, { size: 20, title: name, decorative: false }));
+        for (const tone of ["light", "dark"]) {
+          const swatch = document.createElement("span");
+          swatch.className = `icon-swatch icon-swatch--${tone}`;
+          if (variant.value === "brand" && getIconDefinition(name).brandColor) swatch.style.color = getIconDefinition(name).brandColor;
+          swatch.appendChild(createIcon(name, { size: 20, variant: variant.value }));
+          preview.appendChild(swatch);
+        }
         const label = document.createElement("span");
         label.textContent = name.split(".")[1];
         preview.appendChild(label);
@@ -127,12 +180,28 @@
         meta.className = "icon-meta";
         meta.textContent = name;
         card.append(preview, meta);
-        card.addEventListener("click", () => writeLog("icon.select", { name, category }));
+        card.addEventListener("click", async () => {
+          const selected = document.getElementById("selectedIcon");
+          selected.value = name;
+          try {
+            await navigator.clipboard.writeText(name);
+            writeLog("icon.copied", { name, category });
+          } catch {
+            selected.focus(); selected.select();
+            writeLog("icon.selected", { name, help: "Copy the selected ID manually; clipboard access is unavailable." });
+          }
+        });
         grid.appendChild(card);
       });
       section.append(title, grid);
       groupsHost.appendChild(section);
     });
+    document.getElementById("iconCount").textContent = count ? `${count} icons shown. Brand accents are single colors, not multicolor gradients.` : "No matching icons. Try another name or category.";
+    }
+    search.addEventListener("input", renderCatalog);
+    categorySelect.addEventListener("change", renderCatalog);
+    variant.addEventListener("change", renderCatalog);
+    renderCatalog();
   </script>
 </body>
 </html>

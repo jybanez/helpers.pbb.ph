@@ -1,9 +1,34 @@
 import { ICON_DEFINITIONS } from "./ui.icons.catalog.js?v=0.21.90";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const definitions = new Map(Object.entries(ICON_DEFINITIONS));
+
+// Packs are explicit imports: applications pay only for the artwork they use.
+export function registerIconPack(pack) {
+  const entries = Object.entries(pack || {});
+  const validated = entries.map(([name, definition]) => {
+    if (!/^[a-z][a-z0-9-]*\.[a-z0-9-]+$/.test(name) || !definition?.category || !Array.isArray(definition.nodes) || !definition.nodes.length) {
+      throw new Error(`[registerIconPack] Invalid definition "${name}".`);
+    }
+    const copy = JSON.parse(JSON.stringify(definition));
+    for (const node of copy.nodes) {
+      if (!["path", "circle", "ellipse", "rect", "line", "polyline", "polygon"].includes(node.tag)) throw new Error("Unsupported icon node.");
+      for (const [key, value] of Object.entries(node.attrs || {})) {
+        if (!/^(d|cx|cy|r|rx|ry|x|y|x1|x2|y1|y2|width|height|points|fill|stroke|stroke-width|fill-rule|clip-rule|opacity|transform)$/.test(key) || /url\s*\(/i.test(String(value))) throw new Error("Unsupported icon attribute.");
+      }
+    }
+    if (copy.brandColor && !/^#[0-9a-f]{6}$/i.test(copy.brandColor)) throw new Error("Invalid brand color.");
+    const existing = definitions.get(name);
+    if (existing && JSON.stringify(existing) !== JSON.stringify(copy)) throw new Error(`[registerIconPack] Icon already exists: ${name}`);
+    return [name, copy];
+  });
+  for (const [name, definition] of validated) definitions.set(name, definition);
+  return validated.length;
+}
 
 export function createIcon(name, options = {}) {
-  const definition = getIconDefinition(name);
+  const resolvedName = definitions.has(String(name || "").trim()) ? String(name).trim() : options.fallback || name;
+  const definition = getIconDefinition(resolvedName);
   if (!definition) {
     throw new Error(`[createIcon] Unknown icon "${name}".`);
   }
@@ -20,7 +45,8 @@ export function createIcon(name, options = {}) {
   svg.setAttribute("stroke-linecap", "round");
   svg.setAttribute("stroke-linejoin", "round");
   svg.setAttribute("focusable", "false");
-  svg.setAttribute("data-icon", name);
+  svg.setAttribute("data-icon", resolvedName);
+  if (options.variant === "brand" && definition.brandColor) svg.style.color = definition.brandColor;
   svg.setAttribute("data-icon-category", definition.category);
   svg.setAttribute("class", ["ui-icon", `is-${definition.category}`, options.className || ""].filter(Boolean).join(" "));
 
@@ -50,10 +76,10 @@ export function createIcon(name, options = {}) {
 
 export function getIconDefinition(name) {
   const key = String(name || "").trim();
-  if (!ICON_DEFINITIONS[key]) {
+  if (!definitions.has(key)) {
     return null;
   }
-  const definition = ICON_DEFINITIONS[key];
+  const definition = definitions.get(key);
   return {
     ...definition,
     nodes: definition.nodes.map((node) => ({ ...node, attrs: { ...node.attrs } })),
@@ -61,11 +87,11 @@ export function getIconDefinition(name) {
 }
 
 export function listIcons() {
-  return Object.keys(ICON_DEFINITIONS).sort();
+  return Array.from(definitions.keys()).sort();
 }
 
 export function listIconCategories() {
-  return Array.from(new Set(listIcons().map((name) => ICON_DEFINITIONS[name].category))).sort();
+  return Array.from(new Set(listIcons().map((name) => definitions.get(name).category))).sort();
 }
 
 function normalizeSize(value) {
