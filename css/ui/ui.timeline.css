@@ -33,7 +33,7 @@
   min-width: 0;
 }
 
-.ui-timeline-virtual-slice {
+.ui-timeline .ui-timeline-list.ui-timeline-virtual-slice {
   display: grid;
   gap: 0;
 }

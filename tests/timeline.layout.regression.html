@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Timeline layout and navigation regression</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <link rel="stylesheet" href="../css/ui/ui.timeline.css">
+  <style>#host { width: 620px; height: 320px; } .detail { height: 260px; }</style>
+</head>
+<body data-status="pending">
+  <button id="bulk">Collapse results</button>
+  <div id="host"></div>
+  <pre id="results">pending</pre>
+  <script type="module">
+    const failures = [];
+    const assert = (ok, message) => { if (!ok) failures.push(message); };
+    const settle = () => new Promise(resolve => setTimeout(resolve, 120));
+    try {
+      let module = await import("../js/ui/ui.timeline.js");
+      if (new URLSearchParams(location.search).has("bundled")) {
+        const { createUiLoader, DEFAULT_COMPONENT_REGISTRY } = await import("../js/ui/ui.loader.js");
+        module = await createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true }).load("ui.timeline", { js: true });
+      }
+      const host = document.getElementById("host");
+      const collapsed = new Set();
+      const mounts = new Map();
+      const contexts = new Map();
+      let reachCalls = 0;
+      const items = Array.from({ length: 180 }, (_, index) => ({
+        id: `item-${index}`, title: `Item ${index}`, contentKey: "unchanged",
+        timestamp: new Date(Date.UTC(2026, 8, 18) - index * 60000).toISOString(),
+      }));
+      const timeline = module.createTimeline(host, items, {
+        enableVirtualization: true, virtualThreshold: 10, virtualOverscan: 400,
+        groupByDate: false, endThreshold: 1,
+        estimateItemHeight: item => collapsed.has(item.id) ? 110 : 370,
+        onReachEnd(meta) { reachCalls++; document.body.dataset.reachReason = meta.reason; },
+        mountItemContent(slot, item, context) {
+          mounts.set(item.id, (mounts.get(item.id) || 0) + 1);
+          const toggle = document.createElement("button");
+          toggle.textContent = "Toggle details";
+          const detail = document.createElement("div");
+          detail.className = "detail";
+          detail.textContent = "Details";
+          slot.append(toggle, detail);
+          function update(nextItem, nextContext) {
+            detail.hidden = collapsed.has(item.id);
+            toggle.setAttribute("aria-expanded", String(!detail.hidden));
+            contexts.set(item.id, nextContext);
+          }
+          update(item, context);
+          return { update };
+        },
+      });
+      await settle();
+      const viewport = host.querySelector(".ui-timeline-viewport");
+      assert(getComputedStyle(host.querySelector(".ui-timeline-virtual-slice")).rowGap === "0px", `virtual slice has zero unmeasured gap: ${getComputedStyle(host.querySelector(".ui-timeline-virtual-slice")).rowGap}`);
+      const row = id => Array.from(host.querySelectorAll(".ui-timeline-item")).find(node => node.dataset.itemId === id);
+      const anchor = () => {
+        const top = viewport.getBoundingClientRect().top;
+        const node = Array.from(host.querySelectorAll(".ui-timeline-virtual-unit"))
+          .find(node => node.getBoundingClientRect().bottom > top + 1);
+        return node && { id: node.dataset.itemId, offset: node.getBoundingClientRect().top - top };
+      };
+      const assertAnchor = (before, name) => {
+        const after = anchor();
+        assert(before?.id === after?.id && Math.abs(before.offset - after.offset) <= 3,
+          `${name}: ${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+      };
+      const result = await timeline.scrollToItem("item-100", { focus: true });
+      await settle();
+      assert(result.found && document.activeElement === row("item-100"), "offscreen jump must mount and focus target");
+      assert(Math.abs(row("item-100").getBoundingClientRect().top - viewport.getBoundingClientRect().top) <= 3, "jump aligns measured row");
+      assert(!row("item-0"), "jump keeps DOM window bounded");
+      assert((await timeline.scrollToItem("missing")).reason === "not-loaded", "missing is explicitly not loaded");
+      const button = row("item-100").querySelector("button");
+      button.focus({ preventScroll: true });
+      const before = anchor();
+      const mountCount = mounts.get("item-100");
+      timeline.invalidateLayout(null, { mutate() { items.forEach(item => collapsed.add(item.id)); } });
+      await settle();
+      assertAnchor(before, "bulk collapse preserves anchor despite offscreen invalidation");
+      assert(document.activeElement === button && button.isConnected, "layout preserves focused control identity");
+      assert(mounts.get("item-100") === mountCount, "layout does not remount retained custom content");
+      assert(row("item-100").querySelector(".detail").hidden, "mounted content update observes new presentation state");
+      assert(timeline.getState().virtualization.measuredCount < 30, "old offscreen measurements are invalidated");
+      const collapsedAnchor = anchor();
+      timeline.invalidateLayout(null, { mutate() { collapsed.clear(); } });
+      await settle();
+      assertAnchor(collapsedAnchor, "bulk expansion preserves anchor beyond old scroll bounds");
+      assert(document.activeElement === button, "expansion preserves focus");
+
+      viewport.scrollTop += 200;
+      viewport.dispatchEvent(new Event("scroll"));
+      await settle();
+      assert(anchor().id === "item-100" && anchor().offset < -150, "deep-body case starts inside expanded content");
+      timeline.invalidateLayout("item-100", { mutate() { collapsed.add("item-100"); } });
+      await settle();
+      assert(anchor().id === "item-100" && Math.abs(anchor().offset) <= 3, "collapsing removed body reveals anchor header");
+      timeline.invalidateLayout("item-100", { mutate() { collapsed.delete("item-100"); } });
+      await timeline.scrollToItem("item-100");
+      await settle();
+
+      // A late image/editor resize above the visible card must use the previous anchor.
+      const above = row("item-99");
+      assert(above, "overscan provides an above-viewport row for resize test");
+      const beforeResize = anchor();
+      above.querySelector(".detail").style.height = "500px";
+      await settle();
+      assertAnchor(beforeResize, "ResizeObserver preserves anchor captured before height change");
+
+      document.getElementById("bulk").focus();
+      timeline.invalidateLayout(null, { mutate() { items.forEach(item => collapsed.add(item.id)); } });
+      await settle();
+      assert(document.activeElement.id === "bulk", "bulk toolbar retains focus");
+      for (const align of ["center", "end", "start"]) {
+        const jump = await timeline.scrollToItem("item-150", { align });
+        await settle();
+        const rect = row("item-150").getBoundingClientRect();
+        const vp = viewport.getBoundingClientRect();
+        const expected = align === "center" ? (vp.height - rect.height) / 2 : align === "end" ? vp.height - rect.height : 0;
+        assert(jump.found && Math.abs(rect.top - vp.top - expected) <= 3, `measured jump supports ${align}: ${JSON.stringify(jump)} offset ${rect.top - vp.top} expected ${expected}`);
+      }
+      await timeline.scrollToItem("item-179");
+      await settle();
+      assert(row("item-179").getBoundingClientRect().bottom <= viewport.getBoundingClientRect().bottom + 3, "last-row jump clamps to scroll bounds");
+      assert(reachCalls === 0, `presentation changes and programmatic jumps do not request another page (${reachCalls}, ${document.body.dataset.reachReason})`);
+
+      const pending = timeline.scrollToItem("item-50");
+      timeline.append([{ id: "new-last", title: "Last" }]);
+      assert((await pending).reason === "cancelled", "data changes cancel pending navigation");
+      assert(contexts.get("item-50").total === 181, "retained mounts receive new collection context");
+      await settle();
+      timeline.setLinkedRange({ anchorMs: 0, startMs: Date.UTC(2026, 8, 18) - 5 * 60000, endMs: Date.UTC(2026, 8, 18) });
+      assert((await timeline.scrollToItem("item-100")).reason === "filtered", "loaded but filtered differs from missing");
+      const plainJump = await timeline.scrollToItem("item-2", { focus: true });
+      assert(plainJump.found && document.activeElement === row("item-2"), `nonvirtual jump supports focus: ${JSON.stringify(plainJump)} active ${document.activeElement.outerHTML.slice(0, 180)}`);
+      timeline.setLinkedRange(null);
+      const interrupted = timeline.scrollToItem("item-50");
+      timeline.destroy();
+      assert((await interrupted).reason === "cancelled", "destroy safely cancels in-flight navigation");
+      assert((await timeline.scrollToItem("item-1")).reason === "destroyed", "destroyed timeline cannot navigate");
+      assert(!host.children.length, "destroy releases DOM");
+      document.body.dataset.status = failures.length ? "failed" : "pass";
+      document.getElementById("results").textContent = failures.length ? failures.join("\n") : "PASS: timeline layout, focus, navigation, invalidation and cancellation";
+    } catch (error) {
+      document.body.dataset.status = "failed";
+      document.getElementById("results").textContent = error.stack;
+    }
+  </script>
+</body>
+</html>
