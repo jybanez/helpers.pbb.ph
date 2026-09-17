@@ -1,0 +1,87 @@
+{
+  "browser": "154.0.4258.12",
+  "scope": "Synthetic fixtures; desktop Edge with emulated viewport widths, not real mobile/AT or Bimo voucher acceptance",
+  "cases": [
+    {
+      "delivery": "module",
+      "width": 320,
+      "checks": [
+        "ASCII/UTF-8/2048-byte maximum decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected"
+      ],
+      "savedBytes": 15216
+    },
+    {
+      "delivery": "module",
+      "width": 360,
+      "checks": [
+        "ASCII/UTF-8 decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected"
+      ],
+      "savedBytes": 15216
+    },
+    {
+      "delivery": "module",
+      "width": 1024,
+      "checks": [
+        "ASCII/UTF-8 decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected"
+      ],
+      "savedBytes": 15216
+    },
+    {
+      "delivery": "bundle",
+      "width": 320,
+      "checks": [
+        "ASCII/UTF-8/2048-byte maximum decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected",
+        "demo generated and screenshot captured"
+      ],
+      "savedBytes": 15216
+    },
+    {
+      "delivery": "bundle",
+      "width": 360,
+      "checks": [
+        "ASCII/UTF-8 decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected",
+        "demo generated and screenshot captured"
+      ],
+      "savedBytes": 15216
+    },
+    {
+      "delivery": "bundle",
+      "width": 1024,
+      "checks": [
+        "ASCII/UTF-8 decode equality",
+        "composed PNG Blob decode equality",
+        "user-click initiated and actual saved PNG independently decoded; filename sanitized",
+        "invalid input/capacity/dimensions/null/failure/update/dispose/stale results; app canvas preserved",
+        "re-download saved; object URL and temporary anchor cleanup",
+        "actual cross-origin tainted Canvas rejected",
+        "demo generated and screenshot captured"
+      ],
+      "savedBytes": 15216
+    }
+  ]
+}

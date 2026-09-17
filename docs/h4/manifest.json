@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "provenanceCommit": "48313e597615939f05e40aa47b3a5f08ad85b384",
+  "runtime": [
+    "dist/helpers.h4.min.js"
+  ],
+  "encoder": {
+    "revision": "3c6d0b3cefb4e049dc337e82237c9644399716a8",
+    "license": "MIT"
+  },
+  "testDecoder": {
+    "version": "1.4.0",
+    "revision": "8e6a036beafa7053dd44b1b76ac578d22b1b3311",
+    "license": "Apache-2.0",
+    "runtime": false
+  },
+  "build": "esbuild 0.28.0, ES2020 ESM",
+  "sha256": {
+    "dist/helpers.h4.min.js": "d4eeb828e093523d5cddec6dcf7731391a3bf944f78bef61cc61bb88593143d3",
+    "js/media/qr-png.js": "2dc28718178a08ae9e62770e1eeccb2317938e0cdf774842f91291c8f575f3a9",
+    "vendor/h4/qrcodegen.ts": "1dc03fb5a10e0e2318ea162755bbdb9977ca6ce52cff959e9c9b6deafdccda9c",
+    "vendor/h4/qrcodegen.js": "d02ec46ed79aa09b83073c69c6fca0d92d2078fea2fda8ce7b6717abdc06a997",
+    "tests/vendor/h4/jsQR.cjs": "3325b0888fa4745c4e6940897d8c4f426fbaae76901fcbfe1871a04e90a51655",
+    "tests/vendor/h4/LICENSE": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "tests/vendor/h4/package.upstream.json": "23850629144f70982bdefa89db822397fc14bc849d6ed18bf9ceeb72c0f2678f"
+  }
+}
