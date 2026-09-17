@@ -144,6 +144,8 @@ export function createTimeline(container, items = [], options = {}) {
         },
       });
       unitNode.dataset.virtualIndex = String(index);
+      unitNode.classList.toggle("has-group-divider", unit.startsGroup && index > 0);
+      unitNode.classList.toggle("ends-group", index === units.length - 1 || units[index + 1].startsGroup);
       if (!reusable && unit.groupLabel) {
         unitNode.appendChild(createElement("p", {
           className: "ui-timeline-group-label",

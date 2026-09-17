@@ -52,7 +52,7 @@
     }
     #timelineHostVirtual {
       height: 480px;
-      padding: 0;
+      padding: 10px;
     }
     .log {
       margin: 0;
@@ -134,7 +134,7 @@
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.179";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.180";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
@@ -269,7 +269,7 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.179";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.180";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
 
