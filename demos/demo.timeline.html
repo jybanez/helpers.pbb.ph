@@ -92,53 +92,6 @@
       color: var(--demo-muted, var(--ui-muted, #9fb2d8));
       font-size: 13px;
     }
-    .feed-details { display: grid; gap: 10px; padding-top: 10px; }
-    .feed-details[hidden], .feed-preview[hidden] { display: none; }
-    .feed-details p, .feed-preview { margin: 0; font-size: 13px; line-height: 20px; }
-    #timelineHostVirtual { container-type: inline-size; container-name: timeline-feed; }
-    #timelineHostVirtual .ui-timeline-header { display: none; }
-    #timelineHostVirtual .ui-timeline-body { gap: 0; }
-    #timelineHostVirtual .ui-timeline-custom-content { margin: 0; }
-    .feed-message-header {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) max-content;
-      align-items: center;
-      gap: clamp(4px, 1vw, 12px);
-      width: 100%;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-      font-size: 13px;
-      line-height: 20px;
-      text-align: left;
-      cursor: pointer;
-      border-radius: 3px;
-    }
-    .feed-message-header:focus-visible { outline: 2px solid var(--ui-accent, #7bb5ff); outline-offset: 4px; }
-    .feed-message-header:hover { color: var(--ui-accent, #7bb5ff); }
-    .feed-sender, .feed-addressed, .feed-preview { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .feed-sender { font-weight: 700; }
-    .feed-addressed, .feed-preview { color: var(--ui-muted, #9fb2d8); }
-    .feed-timestamp { grid-column: 4; font-size: 11px; white-space: nowrap; text-align: right; color: var(--ui-muted, #9fb2d8); }
-    .feed-message-header[aria-expanded="true"] {
-      grid-template-columns: minmax(0, 1fr) max-content;
-      row-gap: 4px;
-    }
-    .feed-message-header[aria-expanded="true"] .feed-sender { grid-column: 1; grid-row: 1; }
-    .feed-message-header[aria-expanded="true"] .feed-addressed { grid-column: 1; grid-row: 2; }
-    .feed-message-header[aria-expanded="true"] .feed-timestamp { grid-column: 2; grid-row: 1; }
-    @container timeline-feed (max-width: 520px) {
-      .feed-message-header[aria-expanded="false"] {
-        grid-template-columns: minmax(0, 1fr) max-content;
-        row-gap: 4px;
-      }
-      .feed-message-header[aria-expanded="false"] .feed-sender { grid-column: 1; grid-row: 1; }
-      .feed-message-header[aria-expanded="false"] .feed-addressed { grid-column: 1 / -1; grid-row: 2; }
-      .feed-message-header[aria-expanded="false"] .feed-preview { grid-column: 1 / -1; grid-row: 3; }
-      .feed-message-header[aria-expanded="false"] .feed-timestamp { grid-column: 2; grid-row: 1; }
-    }
     #timelineJumpId { width: 100px; }
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
     .timeline-guide { display: grid; gap: 12px; min-width: 0; }
@@ -149,7 +102,7 @@
     .timeline-guide code { overflow-wrap: anywhere; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.183";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.185";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
@@ -320,11 +273,11 @@ const timeline = createTimeline(host, items, {
           <li><strong>Prepend Newer / Append Older:</strong> adds 8 newer or 12 older in-memory records. Scroll partway down before prepending to observe anchor preservation.</li>
           <li><strong>Retry End:</strong> resets the paging notification latch. Scroll near the end to see <code>onReachEnd</code>. This demo logs the request; it does not contact a server.</li>
           <li><strong>Date groups:</strong> scroll into March 8 to see the floating date change. It remains available even when the original heading is outside the rendered window.</li>
-          <li><strong>Narrow layouts:</strong> at a feed width of 520px or less, sender, addressed, and preview stack in rows; the time stays top-right. The preview is one line with an ellipsis.</li>
+          <li><strong>Narrow layouts:</strong> at a feed width of 560px or less, sender, addressed, and preview stack in rows; the time stays top-right. The preview is one line with an ellipsis.</li>
         </ul>
         <details><summary>What belongs to the helper, and what belongs to your app?</summary>
-          <p>The helper owns date labels, markers, measured row heights, viewport anchoring, and offscreen navigation. The sender/addressed fields, disclosure buttons, expansion state, follow-up action, and responsive message columns are this demo's custom renderer. There is no built-in <code>collapsed</code> item option.</p>
-          <p>Keep expansion state outside the mounted DOM: virtualized rows are removed and remounted while scrolling. Return an <code>update()</code> hook from <code>mountItemContent</code>, and call <code>invalidateLayout(id, { mutate })</code> for presentation changes. Use <code>contentKey</code> only when replacing the nested component itself.</p>
+          <p>Helper owns disclosure state, accessible header toggles, responsive columns, grouping, measured heights, and viewport anchoring. Enable <code>collapsible: true</code>; supply <code>title</code> (sender), <code>subtitle</code> (addressed), <code>preview</code> (defaults to description), and timestamp.</p>
+          <p>Use <code>setCollapsed(id, boolean)</code>, <code>isCollapsed(id)</code>, <code>collapseAll()</code>, and <code>expandAll()</code>. State survives updates and virtual remounts by stable ID. Custom bodies remain mounted while hidden. The app supplies rich content and follow-up actions. See the <a href="../docs/timeline-disclosure.md">native disclosure guide</a>.</p>
         </details>
         <details><summary>Height estimates, paging, and cleanup</summary>
           <p>Give the host a height, for example <code>height: 480px; min-height: 0</code>. Virtualization activates only for vertical feeds at or above <code>virtualThreshold</code>. The helper measures mounted rows; <code>estimateItemHeight(item, { startsGroup })</code> predicts the complete offscreen unit, including date heading and spacing. Tune estimates for your own renderer and narrow layout.</p>
@@ -362,7 +315,7 @@ const timeline = createTimeline(host, items, {
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.183";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.185";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
 
@@ -461,9 +414,6 @@ const timeline = createTimeline(host, items, {
 
     let virtualNewest = 0;
     let virtualOldest = 159;
-    let detailsExpanded = true;
-    const expansionOverrides = new Map();
-    const isExpanded = id => expansionOverrides.get(String(id)) ?? detailsExpanded;
     const virtualStatus = document.getElementById("timelineVirtualStatus");
     function reportVirtual(message) {
       virtualStatus.textContent = `${virtualItems.length} events loaded. ${message}`;
@@ -477,10 +427,11 @@ const timeline = createTimeline(host, items, {
         id: `feed-${index}`,
         className: index % 11 === 0 ? "is-active" : "",
         timestamp,
-        title: `Feed event ${index}`,
+        title: ["Operator Maya", "Dispatch", "Team Alpha"][Math.abs(index) % 3],
+        subtitle: ["Team Alpha", "All responders", "Dispatch"][Math.abs(index) % 3],
         sender: ["Operator Maya", "Dispatch", "Team Alpha"][Math.abs(index) % 3],
         addressed: ["Team Alpha", "All responders", "Dispatch"][Math.abs(index) % 3],
-        detail: index % 5 === 0
+        description: index % 5 === 0
           ? "Responder assigned. Location verified and caller updated."
           : "Status confirmed with the assigned team.",
         status: index % 3 === 0 ? "completed" : "accepted",
@@ -493,65 +444,22 @@ const timeline = createTimeline(host, items, {
       groupByDate: true,
       enableVirtualization: true,
       virtualThreshold: 100,
+      collapsible: true,
       estimateItemHeight(item, { startsGroup }) {
-        return (isExpanded(item.id) ? 190 : 52) + (startsGroup ? 40 : 0);
+        return (item.collapsed ? 100 : 190) + (startsGroup ? 40 : 0);
+      },
+      onCollapseChange({ ids, collapsed }) {
+        reportVirtual(`${ids.length} message(s) ${collapsed ? "collapsed" : "expanded"}.`);
       },
       mountItemContent(slot, item) {
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "feed-message-header";
-        toggle.setAttribute("aria-label", `${item.title}: ${item.sender}, addressed to ${item.addressed}`);
-        const sender = document.createElement("span");
-        sender.className = "feed-sender";
-        sender.textContent = item.sender;
-        sender.title = item.sender;
-        const addressed = document.createElement("span");
-        addressed.className = "feed-addressed";
-        addressed.textContent = item.addressed;
-        addressed.title = `Addressed to ${item.addressed}`;
-        const preview = document.createElement("span");
-        preview.className = "feed-preview";
-        preview.textContent = item.detail;
-        preview.title = item.detail;
-        const timestamp = document.createElement("time");
-        timestamp.className = "feed-timestamp";
-        timestamp.dateTime = new Date(item.timestamp).toISOString();
-        timestamp.textContent = slot.parentElement.querySelector(".ui-timeline-time").textContent;
-        timestamp.title = slot.parentElement.querySelector(".ui-timeline-time").title;
-        toggle.append(sender, addressed, preview, timestamp);
-        const details = document.createElement("div");
-        details.id = `details-${item.id}`;
-        details.className = "feed-details";
-        toggle.setAttribute("aria-controls", details.id);
-        const note = document.createElement("p");
-        note.textContent = item.detail;
         const followup = document.createElement("p");
         followup.textContent = "Team review complete. Next step: contact the assigned responder and confirm the outcome.";
         const action = document.createElement("button");
         action.type = "button";
         action.className = "ui-button ui-button-borderless";
         action.textContent = "Log Follow-up";
-        action.addEventListener("click", () => {
-          reportVirtual(`Follow-up logged for ${item.id}.`);
-          writeLog("timeline.virtual.followup", { id: item.id });
-        });
-        details.append(note, followup, action);
-        slot.append(toggle, details);
-        function update() {
-          const expanded = isExpanded(item.id);
-          if (!expanded && details.contains(document.activeElement)) toggle.focus({ preventScroll: true });
-          toggle.setAttribute("aria-expanded", String(expanded));
-          details.hidden = !expanded;
-          preview.hidden = expanded;
-        }
-        toggle.addEventListener("click", () => {
-          virtualTimeline.invalidateLayout(item.id, {
-            mutate() { expansionOverrides.set(item.id, !isExpanded(item.id)); },
-          });
-          reportVirtual(`${item.title} ${isExpanded(item.id) ? "expanded" : "collapsed"}.`);
-        });
-        update();
-        return { update };
+        action.addEventListener("click", () => reportVirtual(`Follow-up logged for ${item.id}.`));
+        slot.append(followup, action);
       },
       onRangeChange(range) {
         writeLog("timeline.virtual.range", range);
@@ -565,12 +473,9 @@ const timeline = createTimeline(host, items, {
     });
 
     function setAllExpanded(expanded) {
-      virtualTimeline.invalidateLayout(null, {
-        mutate() {
-          detailsExpanded = expanded;
-          expansionOverrides.clear();
-        },
-      });
+      virtualTimeline.update(undefined, { defaultCollapsed: !expanded });
+      if (expanded) virtualTimeline.expandAll();
+      else virtualTimeline.collapseAll();
       reportVirtual(`All details ${expanded ? "expanded" : "collapsed"}. New rows will use this mode.`);
       writeLog("timeline.virtual.layout", { expanded, count: virtualItems.length });
     }
@@ -586,7 +491,7 @@ const timeline = createTimeline(host, items, {
       }
       const id = `feed-${number}`;
       if (virtualItems.some(item => item.id === id)) {
-        virtualTimeline.invalidateLayout(id, { mutate() { expansionOverrides.set(id, true); } });
+        virtualTimeline.setCollapsed(id, false);
       }
       const result = await virtualTimeline.scrollToItem(id, { align: "start", focus: true });
       reportVirtual(result.found ? `Event ${number} expanded and focused.`

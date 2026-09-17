@@ -5,7 +5,7 @@
   <title>Timeline layout and navigation regression</title>
   <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
-  <link rel="stylesheet" href="../css/ui/ui.timeline.css">
+  <link rel="stylesheet" href="../css/ui/ui.timeline.css?v=0.21.8">
   <style>#host { width: 620px; height: 320px; } .detail { height: 260px; }</style>
 </head>
 <body data-status="pending">
@@ -17,7 +17,7 @@
     const assert = (ok, message) => { if (!ok) failures.push(message); };
     const settle = () => new Promise(resolve => setTimeout(resolve, 120));
     try {
-      let module = await import("../js/ui/ui.timeline.js");
+      let module = await import("../js/ui/ui.timeline.js?v=0.21.8");
       if (new URLSearchParams(location.search).has("bundled")) {
         const { createUiLoader, DEFAULT_COMPONENT_REGISTRY } = await import("../js/ui/ui.loader.js");
         module = await createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true }).load("ui.timeline", { js: true });

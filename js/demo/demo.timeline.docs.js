@@ -27,72 +27,28 @@ const anchorMs = Date.parse("2026-03-09T00:00:00+08:00");
 timeline.setLinkedRange({ anchorMs, startMs: 0, endMs: 86400000 - 1 });
 timeline.setLinkedRange(null); // clear the filter
 // On view teardown: timeline.destroy();`,
-    "virtualized feed": `// Minimal working disclosure renderer. The richer sender/addressed
-// columns and mobile CSS are in the full demo source linked above.
+    "virtualized feed": `// Native disclosure: no application expansion map or header renderer.
 host.style.height = "480px";
-host.style.minHeight = "0";
 const records = Array.from({ length: 160 }, (_, i) => ({
-  id: "event-" + i,
-  title: "Event " + i,
+  id: "event-" + i, title: "Operator Maya", subtitle: "Team Alpha",
   timestamp: new Date(Date.UTC(2026, 2, 9, 8, 30) - i * 420000).toISOString(),
-  detail: "Application-owned message details for event " + i,
+  description: "Application message details for event " + i,
 }));
-const expanded = new Set(); // survives virtual unmounts
 const timeline = createTimeline(host, records, {
-  groupByDate: true,
-  timeZone: "Asia/Manila",
-  enableVirtualization: true,
-  virtualThreshold: 100,
-  virtualOverscan: 480,
+  collapsible: true, defaultCollapsed: true, groupByDate: true,
+  enableVirtualization: true, virtualThreshold: 100,
   estimateItemHeight(item, { startsGroup }) {
-    // Estimates only: include the standard header, custom content, and spacing.
-    return (expanded.has(item.id) ? 150 : 100) + (startsGroup ? 40 : 0);
+    return (item.collapsed ? 100 : 190) + (startsGroup ? 40 : 0);
   },
-  mountItemContent(slot, item) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "Details for " + item.title;
-    const body = document.createElement("p");
-    body.id = "details-" + item.id;
-    button.setAttribute("aria-controls", body.id);
-    slot.append(button, body);
-    function update(nextItem) {
-      const open = expanded.has(nextItem.id);
-      button.setAttribute("aria-expanded", String(open));
-      body.hidden = !open;
-      body.textContent = nextItem.detail;
-    }
-    function toggle() {
-      timeline.invalidateLayout(item.id, { mutate() {
-        if (expanded.has(item.id)) expanded.delete(item.id);
-        else expanded.add(item.id);
-      } });
-    }
-    button.addEventListener("click", toggle);
-    update(item);
-    return {
-      update,
-      destroy() { button.removeEventListener("click", toggle); },
-    };
-  },
-  onRangeChange(range) { console.log("mounted range", range); },
+  onCollapseChange(change) { console.log(change.ids, change.collapsed); },
   onReachEnd(boundary) { console.log("load older records here", boundary); },
 });
-
-// Expand a loaded offscreen item, then mount, align, and focus it.
-timeline.invalidateLayout("event-120", { mutate() {
-  expanded.add("event-120");
-} });
-const result = await timeline.scrollToItem("event-120", {
-  align: "start", focus: true,
-});
-if (!result.found) console.log(result.reason);
-
-// Collapse all without changing record identity or recreating the helper.
-// timeline.invalidateLayout(null, { mutate() { expanded.clear(); } });
-// Retry after your app clears a failed loading state:
-// timeline.resetReachEnd();
-// On view teardown: timeline.destroy();`,
+timeline.setCollapsed("event-120", false);
+await timeline.scrollToItem("event-120", { align: "start", focus: true });
+timeline.collapseAll(); // includes filtered/offscreen loaded items
+// Future items use defaultCollapsed; bulk methods change existing items only.
+// timeline.expandAll();
+// timeline.destroy();`,
     "horizontal": `const timeline = createTimeline(host, items, {
   orientation: "horizontal",
   groupByDate: false,
@@ -131,6 +87,8 @@ timeline.update([]); // removal also destroys the mount
 timeline.destroy(); // release the entire view`,
   };
   meta.options.push(
+    { option: "collapsible / defaultCollapsed", default: "false / false", description: "Opt in to native disclosure; set the initial state for new stable IDs." },
+    { option: "onCollapseChange", default: "null", description: "Receives { ids, collapsed } once per change operation." },
     { option: "<code>locale</code>", default: '<code>"en-US"</code>', description: "Intl date/time formatting locale, for example en-GB for 24-hour time." },
     { option: "<code>timeZone</code>", default: "browser timezone", description: "IANA timezone such as Asia/Manila or UTC. Controls both date boundaries and displayed timestamps; set explicitly when all users must see the same day groups." },
     { option: "<code>emptyText</code>", default: '<code>"No timeline items."</code>', description: "Message displayed when the collection or linked range contains no visible items." },
@@ -139,7 +97,13 @@ timeline.destroy(); // release the entire view`,
     { option: "<code>onReachEnd</code>", default: "<code>null</code>", description: "Notifies once per end boundary when within endThreshold; your app owns fetching, loading/error UI, and retries." },
   );
   meta.options.find(row => row.option === "<code>groupByDate</code>").description = "Groups vertical items by day. Grouped timestamps show time only; virtual feeds keep an active floating date after the inline heading scrolls away. Horizontal timelines keep full timestamps.";
+  meta.methods.unshift(
+    { method: "setCollapsed(id, value)", arguments: "stable ID, boolean", returns: "Whether an existing item changed." },
+    { method: "isCollapsed(id)", arguments: "stable ID", returns: "Current collapsed state; false if unavailable." },
+    { method: "collapseAll() / expandAll()", arguments: "none", returns: "Changed IDs, including filtered/offscreen loaded items." },
+  );
   meta.properties.unshift(
+    { property: "item.collapsed / item.preview", type: "boolean / string", description: "Initial disclosure state and plain-text collapsed preview (defaults to description)." },
     { property: "<code>item.timestamp</code>", type: "ISO date string", description: "Use a timezone-qualified timestamp. Initial/update collections sort newest first; invalid or missing timestamps are undated. Supply append/prepend batches in the correct chronological direction." },
     { property: "<code>item.title / subtitle / description</code>", type: "string", description: "Standard card text. title defaults to Untitled Event; other text is optional. Custom content appears below these fields." },
     { property: "<code>item.status</code>", type: "string", description: "Marker appearance: requested, assigned, accepted, en_route, on_scene, completed, cancelled. Aliases include success, warning, error, and info." },

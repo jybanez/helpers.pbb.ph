@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added opt-in native timeline disclosure: per-item and bulk APIs, accessible header toggles, responsive collapsed previews, and durable virtualized state. Timeline revision `0.21.8`, UI bundle `0.21.185`; see `docs/timeline-disclosure.md`.
+
 - Added `people.agent` as the shared small robot-style identity icon for agent badges. Bumped `UI_ICONS_REV`, `UI_BUNDLE_REV`, and `UI_GAME_BUNDLE_REV`.
 - Fixed `ui.form.modal` required-field validation focus so hosted controls such as `number-stepper` keep focus on their inner input after submit-button click handling completes. Bumped `UI_OVERLAY_ROUTING_REV` and `UI_BUNDLE_REV`.
 - Fixed password reveal spacing so long masked or visible values do not collide with show/hide icons across editable `ui.password` fields and read-only `ui.property.viewer` sensitive rows. Bumped `UI_PASSWORD_REV`, `UI_PROPERTY_VIEWER_REV`, and `UI_BUNDLE_REV`.

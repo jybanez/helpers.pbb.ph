@@ -5,6 +5,39 @@
   max-width: 100%;
 }
 
+.ui-timeline .ui-timeline-disclosure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+.ui-timeline-disclosure:focus-visible { outline: 2px solid var(--ui-primary, #7bb5ff); outline-offset: 4px; border-radius: 2px; }
+.ui-timeline-disclosure .ui-timeline-title { grid-column: 1; grid-row: 1; }
+.ui-timeline-disclosure .ui-timeline-subtitle { grid-column: 1; grid-row: 2; }
+.ui-timeline-disclosure .ui-timeline-time { grid-column: 2; grid-row: 1; }
+.ui-timeline-details { display: grid; gap: 6px; min-width: 0; }
+.ui-timeline-details[hidden], .ui-timeline-preview[hidden] { display: none; }
+.ui-timeline-preview { font-size: 13px; color: var(--ui-muted, #9fb1cf); min-width: 0; }
+.is-collapsed .ui-timeline-disclosure { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) auto; }
+.is-collapsed .ui-timeline-disclosure .ui-timeline-subtitle { grid-column: 2; grid-row: 1; }
+.is-collapsed .ui-timeline-disclosure .ui-timeline-preview { grid-column: 3; grid-row: 1; }
+.is-collapsed .ui-timeline-disclosure .ui-timeline-time { grid-column: 4; grid-row: 1; }
+.is-collapsed .ui-timeline-disclosure :is(.ui-timeline-title, .ui-timeline-subtitle, .ui-timeline-preview) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 560px) {
+  .is-collapsed .ui-timeline-disclosure { grid-template-columns: minmax(0, 1fr) auto; }
+  .is-collapsed .ui-timeline-disclosure .ui-timeline-subtitle { grid-column: 1 / -1; grid-row: 2; }
+  .is-collapsed .ui-timeline-disclosure .ui-timeline-preview { grid-column: 1 / -1; grid-row: 3; }
+  .is-collapsed .ui-timeline-disclosure .ui-timeline-time { grid-column: 2; grid-row: 1; }
+}
+
 .ui-timeline.is-virtualized {
   position: relative;
   display: block;
@@ -445,3 +478,5 @@
 .ui-timeline--density-compact .ui-timeline-description {
   font-size: 12px;
 }
+
+.ui-timeline:has(.is-collapsible) { container-type: inline-size; }
