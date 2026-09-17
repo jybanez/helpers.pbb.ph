@@ -1,2 +1,4 @@
-vendor/h4/* -text
-tests/vendor/h4/* -text
+vendor/h4/* -text whitespace=-blank-at-eol
+tests/vendor/h4/* -text whitespace=-blank-at-eol,-blank-at-eof
+dist/helpers.h4.min.js -text whitespace=-blank-at-eol
+js/media/qr-png.js -text

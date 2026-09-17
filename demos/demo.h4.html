@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Offline QR and PNG demo</title>
+<style>body{font:16px system-ui;max-width:46rem;margin:2rem auto;padding:1rem}label,button{display:block;margin:1rem 0}canvas{max-width:100%;height:auto}input{width:100%;box-sizing:border-box;padding:.7rem}button{padding:.7rem}#status{min-height:2rem}</style>
+<h1>Offline QR and PNG</h1><p>Synthetic composition demo. Generate a PNG, then use Save PNG to download it.</p>
+<label>Text to encode<input id="text" value="BP:CLAIM:SYNTHETIC-DEMO" autocomplete="off"></label>
+<button id="generate">Generate PNG</button><button id="save" disabled>Save PNG</button>
+<p id="status" role="status"></p><canvas id="voucher" width="600" height="500" aria-label="Synthetic voucher preview"></canvas>
+<script type="module">
+import {createQr,createCanvasPngExporter} from '../dist/helpers.h4.min.js';
+const input=document.querySelector('#text'),save=document.querySelector('#save'),status=document.querySelector('#status'),canvas=document.querySelector('#voucher');
+const exporter=createCanvasPngExporter();let qr,blob,revision=0;
+input.addEventListener('input',()=>{revision++;exporter.cancel();qr?.destroy();blob=null;save.disabled=true;canvas.getContext('2d').clearRect(0,0,600,500);status.textContent='Generate a new PNG for the changed text.';});
+document.querySelector('#generate').onclick=async()=>{
+ const epoch=++revision;exporter.cancel();blob=null;save.disabled=true;qr?.destroy();
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,600,500);
+ try{qr=createQr({text:input.value,scale:4});if(qr.canvas.width>400)throw Object.assign(Error(),{code:'DEMO_LAYOUT'});
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,600,500);ctx.fillStyle='#000';ctx.font='24px system-ui';ctx.fillText('Synthetic voucher — not redeemable',20,40);ctx.drawImage(qr.canvas,40,80);
+ const result=await exporter.export(canvas);if(epoch!==revision)return;blob=result;save.disabled=false;status.textContent='PNG generated locally. Ready to save.';
+ }catch(e){if(epoch!==revision)return;ctx.clearRect(0,0,600,500);status.textContent=`Could not generate PNG (${e.code||'ERROR'}).`;}
+};
+save.onclick=()=>{try{exporter.download(blob,{filename:'synthetic-voucher.png'});status.textContent='Download initiated. Check your browser downloads.';}catch(e){status.textContent=`Could not start download (${e.code||'ERROR'}).`;}};
+addEventListener('pagehide',()=>{revision++;qr?.destroy();exporter.destroy();blob=null;},{once:true});
+</script></html>

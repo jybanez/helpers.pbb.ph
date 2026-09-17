@@ -27,4 +27,6 @@ rendered and PNG round trips, not inferred from matching encoder logic.
 
 Both upstream artifacts were retrieved directly from their pinned GitHub raw
 URLs. No runtime CDN or external QR service. Vendored bytes use `-text` Git
-attributes to retain upstream hashes across Windows checkouts.
+attributes to retain upstream hashes across Windows checkouts. End-of-line
+whitespace checking is disabled only on vendored/generated vendor-bearing
+artifacts so the upstream license header can remain unchanged.

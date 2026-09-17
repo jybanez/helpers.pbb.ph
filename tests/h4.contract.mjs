@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
+import * as h4 from '../dist/helpers.h4.min.js';
+const manifest=JSON.parse(await fs.readFile('docs/h4/manifest.json','utf8'));
+for(const [file,hash] of Object.entries(manifest.sha256))assert.equal(createHash('sha256').update(await fs.readFile(file)).digest('hex'),hash,file);
+assert.deepEqual(Object.keys(h4.H4_COMPONENT_REGISTRY),['media.qr','media.png']);
+assert.equal(h4.H4_VERSION,manifest.version);
+assert.equal(manifest.testDecoder.runtime,false);
+const artifact=await fs.readFile(manifest.runtime[0],'utf8');
+assert.ok(artifact.includes('Copyright (c) Project Nayuki'));
+assert.ok(!artifact.includes('jsQR'));
+assert.ok(!/\bfetch\s*\(|XMLHttpRequest|WebSocket/.test(artifact));
+assert.equal(typeof h4.createQr,'function');assert.equal(typeof h4.createCanvasPngExporter,'function');
+console.log('H4 integrity/exports/registry/offline packaging contract passed.');

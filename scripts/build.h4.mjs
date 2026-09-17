@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+import esbuild from 'esbuild';
+import {createHash} from 'node:crypto';
+const source = await fs.readFile('vendor/h4/qrcodegen.ts', 'utf8');
+const notice = source.slice(0, source.indexOf('*/') + 2);
+const result = await esbuild.transform(source + '\nexport { qrcodegen };', {loader:'ts', format:'esm', target:'es2020', banner:notice});
+await fs.writeFile('vendor/h4/qrcodegen.js', result.code);
+await esbuild.build({entryPoints:['js/media/qr-png.js'],outfile:'dist/helpers.h4.min.js',bundle:true,format:'esm',target:'es2020',minify:true,banner:{js:notice}});
+const files = ['dist/helpers.h4.min.js','js/media/qr-png.js','vendor/h4/qrcodegen.ts','vendor/h4/qrcodegen.js','tests/vendor/h4/jsQR.cjs','tests/vendor/h4/LICENSE','tests/vendor/h4/package.upstream.json'];
+const hashes = {};
+for (const file of files) hashes[file] = createHash('sha256').update(await fs.readFile(file)).digest('hex');
+await fs.writeFile('docs/h4/manifest.json', JSON.stringify({version:'1.0.0',provenanceCommit:'48313e597615939f05e40aa47b3a5f08ad85b384',runtime:['dist/helpers.h4.min.js'],encoder:{revision:'3c6d0b3cefb4e049dc337e82237c9644399716a8',license:'MIT'},testDecoder:{version:'1.4.0',revision:'8e6a036beafa7053dd44b1b76ac578d22b1b3311',license:'Apache-2.0',runtime:false},build:'esbuild 0.28.0, ES2020 ESM',sha256:hashes},null,2)+'\n');
