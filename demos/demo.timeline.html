@@ -95,16 +95,14 @@
     .feed-details { display: grid; gap: 10px; padding-top: 10px; }
     .feed-details[hidden], .feed-preview[hidden] { display: none; }
     .feed-details p, .feed-preview { margin: 0; font-size: 13px; line-height: 20px; }
-    #timelineHostVirtual { overflow-x: auto; }
-    #timelineHostVirtual .ui-timeline-viewport { min-width: 620px; }
     #timelineHostVirtual .ui-timeline-header { display: none; }
     #timelineHostVirtual .ui-timeline-body { gap: 0; }
     #timelineHostVirtual .ui-timeline-custom-content { margin: 0; }
     .feed-message-header {
       display: grid;
-      grid-template-columns: 110px 110px minmax(0, 1fr) 145px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) max-content;
       align-items: center;
-      gap: 12px;
+      gap: clamp(4px, 1vw, 12px);
       width: 100%;
       padding: 0;
       border: 0;
@@ -124,7 +122,7 @@
     .feed-addressed, .feed-preview { color: var(--ui-muted, #9fb2d8); }
     .feed-timestamp { grid-column: 4; font-size: 11px; white-space: nowrap; text-align: right; color: var(--ui-muted, #9fb2d8); }
     .feed-message-header[aria-expanded="true"] {
-      grid-template-columns: minmax(0, 1fr) 145px;
+      grid-template-columns: minmax(0, 1fr) max-content;
       row-gap: 4px;
     }
     .feed-message-header[aria-expanded="true"] .feed-sender { grid-column: 1; grid-row: 1; }
@@ -134,7 +132,7 @@
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.181";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.182";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
@@ -269,7 +267,7 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.181";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.182";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
 
@@ -403,6 +401,7 @@
         timestamp.className = "feed-timestamp";
         timestamp.dateTime = new Date(item.timestamp).toISOString();
         timestamp.textContent = slot.parentElement.querySelector(".ui-timeline-time").textContent;
+        timestamp.title = slot.parentElement.querySelector(".ui-timeline-time").title;
         toggle.append(sender, addressed, preview, timestamp);
         const details = document.createElement("div");
         details.id = `details-${item.id}`;
