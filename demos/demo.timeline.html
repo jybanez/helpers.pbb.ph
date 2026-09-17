@@ -376,7 +376,7 @@
     const virtualTimeline = createTimeline(virtualHost, virtualItems, {
       ariaLabel: "Virtualized incident feed",
       orientation: "vertical",
-      groupByDate: false,
+      groupByDate: true,
       enableVirtualization: true,
       virtualThreshold: 100,
       estimateItemHeight(item, { startsGroup }) {
