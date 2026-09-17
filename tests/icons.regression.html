@@ -27,7 +27,14 @@
   <pre id="results">Running...</pre>
 
   <script type="module">
-    import { createIcon, getIconDefinition, listIcons, listIconCategories } from "../js/ui/ui.icons.js";
+    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { FILE_ICONS, getFileIconName } from "../js/ui/ui.icons.files.js";
+    import { SOCIAL_ICONS } from "../js/ui/ui.icons.social.js";
+    import { AI_ICONS } from "../js/ui/ui.icons.ai.js";
+    const bundled = new URLSearchParams(location.search).has("bundled");
+    if (bundled) { uiLoader.setPreferBundles(true); await uiLoader.load("ui.icons"); }
+    const { createIcon, getIconDefinition, listIcons, listIconCategories, registerIconPack } = bundled
+      ? await uiLoader.get("ui.icons") : await import("../js/ui/ui.icons.js");
 
     const failures = [];
     const host = document.getElementById("host");
@@ -274,6 +281,34 @@
         threw = true;
       }
       assert(threw, "createIcon should throw for unknown icon ids");
+      assert(!getIconDefinition("social.github"), "optional packs are absent until registered");
+      [FILE_ICONS, SOCIAL_ICONS, AI_ICONS].forEach(registerIconPack);
+      const registeredCount = listIcons().length;
+      registerIconPack(SOCIAL_ICONS);
+      assert(listIcons().length === registeredCount, "re-registering a pack is idempotent");
+      for (const name of [...Object.keys(FILE_ICONS), ...Object.keys(SOCIAL_ICONS), ...Object.keys(AI_ICONS)]) {
+        const icon = createIcon(name, { title: name });
+        assert(icon.getAttribute("role") === "img" && icon.children.length > 1, `pack icon renders accessibly: ${name}`);
+        host.append(icon);
+      }
+      const github = createIcon("social.github");
+      assert(github.querySelector("path").getAttribute("fill") === "currentColor", "brand silhouette uses theme color");
+      assert(github.querySelector("path").getAttribute("stroke") === "none", "brand silhouette has no outline distortion");
+      assert(createIcon("ai.claude", { variant: "brand" }).style.color === "rgb(217, 119, 87)", "brand accent is opt-in");
+      assert(createIcon("ai.claude").style.color === "", "monochrome inherits theme");
+      assert(createIcon("ai.unknown-provider", { fallback: "ai.generic" }).dataset.icon === "ai.generic", "unknown provider fallback resolves");
+      for (const [name, mime, expected] of [["REPORT.PDF?download=1", "", "pdf"], ["book.xlsx", "", "excel"], ["unknown", "image/png", "image"], ["unknown", "application/pdf; charset=utf-8", "pdf"], ["a.constructor", "", "unknown"], ["odd.xyz", "", "unknown"]]) {
+        assert(getFileIconName(name, mime) === `files.${expected}`, `file detection: ${name}`);
+      }
+      const snapshot = getIconDefinition("social.github");
+      snapshot.nodes[0].attrs.d = "changed";
+      assert(getIconDefinition("social.github").nodes[0].attrs.d !== "changed", "definitions are defensively copied");
+      let conflict = false;
+      try { registerIconPack({ "social.github": FILE_ICONS["files.pdf"] }); } catch { conflict = true; }
+      assert(conflict, "conflicting IDs do not replace existing icons");
+      let rejected = false;
+      try { registerIconPack({ "test.valid": FILE_ICONS["files.pdf"], "test.invalid": { category: "test", nodes: [{ tag: "script" }] } }); } catch { rejected = true; }
+      assert(rejected && !getIconDefinition("test.valid"), "unsafe packs fail atomically");
     } catch (error) {
       failures.push(`exception: ${String(error?.message || error)}`);
     }

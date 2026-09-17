@@ -284,6 +284,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `createDevicePrimer(container, data, options)` project-configurable startup readiness checks for permissions, devices, and browser capabilities
   - `createDevicePrimerModal(data, options)` modal preset wrapper for startup primer flows, with default auto-close after successful checks
 - `ui.icons.js`
+  - optional [file, social, and AI icon packs](docs/ui-icon-packs.md), registered with `registerIconPack(...)`; includes file-type detection, explicit fallbacks, brand accents, and artwork attribution
   - `createIcon(name, options)` shared SVG icon creation over a categorized registry with namespaced ids and `currentColor` inheritance
   - `getIconDefinition(name)`, `listIcons()`, and `listIconCategories()` expose registry lookup without requiring projects to own raw SVG strings
   - includes operational/SITREP categories for shared report sections, hazards, population groups, routes, resources, teams, maps, alerts, and data-quality cues
