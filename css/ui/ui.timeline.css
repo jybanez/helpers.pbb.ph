@@ -49,8 +49,13 @@
   padding-bottom: 8px;
 }
 
-.ui-timeline-virtual-unit.starts-group:not(:first-child) {
-  padding-top: 6px;
+.ui-timeline-virtual-unit.has-group-divider {
+  padding-top: 10px;
+}
+
+.ui-timeline-virtual-unit.has-group-divider > .ui-timeline-group-label {
+  border-top: 1px solid var(--ui-border, #2f4e85);
+  padding-top: 10px;
 }
 
 .ui-timeline-virtual-unit .ui-timeline-group-label {
@@ -255,6 +260,29 @@
   width: 2px;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(88, 136, 206, 0.65), rgba(57, 83, 126, 0.55));
+}
+
+.ui-timeline--vertical .ui-timeline-virtual-slice::before {
+  content: none;
+}
+
+.ui-timeline--vertical .ui-timeline-virtual-unit > .ui-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: -10px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(88, 136, 206, 0.65), rgba(57, 83, 126, 0.55));
+}
+
+.ui-timeline--vertical.ui-timeline--density-compact .ui-timeline-virtual-unit > .ui-timeline-item::before {
+  bottom: -8px;
+}
+
+.ui-timeline--vertical .ui-timeline-virtual-unit.ends-group > .ui-timeline-item::before {
+  bottom: 0;
 }
 
 .ui-timeline--vertical .ui-timeline-item {

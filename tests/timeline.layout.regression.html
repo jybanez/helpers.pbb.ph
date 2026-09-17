@@ -23,17 +23,19 @@
         module = await createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: true }).load("ui.timeline", { js: true });
       }
       const host = document.getElementById("host");
+      const grouped = new URLSearchParams(location.search).has("grouped");
+      const interval = grouped ? 3600000 : 60000;
       const collapsed = new Set();
       const mounts = new Map();
       const contexts = new Map();
       let reachCalls = 0;
       const items = Array.from({ length: 180 }, (_, index) => ({
         id: `item-${index}`, title: `Item ${index}`, contentKey: "unchanged",
-        timestamp: new Date(Date.UTC(2026, 8, 18) - index * 60000).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 8, 18) - index * interval).toISOString(),
       }));
       const timeline = module.createTimeline(host, items, {
         enableVirtualization: true, virtualThreshold: 10, virtualOverscan: 400,
-        groupByDate: false, endThreshold: 1,
+        groupByDate: grouped, timeZone: "UTC", endThreshold: 1,
         estimateItemHeight: item => collapsed.has(item.id) ? 110 : 370,
         onReachEnd(meta) { reachCalls++; document.body.dataset.reachReason = meta.reason; },
         mountItemContent(slot, item, context) {
@@ -55,6 +57,13 @@
       });
       await settle();
       const viewport = host.querySelector(".ui-timeline-viewport");
+      if (grouped) {
+        assert(host.querySelector(".ui-timeline-group-label"), "date heading is present with custom expandable content");
+        assert(getComputedStyle(host.querySelector(".ui-timeline-virtual-slice"), "::before").content === "none", "connector does not run through date headings");
+        assert(host.querySelector(".has-group-divider"), "later dates include a group divider");
+        const end = host.querySelector(".ends-group .ui-timeline-item");
+        assert(end && getComputedStyle(end, "::before").bottom === "0px", "connector stops at the last message of a date");
+      }
       assert(getComputedStyle(host.querySelector(".ui-timeline-virtual-slice")).rowGap === "0px", `virtual slice has zero unmeasured gap: ${getComputedStyle(host.querySelector(".ui-timeline-virtual-slice")).rowGap}`);
       const row = id => Array.from(host.querySelectorAll(".ui-timeline-item")).find(node => node.dataset.itemId === id);
       const anchor = () => {
@@ -132,7 +141,7 @@
       assert((await pending).reason === "cancelled", "data changes cancel pending navigation");
       assert(contexts.get("item-50").total === 181, "retained mounts receive new collection context");
       await settle();
-      timeline.setLinkedRange({ anchorMs: 0, startMs: Date.UTC(2026, 8, 18) - 5 * 60000, endMs: Date.UTC(2026, 8, 18) });
+      timeline.setLinkedRange({ anchorMs: 0, startMs: Date.UTC(2026, 8, 18) - 5 * interval, endMs: Date.UTC(2026, 8, 18) });
       assert((await timeline.scrollToItem("item-100")).reason === "filtered", "loaded but filtered differs from missing");
       const plainJump = await timeline.scrollToItem("item-2", { focus: true });
       assert(plainJump.found && document.activeElement === row("item-2"), `nonvirtual jump supports focus: ${JSON.stringify(plainJump)} active ${document.activeElement.outerHTML.slice(0, 180)}`);

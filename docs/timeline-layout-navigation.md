@@ -100,5 +100,7 @@ These are app-owned rules to implement alongside the Helper APIs:
 
 Serve the repository and open `tests/timeline.layout.regression.html`; use
 `?bundled=1` to exercise the generated UI bundle. Both must show PASS. Also run
+with `?grouped=1` (or `?grouped=1&bundled=1`) to verify date boundaries during
+expand/collapse, including divider spacing and connector breaks. Also run
 the existing timeline and virtualization regression pages, plus the bundle and
 registry contract tests.
