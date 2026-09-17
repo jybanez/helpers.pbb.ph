@@ -457,7 +457,9 @@ export function createTimeline(container, items = [], options = {}) {
     if (item.timestamp) {
       header.appendChild(createElement("time", {
         className: "ui-timeline-time",
-        text: formatTimestamp(item.timestamp, currentOptions.locale, currentOptions.timeZone),
+        text: formatTimestamp(item.timestamp, currentOptions.locale, currentOptions.timeZone,
+          currentOptions.groupByDate && currentOptions.orientation === "vertical"),
+        attrs: { datetime: item.timestamp, title: formatTimestamp(item.timestamp, currentOptions.locale, currentOptions.timeZone) },
       }));
     }
     body.appendChild(header);
@@ -1075,15 +1077,13 @@ function normalizeStatus(status) {
   return aliasMap[clean] || clean;
 }
 
-function formatTimestamp(value, locale, timeZone) {
+function formatTimestamp(value, locale, timeZone, timeOnly = false) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
   return new Intl.DateTimeFormat(locale, {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
+    ...(timeOnly ? {} : { month: "short", day: "2-digit", year: "numeric" }),
     hour: "2-digit",
     minute: "2-digit",
     timeZone,

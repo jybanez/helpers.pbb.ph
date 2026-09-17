@@ -10,6 +10,10 @@ updates across date boundaries, jumps, and expansion changes even when the
 original heading is outside the rendered window. It does not change row heights
 or intercept pointer events.
 
+Grouped vertical timelines show only the time on each message. The full date
+remains in the time element's `datetime` attribute and hover title. Ungrouped
+and horizontal timelines retain the full date and time.
+
 ## Update card layout
 
 ```js

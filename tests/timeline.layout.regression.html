@@ -57,6 +57,12 @@
       });
       await settle();
       const viewport = host.querySelector(".ui-timeline-viewport");
+      const firstTime = host.querySelector(".ui-timeline-time");
+      assert(firstTime.textContent === new Intl.DateTimeFormat("en-US", {
+        ...(grouped ? {} : { month: "short", day: "2-digit", year: "numeric" }),
+        hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+      }).format(new Date(items[0].timestamp)), "grouped timestamps show time only; ungrouped retain date");
+      assert(firstTime.dateTime === items[0].timestamp && firstTime.title.includes("2026"), "time retains full date metadata");
       const assertFloatingDate = (expected) => {
         if (!grouped) return;
         const label = host.querySelector(".ui-timeline-floating-date");

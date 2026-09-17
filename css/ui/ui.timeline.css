@@ -308,7 +308,7 @@
   border: 0;
   background: transparent;
   padding: 0;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 28px minmax(0, 1fr);
   gap: 0;
 }
 
