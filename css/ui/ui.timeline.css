@@ -164,7 +164,7 @@
   justify-content: center;
   overflow: hidden;
   color: #d9e8ff;
-  box-shadow: 0 0 0 3px rgba(8, 18, 36, 0.9);
+  box-shadow: 0 0 0 3px var(--ui-timeline-marker-ring, var(--ui-bg, #0d1523));
 }
 
 .ui-timeline-marker svg {
