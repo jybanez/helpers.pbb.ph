@@ -4,6 +4,12 @@
 Use these APIs for expandable cards, editors, and reply navigation without
 changing a canonical `contentKey` just to force a redraw.
 
+With `groupByDate: true`, virtual timelines retain the visible day's label at
+the top of the viewport after its inline heading scrolls away. This overlay
+updates across date boundaries, jumps, and expansion changes even when the
+original heading is outside the rendered window. It does not change row heights
+or intercept pointer events.
+
 ## Update card layout
 
 ```js
