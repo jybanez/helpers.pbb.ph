@@ -141,6 +141,12 @@
     }
     #timelineJumpId { width: 100px; }
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
+    .timeline-guide { display: grid; gap: 12px; min-width: 0; }
+    .timeline-guide pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+    .timeline-guide a { color: var(--ui-accent, #7bb5ff); }
+    .timeline-guide li { margin-block: 6px; }
+    .timeline-guide summary { cursor: pointer; font-weight: 700; }
+    .timeline-guide code { overflow-wrap: anywhere; }
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.182";
@@ -159,12 +165,6 @@
         "Do not use it for playback-range controls; use the dedicated Timeline Scrubber demo."
       ],
       description: "The timeline helper is meant for chronology, not generic record listing. This page covers event rendering, item actions, horizontal/vertical presentation, custom row content lifecycle, and opt-in variable-height virtualization for large vertical feeds.",
-      sectionSamples: {
-        "vertical (grouped)": `createTimeline(host, items, {\n  orientation: "vertical",\n  groupByDate: true,\n});`,
-        "virtualized feed": `// Presentation state belongs to the demo.\nlet expanded = true;\nconst overrides = new Map();\nconst isExpanded = id => overrides.get(id) ?? expanded;\n\n// Set estimateItemHeight from isExpanded(item.id).\n// Return update() from mountItemContent to refresh existing DOM.\n\n// Collapse all loaded records, including offscreen rows.\ntimeline.invalidateLayout(null, {\n  mutate() { expanded = false; overrides.clear(); },\n});\n\n// Expand an offscreen target before navigating to it.\ntimeline.invalidateLayout("feed-120", {\n  mutate() { overrides.set("feed-120", true); },\n});\nawait timeline.scrollToItem("feed-120", { focus: true });`,
-        "horizontal": `createTimeline(host, items, {\n  orientation: "horizontal",\n});`,
-        "custom content": `const timeline = createTimeline(host, items, {\n  mountItemContent(slot, item, context) {\n    if (item.type !== "call_session") return null;\n    const card = document.createElement("div");\n    slot.appendChild(card);\n    renderCallCard(card, item);\n    return {\n      update(nextItem) { renderCallCard(card, nextItem); },\n      destroy() { stopNestedPlayback(item.id); },\n    };\n  },\n});`
-      },
       constructor: [
         { factory: "<code>createTimeline(container, items, options)</code>", arguments: "container, timeline items, options", returns: "Timeline instance" }
       ],
@@ -218,6 +218,7 @@
       ]
     };
   </script>
+  <script src='../js/demo/demo.timeline.docs.js'></script>
   <script type='module' src='../js/demo/demo.shell.js'></script>
 </head>
 <body class="demo-shell-sidebar">
@@ -228,12 +229,70 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Timeline Demo</h1>
-      <p>Dedicated demo for timeline rendering and custom item content.</p>
+      <p>Build a chronological event history, then add date groups, actions, custom cards, and a large scrollable feed. Each example includes setup code and a live callback log.</p>
+      <div class="timeline-guide">
+        <h2>Start here</h2>
+        <ol>
+          <li>Load the helper and its styles with <code>uiLoader</code>, then get the <code>createTimeline</code> factory.</li>
+          <li>Provide a host element and items with stable unique IDs and ISO timestamps that include a timezone.</li>
+          <li>Choose a small grouped timeline or a virtualized feed. Only virtualized feeds need a bounded host height.</li>
+          <li>Connect callbacks to your application, and call <code>destroy()</code> when the view is removed.</li>
+        </ol>
+        <details open><summary>Copyable minimal setup</summary>
+          <p>Paths below assume a page in <code>demos/</code>. Adjust the import for your application. The loader loads the component CSS; no framework is required.</p>
+          <pre>&lt;div id="history"&gt;&lt;/div&gt;
+&lt;script type="module"&gt;
+import { uiLoader } from "../js/ui/ui.loader.js";
+await uiLoader.load("ui.timeline");
+const createTimeline = await uiLoader.get("ui.timeline");
+const host = document.getElementById("history");
+const items = [{
+  id: "incident-42-received",
+  timestamp: "2026-03-09T08:04:00+08:00",
+  title: "Call Received",
+  subtitle: "Operator Maya",
+  description: "Initial intake completed.",
+  status: "accepted",
+  meta: ["Hotline", "Inbound"],
+  actions: [{ id: "open", label: "Open incident" }],
+}];
+const timeline = createTimeline(host, items, {
+  groupByDate: true,
+  timeZone: "Asia/Manila",
+  onActionClick(action, item) { console.log(action.id, item.id); },
+});
+// When your view is removed: timeline.destroy();
+&lt;/script&gt;</pre>
+        </details>
+        <p>The example snippets below reuse <code>createTimeline</code>, <code>host</code>, and <code>items</code> from this setup. Run one example per host, destroying the previous instance before replacing it. <a href="./demo.timeline.html">View this demo</a> · <a href="https://github.com/jybanez/helpers.pbb.ph/blob/main/demos/demo.timeline.html">Full demo source</a> · <a href="../docs/timeline-layout-navigation.md">Layout and navigation guide</a></p>
+        <details><summary>Troubleshooting checklist</summary>
+          <ul>
+            <li><strong>No scrollable virtual feed:</strong> give the host a bounded height; check vertical orientation, <code>enableVirtualization</code>, and the visible item count against <code>virtualThreshold</code>.</li>
+            <li><strong>State disappears after scrolling:</strong> keep state keyed by stable unique item ID outside the mount. Never rely on a retained offscreen DOM node.</li>
+            <li><strong>Unexpected date groups:</strong> include offsets in input timestamps and choose an explicit <code>timeZone</code>. Missing or invalid timestamps belong to the undated group.</li>
+            <li><strong>Jump did not land:</strong> inspect <code>result.reason</code>: <code>not-loaded</code>, <code>filtered</code>, <code>cancelled</code>, or <code>destroyed</code>. Load missing data in your app before retrying.</li>
+            <li><strong>Expansion moves the viewport:</strong> change presentation inside the synchronous <code>mutate</code> callback, update the existing mount, and invalidate affected IDs. Do not rebuild the entire timeline for each click.</li>
+            <li><strong>Older-page request fires only once:</strong> the end boundary is latched. Append new records on success; use <code>resetReachEnd()</code> for an explicit retry after failure.</li>
+          </ul>
+        </details>
+      </div>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Vertical (Grouped)</h2>
+      <div class="timeline-guide">
+        <p>Use this for a short audit trail or incident history. Initial items are sorted newest first. Date grouping uses the selected timezone, and grouped message labels show only the time; hover a time to see the full date.</p>
+        <div class="row">
+          <label><input id="timelineGrouping" type="checkbox" checked> Group by date</label>
+          <label>Density <select id="timelineDensity"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
+          <label>Timezone <select id="timelineZone"><option value="Asia/Manila">Asia/Manila</option><option value="UTC">UTC</option></select></label>
+          <button id="timelineEmptyBtn" class="ui-button" type="button">Show Empty</button>
+          <button id="timelineRestoreBtn" class="ui-button" type="button">Restore Items</button>
+        </div>
+        <p>Try disabling grouping to compare full timestamps, switch timezone to see day boundaries, or click <strong>Open</strong> to inspect the action callback below.</p>
+      </div>
       <div id="timelineHostVertical"></div>
+      <pre id="logVertical" class="log" tabindex="0" aria-label="Grouped timeline events">No events yet.</pre>
     </section>
 
     <section class="panel" id="virtualized-feed">
@@ -253,22 +312,47 @@
         <button id="timelineVirtualRetryBtn" class="ui-button ui-button-borderless" type="button">Retry End</button>
       </div>
       <div id="timelineHostVirtual"></div>
-      <p><a href="../docs/timeline-layout-navigation.md">Layout and navigation API guide</a> · Uses <code>invalidateLayout</code>, <code>estimateItemHeight</code>, and <code>scrollToItem</code>. Offscreen rows use estimates until mounted.</p>
+      <div class="timeline-guide">
+        <h3>Try these behaviors</h3>
+        <ul>
+          <li><strong>Collapse All / Expand All:</strong> changes all loaded items, including offscreen ones. Click a header, or focus it and press Enter or Space, to override one message.</li>
+          <li><strong>Jump to Event:</strong> try <code>120</code> for a loaded offscreen item or <code>999</code> for a missing item. This demo expands the target before focusing it. The helper does not fetch missing records.</li>
+          <li><strong>Prepend Newer / Append Older:</strong> adds 8 newer or 12 older in-memory records. Scroll partway down before prepending to observe anchor preservation.</li>
+          <li><strong>Retry End:</strong> resets the paging notification latch. Scroll near the end to see <code>onReachEnd</code>. This demo logs the request; it does not contact a server.</li>
+          <li><strong>Date groups:</strong> scroll into March 8 to see the floating date change. It remains available even when the original heading is outside the rendered window.</li>
+          <li><strong>Narrow layouts:</strong> at a feed width of 520px or less, sender, addressed, and preview stack in rows; the time stays top-right. The preview is one line with an ellipsis.</li>
+        </ul>
+        <details><summary>What belongs to the helper, and what belongs to your app?</summary>
+          <p>The helper owns date labels, markers, measured row heights, viewport anchoring, and offscreen navigation. The sender/addressed fields, disclosure buttons, expansion state, follow-up action, and responsive message columns are this demo's custom renderer. There is no built-in <code>collapsed</code> item option.</p>
+          <p>Keep expansion state outside the mounted DOM: virtualized rows are removed and remounted while scrolling. Return an <code>update()</code> hook from <code>mountItemContent</code>, and call <code>invalidateLayout(id, { mutate })</code> for presentation changes. Use <code>contentKey</code> only when replacing the nested component itself.</p>
+        </details>
+        <details><summary>Height estimates, paging, and cleanup</summary>
+          <p>Give the host a height, for example <code>height: 480px; min-height: 0</code>. Virtualization activates only for vertical feeds at or above <code>virtualThreshold</code>. The helper measures mounted rows; <code>estimateItemHeight(item, { startsGroup })</code> predicts the complete offscreen unit, including date heading and spacing. Tune estimates for your own renderer and narrow layout.</p>
+          <p>In <code>onReachEnd</code>, let your application load the next page. Set <code>isLoading: true</code> with <code>update</code> while fetching, append the returned older records, then update <code>hasMore</code> and clear loading. Supply the full current item collection when calling <code>update</code>. On failure, clear loading and expose a retry button that calls <code>resetReachEnd()</code>. Avoid automatically retrying in a loop.</p>
+          <p>Return <code>destroy()</code> from custom mounts to release listeners, media, timers, and observers. Call the timeline's <code>destroy()</code> when leaving the view. Neither the helper nor this demo persists your messages.</p>
+        </details>
+        <p><a href="../docs/timeline-layout-navigation.md">Detailed layout and navigation contract</a></p>
+      </div>
+      <pre id="logVirtual" class="log" tabindex="0" aria-label="Virtual feed events">No events yet.</pre>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Horizontal</h2>
+      <p>Use a horizontal strip for a small sequence of milestones. Scroll sideways to inspect the cards. Horizontal timelines keep full date/time labels and use standard rendering, even if virtualization is requested. Click a card to see its item callback.</p>
       <div id="timelineHostHorizontal"></div>
+      <pre id="logHorizontal" class="log" tabindex="0" aria-label="Horizontal timeline events">No events yet.</pre>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Custom Content</h2>
+      <p>Mount application UI beneath the standard header. <strong>Update Content</strong> preserves the nested card and calls its update hook; <strong>Remount Content</strong> changes its content key, destroying and recreating it; <strong>Remove Call Item</strong> runs cleanup. Watch the lifecycle log below. The recording card is a placeholder, not a media player.</p>
       <div class="row">
         <button id="timelineCustomUpdateBtn" class="ui-button" type="button">Update Content</button>
         <button id="timelineCustomRemountBtn" class="ui-button ui-button-ghost" type="button">Remount Content</button>
         <button id="timelineCustomRemoveBtn" class="ui-button ui-button-borderless" type="button">Remove Call Item</button>
       </div>
       <div id="timelineHostCustom"></div>
+      <pre id="logCustom" class="log" tabindex="0" aria-label="Custom content lifecycle events">No events yet.</pre>
     </section>
 
     <section class="panel">
@@ -291,7 +375,12 @@
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+      const section = label.startsWith("timeline.virtual") ? "Virtual"
+        : label.startsWith("timeline.horizontal") ? "Horizontal"
+        : label.startsWith("timeline.vertical") ? "Vertical" : label.startsWith("timeline.custom") ? "Custom" : null;
+      for (const target of [log, section && document.getElementById(`log${section}`)].filter(Boolean)) {
+        target.textContent = (target.textContent === "No events yet." ? line : `${line}\n${target.textContent}`).slice(0, 18000);
+      }
     }
 
     document.getElementById("themeToggle").addEventListener("click", () => {
@@ -347,6 +436,7 @@
       ariaLabel: "Vertical incident timeline",
       orientation: "vertical",
       groupByDate: true,
+      timeZone: "Asia/Manila",
       onItemClick(item) {
         writeLog("timeline.vertical.item.click", { id: item.id, title: item.title });
       },
@@ -354,6 +444,20 @@
         writeLog("timeline.vertical.action.click", { actionId: action.id, itemId: item.id });
       },
     });
+
+    let verticalEmpty = false;
+    function updateVertical() {
+      const options = {
+        groupByDate: document.getElementById("timelineGrouping").checked,
+        density: document.getElementById("timelineDensity").value,
+        timeZone: document.getElementById("timelineZone").value,
+      };
+      vertical.update(verticalEmpty ? [] : timelineItems, options);
+      writeLog("timeline.vertical.update", { ...options, count: verticalEmpty ? 0 : timelineItems.length });
+    }
+    for (const id of ["timelineGrouping", "timelineDensity", "timelineZone"]) document.getElementById(id).addEventListener("change", updateVertical);
+    document.getElementById("timelineEmptyBtn").addEventListener("click", () => { verticalEmpty = true; updateVertical(); });
+    document.getElementById("timelineRestoreBtn").addEventListener("click", () => { verticalEmpty = false; updateVertical(); });
 
     let virtualNewest = 0;
     let virtualOldest = 159;
@@ -363,6 +467,7 @@
     const virtualStatus = document.getElementById("timelineVirtualStatus");
     function reportVirtual(message) {
       virtualStatus.textContent = `${virtualItems.length} events loaded. ${message}`;
+      writeLog("timeline.virtual.status", { message, count: virtualItems.length });
     }
     let virtualItems = Array.from({ length: 160 }, (_, index) => buildVirtualItem(index));
 
@@ -508,6 +613,7 @@
     });
     document.getElementById("timelineVirtualRetryBtn").addEventListener("click", () => {
       virtualTimeline.resetReachEnd();
+      reportVirtual("End notification reset. A request is logged only when near the end.");
     });
 
     const horizontal = createTimeline(horizontalHost, timelineItems, {
