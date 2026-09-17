@@ -57,7 +57,14 @@
       });
       await settle();
       const viewport = host.querySelector(".ui-timeline-viewport");
+      const assertFloatingDate = (expected) => {
+        if (!grouped) return;
+        const label = host.querySelector(".ui-timeline-floating-date");
+        assert(!label.hidden && label.textContent.includes(expected), `floating date follows visible day: ${label.textContent}`);
+        assert(Math.abs(label.getBoundingClientRect().top - viewport.getBoundingClientRect().top) <= 1, "floating date stays at viewport top");
+      };
       if (grouped) {
+        assert(host.querySelector(".ui-timeline-floating-date").hidden, "initial inline heading is not duplicated");
         assert(host.querySelector(".ui-timeline-group-label"), "date heading is present with custom expandable content");
         assert(getComputedStyle(host.querySelector(".ui-timeline-virtual-slice"), "::before").content === "none", "connector does not run through date headings");
         assert(host.querySelector(".has-group-divider"), "later dates include a group divider");
@@ -82,6 +89,10 @@
       assert(result.found && document.activeElement === row("item-100"), "offscreen jump must mount and focus target");
       assert(Math.abs(row("item-100").getBoundingClientRect().top - viewport.getBoundingClientRect().top) <= 3, "jump aligns measured row");
       assert(!row("item-0"), "jump keeps DOM window bounded");
+      assertFloatingDate("13");
+      if (grouped) {
+        assert(!host.querySelector(".ui-timeline-virtual-unit .ui-timeline-group-label"), "floating date survives unmounted day heading");
+      }
       assert((await timeline.scrollToItem("missing")).reason === "not-loaded", "missing is explicitly not loaded");
       const button = row("item-100").querySelector("button");
       button.focus({ preventScroll: true });
@@ -90,6 +101,7 @@
       timeline.invalidateLayout(null, { mutate() { items.forEach(item => collapsed.add(item.id)); } });
       await settle();
       assertAnchor(before, "bulk collapse preserves anchor despite offscreen invalidation");
+      assertFloatingDate("13");
       assert(document.activeElement === button && button.isConnected, "layout preserves focused control identity");
       assert(mounts.get("item-100") === mountCount, "layout does not remount retained custom content");
       assert(row("item-100").querySelector(".detail").hidden, "mounted content update observes new presentation state");
@@ -98,6 +110,7 @@
       timeline.invalidateLayout(null, { mutate() { collapsed.clear(); } });
       await settle();
       assertAnchor(collapsedAnchor, "bulk expansion preserves anchor beyond old scroll bounds");
+      assertFloatingDate("13");
       assert(document.activeElement === button, "expansion preserves focus");
 
       viewport.scrollTop += 200;
@@ -125,6 +138,7 @@
       assert(document.activeElement.id === "bulk", "bulk toolbar retains focus");
       for (const align of ["center", "end", "start"]) {
         const jump = await timeline.scrollToItem("item-150", { align });
+        assertFloatingDate("11");
         await settle();
         const rect = row("item-150").getBoundingClientRect();
         const vp = viewport.getBoundingClientRect();
@@ -135,6 +149,26 @@
       await settle();
       assert(row("item-179").getBoundingClientRect().bottom <= viewport.getBoundingClientRect().bottom + 3, "last-row jump clamps to scroll bounds");
       assert(reachCalls === 0, `presentation changes and programmatic jumps do not request another page (${reachCalls}, ${document.body.dataset.reachReason})`);
+      if (grouped) {
+        await timeline.scrollToItem("item-0");
+        viewport.scrollTop = 0;
+        viewport.dispatchEvent(new Event("scroll"));
+        await settle();
+        assert(host.querySelector(".ui-timeline-floating-date").hidden, "scrolling back to top restores inline date");
+        viewport.scrollTop = 45;
+        viewport.dispatchEvent(new Event("scroll"));
+        await settle();
+        assertFloatingDate("18");
+        viewport.scrollTop += row("item-1").getBoundingClientRect().top - viewport.getBoundingClientRect().top + 10;
+        viewport.dispatchEvent(new Event("scroll"));
+        await settle();
+        assertFloatingDate("17");
+        timeline.update(items, { groupByDate: false });
+        await settle();
+        assert(host.querySelector(".ui-timeline-floating-date").hidden, "disabling date grouping removes floating label");
+        timeline.update(items, { groupByDate: true });
+        await settle();
+      }
 
       const pending = timeline.scrollToItem("item-50");
       timeline.append([{ id: "new-last", title: "Last" }]);

@@ -40,6 +40,7 @@ export function createTimeline(container, items = [], options = {}) {
   let root = null;
   let api = null;
   let virtualViewport = null;
+  let floatingDate = null;
   let virtualTopSpacer = null;
   let virtualSlice = null;
   let virtualBottomSpacer = null;
@@ -191,6 +192,7 @@ export function createTimeline(container, items = [], options = {}) {
     else applyEstimatedAnchor(restoreSnapshot);
     queueExactAnchorRestore(restoreSnapshot);
     layoutSnapshot = captureVirtualSnapshot();
+    updateFloatingDate();
     if (!["layout", "jump", "position", "measure"].includes(reason)) checkReachEnd(reason);
   }
 
@@ -217,6 +219,11 @@ export function createTimeline(container, items = [], options = {}) {
     scroller.append(virtualTopSpacer, virtualSlice, virtualBottomSpacer);
     virtualViewport.appendChild(scroller);
     root.appendChild(virtualViewport);
+    floatingDate = createElement("div", {
+      className: "ui-timeline-group-label ui-timeline-floating-date",
+      attrs: { "aria-hidden": "true", hidden: "" },
+    });
+    root.appendChild(floatingDate);
     container.appendChild(root);
     virtualViewport.addEventListener("scroll", onVirtualScroll, { passive: true });
     if (typeof ResizeObserver === "function") {
@@ -236,6 +243,7 @@ export function createTimeline(container, items = [], options = {}) {
     resizeObserver = null;
     virtualViewport?.removeEventListener("scroll", onVirtualScroll);
     virtualViewport = null;
+    floatingDate = null;
     virtualTopSpacer = null;
     virtualSlice = null;
     virtualBottomSpacer = null;
@@ -244,6 +252,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function onVirtualScroll() {
+    updateFloatingDate();
     const programmaticScroll = expectedScrollTop != null && Math.abs(virtualViewport.scrollTop - expectedScrollTop) <= 1;
     if (!programmaticScroll) expectedScrollTop = null;
     if (!programmaticScroll) checkReachEnd("scroll");
@@ -343,6 +352,25 @@ export function createTimeline(container, items = [], options = {}) {
     virtualViewport.scrollTop = Math.max(0, value);
     // Native scroll delivery may occur after the next animation frame.
     expectedScrollTop = virtualViewport.scrollTop;
+    updateFloatingDate();
+  }
+
+  function updateFloatingDate() {
+    if (!floatingDate || !virtualViewport) return;
+    floatingDate.hidden = true;
+    if (!currentOptions.groupByDate) return;
+    const top = virtualViewport.getBoundingClientRect().top;
+    const node = Array.from(virtualSlice.children).find((unit) => unit.getBoundingClientRect().bottom > top + 1);
+    const item = visibleItems[Number(node?.dataset.virtualIndex)];
+    if (!item) return;
+    const heading = node.querySelector(".ui-timeline-group-label");
+    // Keep the inline heading until it passes the viewport, then retain its date
+    // independently of the virtual window (which can unmount that heading).
+    if (heading && heading.getBoundingClientRect().top >= top) return;
+    const dayKey = getItemDayKey(item, currentOptions.timeZone);
+    floatingDate.textContent = dayKey === "unknown" ? "Undated" : formatGroupLabel(dayKey, currentOptions.locale);
+    floatingDate.style.width = `${virtualViewport.clientWidth}px`;
+    floatingDate.hidden = false;
   }
 
   function updateVirtualRange(windowRange) {
