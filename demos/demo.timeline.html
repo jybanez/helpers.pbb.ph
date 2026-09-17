@@ -95,6 +95,7 @@
     .feed-details { display: grid; gap: 10px; padding-top: 10px; }
     .feed-details[hidden], .feed-preview[hidden] { display: none; }
     .feed-details p, .feed-preview { margin: 0; font-size: 13px; line-height: 20px; }
+    #timelineHostVirtual { container-type: inline-size; container-name: timeline-feed; }
     #timelineHostVirtual .ui-timeline-header { display: none; }
     #timelineHostVirtual .ui-timeline-body { gap: 0; }
     #timelineHostVirtual .ui-timeline-custom-content { margin: 0; }
@@ -128,6 +129,16 @@
     .feed-message-header[aria-expanded="true"] .feed-sender { grid-column: 1; grid-row: 1; }
     .feed-message-header[aria-expanded="true"] .feed-addressed { grid-column: 1; grid-row: 2; }
     .feed-message-header[aria-expanded="true"] .feed-timestamp { grid-column: 2; grid-row: 1; }
+    @container timeline-feed (max-width: 520px) {
+      .feed-message-header[aria-expanded="false"] {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        row-gap: 4px;
+      }
+      .feed-message-header[aria-expanded="false"] .feed-sender { grid-column: 1; grid-row: 1; }
+      .feed-message-header[aria-expanded="false"] .feed-addressed { grid-column: 1 / -1; grid-row: 2; }
+      .feed-message-header[aria-expanded="false"] .feed-preview { grid-column: 1 / -1; grid-row: 3; }
+      .feed-message-header[aria-expanded="false"] .feed-timestamp { grid-column: 2; grid-row: 1; }
+    }
     #timelineJumpId { width: 100px; }
     #timelineVirtualStatus { min-height: 1.5em; margin: 0; }
   </style>
