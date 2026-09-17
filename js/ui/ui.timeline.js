@@ -29,10 +29,10 @@ const DEFAULT_OPTIONS = {
   hasMore: true,
   onRangeChange: null,
   onReachEnd: null,
+  estimateItemHeight: null, // total virtual unit height, including any date heading
 };
 
 export function createTimeline(container, items = [], options = {}) {
-  const events = createEventBag();
   const customMounts = new Map();
   let currentItems = normalizeItems(items);
   let currentOptions = normalizeOptions(options);
@@ -49,9 +49,13 @@ export function createTimeline(container, items = [], options = {}) {
   let scrollFrame = 0;
   let measureFrame = 0;
   let anchorRestoreToken = 0;
-  let scrollWriteToken = 0;
-  let programmaticScroll = false;
+  let expectedScrollTop = null;
   let resizeObserver = null;
+  let layoutSnapshot = null;
+  let navigationToken = 0;
+  let destroyed = false;
+  const renderedUnits = new Map();
+  const rowEvents = new Map();
   const measuredHeights = new Map();
 
   function render(reason = "replace", restoreSnapshot = null) {
@@ -66,8 +70,8 @@ export function createTimeline(container, items = [], options = {}) {
     }
     teardownVirtualRoot();
     reconcileCustomMounts(visibleItems);
-    events.clear();
     clearNode(container);
+    clearDetachedRowEvents();
 
     root = createElement("section", {
       className: buildRootClassName(currentOptions, false),
@@ -93,31 +97,45 @@ export function createTimeline(container, items = [], options = {}) {
     }
 
     container.appendChild(root);
+    clearDetachedRowEvents();
   }
 
-  function renderVirtual(reason = "replace", restoreSnapshot = null) {
+  function renderVirtual(reason = "replace", restoreSnapshot = null, targetIndex = null) {
     ensureVirtualRoot();
+    if (!restoreSnapshot && targetIndex == null && ["scroll", "position"].includes(reason)) {
+      restoreSnapshot = captureVirtualSnapshot();
+      if (restoreSnapshot) restoreSnapshot.reason = reason;
+    }
     applyEstimatedAnchor(restoreSnapshot);
 
     const units = buildVirtualUnits(visibleItems, currentOptions);
+    const anchorIndex = restoreSnapshot?.anchorId == null ? -1
+      : units.findIndex(unit => String(unit.item.id) === String(restoreSnapshot.anchorId));
+    const desiredTop = targetIndex != null ? estimateOffset(units, measuredHeights, targetIndex)
+      : restoreSnapshot?.reason === "prepend" && restoreSnapshot.nearTop ? 0
+      : anchorIndex >= 0 ? Math.max(0, estimateOffset(units, measuredHeights, anchorIndex) - restoreSnapshot.anchorOffset)
+      : virtualViewport.scrollTop;
     const windowRange = computeMeasuredWindow(
       units,
       measuredHeights,
-      virtualViewport.scrollTop,
+      desiredTop,
       virtualViewport.clientHeight || container.clientHeight || 1,
       currentOptions.virtualOverscan,
     );
     const renderedItems = visibleItems.slice(windowRange.start, windowRange.end);
+    const activeElement = document.activeElement;
+    const hadFocus = virtualSlice.contains(activeElement);
     reconcileCustomMounts(renderedItems);
-    events.clear();
     resizeObserver?.disconnect();
-    clearNode(virtualSlice);
     virtualTopSpacer.style.height = `${windowRange.topSpacerHeight}px`;
     virtualBottomSpacer.style.height = `${windowRange.bottomSpacerHeight}px`;
 
+    const nextUnits = new Map();
     for (let index = windowRange.start; index < windowRange.end; index += 1) {
       const unit = units[index];
-      const unitNode = createElement("div", {
+      const previous = renderedUnits.get(String(unit.item.id));
+      const reusable = previous && previous.item === unit.item && previous.label === unit.groupLabel;
+      const unitNode = reusable ? previous.node : createElement("div", {
         className: `ui-timeline-virtual-unit${unit.startsGroup ? " starts-group" : ""}`,
         attrs: {
           "data-virtual-index": String(index),
@@ -125,21 +143,53 @@ export function createTimeline(container, items = [], options = {}) {
           "data-measure-key": unit.key,
         },
       });
-      if (unit.groupLabel) {
+      unitNode.dataset.virtualIndex = String(index);
+      if (!reusable && unit.groupLabel) {
         unitNode.appendChild(createElement("p", {
           className: "ui-timeline-group-label",
           text: unit.groupLabel,
         }));
       }
-      unitNode.appendChild(renderItem(unit.item, index, visibleItems.length));
-      virtualSlice.appendChild(unitNode);
+      if (!reusable) unitNode.appendChild(renderItem(unit.item, index, visibleItems.length));
+      else if (previous.index !== index || previous.total !== visibleItems.length) {
+        const rail = unitNode.querySelector(".ui-timeline-rail");
+        const connector = rail.querySelector(".ui-timeline-connector");
+        if (currentOptions.showConnector && index < visibleItems.length - 1) {
+          if (!connector) rail.appendChild(createElement("span", { className: "ui-timeline-connector" }));
+        } else connector?.remove();
+        const record = customMounts.get(getCustomMountKey(unit.item));
+        if (record) {
+          record.context = createItemContext(index, visibleItems.length);
+          callMountUpdate(record, record.item, record.context);
+        }
+      }
+      const position = virtualSlice.children[index - windowRange.start];
+      if (position !== unitNode) virtualSlice.insertBefore(unitNode, position || null);
+      nextUnits.set(String(unit.item.id), { node: unitNode, item: unit.item, label: unit.groupLabel, index, total: visibleItems.length });
       resizeObserver?.observe(unitNode);
+    }
+    for (const node of Array.from(virtualSlice.children)) {
+      if (nextUnits.get(node.dataset.itemId)?.node !== node) node.remove();
+    }
+    renderedUnits.clear();
+    for (const [key, value] of nextUnits) renderedUnits.set(key, value);
+    clearDetachedRowEvents();
+    if (hadFocus && document.activeElement !== activeElement) {
+      if (activeElement.isConnected) activeElement.focus({ preventScroll: true });
+      else virtualViewport.focus({ preventScroll: true });
     }
 
     updateVirtualRange(windowRange);
     measureRenderedUnits(units);
+    // Measurements change both offsets and scroll bounds. Keep spacers in the
+    // same coordinate system before restoring an anchor or aligning a jump.
+    virtualTopSpacer.style.height = `${estimateOffset(units, measuredHeights, windowRange.start)}px`;
+    virtualBottomSpacer.style.height = `${Math.max(0, estimateOffset(units, measuredHeights, units.length) - estimateOffset(units, measuredHeights, windowRange.end))}px`;
+    if (targetIndex != null) setVirtualScrollTop(estimateOffset(units, measuredHeights, targetIndex));
+    else applyEstimatedAnchor(restoreSnapshot);
     queueExactAnchorRestore(restoreSnapshot);
-    checkReachEnd(reason);
+    layoutSnapshot = captureVirtualSnapshot();
+    if (!["layout", "jump", "position", "measure"].includes(reason)) checkReachEnd(reason);
   }
 
   function ensureVirtualRoot() {
@@ -173,6 +223,9 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function teardownVirtualRoot() {
+    expectedScrollTop = null;
+    renderedUnits.clear();
+    layoutSnapshot = null;
     if (scrollFrame) clearTimeout(scrollFrame);
     if (measureFrame) cancelAnimationFrame(measureFrame);
     scrollFrame = 0;
@@ -189,8 +242,12 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function onVirtualScroll() {
-    checkReachEnd("scroll");
+    const programmaticScroll = expectedScrollTop != null && Math.abs(virtualViewport.scrollTop - expectedScrollTop) <= 1;
+    if (!programmaticScroll) expectedScrollTop = null;
+    if (!programmaticScroll) checkReachEnd("scroll");
     if (!programmaticScroll) {
+      navigationToken += 1;
+      layoutSnapshot = captureVirtualSnapshot();
       anchorRestoreToken += 1;
       if (measureFrame) {
         cancelAnimationFrame(measureFrame);
@@ -198,9 +255,10 @@ export function createTimeline(container, items = [], options = {}) {
       }
     }
     if (scrollFrame) return;
+    const reason = programmaticScroll ? "position" : "scroll";
     scrollFrame = setTimeout(() => {
       scrollFrame = 0;
-      renderVirtual("scroll");
+      renderVirtual(reason);
     }, 0);
   }
 
@@ -216,7 +274,7 @@ export function createTimeline(container, items = [], options = {}) {
       }
     }
     if (!changed || measureFrame) return;
-    const snapshot = captureVirtualSnapshot();
+    const snapshot = { ...(layoutSnapshot || captureVirtualSnapshot()), reason: "measure" };
     measureFrame = requestAnimationFrame(() => {
       measureFrame = 0;
       renderVirtual("measure", snapshot);
@@ -273,19 +331,16 @@ export function createTimeline(container, items = [], options = {}) {
       const viewportRect = virtualViewport.getBoundingClientRect();
       const delta = (anchor.getBoundingClientRect().top - viewportRect.top) - snapshot.anchorOffset;
       if (Math.abs(delta) > 1) setVirtualScrollTop(virtualViewport.scrollTop + delta);
-      checkReachEnd("anchor");
+      layoutSnapshot = captureVirtualSnapshot();
+      if (!["layout", "jump", "position", "measure"].includes(snapshot.reason)) checkReachEnd("anchor");
     });
   }
 
   function setVirtualScrollTop(value) {
     if (!virtualViewport) return;
-    const token = scrollWriteToken + 1;
-    scrollWriteToken = token;
-    programmaticScroll = true;
     virtualViewport.scrollTop = Math.max(0, value);
-    requestAnimationFrame(() => {
-      if (scrollWriteToken === token) programmaticScroll = false;
-    });
+    // Native scroll delivery may occur after the next animation frame.
+    expectedScrollTop = virtualViewport.scrollTop;
   }
 
   function updateVirtualRange(windowRange) {
@@ -353,6 +408,8 @@ export function createTimeline(container, items = [], options = {}) {
         "aria-label": buildItemAriaLabel(item),
       },
     });
+    const events = createEventBag();
+    rowEvents.set(row, events);
 
     const rail = createElement("div", { className: "ui-timeline-rail" });
     const marker = createElement("span", {
@@ -559,7 +616,80 @@ export function createTimeline(container, items = [], options = {}) {
     customMounts.clear();
   }
 
+  function clearDetachedRowEvents() {
+    for (const [row, bag] of rowEvents) {
+      if (!container.contains(row)) {
+        bag.clear();
+        rowEvents.delete(row);
+      }
+    }
+  }
+
+  // mutate is synchronous: capture the anchor before app-owned state/DOM changes.
+  function invalidateLayout(ids = null, { mutate } = {}) {
+    if (destroyed) return;
+    navigationToken += 1;
+    const snapshot = captureVirtualSnapshot();
+    const selected = ids == null ? null : new Set((Array.isArray(ids) ? ids : [ids]).map(String));
+    mutate?.();
+    for (const item of currentItems) {
+      if (!selected || selected.has(String(item.id))) measuredHeights.delete(getVirtualMeasureKey(item));
+    }
+    for (const record of customMounts.values()) {
+      if (!selected || selected.has(record.id)) callMountUpdate(record, record.item, record.context);
+    }
+    if (!virtualViewport) return;
+    if (snapshot) {
+      snapshot.reason = "layout";
+      const anchor = findVirtualItemNode(virtualViewport, snapshot.anchorId);
+      // An offset deep in a removed body cannot be retained: reveal its header.
+      if (anchor && -snapshot.anchorOffset >= anchor.getBoundingClientRect().height) snapshot.anchorOffset = 0;
+    }
+    renderVirtual("layout", snapshot);
+  }
+
+  async function scrollToItem(id, { align = "start", focus = false } = {}) {
+    const key = String(id);
+    if (destroyed) return { found: false, reason: "destroyed" };
+    if (!currentItems.some(item => String(item.id) === key)) return { found: false, reason: "not-loaded" };
+    const index = visibleItems.findIndex(item => String(item.id) === key);
+    if (index < 0) return { found: false, reason: "filtered" };
+    const token = ++navigationToken;
+    anchorRestoreToken += 1;
+    if (measureFrame) cancelAnimationFrame(measureFrame);
+    measureFrame = 0;
+    if (scrollFrame) clearTimeout(scrollFrame);
+    scrollFrame = 0;
+    if (virtualViewport) {
+      // Recalculate after mounted content is measured, rather than trusting stale estimates.
+      for (let pass = 0; pass < 2; pass += 1) {
+        renderVirtual("jump", null, index);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        if (destroyed || token !== navigationToken) return { found: false, reason: "cancelled" };
+      }
+    }
+    const row = Array.from(container.querySelectorAll(".ui-timeline-item[data-item-id]"))
+      .find(node => node.dataset.itemId === key);
+    if (!row) return { found: false, reason: "not-mounted" };
+    // Earlier mount passes may have queued an exact restore at start alignment.
+    anchorRestoreToken += 1;
+    if (virtualViewport) {
+      const rect = row.getBoundingClientRect();
+      const viewport = virtualViewport.getBoundingClientRect();
+      const offset = align === "center" ? (viewport.height - rect.height) / 2
+        : align === "end" ? viewport.height - rect.height : 0;
+      setVirtualScrollTop(virtualViewport.scrollTop + rect.top - viewport.top - offset);
+      layoutSnapshot = captureVirtualSnapshot();
+    } else row.scrollIntoView({ block: ["center", "end"].includes(align) ? align : "start" });
+    if (focus) {
+      if (!row.hasAttribute("tabindex")) row.setAttribute("tabindex", "-1");
+      row.focus({ preventScroll: true });
+    }
+    return { found: true, id: key };
+  }
+
   function update(nextItems = currentItems, nextOptions = {}) {
+    navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
     currentItems = normalizeItems(nextItems);
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
@@ -567,6 +697,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function append(nextItems = []) {
+    navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
     if (snapshot) snapshot.reason = "append";
     const incoming = normalizeItems(nextItems);
@@ -575,6 +706,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function prepend(nextItems = []) {
+    navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
     if (snapshot) snapshot.reason = "prepend";
     const incoming = normalizeItems(nextItems);
@@ -583,6 +715,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function setLinkedRange(range) {
+    navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
     currentOptions = normalizeOptions({
       ...currentOptions,
@@ -597,10 +730,12 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function destroy() {
-    events.clear();
+    destroyed = true;
+    navigationToken += 1;
     destroyAllCustomMounts();
     teardownVirtualRoot();
     clearNode(container);
+    clearDetachedRowEvents();
     root = null;
   }
 
@@ -619,6 +754,8 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   api = {
+    invalidateLayout,
+    scrollToItem,
     update,
     append,
     prepend,
@@ -658,6 +795,7 @@ function normalizeOptions(options) {
   next.hasMore = next.hasMore !== false;
   next.onRangeChange = typeof next.onRangeChange === "function" ? next.onRangeChange : null;
   next.onReachEnd = typeof next.onReachEnd === "function" ? next.onReachEnd : null;
+  next.estimateItemHeight = typeof next.estimateItemHeight === "function" ? next.estimateItemHeight : null;
   return next;
 }
 
@@ -743,9 +881,15 @@ function buildVirtualUnits(items, options) {
       key: getVirtualMeasureKey(item),
       startsGroup,
       groupLabel: startsGroup ? (dayKey === "unknown" ? "Undated" : formatGroupLabel(dayKey, options.locale)) : "",
-      estimatedHeight: estimateTimelineItemHeight(item, startsGroup),
+      estimatedHeight: getEstimatedHeight(item, startsGroup, options),
     };
   });
+}
+
+function getEstimatedHeight(item, startsGroup, options) {
+  const estimate = options.estimateItemHeight?.(item, { startsGroup });
+  return typeof estimate === "number" && Number.isFinite(estimate) && estimate > 0
+    ? estimate : estimateTimelineItemHeight(item, startsGroup);
 }
 
 function computeMeasuredWindow(units, measuredHeights, scrollTop, viewportHeight, overscan) {

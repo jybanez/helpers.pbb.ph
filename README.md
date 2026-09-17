@@ -360,6 +360,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `createXyChart(container, options)` generic SVG X/Y chart primitive for line trends, point markers, Y-axis thresholds, shaded bands, and accessible summaries
 - `ui.timeline.js`
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
+  - `invalidateLayout(ids, { mutate })` refreshes presentation heights while preserving the virtual viewport anchor; `scrollToItem(id, { align, focus })` mounts and navigates to loaded items. See [layout and navigation](docs/timeline-layout-navigation.md).
 - `ui.timeline.scrubber.js`
   - `createTimelineScrubber(container, options)` timeline scrubber/playhead with optional range handles and zoom levels
 - `ui.command.palette.js`

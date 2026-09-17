@@ -113,10 +113,13 @@
     assert(afterPrepend?.id === beforePrepend?.id, `prepend away from top should preserve the reader anchor id (${beforePrepend?.id} -> ${afterPrepend?.id})`);
     assert(Math.abs((afterPrepend?.offset || 0) - (beforePrepend?.offset || 0)) <= 3, `prepend away from top should preserve the anchor pixel offset (${beforePrepend?.offset} -> ${afterPrepend?.offset})`);
 
+    // Five new rows now precede item-0: explicitly bring it back into range.
+    await timeline.scrollToItem("item-0");
+    await frames(4);
+    assert(lifecycle.filter((entry) => entry === "mount:custom-a").length >= 2, `custom content should remount when it re-enters the virtual range (${lifecycle.join(", ")})`);
     viewport.scrollTop = 0;
     viewport.dispatchEvent(new Event("scroll"));
     await frames(4);
-    assert(lifecycle.filter((entry) => entry === "mount:custom-a").length >= 2, `custom content should remount when it re-enters the virtual range (${lifecycle.join(", ")})`);
     timeline.prepend([makeItem("latest", Date.UTC(2026, 8, 7, 12, 0, 0))]);
     await frames(5);
     document.body.dataset.phase = "top-prepended";
