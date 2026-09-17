@@ -1,6 +1,9 @@
 # Timeline presentation updates and navigation
 
-`createTimeline` keeps application presentation state separate from item data.
+For built-in collapse/expand, use the [native disclosure API](timeline-disclosure.md).
+The lower-level APIs below support other application-owned presentation changes.
+
+`createTimeline` keeps custom application presentation state separate from item data.
 Use these APIs for expandable cards, editors, and reply navigation without
 changing a canonical `contentKey` just to force a redraw.
 

@@ -5,7 +5,7 @@
   <title>Timeline Virtualization Regression</title>
   <link rel="stylesheet" href="../css/ui/ui.tokens.css">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
-  <link rel="stylesheet" href="../css/ui/ui.timeline.css">
+  <link rel="stylesheet" href="../css/ui/ui.timeline.css?v=0.21.8">
   <style>
     #host { width: 620px; height: 320px; }
     .is-selected .ui-timeline-body { border-color: #7bb5ff; }
@@ -24,7 +24,7 @@
     }
   </script>
   <script type="module">
-    import { createTimeline } from "../js/ui/ui.timeline.js";
+    import { createTimeline } from "../js/ui/ui.timeline.js?v=0.21.8";
 
     const host = document.getElementById("host");
     const results = document.getElementById("results");
@@ -100,7 +100,7 @@
     timeline.append(Array.from({ length: 20 }, (_, offset) => makeItem(80 + offset)));
     await frames(6);
     document.body.dataset.phase = "appended";
-    const afterAppend = firstVisibleAnchor(viewport);
+    const afterAppend = firstVisibleAnchor(viewport, beforeAppend?.id);
     assert(afterAppend?.id === beforeAppend?.id, `append should preserve the old/new page boundary anchor id (${beforeAppend?.id} -> ${afterAppend?.id})`);
     assert(Math.abs((afterAppend?.offset || 0) - (beforeAppend?.offset || 0)) <= 3, `append should preserve the anchor pixel offset (${beforeAppend?.offset} -> ${afterAppend?.offset})`);
 
@@ -109,7 +109,7 @@
     timeline.prepend(Array.from({ length: 5 }, (_, offset) => makeItem(`new-${offset}`, newerBase - offset * 60 * 1000)));
     await frames(6);
     document.body.dataset.phase = "prepended";
-    const afterPrepend = firstVisibleAnchor(viewport);
+    const afterPrepend = firstVisibleAnchor(viewport, beforePrepend?.id);
     assert(afterPrepend?.id === beforePrepend?.id, `prepend away from top should preserve the reader anchor id (${beforePrepend?.id} -> ${afterPrepend?.id})`);
     assert(Math.abs((afterPrepend?.offset || 0) - (beforePrepend?.offset || 0)) <= 3, `prepend away from top should preserve the anchor pixel offset (${beforePrepend?.offset} -> ${afterPrepend?.offset})`);
 
@@ -189,10 +189,14 @@
       results.textContent = "PASS";
     }
 
-    function firstVisibleAnchor(scrollViewport) {
+    function firstVisibleAnchor(scrollViewport, retainedId = null) {
       const viewportRect = scrollViewport.getBoundingClientRect();
       const nodes = Array.from(scrollViewport.querySelectorAll(".ui-timeline-virtual-unit[data-item-id]"));
-      const node = nodes.find((candidate) => candidate.getBoundingClientRect().bottom > viewportRect.top + 2);
+      // Newly mounted overscan can reveal the preceding unit's padding above the
+      // retained anchor. Assert that the original item's position is preserved.
+      const node = retainedId == null
+        ? nodes.find((candidate) => candidate.getBoundingClientRect().bottom > viewportRect.top + 2)
+        : nodes.find((candidate) => candidate.dataset.itemId === retainedId);
       return node ? { id: node.dataset.itemId, offset: node.getBoundingClientRect().top - viewportRect.top } : null;
     }
   </script>

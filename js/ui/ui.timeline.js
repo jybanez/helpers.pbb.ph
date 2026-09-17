@@ -4,6 +4,7 @@ import { createEventBag } from "./ui.events.js";
 const GENERATED_ITEM_ID = Symbol("generatedTimelineItemId");
 const DEFAULT_ITEM_HEIGHT = 64;
 const DEFAULT_GROUP_LABEL_HEIGHT = 32;
+let disclosureInstance = 0;
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -30,6 +31,9 @@ const DEFAULT_OPTIONS = {
   onRangeChange: null,
   onReachEnd: null,
   estimateItemHeight: null, // total virtual unit height, including any date heading
+  collapsible: false,
+  defaultCollapsed: false,
+  onCollapseChange: null,
 };
 
 export function createTimeline(container, items = [], options = {}) {
@@ -58,8 +62,59 @@ export function createTimeline(container, items = [], options = {}) {
   const renderedUnits = new Map();
   const rowEvents = new Map();
   const measuredHeights = new Map();
+  const collapsedStates = new Map();
+  const disclosureIds = new Map();
+  const disclosurePrefix = `ui-timeline-disclosure-${++disclosureInstance}`;
+
+  function syncDisclosure() {
+    if (!currentOptions.collapsible && !collapsedStates.size) return;
+    const ids = new Set(currentItems.map(item => String(item.id)));
+    for (const id of collapsedStates.keys()) if (!ids.has(id)) {
+      collapsedStates.delete(id);
+      disclosureIds.delete(id);
+    }
+    if (!currentOptions.collapsible) return;
+    assertVirtualItemIdentities(currentItems);
+    currentItems = currentItems.map(item => {
+      const id = String(item.id);
+      if (!collapsedStates.has(id)) collapsedStates.set(id, item.collapsed ?? currentOptions.defaultCollapsed);
+      if (!disclosureIds.has(id)) disclosureIds.set(id, `${disclosurePrefix}-${disclosureIds.size + 1}-${++disclosureInstance}`);
+      const collapsed = Boolean(collapsedStates.get(id));
+      return item.collapsed === collapsed ? item : { ...item, collapsed };
+    });
+  }
+
+  function isCollapsed(id) {
+    return currentOptions.collapsible && collapsedStates.get(String(id)) === true;
+  }
+
+  function changeCollapsed(ids, value) {
+    if (destroyed || !currentOptions.collapsible) return [];
+    const selected = ids == null ? null : new Set(ids.map(String));
+    const changed = currentItems.filter(item => (!selected || selected.has(String(item.id))) && isCollapsed(item.id) !== Boolean(value));
+    if (!changed.length) return [];
+    const activeRow = document.activeElement?.closest?.(".ui-timeline-item");
+    const focusId = activeRow && container.contains(activeRow) ? activeRow.dataset.itemId : null;
+    navigationToken += 1;
+    const snapshot = captureVirtualSnapshot();
+    if (snapshot) snapshot.reason = "layout";
+    for (const item of changed) {
+      collapsedStates.set(String(item.id), Boolean(value));
+      measuredHeights.delete(getVirtualMeasureKey(item));
+    }
+    if (snapshot && value && changed.some(item => String(item.id) === String(snapshot.anchorId))) snapshot.anchorOffset = 0;
+    render("layout", snapshot);
+    if (focusId && changed.some(item => String(item.id) === focusId)) {
+      Array.from(container.querySelectorAll(".ui-timeline-item")).find(row => row.dataset.itemId === focusId)
+        ?.querySelector(".ui-timeline-disclosure")?.focus({ preventScroll: true });
+    }
+    const changedIds = changed.map(item => item.id);
+    currentOptions.onCollapseChange?.({ ids: changedIds, collapsed: Boolean(value) });
+    return changedIds;
+  }
 
   function render(reason = "replace", restoreSnapshot = null) {
+    syncDisclosure();
     if (!container || container.nodeType !== 1) {
       return;
     }
@@ -430,7 +485,7 @@ export function createTimeline(container, items = [], options = {}) {
 
   function renderItem(item, index, total) {
     const row = createElement("article", {
-      className: ["ui-timeline-item", item.className || ""].filter(Boolean).join(" "),
+      className: ["ui-timeline-item", currentOptions.collapsible ? "is-collapsible" : "", isCollapsed(item.id) ? "is-collapsed" : "", item.className || ""].filter(Boolean).join(" "),
       attrs: {
         "data-item-id": String(item.id),
         role: "listitem",
@@ -452,8 +507,22 @@ export function createTimeline(container, items = [], options = {}) {
     }
 
     const body = createElement("div", { className: "ui-timeline-body" });
-    const header = createElement("header", { className: "ui-timeline-header" });
-    header.appendChild(createElement("h4", { className: "ui-timeline-title", text: item.title }));
+    const disclosure = currentOptions.collapsible;
+    const header = createElement(disclosure ? "button" : "header", {
+      className: `ui-timeline-header${disclosure ? " ui-timeline-disclosure" : ""}`,
+      attrs: disclosure ? { type: "button", "aria-expanded": String(!isCollapsed(item.id)), "aria-controls": disclosureIds.get(String(item.id)) } : {},
+    });
+    header.appendChild(createElement(disclosure ? "span" : "h4", { className: "ui-timeline-title", text: item.title }));
+    if (disclosure) {
+      header.appendChild(createElement("span", { className: "ui-timeline-subtitle", text: item.subtitle }));
+      const preview = createElement("span", { className: "ui-timeline-preview", text: item.preview ?? item.description });
+      preview.hidden = !isCollapsed(item.id);
+      header.appendChild(preview);
+      events.on(header, "click", event => {
+        event.stopPropagation();
+        changeCollapsed([item.id], !isCollapsed(item.id));
+      });
+    }
     if (item.timestamp) {
       header.appendChild(createElement("time", {
         className: "ui-timeline-time",
@@ -463,12 +532,20 @@ export function createTimeline(container, items = [], options = {}) {
       }));
     }
     body.appendChild(header);
+    const content = disclosure ? createElement("div", {
+      className: "ui-timeline-details",
+      attrs: { id: disclosureIds.get(String(item.id)) },
+    }) : body;
+    if (disclosure) {
+      content.hidden = isCollapsed(item.id);
+      body.appendChild(content);
+    }
 
-    if (item.subtitle) {
+    if (item.subtitle && !disclosure) {
       body.appendChild(createElement("p", { className: "ui-timeline-subtitle", text: item.subtitle }));
     }
     if (item.description) {
-      body.appendChild(createElement("p", { className: "ui-timeline-description", text: item.description }));
+      content.appendChild(createElement("p", { className: "ui-timeline-description", text: item.description }));
     }
     if (Array.isArray(item.meta) && item.meta.length) {
       const metaWrap = createElement("div", { className: "ui-timeline-meta" });
@@ -478,7 +555,7 @@ export function createTimeline(container, items = [], options = {}) {
           text: String(entry),
         }));
       });
-      body.appendChild(metaWrap);
+      content.appendChild(metaWrap);
     }
     if (Array.isArray(item.actions) && item.actions.length) {
       const actions = createElement("div", { className: "ui-timeline-actions" });
@@ -494,9 +571,9 @@ export function createTimeline(container, items = [], options = {}) {
         });
         actions.appendChild(button);
       });
-      body.appendChild(actions);
+      content.appendChild(actions);
     }
-    renderCustomContent(body, item, index, total);
+    renderCustomContent(content, item, index, total);
 
     events.on(row, "click", (event) => {
       if (shouldIgnoreItemActivation(event)) {
@@ -724,7 +801,9 @@ export function createTimeline(container, items = [], options = {}) {
     navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
     currentItems = normalizeItems(nextItems);
+    const disclosureChanged = nextOptions?.collapsible != null && Boolean(nextOptions.collapsible) !== currentOptions.collapsible;
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
+    if (disclosureChanged) measuredHeights.clear();
     render("replace", snapshot);
   }
 
@@ -786,6 +865,10 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   api = {
+    setCollapsed: (id, value) => changeCollapsed([id], value).length > 0,
+    isCollapsed,
+    collapseAll: () => changeCollapsed(null, true),
+    expandAll: () => changeCollapsed(null, false),
     invalidateLayout,
     scrollToItem,
     update,
@@ -828,6 +911,9 @@ function normalizeOptions(options) {
   next.onRangeChange = typeof next.onRangeChange === "function" ? next.onRangeChange : null;
   next.onReachEnd = typeof next.onReachEnd === "function" ? next.onReachEnd : null;
   next.estimateItemHeight = typeof next.estimateItemHeight === "function" ? next.estimateItemHeight : null;
+  next.collapsible = Boolean(next.collapsible);
+  next.defaultCollapsed = Boolean(next.defaultCollapsed);
+  next.onCollapseChange = typeof next.onCollapseChange === "function" ? next.onCollapseChange : null;
   return next;
 }
 
@@ -847,6 +933,8 @@ function normalizeItems(items) {
         title: String(item.title ?? "Untitled Event"),
         subtitle: item.subtitle == null ? "" : String(item.subtitle),
         description: item.description == null ? "" : String(item.description),
+        preview: item.preview == null ? undefined : String(item.preview),
+        collapsed: item.collapsed == null ? undefined : Boolean(item.collapsed),
         timestamp: ts && !Number.isNaN(ts.getTime()) ? ts.toISOString() : null,
         status: normalizeStatus(item.status),
         meta: Array.isArray(item.meta) ? item.meta : [],

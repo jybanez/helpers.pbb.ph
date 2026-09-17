@@ -21,7 +21,11 @@
     });
   </script>
   <script type="module">
-    import { createTimeline } from "../js/ui/ui.timeline.js";
+    const bundled = new URLSearchParams(location.search).has("bundled");
+    const { uiLoader } = await import("../js/ui/ui.loader.js");
+    uiLoader.setPreferBundles(bundled);
+    await uiLoader.load("ui.timeline");
+    const createTimeline = await uiLoader.get("ui.timeline");
 
     const host = document.getElementById("host");
     const results = document.getElementById("results");
@@ -155,6 +159,66 @@
     assert(compactItemStyle.gap === "0px", "compact vertical timeline items should keep zero gap for rail alignment");
     compactTimeline.destroy();
     compactHost.remove();
+
+
+    const disclosureHost = document.createElement("div");
+    disclosureHost.style.cssText = "width:900px;height:300px";
+    document.body.append(disclosureHost);
+    const disclosureItems = Array.from({length:150}, (_, i) => ({
+      id: `native-${i}`, title: "Operator Maya", subtitle: "Team Alpha",
+      description: "Full message body with actionable details.", preview: "One line preview",
+      timestamp: new Date(Date.UTC(2026, 2, 9) - i * 3600000).toISOString(),
+      actions: [{id:"reply",label:"Reply"}]
+    }));
+    let selected = 0, actionCalls = 0, notifications = 0, updates = 0;
+    const native = createTimeline(disclosureHost, disclosureItems, {
+      collapsible:true, groupByDate:true, enableVirtualization:true, virtualThreshold:10,
+      defaultCollapsed:true, onItemClick(){selected++}, onActionClick(){actionCalls++},
+      onCollapseChange(){notifications++},
+      mountItemContent(slot) {
+        slot.textContent = "Custom body";
+        return {update(){updates++}};
+      }
+    });
+    const nativeRow = () => disclosureHost.querySelector('.ui-timeline-item');
+    const header = () => nativeRow().querySelector('.ui-timeline-disclosure');
+    assert(header().tagName === "BUTTON" && header().getAttribute("aria-expanded") === "false", "native disclosure is a collapsed accessible button");
+    assert(document.getElementById(header().getAttribute("aria-controls"))?.hidden, "header controls its hidden details");
+    assert(getComputedStyle(header()).display === "grid", "native header uses grid");
+    header().focus(); header().click();
+    assert(!native.isCollapsed("native-0") && selected === 0 && notifications === 1, "header toggles without row activation");
+    assert(document.activeElement === header(), "toggle restores header focus");
+    assert(updates > 0, "toggle updates preserved custom content");
+    nativeRow().querySelector('.ui-timeline-actions button').click();
+    assert(actionCalls === 1 && !native.isCollapsed("native-0"), "actions remain independent");
+    native.collapseAll();
+    assert(native.isCollapsed("native-140"), "bulk collapse includes offscreen IDs");
+    native.setCollapsed("native-140",false);
+    assert(!native.isCollapsed("native-140"), "offscreen state can be changed");
+    const jump = await native.scrollToItem("native-140");
+    assert(jump.found && disclosureHost.querySelector('[data-item-id="native-140"] .ui-timeline-disclosure')?.getAttribute("aria-expanded") === "true", "offscreen remount reflects native state");
+    native.update(disclosureItems);
+    assert(!native.isCollapsed("native-140"), "update preserves surviving ID state");
+    native.setLinkedRange({startMs:Date.UTC(2026,2,8),endMs:Date.UTC(2026,2,10)});
+    native.collapseAll();
+    assert(native.isCollapsed("native-140"), "bulk includes filtered IDs");
+    native.setLinkedRange(null);
+    native.prepend([{...disclosureItems[0],id:"new-native",collapsed:false}]);
+    assert(!native.isCollapsed("new-native"), "new item initial state overrides default");
+    native.update(disclosureItems.slice(0,2));
+    native.append([{...disclosureItems[0],id:"native-140"}]);
+    assert(native.isCollapsed("native-140"), "removed ID state is pruned");
+    native.collapseAll();
+    disclosureHost.style.width = "320px";
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const senderRect = header().querySelector('.ui-timeline-title').getBoundingClientRect();
+    const addressedRect = header().querySelector('.ui-timeline-subtitle').getBoundingClientRect();
+    const timeRect = header().querySelector('.ui-timeline-time').getBoundingClientRect();
+    assert(addressedRect.top > senderRect.top && Math.abs(timeRect.top - senderRect.top) < 12, "mobile stacks addressed while time remains at top right");
+    assert(disclosureHost.scrollWidth <= disclosureHost.clientWidth + 1, "mobile disclosure does not overflow");
+    native.update(undefined, {collapsible:false});
+    assert(!disclosureHost.querySelector('.ui-timeline-disclosure') && !disclosureHost.querySelector('.ui-timeline-details[hidden]'), "disabling disclosure restores normal content");
+    native.destroy(); disclosureHost.remove();
 
     if (failures.length) {
       document.body.dataset.status = "failed";
