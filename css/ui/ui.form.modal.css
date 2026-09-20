@@ -340,3 +340,19 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Schema toggle choices wrap within narrow dialogs, including long labels. */
+.ui-form-modal-toggle-group-host,
+.ui-form-modal-toggle-group-host .ui-toggle-group__item {
+  min-width: 0;
+  max-width: 100%;
+}
+.ui-form-modal-toggle-group-host .ui-toggle-button {
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+}
+.ui-form-modal-toggle-group-host .ui-toggle-button__label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

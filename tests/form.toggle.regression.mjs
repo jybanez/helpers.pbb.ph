@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE||'C:/wamp64/www/bimoperks/node_modules/playwright/index.mjs'));
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--allow-file-access-from-files']});
+const results=[];
+try {
+for(const bundled of [false,true])for(const width of [320,390,1280]){
+ const page=await browser.newPage({viewport:{width,height:900}});page.setDefaultTimeout(12000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.resolve('tests/form.toggle.regression.html')).href+(bundled?'?bundled':''));await page.waitForFunction(()=>window.ready);
+ const field=n=>page.locator(`[id="ui-form-modal-${n}-${n==='transferable'?0:n==='ambassador_mode'?1:n==='terms_mode'?3:n==='locked'?5:6}-0"]`);
+ assert.equal(await page.evaluate(()=>form.getValues().transferable),null);
+ assert.equal(await page.evaluate(()=>form.getValues().portal_mode),'selected');
+ await page.evaluate(()=>form.setValues({portal_mode:'all_active'}));
+ assert.equal(await page.evaluate(()=>form.getValues().portal_mode),'all_active');
+ await page.getByRole('button',{name:'Submit',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.classList.contains('ui-toggle-button'));
+ assert.equal(await field('transferable').getAttribute('aria-invalid'),'true');
+ await field('transferable').getByRole('button',{name:/Not transferable/}).click();
+ assert.equal(await page.evaluate(()=>form.getValues().transferable),'false');
+ await field('ambassador_mode').getByRole('button',{name:'Selected',exact:true}).click();
+ await page.getByLabel('Selected record', {exact:true}).check();
+ await field('terms_mode').getByRole('button',{name:'supplement',exact:true}).click();
+ await page.getByLabel('Terms text',{exact:true}).fill('Keep this');
+ await page.evaluate(()=>form.setValues({ambassador_mode:'all_active',terms_mode:'inherit'}));
+ assert.equal(await page.evaluate(()=>Object.hasOwn(form.getValues(),'record')),false);
+ assert.equal(await page.evaluate(()=>Object.hasOwn(form.getValues(),'terms')),false);
+ await page.evaluate(()=>form.setValues({ambassador_mode:'selected',terms_mode:'override'}));
+ assert.equal(await page.evaluate(()=>form.getValues().record),true);assert.equal(await page.evaluate(()=>form.getValues().terms),'Keep this');
+ assert.equal(await page.evaluate(()=>form.getValues().transferable),'false');
+ assert.ok(await field('locked').getByRole('button',{name:'a',exact:true}).isDisabled());
+ assert.ok(await field('readonly').getByRole('button',{name:'a',exact:true}).isDisabled());
+ await page.evaluate(()=>{form.setBusy(true);form.setValues({transferable:'true',ambassador_mode:'all_active'});});
+ assert.equal(await field('transferable').locator('button:not(:disabled)').count(),0);
+ await page.evaluate(()=>form.setBusy(false));
+ assert.ok(await field('locked').getByRole('button',{name:'a',exact:true}).isDisabled());
+ assert.ok(await field('transferable').getByRole('button',{name:'Transferable',exact:true}).isEnabled());
+ await page.evaluate(()=>form.setValues({transferable:null}));assert.equal(await page.evaluate(()=>form.getValues().transferable),null);
+ assert.ok(await page.evaluate(()=>changed.length>=3));
+ assert.ok(await field('transferable').evaluate(e=>e.scrollWidth<=e.clientWidth+1));
+ const stale=await field('transferable').getByRole('button',{name:'Transferable',exact:true}).elementHandle();
+ await page.evaluate(()=>{window.previousChanges=changed.length;form.destroy();form.destroy();});
+ await stale.evaluate(e=>e.click());assert.equal(await page.evaluate(()=>changed.length),await page.evaluate(()=>previousChanges));
+ assert.equal(await page.locator('.ui-modal-root').count(),0);assert.deepEqual(errors,[]);
+ results.push({bundled,width,pass:true});console.log('PASS',bundled,width);await page.close();
+}
+const page=await browser.newPage();await page.goto(pathToFileURL(path.resolve('tests/form.modal.regression.html')).href);await page.waitForSelector('body[data-status="pass"]',{timeout:30000});console.log('Existing form regression PASS');await page.close();
+await fs.writeFile('output/form-toggle-results.json',JSON.stringify(results,null,2)+'\n');
+}catch(error){console.error(error);throw error;}finally{await browser.close();}
