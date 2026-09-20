@@ -154,6 +154,23 @@ export const ICON_DEFINITIONS = {
     rect(14, 3, 7, 7, 1.5),
     rect(14, 14, 7, 7, 1.5),
   ]),
+  "navigation.website": icon("navigation", [
+    rect(3, 4, 18, 16, 2),
+    line(3, 9, 21, 9),
+    line(7, 6.5, 7.5, 6.5),
+    line(11, 6.5, 11.5, 6.5),
+  ]),
+  "navigation.voucher": icon("navigation", [
+    path("M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4V6Z"),
+    line(15, 7, 15, 8),
+    line(15, 11.5, 15, 12.5),
+    line(15, 16, 15, 17),
+  ]),
+  "navigation.portal": icon("navigation", [
+    path("M10 8V3h10v18H10v-5"),
+    line(3, 12, 15, 12),
+    polyline("11 8 15 12 11 16"),
+  ]),
   "navigation.menu": icon("navigation", [
     line(4, 7, 20, 7),
     line(4, 12, 20, 12),
