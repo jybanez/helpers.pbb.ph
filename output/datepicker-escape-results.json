@@ -1,0 +1,50 @@
+[
+  {
+    "bundled": false,
+    "width": 390,
+    "field": "Starts (business timezone)",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "field": "Expires",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "field": "Starts (business timezone)",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "field": "Expires",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "field": "Starts (business timezone)",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "field": "Expires",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "field": "Starts (business timezone)",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "field": "Expires",
+    "pass": true
+  }
+]

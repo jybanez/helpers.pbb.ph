@@ -263,9 +263,12 @@ export function createModal(options = {}) {
   }
 
   function onDocumentKeyDown(event) {
-    if (!open) {
+    if (!open || event.defaultPrevented) {
       return;
     }
+    // Background modals must not close or trap focus beneath an active alert.
+    const foreground = [...getDocumentContext().querySelectorAll('[data-ui-modal-id][aria-hidden="false"]')].at(-1);
+    if (foreground !== root) return;
     if (event.key === "Escape" && currentOptions.closeOnEscape) {
       if (isBusy() && !currentOptions.escapeCloseWhileBusy) {
         event.preventDefault();

@@ -4,7 +4,7 @@ import {parseCivil,formatCivil} from '../js/ui/ui.datepicker.civil.js';
 window.parseCivil=parseCivil;window.formatCivil=formatCivil;
 uiLoader.setPreferBundles(location.search.includes('bundled'));
 await uiLoader.load('ui.form.modal');await uiLoader.load('ui.datepicker');
-window.createPicker=await uiLoader.get('ui.datepicker');
+window.createPicker=await uiLoader.get('ui.datepicker');window.showAlert=await uiLoader.get('ui.dialog.alert');
 const create=await uiLoader.get('ui.form.modal');
 window.changes=[];
 window.form=create({title:'Voucher schedule',initialValues:{starts:'2024-03-10T02:30:45.123'},rows:[

@@ -1,0 +1,20 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Canonical field validation</title><body><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+uiLoader.setPreferBundles(location.search.includes('bundled'));
+const create=await uiLoader.get('ui.form.modal');window.createForm=create;const adapter=await uiLoader.get('ui.field.error');
+const alert=await uiLoader.get('ui.dialog.alert');
+window.submits=0;window.invalids=[];
+window.form=create({title:'Validation example',size:'lg',initialValues:{password:'short'},rows:[
+[{type:'input',name:'name',label:'Full name',required:true,minLength:3},{type:'input',input:'password',name:'password',label:'Password',required:true,minLength:8}],
+[{type:'input',input:'email',name:'email',label:'Email',required:true},{type:'input',name:'code',label:'Pairing code',pattern:'[0-9]{6}',validationMessage:'Pairing code must contain six digits.'}],
+[{type:'ui.select',name:'scope',label:'Scope',required:true,options:['One','Two']},{type:'datepicker',name:'date',label:'Start date',required:true,valueMode:'wall-clock'}],
+[{type:'avatar',name:'avatar',label:'Profile photo',required:true}],
+[{type:'input',name:'confirm',label:'Confirm password',required:true}],
+[{type:'input',name:'optional',label:'Optional',minLength:3},{type:'input',name:'inactive',label:'Inactive',required:true,disabled:true}],
+[{type:'input',name:'hidden',label:'Conditional',required:true,visibleWhen:{scope:'Two'}}]
+],validate(values){return values.confirm&&values.confirm!==values.password?{confirm:'Confirm password must match Password.'}:{}},
+onInvalid:async(report,ctx)=>{invalids.push({report,busy:ctx.isBusy()});await alert('Correct the highlighted fields.',{title:'Check form',variant:'error',draggable:true,renderTarget:'local',workspaceBridge:false});},
+onSubmit(){submits++;return false;}});form.open();
+const host=document.createElement('div');host.innerHTML='<input aria-label="Composite value" aria-describedby="existing">';document.body.append(host);
+window.composite=adapter(host,{target:host.firstChild});window.ready=true;
+</script></body></html>

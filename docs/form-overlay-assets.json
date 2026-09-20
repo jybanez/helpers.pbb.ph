@@ -1,0 +1,42 @@
+{
+  "revision": "0.21.197",
+  "status": "candidate; verify publication separately",
+  "assets": [
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "75b704e5a0d27d1786fce62045b214e8dd5b0a4fc25eb88d1ffe1fd87916a6c1"
+    },
+    {
+      "path": "js/ui/ui.field.error.js",
+      "sha256": "eda1899e39593e6fa386943cfbdfb262fbf9ca37c7d250146620f6307f65cd8c"
+    },
+    {
+      "path": "css/ui/ui.field.error.css",
+      "sha256": "bd29471d939ad0ce6e5d39b9f7c4eea0e1ffb37885747d5d92839b5c69603306"
+    },
+    {
+      "path": "js/ui/ui.modal.js",
+      "sha256": "8fce21a8092972b0a2bb73114c36ac30c4975d3e2e27ed371a9ae281922d9b32"
+    },
+    {
+      "path": "js/ui/ui.dialog.js",
+      "sha256": "92966acb687231ebb0f8dc8e90e1e11828f198e651edc139fb657b32283ec739"
+    },
+    {
+      "path": "js/ui/ui.datepicker.js",
+      "sha256": "aa4474d37b994a8af9a1f068ee3af6ee72e3c0ce8f0853783d11a8279da706f2"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "5494189ac46d3a91ae2568a4d0646665dd63899aaeb3815e3f1a8a44aa59ce7e"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "d749e08015897800a5e4a04f68324bd37880401d388dc0a16008eb8c85cd3a38"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "be8125ffb8ef638882c493991eedd562e20d2c8c8e8b5f1b357d68a2f90dd909"
+    }
+  ]
+}
