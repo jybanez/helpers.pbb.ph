@@ -13,13 +13,52 @@ info, warning and danger retain their existing pressed palettes in normal, hover
 focus and disabled states. An inset keyboard focus outline stays inside the
 segmented container. Pill selectors and behavior remain unchanged.
 
-For narrow form adoption, replace css/ui/ui.toggle.css and js/ui/ui.form.modal.js
-(the latter only changes its automatic CSS URL). Use explicit form import
-?v=0.21.193 with the existing complete 0.21.191 graph and segmented schema options.
-Do not substitute an app-local CSS patch. Previous form JS and toggle CSS hashes
-are superseded. Loader registry toggle CSS URLs and main bundle revision are
-0.21.193; generated main JS/CSS are paired. Datepicker, calendar, civil and other
-form dependencies are unchanged. Global/preset upgrades are not required.
+## Bundled application adoption
+
+The updated user requirement supersedes the earlier direct-source voucher
+adoption advice. Use the existing shared `journeyHelper()` loader with
+`preferBundles: true`; resolve `await loader.get('ui.form.modal')` inside the
+existing deferred voucher action. Remove that action's explicit form import.
+Do not create a second loader or pre-import component modules.
+
+Adopt this candidate's matched set, keeping the relative directory layout:
+`js/ui/ui.loader.js`, `dist/helpers.ui.bundle.min.js`, and
+`dist/helpers.ui.bundle.min.css`. Cache the loader with a new application URL
+revision; it selects main JS/CSS revision0.21.193. Exact candidate SHA256 values
+are in `docs/segmented-selection-assets.json`; published identities must be
+rechecked after merge. These are candidate assets, not yet publication approval.
+The loader has no static imports. The main bundle contains form schema, toggle
+group/segmented forwarding and wall-clock datepicker implementations and their
+internal dependencies. Existing source/bundle behavioral tests cover their APIs.
+The loader's `data-ui-bundle="ui"` stylesheet prevents the form's automatic
+source-style injection. Let loader.get load CSS before creating the form.
+
+Normal successful bundle loading must request the loader and paired main bundle,
+without requests for individual form/toggle/calendar/civil component modules.
+Do not use `css:false` in application form resolution. Bundle errors propagate;
+there is no automatic source fallback. An explicitly configured source mode is
+a separate path and must not count as normal bundle success.
+
+Read-only Bimo reference audit: shared loader consumers include common navbar;
+account tabs, toast, dropdown, action modals, account/password presets, alerts
+and confirms; settings modal; public-auth form; home login preset; users modal;
+and users.business splitter/virtual list. Developer must run focused regressions
+for these affected consumers when replacing the shared main bundle. Preserve
+business wall-clock/legacy seconds, exact/unset toggle values, conditional
+retention, validation-before-busy, retained commands and deferred authenticated
+module loading. Minute precision is a separate pending API change.
+
+Existing helperIcons() directly imports icons, and helperGrid() loads a separate
+0.21.189 grid module after loading bundled grid CSS. A main-bundle refresh alone
+does not eliminate those independent requests. Developer should inventory and
+report them separately and assess any migration against the user's intended
+scope; do not claim a page-wide zero-module-request result from voucher-only
+network evidence. Retain historical assets/provenance until a reference audit
+supports removal. Do not refresh game/inspection/H4/scanner artifacts.
+
+Application acceptance requires an actual network trace, no duplicate component
+instances/styles, focused shared-consumer regressions and fresh selected-state
+Bimo390/1440 captures. No Bimo files were changed by Helper.
 
 ## Evidence
 
