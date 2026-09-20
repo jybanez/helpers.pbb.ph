@@ -1,0 +1,127 @@
+{
+  "revision": "0.21.191",
+  "entry": "js/ui/ui.form.modal.js?v=0.21.191",
+  "note": "Complete static relative module closure plus auto-loaded CSS. Preserve paths and import query revisions. Asset availability does not imply Bimo compatibility approval.",
+  "assets": [
+    {
+      "path": "css/ui/ui.calendar.css",
+      "sha256": "c79cc950cb35274b134f0922efd8f433fd288bf7e8450b8b33f4d697e2e860b4"
+    },
+    {
+      "path": "css/ui/ui.components.css",
+      "sha256": "a8ea97630941f9fc49d4a7c7338234f3da194cfdb128783f5e242f57543044d5"
+    },
+    {
+      "path": "css/ui/ui.datepicker.css",
+      "sha256": "da63f01f48e36f28e5f33809457c2a880e1670a5d8432403aa5e794314f0998e"
+    },
+    {
+      "path": "css/ui/ui.form.modal.css",
+      "sha256": "203e075a4a599543b2a9159a2422f640cc2b0b0b22de546bb123d32d96ded2ea"
+    },
+    {
+      "path": "css/ui/ui.modal.css",
+      "sha256": "6f5aa0e42196facb04b077a54a03c175629da2f36f2555a4d0106158fadc146b"
+    },
+    {
+      "path": "css/ui/ui.number.stepper.css",
+      "sha256": "182286b600183d1e78b6e37edf9c533747ea5f0866ce4c983d28775648ff17d4"
+    },
+    {
+      "path": "css/ui/ui.password.css",
+      "sha256": "be05abbcb946099fe94953ea4f0a8fb443b46c64d257112feeae7e86ecdccb91"
+    },
+    {
+      "path": "css/ui/ui.select.css",
+      "sha256": "88b07bb3c2b73fa435a292c67945b782bcd8a54bb2ee4e20e9c5b8d36c44d976"
+    },
+    {
+      "path": "css/ui/ui.toggle.css",
+      "sha256": "521f25a67c6837e25c11711e7d3f093cf3de3dd464c86a2db85f8af6d8b6ff12"
+    },
+    {
+      "path": "css/ui/ui.tokens.css",
+      "sha256": "015c364c37150def26bacdbab819ec820da226ceeb212479f3475b4676095f85"
+    },
+    {
+      "path": "css/ui/ui.tree.select.css",
+      "sha256": "dffabcf941c8248e77d028213d19c8a8f2865ed4045d340c163faa0a9ce7a9cb"
+    },
+    {
+      "path": "js/ui/ui.calendar.js",
+      "sha256": "e87c4ad14d422e2a44d4e38b39564dd38a3b847d183cede6360a4e3b10186038"
+    },
+    {
+      "path": "js/ui/ui.datepicker.civil.js",
+      "sha256": "283ddae6ed10624d38924642ed3b62e0feacf0d53b12ea989fbe121011f1b0a6"
+    },
+    {
+      "path": "js/ui/ui.datepicker.js",
+      "sha256": "900fb6f0042245a18dd7202194bdb644339eb711bbf02bb75634b8ef10110b0c"
+    },
+    {
+      "path": "js/ui/ui.dialog.js",
+      "sha256": "27ce0ca58dff2f0042a5d9c60e40b4a27b114c42c92c19e6680105c05e62c919"
+    },
+    {
+      "path": "js/ui/ui.dom.js",
+      "sha256": "ba8c7f354f116d1b81f1094c6e32ba90dd1473c905652b57401053645385ac9e"
+    },
+    {
+      "path": "js/ui/ui.events.js",
+      "sha256": "44ac5df34220a70b0b01830e75318eacc7ed1f2ce2a86594626031ff2237f1f6"
+    },
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "7b44d21f47b1fd6f2065e26e1dfac7c565f942339af11d9e5c9bdf36413788c4"
+    },
+    {
+      "path": "js/ui/ui.icons.catalog.js",
+      "sha256": "699f111d881d237bca3d0da07b86479b59faaa5f8b1e2fdc44fff372388fc007"
+    },
+    {
+      "path": "js/ui/ui.icons.js",
+      "sha256": "ca87b6c8495acf7c92613b7003c53c1464dba30028a30c0e9435f560eb98c628"
+    },
+    {
+      "path": "js/ui/ui.modal.js",
+      "sha256": "186b5b3c334f02bbdc32835e213c4cb9a01937e85241fdbdc0c0f5c1ab4ea162"
+    },
+    {
+      "path": "js/ui/ui.number.stepper.js",
+      "sha256": "f4d949fc3dcc19db0016e4071838192a29edac84696411dfdc0f93f0cc8003b6"
+    },
+    {
+      "path": "js/ui/ui.password.js",
+      "sha256": "680fb86600859ea969a9acf2c7a181cc8abc137eccc1b07b6fb58d935c8749b0"
+    },
+    {
+      "path": "js/ui/ui.select.js",
+      "sha256": "7ba9f8f60bf13fdfc9fc6af6420070c5fe83b1994f9f29909da6b8b9a2deb152"
+    },
+    {
+      "path": "js/ui/ui.semantic.icons.js",
+      "sha256": "8e019bfea0132a50cfac8b6070b2f1b68cb4a53bbb213a061001c9ddd30c7cba"
+    },
+    {
+      "path": "js/ui/ui.toast.js",
+      "sha256": "5ef55556ee61094ea9bd35404724123850f9970b9c66675eb964681e25842282"
+    },
+    {
+      "path": "js/ui/ui.toggle.button.js",
+      "sha256": "9981772135eaa8dbaaf54bb4933161d58357bd8ac3b42f5e4ce8578e6b397801"
+    },
+    {
+      "path": "js/ui/ui.toggle.group.js",
+      "sha256": "98d034815fb29fcf838b544f7e4ff53271861d833908691dae35fe7b644de202"
+    },
+    {
+      "path": "js/ui/ui.tree.select.js",
+      "sha256": "e02d6743c73167e3b72eef22e8cdb1cc4f4245b4ffae30665b3ffcc61a4d6800"
+    },
+    {
+      "path": "js/ui/ui.workspace.bridge.js",
+      "sha256": "11040c46d9b93e43faf7b9ccae3a8b10f81d63d28ef7a5065705d2e91938d7a8"
+    }
+  ]
+}

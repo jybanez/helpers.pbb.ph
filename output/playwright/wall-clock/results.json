@@ -1,0 +1,42 @@
+[
+  {
+    "bundled": false,
+    "timezoneId": "UTC",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "America/New_York",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "Asia/Manila",
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "Pacific/Apia",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "UTC",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "America/New_York",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "Asia/Manila",
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "Pacific/Apia",
+    "pass": true
+  }
+]

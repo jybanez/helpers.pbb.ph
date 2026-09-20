@@ -1,6 +1,8 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
-import { createCalendar } from "./ui.calendar.js";
+import { createCalendar } from "./ui.calendar.js?v=0.21.191";
+
+import { parseCivil, formatCivil, civilMonth, civilTime, civilAtTime } from "./ui.datepicker.civil.js?v=0.21.191";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -12,6 +14,9 @@ const DEFAULT_OPTIONS = {
   closeOnSelect: true,
   weekStartsOn: 0, // 0=Sun
   showTime: false,
+  valueMode: "instant", // wall-clock uses civil strings, never browser-zone conversion
+  disabled: false,
+  readonly: false,
   min: null,
   max: null,
   disabledDates: null, // (date:Date) => boolean
@@ -27,7 +32,9 @@ export function createDatepicker(container, options = {}) {
   const portalEvents = createEventBag();
   let currentOptions = normalizeOptions(options);
   let open = false;
-  let viewDate = startOfMonth(new Date());
+  let destroyed = false;
+  const wallClock = currentOptions.valueMode === "wall-clock";
+  let viewDate = monthStart(new Date());
   let start = null;
   let end = null;
   let startTime = "00:00";
@@ -42,7 +49,7 @@ export function createDatepicker(container, options = {}) {
   hydrateValue(currentOptions.value);
 
   function render() {
-    if (!container || container.nodeType !== 1) {
+    if (destroyed || !container || container.nodeType !== 1) {
       return;
     }
     events.clear();
@@ -60,6 +67,7 @@ export function createDatepicker(container, options = {}) {
       className: "ui-datepicker-trigger",
       attrs: {
         type: "button",
+        disabled: currentOptions.disabled || currentOptions.readonly ? "disabled" : null,
         "aria-haspopup": "dialog",
         "aria-expanded": open ? "true" : "false",
         "aria-label": currentOptions.ariaLabel,
@@ -75,6 +83,7 @@ export function createDatepicker(container, options = {}) {
       html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
     }));
     events.on(trigger, "click", () => {
+      if (currentOptions.disabled || currentOptions.readonly) return;
       if (!open) {
         lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       }
@@ -95,22 +104,23 @@ export function createDatepicker(container, options = {}) {
       calendar = createCalendar(calendarHost, {
         ariaLabel: `${currentOptions.ariaLabel} calendar`,
         locale: currentOptions.locale,
+        dateBasis: wallClock ? "utc" : "local",
         value: start,
         viewDate,
         mode: currentOptions.mode,
         rangeStart: start,
         rangeEnd: end,
         weekStartsOn: currentOptions.weekStartsOn,
-        min: currentOptions.min,
-        max: currentOptions.max,
-        disabledDates: currentOptions.disabledDates,
+        min: wallClock ? readDate(currentOptions.min) : currentOptions.min,
+        max: wallClock ? readDate(currentOptions.max) : currentOptions.max,
+        disabledDates: wallClock && currentOptions.disabledDates ? date => currentOptions.disabledDates(formatCivil(date, false)) : currentOptions.disabledDates,
         yearRangePast: currentOptions.yearRangePast,
         yearRangeFuture: currentOptions.yearRangeFuture,
         onSelect(date) {
           selectDate(date);
         },
         onViewChange(date) {
-          viewDate = startOfMonth(date);
+          viewDate = monthStart(date);
         },
       });
       if (currentOptions.showTime) {
@@ -227,13 +237,14 @@ export function createDatepicker(container, options = {}) {
       wrap.appendChild(createElement("label", { className: "ui-datepicker-time-label", text: "Time" }));
       const input = createElement("input", {
         className: "ui-input",
-        attrs: { type: "time" },
+        attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" },
       });
       input.value = startTime;
       events.on(input, "input", () => {
-        startTime = normalizeTime(input.value);
+        if (!input.value || !input.validity.valid) return;
+        startTime = wallClock ? input.value : normalizeTime(input.value);
         if (start) {
-          start = atTime(start, startTime);
+          start = combineTime(start, startTime);
         }
         emitChange();
         updateTriggerValue();
@@ -241,24 +252,26 @@ export function createDatepicker(container, options = {}) {
       wrap.appendChild(input);
     } else {
       const startLabel = createElement("label", { className: "ui-datepicker-time-label", text: "Start Time" });
-      const startInput = createElement("input", { className: "ui-input", attrs: { type: "time" } });
+      const startInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" } });
       startInput.value = startTime;
       events.on(startInput, "input", () => {
-        startTime = normalizeTime(startInput.value);
+        if (!startInput.value || !startInput.validity.valid) return;
+        startTime = wallClock ? startInput.value : normalizeTime(startInput.value);
         if (start) {
-          start = atTime(start, startTime);
+          start = combineTime(start, startTime);
         }
         emitChange();
         updateTriggerValue();
       });
 
       const endLabel = createElement("label", { className: "ui-datepicker-time-label", text: "End Time" });
-      const endInput = createElement("input", { className: "ui-input", attrs: { type: "time" } });
+      const endInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" } });
       endInput.value = endTime;
       events.on(endInput, "input", () => {
-        endTime = normalizeTime(endInput.value);
+        if (!endInput.value || !endInput.validity.valid) return;
+        endTime = wallClock ? endInput.value : normalizeTime(endInput.value);
         if (end) {
-          end = atTime(end, endTime);
+          end = combineTime(end, endTime);
         }
         emitChange();
         updateTriggerValue();
@@ -271,7 +284,7 @@ export function createDatepicker(container, options = {}) {
 
   function selectDate(date) {
     if (currentOptions.mode === "single") {
-      start = atTime(date, startTime);
+      start = combineTime(date, startTime);
       end = null;
       emitChange();
       if (currentOptions.closeOnSelect) {
@@ -282,17 +295,17 @@ export function createDatepicker(container, options = {}) {
     }
 
     if (!start || (start && end)) {
-      start = atTime(date, startTime);
+      start = combineTime(date, startTime);
       end = null;
       emitChange();
       render();
       return;
     }
 
-    const next = atTime(date, endTime);
-    if (compareDay(next, start) < 0) {
+    const next = combineTime(date, endTime);
+    if ((wallClock ? formatCivil(next, false).localeCompare(formatCivil(start, false)) : compareDay(next, start)) < 0) {
       end = start;
-      start = atTime(next, startTime);
+      start = combineTime(next, startTime);
     } else {
       end = next;
     }
@@ -308,13 +321,13 @@ export function createDatepicker(container, options = {}) {
       if (!start) {
         return currentOptions.placeholder;
       }
-      return formatValue(start, currentOptions.locale, currentOptions.showTime);
+      return displayValue(start, currentOptions.locale, currentOptions.showTime);
     }
     if (!start && !end) {
       return currentOptions.placeholder;
     }
-    const s = start ? formatValue(start, currentOptions.locale, currentOptions.showTime) : "";
-    const e = end ? formatValue(end, currentOptions.locale, currentOptions.showTime) : "";
+    const s = start ? displayValue(start, currentOptions.locale, currentOptions.showTime) : "";
+    const e = end ? displayValue(end, currentOptions.locale, currentOptions.showTime) : "";
     return e ? `${s} - ${e}` : `${s} -`;
   }
 
@@ -325,27 +338,37 @@ export function createDatepicker(container, options = {}) {
     }
   }
 
+  function readDate(value) { return wallClock ? parseCivil(value) : parseAnyDate(value); }
+  function monthStart(date) { return wallClock ? civilMonth(date) : startOfMonth(date); }
+  function timeOf(date) { return wallClock ? civilTime(date) : formatTime(date); }
+  function combineTime(date, time) { return wallClock ? civilAtTime(date, time) : atTime(date, time); }
+  function serialize(date) { return wallClock ? formatCivil(date, currentOptions.showTime) : (date ? date.toISOString() : null); }
+  function displayValue(date, locale, withTime) {
+    if (!wallClock) return formatValue(date, locale, withTime);
+    return formatCivil(date, withTime).replace("T", " ");
+  }
+
   function hydrateValue(value) {
     if (currentOptions.mode === "single") {
-      const date = parseAnyDate(value);
+      const date = readDate(value);
       start = date;
       end = null;
       if (date) {
-        startTime = formatTime(date);
-        viewDate = startOfMonth(date);
+        startTime = timeOf(date);
+        viewDate = monthStart(date);
       }
       return;
     }
 
-    const pair = parseRange(value);
+    const pair = wallClock ? { start: readDate(Array.isArray(value) ? value[0] : value?.start), end: readDate(Array.isArray(value) ? value[1] : value?.end) } : parseRange(value);
     start = pair.start;
     end = pair.end;
     if (start) {
-      startTime = formatTime(start);
-      viewDate = startOfMonth(start);
+      startTime = timeOf(start);
+      viewDate = monthStart(start);
     }
     if (end) {
-      endTime = formatTime(end);
+      endTime = timeOf(end);
     }
   }
 
@@ -353,6 +376,7 @@ export function createDatepicker(container, options = {}) {
     if (typeof currentOptions.onChange !== "function") {
       return;
     }
+    currentOptions.value = getValue();
     currentOptions.onChange(getValue(), getState());
   }
 
@@ -395,24 +419,27 @@ export function createDatepicker(container, options = {}) {
   }
 
   function update(nextOptions = {}) {
-    currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
+    if (nextOptions.valueMode && nextOptions.valueMode !== currentOptions.valueMode) throw new TypeError("Recreate the picker to change valueMode.");
+    currentOptions = normalizeOptions({ ...currentOptions, value: getValue(), ...(nextOptions || {}) });
+    if (currentOptions.disabled || currentOptions.readonly) open = false;
     hydrateValue(currentOptions.value);
     render();
   }
 
-  function setValue(nextValue) {
+  function setValue(nextValue, emit = true) {
     hydrateValue(nextValue);
-    emitChange();
+    currentOptions.value = getValue();
+    if (emit) emitChange();
     render();
   }
 
   function getValue() {
     if (currentOptions.mode === "single") {
-      return start ? start.toISOString() : null;
+      return serialize(start);
     }
     return {
-      start: start ? start.toISOString() : null,
-      end: end ? end.toISOString() : null,
+      start: serialize(start),
+      end: serialize(end),
     };
   }
 
@@ -420,9 +447,9 @@ export function createDatepicker(container, options = {}) {
     return {
       open,
       mode: currentOptions.mode,
-      viewDate: viewDate.toISOString(),
-      start: start ? start.toISOString() : null,
-      end: end ? end.toISOString() : null,
+      viewDate: wallClock ? formatCivil(viewDate, false) : viewDate.toISOString(),
+      start: serialize(start),
+      end: serialize(end),
       startTime,
       endTime,
       options: { ...currentOptions },
@@ -430,6 +457,9 @@ export function createDatepicker(container, options = {}) {
   }
 
   function destroy() {
+    if (destroyed) return;
+    destroyed = true;
+    open = false;
     globalEvents.clear();
     portalEvents.clear();
     events.clear();
@@ -446,6 +476,11 @@ export function createDatepicker(container, options = {}) {
 
   return {
     update,
+    setDisabled(disabled) {
+      currentOptions.disabled = Boolean(disabled);
+      if (disabled) open = false;
+      render();
+    },
     setValue,
     getValue,
     getState,
@@ -455,6 +490,7 @@ export function createDatepicker(container, options = {}) {
 
 function normalizeOptions(options) {
   const next = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  if (!["instant", "wall-clock"].includes(next.valueMode)) throw new TypeError("Unknown datepicker valueMode.");
   if (options && Object.prototype.hasOwnProperty.call(options, "appendTo") && !Object.prototype.hasOwnProperty.call(options, "panelParent")) {
     next.panelParent = options.appendTo;
   }
