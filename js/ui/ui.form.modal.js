@@ -860,6 +860,7 @@ export function createFormModal(options = {}) {
     if (!validation.valid) {
       applyErrors(validation.errors);
       reportingInvalid = true;
+      const invalidField = fields.get(validation.firstInvalidField);
       focusFirstInvalid(validation.firstInvalidField);
       try {
         if (typeof currentOptions.onInvalid === "function") {
@@ -867,7 +868,7 @@ export function createFormModal(options = {}) {
         }
       } finally {
         reportingInvalid = false;
-        requestInvalidFocus(validation.firstInvalidField);
+        requestInvalidFocus(validation.firstInvalidField, invalidField);
       }
       return false;
     }
@@ -1005,7 +1006,7 @@ export function createFormModal(options = {}) {
     }
   }
 
-  function requestInvalidFocus(name) {
+  function requestInvalidFocus(name, expectedField = fields.get(name)) {
     if (!name) {
       return;
     }
@@ -1013,7 +1014,11 @@ export function createFormModal(options = {}) {
       ? window.requestAnimationFrame.bind(window)
       : (callback) => setTimeout(callback, 0);
     schedule(() => {
-      if (destroyed || !modal?.getState?.().open) {
+      const field = fields.get(name);
+      const target = getFieldAriaTarget(field || {});
+      if (destroyed || !modal?.getState?.().open || field !== expectedField ||
+          !target?.isConnected || target.getAttribute("aria-invalid") !== "true" ||
+          field?.config.disabled || field?.config.readonly) {
         return;
       }
       focusFirstInvalid(name);

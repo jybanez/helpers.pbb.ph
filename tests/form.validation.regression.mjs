@@ -26,5 +26,14 @@ try{for(const bundled of [false,true])for(const width of [390,1440]){
  const compositeInput=page.getByLabel('Composite value');assert.equal(await compositeInput.getAttribute('aria-invalid'),'true');assert.ok((await compositeInput.getAttribute('aria-describedby')).includes('existing'));
  await compositeInput.fill('fixed');assert.equal(await compositeInput.getAttribute('aria-invalid'),null);
  await page.evaluate(()=>{composite.destroy();composite.destroy()});assert.equal(await compositeInput.getAttribute('aria-describedby'),'existing');
+ // An awaited invalid callback must not focus a replacement or corrected field.
+ for(const replace of [true,false]){
+  await page.evaluate(()=>{window.pendingInvalid=false;window.late=createForm({title:'Late feedback',rows:[[{type:'input',name:'first',label:'First',required:true},{type:'input',name:'second',label:'Second'}]],onInvalid:()=>new Promise(resolve=>{window.pendingInvalid=true;window.releaseInvalid=resolve})});late.open();});
+  await page.getByRole('button',{name:'Submit',exact:true}).click();await page.waitForFunction(()=>pendingInvalid);
+  await page.evaluate(replace=>{if(replace)late.update({title:'Replacement fields'});else late.setValues({first:'Corrected'});},replace);
+  await page.getByLabel('Second',{exact:true}).focus();await page.evaluate(()=>releaseInvalid());await page.waitForTimeout(100);
+  assert.equal(await page.getByLabel('Second',{exact:true}).evaluate(e=>document.activeElement===e),true);
+  await page.evaluate(()=>late.destroy());
+ }
  results.push({bundled,width,pass:true});console.log('PASS validation',bundled,width);await page.close();
 }await fs.writeFile('output/playwright/form-validation/results.json',JSON.stringify(results,null,2)+'\n');}catch(e){console.error(e);throw e}finally{await browser.close()}

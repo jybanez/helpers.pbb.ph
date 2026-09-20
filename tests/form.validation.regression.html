@@ -1,7 +1,7 @@
 <!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Canonical field validation</title><body><script type="module">
 import {uiLoader} from '../js/ui/ui.loader.js';
 uiLoader.setPreferBundles(location.search.includes('bundled'));
-const create=await uiLoader.get('ui.form.modal');const adapter=await uiLoader.get('ui.field.error');
+const create=await uiLoader.get('ui.form.modal');window.createForm=create;const adapter=await uiLoader.get('ui.field.error');
 const alert=await uiLoader.get('ui.dialog.alert');
 window.submits=0;window.invalids=[];
 window.form=create({title:'Validation example',size:'lg',initialValues:{password:'short'},rows:[

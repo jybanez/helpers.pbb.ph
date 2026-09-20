@@ -32,7 +32,14 @@ The callback is opt-in: Helper does not impose an alert on other consumers.
 Applications requiring an alert must await it in onInvalid. Underlying first-field
 focus is restored after the callback settles, not while an alert is open. Repeated
 submit is ignored while onInvalid is pending. Keep callbacks free of mutations.
-No callbacks are fired by the read-only form.validate() inspection method.
+After await, focus restoration requires the same field instance, a connected
+invalid target and an open/current form; replacement or corrected fields are not
+refocused. No callbacks are fired by the read-only form.validate() inspection method.
+
+Synchronous validate does not replace asynchronous file/decode validation. Keep
+those checks in the existing guarded asynchronous path with manageBusyOnSubmit:false;
+capture values/context before awaiting, reject stale/dismissed results, validate
+before busy/submission requests and preserve uncertain-command protections.
 
 Custom validate returns a field-error map merged with built-in errors before busy.
 Only currently rendered, active schema fields can receive those errors. Dotted
