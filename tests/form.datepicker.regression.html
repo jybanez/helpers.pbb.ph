@@ -1,0 +1,18 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Business-local date/time form</title><body><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+import {parseCivil,formatCivil} from '../js/ui/ui.datepicker.civil.js';
+window.parseCivil=parseCivil;window.formatCivil=formatCivil;
+uiLoader.setPreferBundles(location.search.includes('bundled'));
+await uiLoader.load('ui.form.modal');await uiLoader.load('ui.datepicker');
+window.createPicker=await uiLoader.get('ui.datepicker');
+const create=await uiLoader.get('ui.form.modal');
+window.changes=[];
+window.form=create({title:'Voucher schedule',initialValues:{starts:'2024-03-10T02:30:45.123'},rows:[
+[{type:'checkbox',name:'scheduled',label:'Scheduled',value:true}],
+[{type:'ui.datepicker',name:'starts',label:'Starts (business timezone)',help:'America/New_York; server validates business time',showTime:true,valueMode:'wall-clock',required:true,visibleWhen:{scheduled:true}}],
+[{type:'datepicker',name:'ends',label:'Expires',showTime:true,valueMode:'wall-clock'}],
+[{type:'datepicker',name:'locked',label:'Disabled',showTime:true,valueMode:'wall-clock',disabled:true,value:'2024-11-03T01:30:22'}],
+[{type:'datepicker',name:'readonly',label:'Read only',showTime:true,valueMode:'wall-clock',readonly:true,value:'2024-11-03T01:30:22'}]
+],onChange(values){changes.push(values);},onSubmit(){return false;}});
+form.open();window.ready=true;
+</script></body></html>

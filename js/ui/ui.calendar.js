@@ -3,6 +3,7 @@ import { createEventBag } from "./ui.events.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  dateBasis: "local", // utc is a civil-calendar carrier; default remains browser local
   ariaLabel: "Calendar",
   locale: "en-US",
   value: null,
@@ -25,6 +26,7 @@ const DEFAULT_OPTIONS = {
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function createCalendar(container, options = {}) {
+  const { parseAnyDate, buildCalendarDays, rotateWeekdays, getMonthOptions, getYearRange, addMonths, addDays, startOfMonth, startOfDay, isSameDay, formatMonthYear, formatDayLabel, getYear, getMonth, getDate, makeDate } = createCalendarDateOps(options.dateBasis === "utc");
   const events = createEventBag();
   let currentOptions = normalizeOptions(options);
   let viewDate = startOfMonth(parseAnyDate(currentOptions.viewDate) || parseAnyDate(currentOptions.value) || new Date());
@@ -32,9 +34,10 @@ export function createCalendar(container, options = {}) {
   let rangeStart = parseAnyDate(currentOptions.rangeStart);
   let rangeEnd = parseAnyDate(currentOptions.rangeEnd);
   let root = null;
+  let destroyed = false;
 
   function render() {
-    if (!container || container.nodeType !== 1) {
+    if (destroyed || !container || container.nodeType !== 1) {
       return;
     }
     events.clear();
@@ -86,27 +89,27 @@ export function createCalendar(container, options = {}) {
     getMonthOptions(currentOptions.locale).forEach((month, index) => {
       monthSelect.appendChild(createElement("option", { text: month, attrs: { value: String(index) } }));
     });
-    monthSelect.value = String(viewDate.getMonth());
+    monthSelect.value = String(getMonth(viewDate));
 
     const yearSelect = createElement("select", {
       className: "ui-input ui-calendar-select",
       attrs: { "aria-label": "Select year" },
     });
-    getYearRange(viewDate.getFullYear(), currentOptions.yearRangePast, currentOptions.yearRangeFuture).forEach((year) => {
+    getYearRange(getYear(viewDate), currentOptions.yearRangePast, currentOptions.yearRangeFuture).forEach((year) => {
       yearSelect.appendChild(createElement("option", { text: String(year), attrs: { value: String(year) } }));
     });
-    yearSelect.value = String(viewDate.getFullYear());
+    yearSelect.value = String(getYear(viewDate));
 
     events.on(monthSelect, "change", () => {
       const month = Number(monthSelect.value);
       if (Number.isFinite(month)) {
-        setViewDate(new Date(viewDate.getFullYear(), month, 1), { source: "month-select" });
+        setViewDate(makeDate(getYear(viewDate), month, 1), { source: "month-select" });
       }
     });
     events.on(yearSelect, "change", () => {
       const year = Number(yearSelect.value);
       if (Number.isFinite(year)) {
-        setViewDate(new Date(year, viewDate.getMonth(), 1), { source: "year-select" });
+        setViewDate(makeDate(year, getMonth(viewDate), 1), { source: "year-select" });
       }
     });
 
@@ -150,7 +153,7 @@ export function createCalendar(container, options = {}) {
       }
       const cell = createElement("button", {
         className: classes.join(" "),
-        text: String(item.date.getDate()),
+        text: String(getDate(item.date)),
         attrs: {
           type: "button",
           disabled: disabled ? "disabled" : null,
@@ -206,6 +209,7 @@ export function createCalendar(container, options = {}) {
   }
 
   function destroy() {
+    destroyed = true;
     events.clear();
     clearNode(container);
     root = null;
@@ -271,6 +275,18 @@ function normalizeOptions(options) {
   return next;
 }
 
+function createCalendarDateOps(utc) {
+  const getYear = date => date[utc ? "getUTCFullYear" : "getFullYear"]();
+  const getMonth = date => date[utc ? "getUTCMonth" : "getMonth"]();
+  const getDate = date => date[utc ? "getUTCDate" : "getDate"]();
+  const getDay = date => date[utc ? "getUTCDay" : "getDay"]();
+  function makeDate(year, month, day) {
+    if (!utc) return new Date(year, month, day);
+    const date = new Date(0);
+    date.setUTCFullYear(year, month, day);
+    return date;
+  }
+
 function parseAnyDate(value) {
   if (!value) {
     return null;
@@ -284,14 +300,14 @@ function parseAnyDate(value) {
 
 function buildCalendarDays(monthDate, weekStartsOn) {
   const first = startOfMonth(monthDate);
-  const startOffset = (first.getDay() - weekStartsOn + 7) % 7;
+  const startOffset = (getDay(first) - weekStartsOn + 7) % 7;
   const gridStart = addDays(first, -startOffset);
   const days = [];
   for (let i = 0; i < 42; i += 1) {
     const date = addDays(gridStart, i);
     days.push({
       date,
-      outsideMonth: date.getMonth() !== first.getMonth(),
+      outsideMonth: getMonth(date) !== getMonth(first),
     });
   }
   return days;
@@ -302,10 +318,10 @@ function rotateWeekdays(days, start) {
 }
 
 function getMonthOptions(locale) {
-  const formatter = new Intl.DateTimeFormat(locale, { month: "short" });
+  const formatter = new Intl.DateTimeFormat(locale, { month: "short", ...(utc ? {timeZone: "UTC"} : {}) });
   const months = [];
   for (let i = 0; i < 12; i += 1) {
-    months.push(formatter.format(new Date(2026, i, 1)));
+    months.push(formatter.format(makeDate(2026, i, 1)));
   }
   return months;
 }
@@ -320,41 +336,45 @@ function getYearRange(baseYear, past, future) {
 
 function addMonths(date, amount) {
   const next = new Date(date.getTime());
-  next.setMonth(next.getMonth() + amount);
+  next[utc ? "setUTCMonth" : "setMonth"](getMonth(next) + amount);
   return startOfMonth(next);
 }
 
 function addDays(date, amount) {
   const next = new Date(date.getTime());
-  next.setDate(next.getDate() + amount);
+  next[utc ? "setUTCDate" : "setDate"](getDate(next) + amount);
   return next;
 }
 
 function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  return makeDate(getYear(date), getMonth(date), 1);
 }
 
 function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return makeDate(getYear(date), getMonth(date), getDate(date));
 }
 
 function isSameDay(a, b) {
   return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+    getYear(a) === getYear(b) &&
+    getMonth(a) === getMonth(b) &&
+    getDate(a) === getDate(b)
   );
 }
 
 function formatMonthYear(date, locale) {
-  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", ...(utc ? {timeZone: "UTC"} : {}) }).format(date);
 }
 
 function formatDayLabel(date, locale) {
   return new Intl.DateTimeFormat(locale, {
+    ...(utc ? {timeZone: "UTC"} : {}),
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   }).format(date);
+}
+
+return { parseAnyDate, buildCalendarDays, rotateWeekdays, getMonthOptions, getYearRange, addMonths, addDays, startOfMonth, startOfDay, isSameDay, formatMonthYear, formatDayLabel, getYear, getMonth, getDate, makeDate };
 }
