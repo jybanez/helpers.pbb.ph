@@ -149,6 +149,11 @@ export const ICON_DEFINITIONS = {
     path("M5 9.5V20h14V9.5"),
     path("M9 20v-5h6v5"),
   ]),
+  "navigation.dashboard": icon("navigation", [
+    rect(3, 3, 7, 18, 1.5),
+    rect(14, 3, 7, 7, 1.5),
+    rect(14, 14, 7, 7, 1.5),
+  ]),
   "navigation.menu": icon("navigation", [
     line(4, 7, 20, 7),
     line(4, 12, 20, 12),
