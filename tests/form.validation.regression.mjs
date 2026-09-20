@@ -14,9 +14,10 @@ try{for(const bundled of [false,true])for(const width of [390,1440]){
  assert.ok(cues.length>=7);assert.ok(cues.every(c=>c.outline!=='none'&&c.description),JSON.stringify(cues));
  await page.screenshot({path:`output/playwright/form-validation/${bundled?'bundle':'source'}-${width}.png`,fullPage:true});
  await page.getByLabel('Full name',{exact:true}).fill('Jane');assert.equal(await page.getByLabel('Full name',{exact:true}).getAttribute('aria-invalid'),null);
+ const corrected=await page.getByLabel('Full name',{exact:true}).evaluate(e=>({outline:getComputedStyle(e).outlineStyle,error:document.getElementById(e.getAttribute('aria-describedby'))?.textContent,hidden:document.getElementById(e.getAttribute('aria-describedby'))?.hidden}));assert.equal(corrected.outline,'none');assert.equal(corrected.error,'');assert.equal(corrected.hidden,true);
  await page.evaluate(()=>form.setValues({password:'long-secret',confirm:'different',email:'not-email',code:'abc',scope:'One',date:'2026-09-21'}));
  await page.getByRole('button',{name:'Submit',exact:true}).click();await page.waitForFunction(()=>invalids.length===2);
- const second=await page.evaluate(()=>invalids[1].report.errors);assert.match(second.confirm,/match/);assert.match(second.email,/Email/);assert.match(second.code,/six digits/);assert.equal(await page.evaluate(()=>submits),0);
+ const second=await page.evaluate(()=>invalids[1].report.errors);assert.match(second.confirm,/match/);assert.match(second.avatar,/Profile photo/);assert.match(second.email,/Email/);assert.match(second.code,/six digits/);assert.equal(await page.evaluate(()=>submits),0);
  await page.getByRole('button',{name:'OK',exact:true}).click();
  // Required avatar gets a selected file through its native chooser input.
  await page.locator('input[type=file]').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/dsAAAAASUVORK5CYII=','base64')});
@@ -25,14 +26,15 @@ try{for(const bundled of [false,true])for(const width of [390,1440]){
  await page.evaluate(()=>{composite.setError('Choose a valid sale option.');form.destroy();});
  const compositeInput=page.getByLabel('Composite value');assert.equal(await compositeInput.getAttribute('aria-invalid'),'true');assert.ok((await compositeInput.getAttribute('aria-describedby')).includes('existing'));
  await compositeInput.fill('fixed');assert.equal(await compositeInput.getAttribute('aria-invalid'),null);
- await page.evaluate(()=>{composite.destroy();composite.destroy()});assert.equal(await compositeInput.getAttribute('aria-describedby'),'existing');
+ await page.evaluate(()=>{composite.destroy();composite.destroy()});assert.equal(await compositeInput.getAttribute('aria-describedby'),'existing');assert.equal(await compositeInput.evaluate(e=>e.classList.contains('ui-field-error-target')),false);
  // An awaited invalid callback must not focus a replacement or corrected field.
- for(const replace of [true,false]){
+ for(const replace of [true,false,'destroy']){
   await page.evaluate(()=>{window.pendingInvalid=false;window.late=createForm({title:'Late feedback',rows:[[{type:'input',name:'first',label:'First',required:true},{type:'input',name:'second',label:'Second'}]],onInvalid:()=>new Promise(resolve=>{window.pendingInvalid=true;window.releaseInvalid=resolve})});late.open();});
   await page.getByRole('button',{name:'Submit',exact:true}).click();await page.waitForFunction(()=>pendingInvalid);
-  await page.evaluate(replace=>{if(replace)late.update({title:'Replacement fields'});else late.setValues({first:'Corrected'});},replace);
-  await page.getByLabel('Second',{exact:true}).focus();await page.evaluate(()=>releaseInvalid());await page.waitForTimeout(100);
-  assert.equal(await page.getByLabel('Second',{exact:true}).evaluate(e=>document.activeElement===e),true);
+  await page.evaluate(replace=>{if(replace==='destroy')late.destroy();else if(replace)late.update({title:'Replacement fields'});else late.setValues({first:'Corrected'});},replace);
+  const focusTarget=replace==='destroy'?compositeInput:page.getByLabel('Second',{exact:true});
+  await focusTarget.focus();await page.evaluate(()=>releaseInvalid());await page.waitForTimeout(100);
+  assert.equal(await focusTarget.evaluate(e=>document.activeElement===e),true);
   await page.evaluate(()=>late.destroy());
  }
  results.push({bundled,width,pass:true});console.log('PASS validation',bundled,width);await page.close();
