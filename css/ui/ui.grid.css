@@ -149,6 +149,10 @@
 .ui-grid-state-cell {
   text-align: center;
   color: var(--ui-muted, #9fb2d8);
+  padding: 14px;
+}
+
+.ui-grid-state-cell.ui-grid-state-cell--wrapped {
   padding: 0;
 }
 
