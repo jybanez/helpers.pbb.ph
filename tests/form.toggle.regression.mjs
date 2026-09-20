@@ -12,6 +12,20 @@ for(const bundled of [false,true])for(const width of [320,390,1280]){
  await page.goto(pathToFileURL(path.resolve('tests/form.toggle.regression.html')).href+(bundled?'?bundled':''));await page.waitForFunction(()=>window.ready);
  const field=n=>page.locator(`[id="ui-form-modal-${n}-${n==='transferable'?0:n==='ambassador_mode'?1:n==='terms_mode'?3:n==='locked'?5:6}-0"]`);
  assert.equal(await page.evaluate(()=>form.getValues().transferable),null);
+ assert.equal(await page.locator('.ui-toggle-group--segmented').count(),4);
+ assert.equal(await page.locator('.ui-toggle-group--pill').count(),2);
+ const geometry=await field('transferable').evaluate(host=>{
+  const label=host.querySelector('.ui-toggle-button__label');
+  const button=label.closest('button');const group=host.querySelector('.ui-toggle-group');
+  return {fits:host.scrollWidth<=host.clientWidth+1&&label.scrollWidth<=label.clientWidth+1,
+   groupFits:group.getBoundingClientRect().right<=host.getBoundingClientRect().right+1,
+   labelHeight:label.getBoundingClientRect().height,lineHeight:parseFloat(getComputedStyle(label).lineHeight),variant:button.classList.contains('ui-toggle-button--segmented')};
+ });
+ assert.ok(geometry.fits&&geometry.groupFits&&geometry.variant,JSON.stringify(geometry));
+ if(width<=390)assert.ok(geometry.labelHeight>geometry.lineHeight,JSON.stringify(geometry));
+ await fs.mkdir('output/playwright/form-toggle-variants',{recursive:true});
+ await page.screenshot({path:`output/playwright/form-toggle-variants/${bundled?'bundle':'source'}-${width}.png`});
+
  assert.equal(await page.evaluate(()=>form.getValues().portal_mode),'selected');
  await page.evaluate(()=>form.setValues({portal_mode:'all_active'}));
  assert.equal(await page.evaluate(()=>form.getValues().portal_mode),'all_active');
@@ -43,7 +57,7 @@ for(const bundled of [false,true])for(const width of [320,390,1280]){
  await page.evaluate(()=>{window.previousChanges=changed.length;form.destroy();form.destroy();});
  await stale.evaluate(e=>e.click());assert.equal(await page.evaluate(()=>changed.length),await page.evaluate(()=>previousChanges));
  assert.equal(await page.locator('.ui-modal-root').count(),0);assert.deepEqual(errors,[]);
- results.push({bundled,width,pass:true});console.log('PASS',bundled,width);await page.close();
+ results.push({bundled,width,variant:"segmented",pillDefault:true,pass:true});console.log('PASS',bundled,width);await page.close();
 }
 const page=await browser.newPage();await page.goto(pathToFileURL(path.resolve('tests/form.modal.regression.html')).href);await page.waitForSelector('body[data-status="pass"]',{timeout:30000});console.log('Existing form regression PASS');await page.close();
 await fs.writeFile('output/form-toggle-results.json',JSON.stringify(results,null,2)+'\n');
