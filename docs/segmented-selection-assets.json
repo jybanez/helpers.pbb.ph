@@ -1,0 +1,25 @@
+{
+  "revision": "0.21.193",
+  "assets": [
+    {
+      "path": "css/ui/ui.toggle.css",
+      "sha256": "97e68822e158d87465102c3826a06e6354f48d12468c72cebcb9c7e3e1ca82f9"
+    },
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "8fec92a5d83406ebb719ad7b31fefd6779a9c27d63a04cfcfd40c4cee6bb30b6"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "b33971359160e628e6658715e1fcc2ab7eaa5e4dcaeedabe64304bf833260797"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "f5d6ab2f3a420f06614e167b4fb86be71edd920b27d06e8c6d5bdd450d235cbf"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "26bdbc02c8619e509a987fd5836145401763f7b6e4dd0f5f1ac70f808327c556"
+    }
+  ]
+}

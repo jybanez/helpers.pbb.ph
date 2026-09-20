@@ -47,6 +47,8 @@ for(const bundled of [false,true])for(const width of [320,390,1280]){
  assert.ok(await field('readonly').getByRole('button',{name:'a',exact:true}).isDisabled());
  await page.evaluate(()=>{form.setBusy(true);form.setValues({transferable:'true',ambassador_mode:'all_active'});});
  assert.equal(await field('transferable').locator('button:not(:disabled)').count(),0);
+ const busyColors=await field('transferable').locator('button').evaluateAll(buttons=>buttons.map(e=>({pressed:e.getAttribute('aria-pressed'),background:getComputedStyle(e).backgroundColor})));
+ assert.notEqual(busyColors.find(e=>e.pressed==='true').background,busyColors.find(e=>e.pressed==='false').background,'busy selected background');
  await page.evaluate(()=>form.setBusy(false));
  assert.ok(await field('locked').getByRole('button',{name:'a',exact:true}).isDisabled());
  assert.ok(await field('transferable').getByRole('button',{name:'Transferable',exact:true}).isEnabled());
