@@ -1,0 +1,462 @@
+[
+  {
+    "bundled": false,
+    "width": 390,
+    "tone": "neutral",
+    "normal": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "tone": "success",
+    "normal": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "tone": "info",
+    "normal": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "tone": "warning",
+    "normal": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "tone": "danger",
+    "normal": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "tone": "neutral",
+    "normal": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "tone": "success",
+    "normal": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "tone": "info",
+    "normal": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "tone": "warning",
+    "normal": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": false,
+    "width": 1440,
+    "tone": "danger",
+    "normal": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "tone": "neutral",
+    "normal": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "tone": "success",
+    "normal": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "tone": "info",
+    "normal": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "tone": "warning",
+    "normal": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "tone": "danger",
+    "normal": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "tone": "neutral",
+    "normal": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.152157 0.230275 0.386039)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "tone": "success",
+    "normal": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.0980392 0.241804 0.27051)",
+      "color": "color(srgb 0.644471 0.866431 0.844863)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "tone": "info",
+    "normal": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.129804 0.200157 0.337569)",
+      "color": "color(srgb 0.728941 0.803765 0.968941)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "tone": "warning",
+    "normal": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.221569 0.228392 0.216863)",
+      "color": "color(srgb 0.877804 0.841098 0.743529)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  },
+  {
+    "bundled": true,
+    "width": 1440,
+    "tone": "danger",
+    "normal": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "unselected": {
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(215, 224, 244)",
+      "outline": "none",
+      "opacity": "1"
+    },
+    "disabled": {
+      "background": "color(srgb 0.231451 0.169804 0.262039)",
+      "color": "color(srgb 0.890196 0.747843 0.843922)",
+      "outline": "none",
+      "opacity": "0.52"
+    }
+  }
+]

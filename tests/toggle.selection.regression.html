@@ -1,0 +1,12 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Segment selection states</title><body><style>body{background:#0f172a;color:#d7e0f4;font:14px sans-serif;margin:16px}section{margin-bottom:16px}h2{font-size:15px}button{transition:none!important}</style><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+uiLoader.setPreferBundles(location.search.includes('bundled'));
+const create=await uiLoader.get('ui.toggle.group');
+window.groups={};
+for(const tone of ['neutral','success','info','warning','danger'])for(const variant of ['segmented','pill']){
+ const section=document.createElement('section');section.id=tone+'-'+variant;
+ section.innerHTML=`<h2>${tone} / ${variant}</h2><div></div>`;document.body.append(section);
+ groups[section.id]=create(section.lastChild,{tone,variant,multi:false,items:[{id:'a',label:'Selected',pressed:true},{id:'b',label:'Unselected'}]});
+}
+window.ready=true;
+</script></body></html>

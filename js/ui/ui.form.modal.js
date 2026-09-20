@@ -18,7 +18,7 @@ const FORM_MODAL_STYLE_PATHS = [
   "../../css/ui/ui.password.css",
   "../../css/ui/ui.calendar.css",
   "../../css/ui/ui.datepicker.css",
-  "../../css/ui/ui.toggle.css",
+  "../../css/ui/ui.toggle.css?v=0.21.193",
 ];
 const FORM_MODAL_STYLE_HREFS = FORM_MODAL_STYLE_PATHS.map((path) => new URL(path, import.meta.url).href);
 
