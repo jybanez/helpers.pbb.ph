@@ -1,3 +1,4 @@
+import { setFieldError } from "./ui.field.error.js?v=0.21.195";
 import { createElement, clearNode } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.61";
 import { createNumberStepper } from "./ui.number.stepper.js";
@@ -9,6 +10,7 @@ import { createTreeSelect } from "./ui.tree.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [
   "../../css/ui/ui.tokens.css",
+  "../../css/ui/ui.field.error.css?v=0.21.195",
   "../../css/ui/ui.components.css",
   "../../css/ui/ui.modal.css",
   "../../css/ui/ui.form.modal.css?v=0.21.191",
@@ -44,11 +46,14 @@ const DEFAULT_OPTIONS = {
   busyMessage: "Saving...",
   manageBusyOnSubmit: true,
   onSubmit: null,
+  onInvalid: null,
+  validate: null,
   onChange: null,
   onClose: null,
 };
 
 export function createFormModal(options = {}) {
+  let reportingInvalid = false;
   const currentOptions = normalizeOptions(options);
   ensureFormModalStyles(resolveTargetDocument(currentOptions.parent));
   const refs = {
@@ -365,6 +370,10 @@ export function createFormModal(options = {}) {
 
     const value = resolveItemValue(item);
     const control = createControl(type, id, name, item, value, errorEl);
+    const constraintTarget = getFieldAriaTarget({ type, control });
+    for (const [key, attr] of Object.entries({minLength:"minlength",maxLength:"maxlength",min:"min",max:"max",step:"step",pattern:"pattern"})) {
+      if (item[key] != null && constraintTarget?.matches?.("input,textarea,select")) constraintTarget.setAttribute(attr, String(item[key]));
+    }
     if (!control) {
       return null;
     }
@@ -842,7 +851,7 @@ export function createFormModal(options = {}) {
       event.preventDefault();
       event.stopPropagation();
     }
-    if (destroyed || modal.isBusy()) {
+    if (destroyed || reportingInvalid || modal.isBusy()) {
       return false;
     }
     clearErrors();
@@ -850,8 +859,16 @@ export function createFormModal(options = {}) {
     const validation = validate();
     if (!validation.valid) {
       applyErrors(validation.errors);
+      reportingInvalid = true;
       focusFirstInvalid(validation.firstInvalidField);
-      requestInvalidFocus(validation.firstInvalidField);
+      try {
+        if (typeof currentOptions.onInvalid === "function") {
+          await currentOptions.onInvalid({ ...validation, values: getValues() }, createContext(null));
+        }
+      } finally {
+        reportingInvalid = false;
+        requestInvalidFocus(validation.firstInvalidField);
+      }
       return false;
     }
     if (typeof currentOptions.onSubmit !== "function") {
@@ -879,38 +896,52 @@ export function createFormModal(options = {}) {
     const errors = {};
     let firstInvalidField = null;
     fields.forEach((field, name) => {
-      if (field.type === "hidden") {
+      if (field.type === "hidden" || field.config.disabled || field.config.readonly) {
         return;
       }
       const control = field.control;
       if (!(control instanceof HTMLElement)) {
         return;
       }
+      const label = String(field.config.label || field.config.ariaLabel || name);
       let message = "";
       if (field.type === "checkbox") {
         if (field.config.required && !control.checked) {
-          message = "This field is required.";
+          message = `Please provide ${label}; this field is required.`;
         }
       } else if (field.type === "ui.select" || field.type === "ui.treeselect" || field.type === "ui.datepicker" || field.type === "ui.toggle.group" || field.type === "number-stepper") {
         const value = getFieldValue(field);
         const isEmpty = Array.isArray(value) ? value.length === 0 : value == null || value === "";
         if (field.config.required && isEmpty) {
-          message = "This field is required.";
+          message = `Please provide ${label}; this field is required.`;
         }
       } else if (field.type === "avatar") {
         const value = getFieldValue(field);
         const hasPreview = field.control?.__uiAvatarFieldInstance?.hasPreview?.() === true;
         if (field.config.required && !value && !hasPreview) {
-          message = "Please choose a photo.";
+          message = `Choose a photo for ${label}.`;
         }
-      } else if (field.config.required && !getFieldValue(field)) {
-        message = "This field is required.";
+      } else if (field.config.required && (getFieldValue(field) == null || String(getFieldValue(field)).trim() === "")) {
+        message = `Please provide ${label}; this field is required.`;
       } else {
         const validationTarget = getFieldAriaTarget(field);
         if (typeof validationTarget?.checkValidity === "function" && !validationTarget.checkValidity()) {
-          message = validationTarget.validationMessage || "Invalid value.";
+          message = `${label}: ${validationTarget.validationMessage || "Enter a valid value."}`;
         }
       }
+      const validationTarget = getFieldAriaTarget(field);
+      if (!message && typeof validationTarget?.checkValidity === "function" && !validationTarget.checkValidity()) {
+        message = `${label}: ${validationTarget.validationMessage || "Enter a valid value."}`;
+      }
+      const value = getFieldValue(field);
+      const text = value == null ? "" : String(value);
+      // Explicit checks also validate programmatically populated values (native
+      // minlength/maxlength validity applies only to user-edited strings).
+      if (!message && text && ["input", "textarea"].includes(field.type)) {
+        if (field.config.minLength != null && text.length < Number(field.config.minLength)) message = `${label} must contain at least ${field.config.minLength} characters.`;
+        if (field.config.maxLength != null && text.length > Number(field.config.maxLength)) message = `${label} must contain no more than ${field.config.maxLength} characters.`;
+      }
+      if (message && field.config.validationMessage) message = String(field.config.validationMessage);
       if (message) {
         errors[name] = message;
         if (!firstInvalidField) {
@@ -918,6 +949,17 @@ export function createFormModal(options = {}) {
         }
       }
     });
+    if (typeof currentOptions.validate === "function") {
+      const custom = currentOptions.validate(getValues(), createContext(null)) || {};
+      if (typeof custom.then === "function") throw new TypeError("Form validate must synchronously return a field-error map.");
+      for (const [name, message] of Object.entries(custom)) {
+        const field = resolveErrorField(name);
+        if (message && field && field.type !== "hidden" && !field.config.disabled && !field.config.readonly) {
+          errors[name] = String(message);
+          if (!firstInvalidField) firstInvalidField = field.name;
+        }
+      }
+    }
     return {
       valid: !Object.keys(errors).length,
       errors,
@@ -984,10 +1026,7 @@ export function createFormModal(options = {}) {
       if (!field || !field.errorEl) {
         return;
       }
-      field.errorEl.hidden = false;
-      field.errorEl.textContent = String(errors[name] || "");
-      const ariaTarget = getFieldAriaTarget(field);
-      ariaTarget?.setAttribute?.("aria-invalid", "true");
+      setFieldError(getFieldAriaTarget(field), field.errorEl, errors[name]);
     });
   }
 
@@ -996,10 +1035,7 @@ export function createFormModal(options = {}) {
     if (!field || !field.errorEl) {
       return;
     }
-    field.errorEl.hidden = true;
-    field.errorEl.textContent = "";
-    const ariaTarget = getFieldAriaTarget(field);
-    ariaTarget?.removeAttribute?.("aria-invalid");
+    setFieldError(getFieldAriaTarget(field), field.errorEl, "");
   }
 
   function clearErrors() {
@@ -1042,6 +1078,7 @@ export function createFormModal(options = {}) {
       const field = fields.get(name);
       if (field) {
         setFieldValue(field, nextValues[name]);
+        clearFieldError(name);
       }
       const display = displays.get(name);
       if (display) {
