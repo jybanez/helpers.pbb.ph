@@ -3,36 +3,36 @@
     "bundled": false,
     "width": 320,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   },
   {
     "bundled": false,
     "width": 390,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   },
   {
     "bundled": false,
     "width": 1280,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   },
   {
     "bundled": true,
     "width": 320,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   },
   {
     "bundled": true,
     "width": 390,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   },
   {
     "bundled": true,
     "width": 1280,
     "pass": true,
-    "checks": "empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
+    "checks": "legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy"
   }
 ]

@@ -674,7 +674,7 @@ export function createGrid(container, rows = [], options = {}) {
   function buildStateRow(text) {
     const tr = createElement("tr");
     const td = createElement("td", {
-      className: "ui-grid-state-cell",
+      className: "ui-grid-state-cell ui-grid-state-cell--wrapped",
       attrs: { colspan: String(currentOptions.columns.length + (isSelectable() ? 1 : 0)) },
     });
     td.appendChild(createElement("div", {

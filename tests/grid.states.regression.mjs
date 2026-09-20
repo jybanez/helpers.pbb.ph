@@ -17,6 +17,18 @@ try{
    assert.ok(bounds.left>=-1&&bounds.right<=bounds.viewport+3,JSON.stringify(bounds));assert.ok(bounds.wrap);assert.equal(bounds.headers,3);assert.equal(bounds.colspan,3);assert.equal(bounds.role,'status');
   };
   await checkState();console.log("initial state pass");
+  // Legacy bare-text markup shares the document with the new source/bundle grid.
+  // Appended after primary host so existing geometry/column selectors stay scoped.
+  const coexistence=await page.evaluate(()=>{
+   const host=document.createElement('div');host.id='legacy-state-fixture';
+   host.innerHTML='<div class="ui-grid"><table class="ui-grid-table"><tbody><tr><td class="ui-grid-state-cell" colspan="3">Legacy empty state</td></tr></tbody></table></div>';
+   document.body.append(host);
+   const padding=e=>['Top','Right','Bottom','Left'].map(side=>getComputedStyle(e)['padding'+side]);
+   return {legacy:padding(host.querySelector('td')),wrapped:padding(document.querySelector('#host .ui-grid-state-cell')),message:padding(document.querySelector('#host .ui-grid-state-message'))};
+  });
+  assert.deepEqual(coexistence,{legacy:Array(4).fill('14px'),wrapped:Array(4).fill('0px'),message:Array(4).fill('14px')});
+  await page.locator('#legacy-state-fixture').evaluate(e=>e.remove());
+
   await page.screenshot({path:`output/playwright/grid-states/${bundled?'bundle':'source'}-${width}.png`});
   console.log("screenshot done");await page.evaluate(()=>grid.setRows(rows));
   const before=await page.locator('col').first().evaluate(e=>parseFloat(e.style.width));
@@ -36,7 +48,7 @@ try{
   await page.evaluate(()=>grid.update(rows,{errorText:'',loading:false}));assert.equal(await page.locator('.ui-grid-state-message').count(),0);
   await page.locator('tbody button').click();assert.equal(await page.evaluate(()=>clicks),2);
   await page.evaluate(()=>grid.destroy());assert.equal(await page.locator('#host').innerHTML(),'');assert.deepEqual(errors,[]);
-  report.push({bundled,width,pass:true,checks:'empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy'});console.log('PASS '+JSON.stringify(report.at(-1)));await page.close();
+  report.push({bundled,width,pass:true,checks:'legacy/new state CSS coexistence,empty,scrolled transition,state scrolling,long text,loading,error,viewport resize,column resize,action reachability,semantics,destroy'});console.log('PASS '+JSON.stringify(report.at(-1)));await page.close();
  }
  // Existing full grid behavior suite, source mode.
  const legacy=await browser.newPage();await legacy.goto(pathToFileURL(path.resolve('tests/grid.regression.html')).href);await legacy.waitForSelector('body[data-status="pass"]');console.log('Existing grid regression PASS');await legacy.close();
