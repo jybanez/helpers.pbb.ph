@@ -3,7 +3,7 @@
   "assets": [
     {
       "path": "js/ui/ui.form.modal.js",
-      "sha256": "cc11126df244721f7235adf4b50247bf753b78749b7601ce1b34e15595e1fc17"
+      "sha256": "079da09f80904939d9fa9231806b23b021eb3a3f539adda70fb8839eae18802b"
     },
     {
       "path": "js/ui/ui.field.error.js",
@@ -19,7 +19,7 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "ea1b53255a855066cee63734b0af20cbf610bbc454f562f64e303017710274da"
+      "sha256": "877c22ddf040fa10353296f9f432584bfab66988196640d53a24cb14da594689"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

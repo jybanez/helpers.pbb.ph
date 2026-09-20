@@ -5,7 +5,9 @@ hidden conditional fields, disabled and readonly fields are excluded. Optional
 empty fields remain optional. Required messages include the user-facing label.
 Use schema minLength/maxLength/min/max/step/pattern for applicable native controls,
 including password. Programmatically supplied text/password values also receive
-length validation. Supply validationMessage for concrete domain-specific guidance,
+length validation. Required passwords use exact emptiness, preserving nonempty
+whitespace credentials; any additional password policy belongs in app validate.
+Supply validationMessage for concrete domain-specific guidance,
 especially pairing-code patterns. Backend validation remains mandatory.
 
 ```js

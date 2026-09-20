@@ -37,5 +37,14 @@ try{for(const bundled of [false,true])for(const width of [390,1440]){
   assert.equal(await focusTarget.evaluate(e=>document.activeElement===e),true);
   await page.evaluate(()=>late.destroy());
  }
+ // Required password checks exact emptiness; whitespace policy belongs to apps.
+ for(const boundary of [{value:'',minLength:null,valid:false},{value:' ',minLength:null,valid:true},{value:' ',minLength:8,valid:false},{value:'        ',minLength:8,valid:true}]){
+  await page.evaluate(b=>{window.passwordSubmits=0;window.passwordErrors=[];window.passwordForm=createForm({title:'Password boundary',rows:[[{type:'input',input:'password',name:'credential',label:'Credential',required:true,...(b.minLength==null?{}:{minLength:b.minLength})}]],initialValues:{credential:b.value},onInvalid:r=>passwordErrors.push(r),onSubmit:()=>{passwordSubmits++;return false}});passwordForm.open();},boundary);
+  await page.getByRole('button',{name:'Submit',exact:true}).click();await page.waitForFunction(()=>passwordSubmits+passwordErrors.length===1);
+  assert.equal(await page.evaluate(()=>passwordSubmits),boundary.valid?1:0,JSON.stringify(boundary));
+  assert.equal(await page.evaluate(()=>passwordForm.getValues().credential),boundary.value);
+  if(!boundary.valid)assert.match(await page.evaluate(()=>passwordErrors[0].errors.credential),boundary.value?/8/:/required/);
+  await page.evaluate(()=>passwordForm.destroy());
+ }
  results.push({bundled,width,pass:true});console.log('PASS validation',bundled,width);await page.close();
 }await fs.writeFile('output/playwright/form-validation/results.json',JSON.stringify(results,null,2)+'\n');}catch(e){console.error(e);throw e}finally{await browser.close()}

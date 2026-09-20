@@ -922,7 +922,9 @@ export function createFormModal(options = {}) {
         if (field.config.required && !value && !hasPreview) {
           message = `Choose a photo for ${label}.`;
         }
-      } else if (field.config.required && (getFieldValue(field) == null || String(getFieldValue(field)).trim() === "")) {
+      } else if (field.config.required && (getFieldValue(field) == null ||
+        (field.type === "input" && normalizeInputType(field.config.input) === "password"
+          ? String(getFieldValue(field)) === "" : String(getFieldValue(field)).trim() === ""))) {
         message = `Please provide ${label}; this field is required.`;
       } else {
         const validationTarget = getFieldAriaTarget(field);
