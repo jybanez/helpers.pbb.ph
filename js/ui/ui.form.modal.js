@@ -4,7 +4,7 @@ import { createNumberStepper } from "./ui.number.stepper.js";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
 import { createToggleGroup } from "./ui.toggle.group.js";
-import { createDatepicker } from "./ui.datepicker.js?v=0.21.191";
+import { createDatepicker } from "./ui.datepicker.js?v=0.21.194";
 import { createTreeSelect } from "./ui.tree.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [
@@ -484,7 +484,7 @@ export function createFormModal(options = {}) {
         attrs: { id, role: "group", "aria-label": item.ariaLabel || item.label || name },
       });
       host.__uiDatepickerInstance = createDatepicker(host, {
-        value, valueMode: item.valueMode || "instant", showTime: Boolean(item.showTime),
+        value, valueMode: item.valueMode || "instant", showTime: Boolean(item.showTime), timePrecision: item.timePrecision ?? "auto",
         ariaLabel: item.ariaLabel || item.label || name,
         placeholder: item.placeholder || "Select date", locale: item.locale || "en-US",
         min: item.min, max: item.max, disabledDates: item.disabledDates,

@@ -1,0 +1,50 @@
+[
+  {
+    "bundled": false,
+    "timezoneId": "UTC",
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "UTC",
+    "width": 1440,
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "America/New_York",
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "timezoneId": "America/New_York",
+    "width": 1440,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "UTC",
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "UTC",
+    "width": 1440,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "America/New_York",
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "timezoneId": "America/New_York",
+    "width": 1440,
+    "pass": true
+  }
+]

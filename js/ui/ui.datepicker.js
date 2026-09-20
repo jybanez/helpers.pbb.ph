@@ -14,6 +14,7 @@ const DEFAULT_OPTIONS = {
   closeOnSelect: true,
   weekStartsOn: 0, // 0=Sun
   showTime: false,
+  timePrecision: "auto", // minute changes editing/display, never stored-value hydration
   valueMode: "instant", // wall-clock uses civil strings, never browser-zone conversion
   disabled: false,
   readonly: false,
@@ -237,12 +238,12 @@ export function createDatepicker(container, options = {}) {
       wrap.appendChild(createElement("label", { className: "ui-datepicker-time-label", text: "Time" }));
       const input = createElement("input", {
         className: "ui-input",
-        attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" },
+        attrs: { type: "time", step: currentOptions.timePrecision === "minute" ? "60" : wallClock ? "0.001" : "60", "aria-label": "Time" },
       });
-      input.value = startTime;
+      input.value = shownTime(startTime);
       events.on(input, "input", () => {
         if (!input.value || !input.validity.valid) return;
-        startTime = wallClock ? input.value : normalizeTime(input.value);
+        startTime = editedTime(input.value);
         if (start) {
           start = combineTime(start, startTime);
         }
@@ -252,11 +253,11 @@ export function createDatepicker(container, options = {}) {
       wrap.appendChild(input);
     } else {
       const startLabel = createElement("label", { className: "ui-datepicker-time-label", text: "Start Time" });
-      const startInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" } });
-      startInput.value = startTime;
+      const startInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: currentOptions.timePrecision === "minute" ? "60" : wallClock ? "0.001" : "60", "aria-label": "Time" } });
+      startInput.value = shownTime(startTime);
       events.on(startInput, "input", () => {
         if (!startInput.value || !startInput.validity.valid) return;
-        startTime = wallClock ? startInput.value : normalizeTime(startInput.value);
+        startTime = editedTime(startInput.value);
         if (start) {
           start = combineTime(start, startTime);
         }
@@ -265,11 +266,11 @@ export function createDatepicker(container, options = {}) {
       });
 
       const endLabel = createElement("label", { className: "ui-datepicker-time-label", text: "End Time" });
-      const endInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: wallClock ? "0.001" : "60", "aria-label": "Time" } });
-      endInput.value = endTime;
+      const endInput = createElement("input", { className: "ui-input", attrs: { type: "time", step: currentOptions.timePrecision === "minute" ? "60" : wallClock ? "0.001" : "60", "aria-label": "Time" } });
+      endInput.value = shownTime(endTime);
       events.on(endInput, "input", () => {
         if (!endInput.value || !endInput.validity.valid) return;
-        endTime = wallClock ? endInput.value : normalizeTime(endInput.value);
+        endTime = editedTime(endInput.value);
         if (end) {
           end = combineTime(end, endTime);
         }
@@ -340,12 +341,27 @@ export function createDatepicker(container, options = {}) {
 
   function readDate(value) { return wallClock ? parseCivil(value) : parseAnyDate(value); }
   function monthStart(date) { return wallClock ? civilMonth(date) : startOfMonth(date); }
-  function timeOf(date) { return wallClock ? civilTime(date) : formatTime(date); }
-  function combineTime(date, time) { return wallClock ? civilAtTime(date, time) : atTime(date, time); }
+  function shownTime(time) { return currentOptions.timePrecision === "minute" ? time.slice(0, 5) : time; }
+  function editedTime(time) { return currentOptions.timePrecision === "minute" ? time.slice(0, 5) : wallClock ? time : normalizeTime(time); }
+  function timeOf(date) {
+    if (wallClock) return civilTime(date);
+    if (currentOptions.timePrecision !== "minute") return formatTime(date);
+    return `${formatTime(date)}:${String(date.getSeconds()).padStart(2, "0")}.${String(date.getMilliseconds()).padStart(3, "0")}`;
+  }
+  function combineTime(date, time) {
+    if (wallClock) return civilAtTime(date, time);
+    if (currentOptions.timePrecision !== "minute") return atTime(date, time);
+    const next = new Date(date.getTime());
+    const [h, m, seconds = "0"] = time.split(":");
+    const [sec, ms = "0"] = seconds.split(".");
+    next.setHours(Number(h), Number(m), Number(sec), Number(ms.padEnd(3, "0")));
+    return next;
+  }
   function serialize(date) { return wallClock ? formatCivil(date, currentOptions.showTime) : (date ? date.toISOString() : null); }
   function displayValue(date, locale, withTime) {
     if (!wallClock) return formatValue(date, locale, withTime);
-    return formatCivil(date, withTime).replace("T", " ");
+    const text = formatCivil(date, withTime).replace("T", " ");
+    return withTime && currentOptions.timePrecision === "minute" ? text.slice(0, 16) : text;
   }
 
   function hydrateValue(value) {
@@ -356,6 +372,8 @@ export function createDatepicker(container, options = {}) {
       if (date) {
         startTime = timeOf(date);
         viewDate = monthStart(date);
+      } else if (currentOptions.timePrecision === "minute") {
+        startTime = shownTime(startTime);
       }
       return;
     }
@@ -369,6 +387,10 @@ export function createDatepicker(container, options = {}) {
     }
     if (end) {
       endTime = timeOf(end);
+    }
+    if (currentOptions.timePrecision === "minute") {
+      if (!start) startTime = shownTime(startTime);
+      if (!end) endTime = shownTime(endTime);
     }
   }
 
@@ -490,6 +512,7 @@ export function createDatepicker(container, options = {}) {
 
 function normalizeOptions(options) {
   const next = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  if (!["auto", "minute"].includes(next.timePrecision)) throw new TypeError("Unknown datepicker timePrecision.");
   if (!["instant", "wall-clock"].includes(next.valueMode)) throw new TypeError("Unknown datepicker valueMode.");
   if (options && Object.prototype.hasOwnProperty.call(options, "appendTo") && !Object.prototype.hasOwnProperty.call(options, "panelParent")) {
     next.panelParent = options.appendTo;
