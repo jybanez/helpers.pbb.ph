@@ -1,4 +1,4 @@
-# Canonical validation feedback (0.21.195)
+# Canonical validation feedback (0.21.197)
 
 Form submissions validate before busy/onSubmit. Visible active fields participate;
 hidden conditional fields, disabled and readonly fields are excluded. Optional
@@ -86,7 +86,7 @@ and requests until its composite/domain validation passes.
 
 ## Adoption and verification
 
-Use the shared preferBundles path and matched0.21.195 loader/mainJS/mainCSS.
+Use the shared preferBundles path and matched0.21.197 loader/mainJS/mainCSS.
 New ui.field.error export is a factory. Modular users need the new module/CSS as
 well as revised form/loader. No Bimo application files changed here. Preserve
 minute precision, segmented choices, backend validation and retained-command rules.
@@ -96,3 +96,5 @@ optional/hidden/disabled semantics, associated visible cues, draggable alert and
 focus return, zero invalid submit callbacks, correction and valid submit, adapter
 cleanup. Existing toggle/full-form regressions and bundle/registry contracts run.
 Screenshots/results: output/playwright/form-validation/. No device/AT claim.
+
+Combined candidate includes foreground-modal keyboard ownership and picker Escape/outside-click isolation. Matched candidate assets: docs/form-overlay-assets.json.
