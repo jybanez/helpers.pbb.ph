@@ -149,7 +149,18 @@
 .ui-grid-state-cell {
   text-align: center;
   color: var(--ui-muted, #9fb2d8);
+  padding: 0;
+}
+
+.ui-grid-state-message {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: var(--ui-grid-state-width, 100%);
+  max-width: 100%;
   padding: 14px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ui-grid-footer {

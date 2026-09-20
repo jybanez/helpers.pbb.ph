@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grid state viewport regression</title>
+<style>body{margin:12px;background:#0c1017;color:#d7e0f4;font:16px system-ui}#host{max-width:900px}.ui-grid{min-width:0}</style>
+<div id="host"></div>
+<script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+uiLoader.setPreferBundles(new URLSearchParams(location.search).has('bundled'));
+await uiLoader.load('ui.grid');
+const createGrid=await uiLoader.get('ui.grid');
+window.clicks=0;
+window.rows=[{id:'1',origin:'https://example.test',status:'Active'}];
+window.grid=createGrid(document.querySelector('#host'),[],{
+ enableColumnResize:true,enableSearch:false,enableSort:false,enablePagination:false,
+ emptyText:'No registered websites.',columns:[
+ {key:'origin',label:'Website URL',width:'360px'},
+ {key:'status',label:'Status',width:'120px'},
+ {key:'actions',label:'Actions',width:'120px',renderCell:()=>{const b=document.createElement('button');b.textContent='Edit';b.onclick=()=>clicks++;return b;}}
+ ]
+});
+window.ready=true;
+</script></html>

@@ -53,6 +53,7 @@ export function createGrid(container, rows = [], options = {}) {
   let tableWrapEl = null;
   let searchInput = null;
   let tableBody = null;
+  let stateViewportObserver = null;
   let pageInfo = null;
   let prevButton = null;
   let nextButton = null;
@@ -114,6 +115,7 @@ export function createGrid(container, rows = [], options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    stateViewportObserver?.disconnect();
     rowEvents.clear();
     events.clear();
     clearNode(container);
@@ -296,7 +298,13 @@ export function createGrid(container, rows = [], options = {}) {
     }
 
     container.appendChild(root);
+    if (typeof ResizeObserver !== "undefined") {
+      stateViewportObserver = new ResizeObserver(syncStateViewport);
+      stateViewportObserver.observe(tableWrapEl);
+    }
+    events.on(window, "resize", syncStateViewport);
     events.on(tableWrapEl, "scroll", () => {
+      syncStateViewport();
       if (!virtualState.enabled) {
         return;
       }
@@ -408,6 +416,13 @@ export function createGrid(container, rows = [], options = {}) {
     const safeTotal = Math.max(320, Math.round(total));
     tableEl.style.width = `${safeTotal}px`;
     tableEl.style.minWidth = `${safeTotal}px`;
+    syncStateViewport();
+  }
+
+  function syncStateViewport() {
+    if (!tableWrapEl || !tableEl) return;
+    const width = Math.max(0, Math.min(tableWrapEl.clientWidth, tableEl.clientWidth) - 2);
+    tableWrapEl.style.setProperty("--ui-grid-state-width", `${width}px`);
   }
 
   function renderRows() {
@@ -418,11 +433,13 @@ export function createGrid(container, rows = [], options = {}) {
     clearNode(tableBody);
 
     if (currentOptions.loading) {
+      virtualState.enabled = false;
       tableBody.appendChild(buildStateRow("Loading..."));
       updatePagerMeta(0, 0, 0);
       return;
     }
     if (currentOptions.errorText) {
+      virtualState.enabled = false;
       tableBody.appendChild(buildStateRow(String(currentOptions.errorText)));
       updatePagerMeta(0, 0, 0);
       return;
@@ -658,9 +675,13 @@ export function createGrid(container, rows = [], options = {}) {
     const tr = createElement("tr");
     const td = createElement("td", {
       className: "ui-grid-state-cell",
-      text: text || currentOptions.emptyText,
       attrs: { colspan: String(currentOptions.columns.length + (isSelectable() ? 1 : 0)) },
     });
+    td.appendChild(createElement("div", {
+      className: "ui-grid-state-message",
+      text: text || currentOptions.emptyText,
+      attrs: { role: "status" },
+    }));
     tr.appendChild(td);
     return tr;
   }
@@ -751,6 +772,8 @@ export function createGrid(container, rows = [], options = {}) {
   }
 
   function destroy() {
+    stateViewportObserver?.disconnect();
+    stateViewportObserver = null;
     if (renderFrame != null) {
       cancelAnimationFrame(renderFrame);
       renderFrame = null;
