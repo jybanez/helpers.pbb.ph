@@ -12,7 +12,9 @@ window.form=create({title:'Voucher schedule',initialValues:{starts:'2024-03-10T0
 [{type:'ui.datepicker',name:'starts',label:'Starts (business timezone)',help:'America/New_York; server validates business time',showTime:true,valueMode:'wall-clock',required:true,visibleWhen:{scheduled:true}}],
 [{type:'datepicker',name:'ends',label:'Expires',showTime:true,valueMode:'wall-clock'}],
 [{type:'datepicker',name:'locked',label:'Disabled',showTime:true,valueMode:'wall-clock',disabled:true,value:'2024-11-03T01:30:22'}],
-[{type:'datepicker',name:'readonly',label:'Read only',showTime:true,valueMode:'wall-clock',readonly:true,value:'2024-11-03T01:30:22'}]
+[{type:'datepicker',name:'readonly',label:'Read only',showTime:true,valueMode:'wall-clock',readonly:true,value:'2024-11-03T01:30:22'}],
+[{type:'ui.toggle.group',name:'transferable',label:'Transferability',options:['false','true']}],
+[{type:'input',name:'matched',label:'Date selected',visibleWhen:{starts:'2024-03-11T02:31:46.789'}}]
 ],onChange(values){changes.push(values);},onSubmit(){return false;}});
 form.open();window.ready=true;
 </script></body></html>

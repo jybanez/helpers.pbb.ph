@@ -490,6 +490,7 @@ export function createDatepicker(container, options = {}) {
 
 function normalizeOptions(options) {
   const next = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  if (!["instant", "wall-clock"].includes(next.valueMode)) throw new TypeError("Unknown datepicker valueMode.");
   if (options && Object.prototype.hasOwnProperty.call(options, "appendTo") && !Object.prototype.hasOwnProperty.call(options, "panelParent")) {
     next.panelParent = options.appendTo;
   }

@@ -16,7 +16,13 @@ for(const bundled of [false,true])for(const timezoneId of ['UTC','America/New_Yo
  const time=page.locator('.ui-datepicker-panel input[type=time]');assert.equal(await time.inputValue(),'02:30:45.123');
  await time.fill('02:31:46.789');assert.equal(await page.evaluate(()=>form.getValues().starts),'2024-03-10T02:31:46.789');
  await page.getByRole('button',{name:'Monday, March 11, 2024',exact:true}).click();assert.equal(await page.evaluate(()=>form.getValues().starts),'2024-03-11T02:31:46.789');
+ assert.equal(await page.getByLabel('Date selected',{exact:true}).count(),1);
+ assert.equal(await page.locator('.ui-datepicker-panel').count(),0);
+ await page.getByRole('button',{name:'false',exact:true}).click();
+ assert.equal(await page.evaluate(()=>form.getValues().transferable),'false');
+ assert.equal(await page.evaluate(()=>form.getValues().starts),'2024-03-11T02:31:46.789');
  await page.evaluate(()=>form.setValues({starts:'2011-12-30T23:59:58'}));
+ await page.getByRole('button',{name:'Starts (business timezone)',exact:true}).click();
  assert.equal(await page.evaluate(()=>form.getValues().starts),'2011-12-30T23:59:58');
  // Samoa's skipped browser-local day must remain selectable as a civil date.
  await page.getByRole('button',{name:'Friday, December 30, 2011',exact:true}).click();
