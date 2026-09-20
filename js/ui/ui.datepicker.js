@@ -415,14 +415,20 @@ export function createDatepicker(container, options = {}) {
         restoreFocus();
       }
     });
-    globalEvents.on(document, "keydown", (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        open = false;
-        render();
-        restoreFocus();
-      }
-    });
+    // A modal listens on document capture. Its active child picker must handle
+    // Escape earlier, including when a day-selection render detached focus.
+    const doc = container.ownerDocument;
+    globalEvents.on(doc.defaultView || doc, "keydown", (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented || !open) return;
+      const ownerModal = root?.closest("[data-ui-modal-id]");
+      const openModals = [...doc.querySelectorAll('[data-ui-modal-id][aria-hidden="false"]')];
+      if (openModals.length && openModals.at(-1) !== ownerModal) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      open = false;
+      render();
+      restoreFocus();
+    }, true);
   }
 
   function isInsideDatepicker(target) {
@@ -430,9 +436,10 @@ export function createDatepicker(container, options = {}) {
   }
 
   function restoreFocus() {
-    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+    const focusTarget = trigger?.isConnected ? trigger : lastFocusedElement?.isConnected ? lastFocusedElement : null;
+    if (focusTarget && typeof focusTarget.focus === "function") {
       try {
-        lastFocusedElement.focus();
+        focusTarget.focus();
       } catch (_error) {
         // Ignore focus restore failures.
       }

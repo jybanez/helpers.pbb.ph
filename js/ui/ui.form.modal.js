@@ -4,7 +4,7 @@ import { createNumberStepper } from "./ui.number.stepper.js";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
 import { createToggleGroup } from "./ui.toggle.group.js";
-import { createDatepicker } from "./ui.datepicker.js?v=0.21.194";
+import { createDatepicker } from "./ui.datepicker.js?v=0.21.196";
 import { createTreeSelect } from "./ui.tree.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [

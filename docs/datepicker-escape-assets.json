@@ -1,0 +1,25 @@
+{
+  "revision": "0.21.196",
+  "assets": [
+    {
+      "path": "js/ui/ui.datepicker.js",
+      "sha256": "486e45284fb8fb97d1542d4e69c2c75c9674204e031648697caf941f56bc7541"
+    },
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "c6bbcc88f43ea139e1e5a41f6aa60a50739ab978aa5dc0f6229b35275c346fe8"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "9fd0747a68cf03136f323a97eef24c2e6b8ac1fbab8329019ba164c4cc376a1b"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "8593f00efdcf1195b4e6efbb7287ef403379ab70222fed818bc0272449ae0467"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "687d146d65c33586b2dfb9c9ce5c1c2ea367547e851b5a1196aa96478aa36408"
+    }
+  ]
+}
