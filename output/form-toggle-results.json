@@ -2,31 +2,43 @@
   {
     "bundled": false,
     "width": 320,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   },
   {
     "bundled": false,
     "width": 390,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   },
   {
     "bundled": false,
     "width": 1280,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   },
   {
     "bundled": true,
     "width": 320,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   },
   {
     "bundled": true,
     "width": 390,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   },
   {
     "bundled": true,
     "width": 1280,
+    "variant": "segmented",
+    "pillDefault": true,
     "pass": true
   }
 ]

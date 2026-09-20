@@ -470,6 +470,7 @@ export function createFormModal(options = {}) {
       }));
       host.__uiToggleGroupInstance = createToggleGroup(host, {
         items, multi: false, allowNone: true,
+        variant: item.variant || "pill",
         name: item.ariaLabel || item.label || name,
         disabled: Boolean(item.disabled || item.readonly),
         onChange() { handleFieldChange(name); },
