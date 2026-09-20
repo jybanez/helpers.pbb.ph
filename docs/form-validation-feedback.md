@@ -98,3 +98,15 @@ cleanup. Existing toggle/full-form regressions and bundle/registry contracts run
 Screenshots/results: output/playwright/form-validation/. No device/AT claim.
 
 Combined candidate includes foreground-modal keyboard ownership and picker Escape/outside-click isolation. Matched candidate assets: docs/form-overlay-assets.json.
+
+## Empty select options (0.21.198)
+
+An explicit option `{value: '', label: 'Choose…'}` retains its empty value.
+Optional fields submit an empty string; required fields report the required-field
+error before submission. Labels are fallback values only when value is null or
+omitted. Numeric zero and boolean false retain their string representations.
+Applications continue to validate allowed enums and map empty draft values to
+their API contract. This fix does not make optional draft fields required.
+
+Regression: `node tests/form.select.empty.regression.mjs` (source and bundle).
+Adopt matched 0.21.198 loader/main JS/main CSS after review and publication.

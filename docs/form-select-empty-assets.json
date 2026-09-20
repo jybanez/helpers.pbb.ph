@@ -1,0 +1,22 @@
+{
+  "revision": "0.21.198",
+  "status": "candidate; publication must be verified separately",
+  "assets": [
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "b5aecd9a785107b87e5c19f66f92570578a81e708ad561d3b59ec86cf268a825"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "de603ed9dcaac190ffb4ff02448da7ca3253c4ed278b2fffea36b931c5b0de34"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "0d5c23f524780053cbdd0451d97f5fbb475bf0ca08925e24e88973288b25d1c0"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "be8125ffb8ef638882c493991eedd562e20d2c8c8e8b5f1b357d68a2f90dd909"
+    }
+  ]
+}

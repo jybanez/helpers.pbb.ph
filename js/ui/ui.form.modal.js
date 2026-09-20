@@ -1473,7 +1473,7 @@ function normalizeOptionsList(options) {
       if (!label && !value) {
         return null;
       }
-      return { label: label || value, value: value || label, disabled: Boolean(option.disabled) };
+      return { label: label || value, value, disabled: Boolean(option.disabled) };
     })
     .filter(Boolean);
 }
