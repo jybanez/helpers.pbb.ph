@@ -1,0 +1,32 @@
+[
+  {
+    "bundled": false,
+    "width": 320,
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": false,
+    "width": 1280,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 320,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 390,
+    "pass": true
+  },
+  {
+    "bundled": true,
+    "width": 1280,
+    "pass": true
+  }
+]

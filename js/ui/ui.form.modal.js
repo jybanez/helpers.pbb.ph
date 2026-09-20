@@ -3,6 +3,7 @@ import { createActionModal } from "./ui.modal.js?v=0.21.61";
 import { createNumberStepper } from "./ui.number.stepper.js";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
+import { createToggleGroup } from "./ui.toggle.group.js";
 import { createDatepicker } from "./ui.datepicker.js?v=0.21.191";
 import { createTreeSelect } from "./ui.tree.select.js";
 
@@ -17,6 +18,7 @@ const FORM_MODAL_STYLE_PATHS = [
   "../../css/ui/ui.password.css",
   "../../css/ui/ui.calendar.css",
   "../../css/ui/ui.datepicker.css",
+  "../../css/ui/ui.toggle.css",
 ];
 const FORM_MODAL_STYLE_HREFS = FORM_MODAL_STYLE_PATHS.map((path) => new URL(path, import.meta.url).href);
 
@@ -89,7 +91,9 @@ export function createFormModal(options = {}) {
 
   function destroyHostedFieldInstances() {
     fields.forEach((field) => {
-      if (field?.type === "ui.datepicker") {
+      if (field?.type === "ui.toggle.group") {
+        field.control?.__uiToggleGroupInstance?.destroy?.();
+      } else if (field?.type === "ui.datepicker") {
         field.control?.__uiDatepickerInstance?.destroy?.();
       } else if (field?.type === "ui.select") {
         field.control?.__uiSelectInstance?.destroy?.();
@@ -225,7 +229,7 @@ export function createFormModal(options = {}) {
     if (type === "display") {
       return renderDisplayItem(item);
     }
-    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "number-stepper" || type === "avatar") {
+    if (type === "hidden" || type === "input" || type === "textarea" || type === "select" || type === "checkbox" || type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "ui.toggle.group" || type === "number-stepper" || type === "avatar") {
       return renderField(item, type, rowIndex, itemIndex);
     }
     console.warn(`[createFormModal] Unsupported item type "${type}".`);
@@ -375,7 +379,7 @@ export function createFormModal(options = {}) {
         errorEl: null,
       });
       return control;
-    } else if (type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "number-stepper") {
+    } else if (type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "ui.toggle.group" || type === "number-stepper") {
       if (labelText) {
         label.textContent = labelText;
         wrapper.appendChild(label);
@@ -407,7 +411,7 @@ export function createFormModal(options = {}) {
       appendDescribedBy(getFieldAriaTarget({ type, control }), helpEl.id);
     }
 
-    if ((type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "number-stepper") && errorEl) {
+    if ((type === "ui.select" || type === "ui.treeselect" || type === "ui.datepicker" || type === "ui.toggle.group" || type === "number-stepper") && errorEl) {
       appendDescribedBy(getFieldAriaTarget({ type, control }), errorEl.id);
     }
 
@@ -453,6 +457,24 @@ export function createFormModal(options = {}) {
         },
       });
       return control;
+    }
+
+    if (type === "ui.toggle.group") {
+      const host = createElement("div", {
+        className: "ui-form-modal-toggle-group-host",
+        attrs: { id, role: "group", "aria-label": item.ariaLabel || item.label || name },
+      });
+      const items = normalizeOptionsList(item.items || item.options || []).map((option) => ({
+        id: String(option.value), label: option.label, disabled: Boolean(option.disabled),
+        pressed: value != null && String(value) === String(option.value),
+      }));
+      host.__uiToggleGroupInstance = createToggleGroup(host, {
+        items, multi: false, allowNone: true,
+        name: item.ariaLabel || item.label || name,
+        disabled: Boolean(item.disabled || item.readonly),
+        onChange() { handleFieldChange(name); },
+      });
+      return host;
     }
 
     if (type === "ui.datepicker") {
@@ -868,7 +890,7 @@ export function createFormModal(options = {}) {
         if (field.config.required && !control.checked) {
           message = "This field is required.";
         }
-      } else if (field.type === "ui.select" || field.type === "ui.treeselect" || field.type === "ui.datepicker" || field.type === "number-stepper") {
+      } else if (field.type === "ui.select" || field.type === "ui.treeselect" || field.type === "ui.datepicker" || field.type === "ui.toggle.group" || field.type === "number-stepper") {
         const value = getFieldValue(field);
         const isEmpty = Array.isArray(value) ? value.length === 0 : value == null || value === "";
         if (field.config.required && isEmpty) {
@@ -924,7 +946,7 @@ export function createFormModal(options = {}) {
     if (field?.type === "hidden") {
       return;
     }
-    if (field?.type === "ui.datepicker") {
+    if (field?.type === "ui.datepicker" || field?.type === "ui.toggle.group") {
       field.control?.querySelector("button:not(:disabled)")?.focus();
       return;
     }
@@ -1406,7 +1428,7 @@ function normalizeOptionsList(options) {
       if (!label && !value) {
         return null;
       }
-      return { label: label || value, value: value || label };
+      return { label: label || value, value: value || label, disabled: Boolean(option.disabled) };
     })
     .filter(Boolean);
 }
@@ -1538,6 +1560,7 @@ function appendDescribedBy(control, id) {
 
 function normalizeItemType(type) {
   const value = String(type || "").trim().toLowerCase();
+  if (value === "toggle-group") return "ui.toggle.group";
   if (value === "datepicker") return "ui.datepicker";
   if (value === "ui.treeselect" || value === "ui.tree.select") {
     return "ui.treeselect";
@@ -1563,6 +1586,7 @@ function matchesVisibleWhenEntry(actualValue, expectedValue) {
 }
 
 function getFieldValue(field) {
+  if (field.type === "ui.toggle.group") return field.control.__uiToggleGroupInstance.getValue();
   if (field.type === "ui.datepicker") return field.control.__uiDatepickerInstance.getValue();
   if (field.type === "ui.select") {
     return field.control?.__uiSelectInstance?.getValue?.() ?? (field.config.multiple ? [] : null);
@@ -1586,6 +1610,14 @@ function getFieldValue(field) {
 }
 
 function setFieldValue(field, value) {
+  if (field.type === "ui.toggle.group") {
+    const instance = field.control.__uiToggleGroupInstance;
+    instance.setItems(instance.getItems().map((item) => ({
+      ...item, pressed: value != null && String(value) === item.id,
+    })));
+    return;
+  }
+
   if (field.type === "ui.datepicker") {
     field.control.__uiDatepickerInstance.setValue(value, false);
     return;
@@ -1633,6 +1665,7 @@ function getFieldAriaTarget(field) {
   if (!field) {
     return null;
   }
+  if (field.type === "ui.toggle.group") return field.control;
   if (field.type === "ui.datepicker") return field.control;
   if (field.type === "ui.select") {
     return field.control?.querySelector?.(".ui-select-trigger") || null;

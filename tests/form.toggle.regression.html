@@ -1,0 +1,18 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Form toggle regression</title><body><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+uiLoader.setPreferBundles(location.search.includes('bundled'));
+await uiLoader.load('ui.form.modal');
+const create=await uiLoader.get('ui.form.modal');
+window.changed=[];
+window.form=create({title:'Voucher options',initialValues:{portal_mode:'selected'},rows:[
+[{type:'ui.toggle.group',name:'transferable',label:'Transferability',required:true,options:[{value:'false',label:'Not transferable with a very long option label that must wrap'},{value:'true',label:'Transferable'}]}],
+[{type:'toggle-group',name:'ambassador_mode',label:'Ambassadors',options:[{value:'all_active',label:'All active'},{value:'selected',label:'Selected'}]}],
+[{type:'checkbox',name:'record',label:'Selected record',visibleWhen:{ambassador_mode:'selected'}}],
+[{type:'ui.toggle.group',name:'terms_mode',label:'Terms',options:['inherit','supplement','override']}],
+[{type:'textarea',name:'terms',label:'Terms text',visibleWhen:{terms_mode:['supplement','override']}}],
+[{type:'ui.toggle.group',name:'locked',label:'Locked',disabled:true,options:['a','b'],value:'b'}],
+[{type:'ui.toggle.group',name:'readonly',label:'Read only',readonly:true,options:['a','b'],value:'a'}],
+[{type:'ui.toggle.group',name:'portal_mode',label:'Portal scope',options:['all_active','selected']}]
+],onChange(values){changed.push(values)},onSubmit(){window.submitted=true;return false;}});
+form.open();window.ready=true;
+</script></body></html>

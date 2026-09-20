@@ -152,7 +152,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.form.modal": {
     js: "./ui.form.modal.js?v=0.21.191",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css?v=0.21.191", "../../css/ui/ui.number.stepper.css", "../../css/ui/ui.select.css", "../../css/ui/ui.tree.select.css", "../../css/ui/ui.password.css", "../../css/ui/ui.calendar.css", "../../css/ui/ui.datepicker.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.form.modal.css?v=0.21.191", "../../css/ui/ui.number.stepper.css", "../../css/ui/ui.select.css", "../../css/ui/ui.tree.select.css", "../../css/ui/ui.password.css", "../../css/ui/ui.calendar.css", "../../css/ui/ui.datepicker.css", "../../css/ui/ui.toggle.css"],
     deps: ["ui.action.modal", "ui.number.stepper", "ui.password"],
     export: "createFormModal",
   },
