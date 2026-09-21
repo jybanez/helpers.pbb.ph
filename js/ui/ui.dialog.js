@@ -1,7 +1,7 @@
 import { createElement } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.197";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
-import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.61";
+import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.199";
 
 export function uiAlert(message, options = {}) {
   return new Promise((resolve) => {
@@ -394,7 +394,8 @@ function getDefaultActionVariant(dialogVariant, fallback = "primary") {
 
 function createDialogContent(message, options, variant, extraContent = null) {
   const description = String(options.description || "").trim();
-  const isCompact = !description && !extraContent;
+  const items = normalizeDialogItems(options.items);
+  const isCompact = !description && !extraContent && !items.length;
   const content = createElement("div", {
     className: `ui-dialog-body${extraContent ? " ui-dialog-prompt-body" : ""}${isCompact ? " ui-dialog-body--compact" : ""}`,
   });
@@ -414,6 +415,11 @@ function createDialogContent(message, options, variant, extraContent = null) {
   }
   const messageEl = createElement("p", { className: "ui-dialog-message", text: String(message || "") });
   textStack.appendChild(messageEl);
+  if (items.length) {
+    const list = createElement("ul", { className: "ui-dialog-list" });
+    for (const item of items) list.appendChild(createElement("li", { text: item }));
+    textStack.appendChild(list);
+  }
   if (description) {
     const descriptionEl = createElement("p", {
       className: "ui-dialog-description",
@@ -448,6 +454,11 @@ function createDialogContent(message, options, variant, extraContent = null) {
   };
 }
 
+// A serializable text-only list also works through the workspace bridge.
+function normalizeDialogItems(items) {
+  return Array.isArray(items) ? items.filter(item => typeof item === "string" && item.trim()) : [];
+}
+
 function resolveVariantIcon(options, variant) {
   if (options.showVariantIcon === false) {
     return "";
@@ -468,7 +479,7 @@ function speakDialog(options, payload) {
   if (typeof window === "undefined" || !("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") {
     return;
   }
-  const text = String(options.speakText || defaultDialogSpeakText(payload)).trim();
+  const text = String(options.speakText || defaultDialogSpeakText({ ...payload, items: normalizeDialogItems(options.items) })).trim();
   if (!text) {
     return;
   }
@@ -502,6 +513,7 @@ function defaultDialogSpeakText(payload) {
   const parts = [
     String(payload?.title || "").trim(),
     String(payload?.message || "").trim(),
+    ...normalizeDialogItems(payload?.items),
     String(payload?.description || "").trim(),
   ].filter(Boolean);
   return parts.join(". ");

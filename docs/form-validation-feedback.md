@@ -21,8 +21,10 @@ const form = createForm({
       ? {confirm:'Confirm password must match Password.'} : {};
   },
   async onInvalid({errors, firstInvalidField, values}, context) {
-    await alert(Object.values(errors).join('\n'), {
-      title:'Check your entries', variant:'error', draggable:true,
+    // Build concise user-facing issues in schema order; deduplicate by field.
+    const items = buildValidationSummary(errors);
+    await alert('Please address the following issues before continuing:', {
+      title:'Check your entries', variant:'error', draggable:true, items,
       renderTarget:'local', workspaceBridge:false
     });
   },
@@ -110,3 +112,5 @@ their API contract. This fix does not make optional draft fields required.
 
 Regression: `node tests/form.select.empty.regression.mjs` (source and bundle).
 Adopt matched 0.21.198 loader/main JS/main CSS after review and publication.
+
+For canonical structured summary rendering and the application-owned summary mapping contract, see [dialog-lists.md](dialog-lists.md). `buildValidationSummary` in the example is an application function, not a Helper export.

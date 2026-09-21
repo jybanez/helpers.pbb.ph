@@ -1,0 +1,30 @@
+{
+  "revision": "0.21.199",
+  "status": "candidate",
+  "assets": [
+    {
+      "path": "js/ui/ui.dialog.js",
+      "sha256": "5d8fb12ca33ba6b5836a0afc2bb1e83ac0930a0836f8db40ba7243896a0fa3f6"
+    },
+    {
+      "path": "js/ui/ui.workspace.bridge.js",
+      "sha256": "1912c9d612135e055bc866bc741cedb35d79c9021a38ae3e57d174bd2bd47760"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "af8142ded1d5d56baeea4a2e5c0771c7fc43cb13d654fbfa5275ae29df075ea9"
+    },
+    {
+      "path": "css/ui/ui.dialog.css",
+      "sha256": "ad57581ce9090a0272fba06b1f8e3f4c48254b31235da92e931a1f67319cbb6e"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "962d143cfdb64ec4d564990e6e4f91de1c6401e474a653dbf2ff256a762616e3"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "7347f23b400afd5cf37ba93c44546d688a49e3cf2a8c14b4afb8b055f2ea3451"
+    }
+  ]
+}

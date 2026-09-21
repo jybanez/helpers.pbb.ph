@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Structured dialog regression</title><style>body{font-family:var(--ui-font, sans-serif);background:var(--ui-bg);color:var(--ui-text);margin:0}</style><body><button id="launch">Validate</button><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+const query=new URLSearchParams(location.search);uiLoader.setPreferBundles(query.has('bundled'));
+window.showAlert=await uiLoader.get('ui.dialog.alert');
+if(query.has('host')){const install=await uiLoader.get('ui.workspace.bridge.host');install({trustedOrigins:[query.get('childOrigin')]});}
+window.ready=true;
+</script></body></html>
