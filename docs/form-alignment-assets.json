@@ -1,0 +1,26 @@
+{
+  "revision": "0.21.200",
+  "status": "candidate",
+  "assets": [
+    {
+      "path": "css/ui/ui.form.modal.css",
+      "sha256": "d1a11fd918b99d9152e13fa42b244cf5f0300c4e42f61ed7ecd799f4a8f93598"
+    },
+    {
+      "path": "js/ui/ui.form.modal.js",
+      "sha256": "0a5811fe66ddb8df2822d2cc2d0802ec39faf8d32c934cc1288c1bac5347b8f1"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "81c283dd31323462086b933871d0a0adc2760ecc03886fa600f9c562c52c38de"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "9b84d748ecf87def412c86e8a0ff3af58d134b53404207763268d3f311476d38"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "1860f4464e83021951149fa8bbf7e1cf0a04ece9263ffe7fa3f392a18b7f6f5b"
+    }
+  ]
+}

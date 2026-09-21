@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Form field alignment</title><style>body{margin:0;background:#080e18;font-family:var(--ui-font,sans-serif)}</style><body><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+const q=new URLSearchParams(location.search);uiLoader.setPreferBundles(q.has('bundled'));
+const create=await uiLoader.get('ui.form.modal');const columns=Number(q.get('columns'))||2;
+const row=[{type:'select',name:'rule',label:'Commission rule',options:['Fixed per redeemed claim','Percentage'],help:'Fixed: per redeemed claim. Percentage: of covered paid amount. Threshold: amount for each covered paid threshold.'},{type:'input',name:'amount',label:'Commission amount',input:'number'}];
+if(columns===3)row.push({type:'input',name:'wrapped',label:'A deliberately long field label that wraps onto multiple lines in this three-column layout'});
+window.form=create({title:'Mixed field stacks',columns,size:'lg',rows:[[{type:'input',name:'baseline',label:'Baseline input'}],row,[{type:'textarea',name:'notes',label:'Notes',value:'A naturally taller textarea'},{type:'input',name:'neighbor',label:'Neighbor'}],[{type:'checkbox',name:'show',label:'Show conditional',value:true}],[{type:'input',name:'conditional',label:'Conditional',help:'Conditional help remains with its field.',visibleWhen:{show:true}},{type:'input',name:'stable',label:'Stable field'}]],onSubmit:()=>false});form.open();window.ready=true;
+</script></body></html>

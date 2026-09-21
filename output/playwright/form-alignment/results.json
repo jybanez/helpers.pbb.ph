@@ -1,0 +1,378 @@
+[
+  {
+    "bundled": false,
+    "columns": 2,
+    "width": 390,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 86,
+        "h": 36.890625,
+        "fieldY": 67,
+        "fieldBottom": 122.890625
+      },
+      "rule": {
+        "y": 153.890625,
+        "h": 39,
+        "fieldY": 134.890625,
+        "fieldBottom": 230.484375
+      },
+      "amount": {
+        "y": 261.484375,
+        "h": 36.890625,
+        "fieldY": 242.484375,
+        "fieldBottom": 298.375
+      },
+      "notes": {
+        "y": 329.375,
+        "h": 90,
+        "fieldY": 310.375,
+        "fieldBottom": 419.375
+      },
+      "neighbor": {
+        "y": 450.375,
+        "h": 36.890625,
+        "fieldY": 431.375,
+        "fieldBottom": 487.265625
+      },
+      "stable": {
+        "y": 635.140625,
+        "h": 36.890625,
+        "fieldY": 616.140625,
+        "fieldBottom": 672.03125
+      }
+    }
+  },
+  {
+    "bundled": false,
+    "columns": 2,
+    "width": 1440,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 367.8125,
+        "h": 36.890625,
+        "fieldY": 348.8125,
+        "fieldBottom": 404.703125
+      },
+      "rule": {
+        "y": 435.703125,
+        "h": 39,
+        "fieldY": 416.703125,
+        "fieldBottom": 512.296875
+      },
+      "amount": {
+        "y": 435.703125,
+        "h": 36.890625,
+        "fieldY": 416.703125,
+        "fieldBottom": 472.59375
+      },
+      "notes": {
+        "y": 543.296875,
+        "h": 90,
+        "fieldY": 524.296875,
+        "fieldBottom": 633.296875
+      },
+      "neighbor": {
+        "y": 543.296875,
+        "h": 36.890625,
+        "fieldY": 524.296875,
+        "fieldBottom": 580.1875
+      },
+      "stable": {
+        "y": 692.484375,
+        "h": 36.890625,
+        "fieldY": 673.484375,
+        "fieldBottom": 729.375
+      }
+    }
+  },
+  {
+    "bundled": false,
+    "columns": 3,
+    "width": 390,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 86,
+        "h": 36.890625,
+        "fieldY": 67,
+        "fieldBottom": 122.890625
+      },
+      "rule": {
+        "y": 153.890625,
+        "h": 39,
+        "fieldY": 134.890625,
+        "fieldBottom": 230.484375
+      },
+      "amount": {
+        "y": 261.484375,
+        "h": 36.890625,
+        "fieldY": 242.484375,
+        "fieldBottom": 298.375
+      },
+      "notes": {
+        "y": 412.265625,
+        "h": 90,
+        "fieldY": 393.265625,
+        "fieldBottom": 502.265625
+      },
+      "neighbor": {
+        "y": 533.265625,
+        "h": 36.890625,
+        "fieldY": 514.265625,
+        "fieldBottom": 570.15625
+      },
+      "stable": {
+        "y": 718.03125,
+        "h": 36.890625,
+        "fieldY": 699.03125,
+        "fieldBottom": 754.921875
+      },
+      "wrapped": {
+        "y": 344.375,
+        "h": 36.890625,
+        "fieldY": 310.375,
+        "fieldBottom": 381.265625
+      }
+    }
+  },
+  {
+    "bundled": false,
+    "columns": 3,
+    "width": 1440,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 359.421875,
+        "h": 36.890625,
+        "fieldY": 340.421875,
+        "fieldBottom": 396.3125
+      },
+      "rule": {
+        "y": 427.3125,
+        "h": 39,
+        "fieldY": 408.3125,
+        "fieldBottom": 520.703125
+      },
+      "amount": {
+        "y": 427.3125,
+        "h": 36.890625,
+        "fieldY": 408.3125,
+        "fieldBottom": 464.203125
+      },
+      "notes": {
+        "y": 551.703125,
+        "h": 90,
+        "fieldY": 532.703125,
+        "fieldBottom": 641.703125
+      },
+      "neighbor": {
+        "y": 551.703125,
+        "h": 36.890625,
+        "fieldY": 532.703125,
+        "fieldBottom": 588.59375
+      },
+      "stable": {
+        "y": 700.890625,
+        "h": 36.890625,
+        "fieldY": 681.890625,
+        "fieldBottom": 737.78125
+      },
+      "wrapped": {
+        "y": 457.3125,
+        "h": 36.890625,
+        "fieldY": 408.3125,
+        "fieldBottom": 494.203125
+      }
+    }
+  },
+  {
+    "bundled": true,
+    "columns": 2,
+    "width": 390,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 86,
+        "h": 36.890625,
+        "fieldY": 67,
+        "fieldBottom": 122.890625
+      },
+      "rule": {
+        "y": 153.890625,
+        "h": 39,
+        "fieldY": 134.890625,
+        "fieldBottom": 230.484375
+      },
+      "amount": {
+        "y": 261.484375,
+        "h": 36.890625,
+        "fieldY": 242.484375,
+        "fieldBottom": 298.375
+      },
+      "notes": {
+        "y": 329.375,
+        "h": 90,
+        "fieldY": 310.375,
+        "fieldBottom": 419.375
+      },
+      "neighbor": {
+        "y": 450.375,
+        "h": 36.890625,
+        "fieldY": 431.375,
+        "fieldBottom": 487.265625
+      },
+      "stable": {
+        "y": 635.140625,
+        "h": 36.890625,
+        "fieldY": 616.140625,
+        "fieldBottom": 672.03125
+      }
+    }
+  },
+  {
+    "bundled": true,
+    "columns": 2,
+    "width": 1440,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 367.8125,
+        "h": 36.890625,
+        "fieldY": 348.8125,
+        "fieldBottom": 404.703125
+      },
+      "rule": {
+        "y": 435.703125,
+        "h": 39,
+        "fieldY": 416.703125,
+        "fieldBottom": 512.296875
+      },
+      "amount": {
+        "y": 435.703125,
+        "h": 36.890625,
+        "fieldY": 416.703125,
+        "fieldBottom": 472.59375
+      },
+      "notes": {
+        "y": 543.296875,
+        "h": 90,
+        "fieldY": 524.296875,
+        "fieldBottom": 633.296875
+      },
+      "neighbor": {
+        "y": 543.296875,
+        "h": 36.890625,
+        "fieldY": 524.296875,
+        "fieldBottom": 580.1875
+      },
+      "stable": {
+        "y": 692.484375,
+        "h": 36.890625,
+        "fieldY": 673.484375,
+        "fieldBottom": 729.375
+      }
+    }
+  },
+  {
+    "bundled": true,
+    "columns": 3,
+    "width": 390,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 86,
+        "h": 36.890625,
+        "fieldY": 67,
+        "fieldBottom": 122.890625
+      },
+      "rule": {
+        "y": 153.890625,
+        "h": 39,
+        "fieldY": 134.890625,
+        "fieldBottom": 230.484375
+      },
+      "amount": {
+        "y": 261.484375,
+        "h": 36.890625,
+        "fieldY": 242.484375,
+        "fieldBottom": 298.375
+      },
+      "notes": {
+        "y": 412.265625,
+        "h": 90,
+        "fieldY": 393.265625,
+        "fieldBottom": 502.265625
+      },
+      "neighbor": {
+        "y": 533.265625,
+        "h": 36.890625,
+        "fieldY": 514.265625,
+        "fieldBottom": 570.15625
+      },
+      "stable": {
+        "y": 718.03125,
+        "h": 36.890625,
+        "fieldY": 699.03125,
+        "fieldBottom": 754.921875
+      },
+      "wrapped": {
+        "y": 344.375,
+        "h": 36.890625,
+        "fieldY": 310.375,
+        "fieldBottom": 381.265625
+      }
+    }
+  },
+  {
+    "bundled": true,
+    "columns": 3,
+    "width": 1440,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "y": 359.421875,
+        "h": 36.890625,
+        "fieldY": 340.421875,
+        "fieldBottom": 396.3125
+      },
+      "rule": {
+        "y": 427.3125,
+        "h": 39,
+        "fieldY": 408.3125,
+        "fieldBottom": 520.703125
+      },
+      "amount": {
+        "y": 427.3125,
+        "h": 36.890625,
+        "fieldY": 408.3125,
+        "fieldBottom": 464.203125
+      },
+      "notes": {
+        "y": 551.703125,
+        "h": 90,
+        "fieldY": 532.703125,
+        "fieldBottom": 641.703125
+      },
+      "neighbor": {
+        "y": 551.703125,
+        "h": 36.890625,
+        "fieldY": 532.703125,
+        "fieldBottom": 588.59375
+      },
+      "stable": {
+        "y": 700.890625,
+        "h": 36.890625,
+        "fieldY": 681.890625,
+        "fieldBottom": 737.78125
+      },
+      "wrapped": {
+        "y": 457.3125,
+        "h": 36.890625,
+        "fieldY": 408.3125,
+        "fieldBottom": 494.203125
+      }
+    }
+  }
+]
