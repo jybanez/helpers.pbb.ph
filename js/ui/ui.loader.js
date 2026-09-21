@@ -1,7 +1,7 @@
 const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
-const UI_OVERLAY_ROUTING_REV = "0.21.197";
+const UI_OVERLAY_ROUTING_REV = "0.21.199";
 const UI_AUDIO_REV = "0.21.62";
 const UI_ICONS_REV = "0.21.122";
 const UI_FILE_INPUT_REV = "0.21.108";
@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.8";
-const UI_BUNDLE_REV = "0.21.198";
+const UI_BUNDLE_REV = "0.21.199";
 const UI_GAME_BUNDLE_REV = "0.21.123";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -80,19 +80,19 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.workspace.bridge": {
     js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: [],
     export: "getWorkspaceUiBridge",
   },
   "ui.workspace.bridge.host": {
     js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: [],
     export: "installWorkspaceUiBridgeHost",
   },
   "ui.workspace.bridge.modal": {
     js: `./ui.workspace.bridge.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.toast.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: [],
     export: "showWorkspaceActionModal",
   },
@@ -116,25 +116,25 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.dialog": {
     js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: ["ui.modal"],
     export: null,
   },
   "ui.dialog.alert": {
     js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: ["ui.dialog"],
     export: "uiAlert",
   },
   "ui.dialog.confirm": {
     js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: ["ui.dialog"],
     export: "uiConfirm",
   },
   "ui.dialog.prompt": {
     js: `./ui.dialog.js?v=${UI_OVERLAY_ROUTING_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css", "../../css/ui/ui.dialog.css?v=0.21.199"],
     deps: ["ui.dialog"],
     export: "uiPrompt",
   },
