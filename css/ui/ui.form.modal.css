@@ -55,6 +55,11 @@
   display: grid;
   gap: 12px;
   align-content: start;
+  align-items: start;
+}
+
+.ui-form-modal-field {
+  align-content: start;
 }
 
 .ui-form-modal-row.is-items-2 {
