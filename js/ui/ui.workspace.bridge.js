@@ -386,7 +386,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.199");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.201");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -394,7 +394,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.199");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.201");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -402,7 +402,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.199");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.201");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,

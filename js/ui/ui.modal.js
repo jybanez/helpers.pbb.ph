@@ -46,7 +46,13 @@ const tabbableSelector = [
 ].join(", ");
 
 const bodyLockState = new WeakMap();
-let modalIdSeed = 0;
+// Each module URL and bundle can be evaluated independently. Random IDs also
+// remain distinct when dialogs from different realms share a target document.
+function createModalId() {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return `ui-modal-${Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("")}`;
+}
 
 export function createModal(options = {}) {
   const events = createEventBag();
@@ -59,7 +65,7 @@ export function createModal(options = {}) {
   let activeDocument = null;
   let dragState = null;
   let busyCancelPending = false;
-  const modalInstanceId = `ui-modal-${++modalIdSeed}`;
+  const modalInstanceId = createModalId();
   const titleId = `${modalInstanceId}-title`;
 
   const root = createElement("div", { className: "ui-modal-root", attrs: { "aria-hidden": "true", "data-ui-modal-id": modalInstanceId } });

@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Nested modal names</title><body><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+uiLoader.setPreferBundles(new URLSearchParams(location.search).has('bundled'));
+const formFactory = await uiLoader.get('ui.form.modal');
+const actionFactory = await uiLoader.get('ui.action.modal');
+const other = await import('../js/ui/ui.modal.js?independent-copy');
+const options = {renderTarget:'local',workspaceBridge:false,animationMs:0};
+// Construct all before mounting: allocation must not depend on DOM presence.
+window.form = formFactory({...options,title:'Create Voucher',rows:[[{type:'input',name:'title',label:'Voucher title',value:'Keep me'}]]});
+window.preview = actionFactory({...options,title:'Voucher design preview'});
+window.third = other.createActionModal({...options,title:'Independent module preview'});
+form.open();preview.open();third.open();window.ready = true;
+</script></body></html>
