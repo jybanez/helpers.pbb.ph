@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helper production bundle only</title>
+<body>
+<button id="open">Open confirmation</button>
+<p id="result" role="status">Loading Helper…</p>
+<script type="module">
+  import { uiLoader, AI_ICONS } from "../dist/helpers.ui.bundle.min.js?v=0.21.202";
+  const [confirm, icons] = await Promise.all([
+    uiLoader.get("ui.dialog.confirm"), uiLoader.get("ui.icons"),
+  ]);
+  icons.registerIconPack(AI_ICONS);
+  document.querySelector("#result").textContent = "Helper ready (dist only).";
+  document.querySelector("#open").addEventListener("click", async () => {
+    const accepted = await confirm("Continue with this example?", { variant: "warning" });
+    document.querySelector("#result").textContent = accepted ? "Confirmed." : "Cancelled.";
+  });
+</script>
+</body>
+</html>
