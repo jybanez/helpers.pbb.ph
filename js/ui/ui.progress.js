@@ -28,16 +28,24 @@ export function createProgress(container, data = {}, options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
-    clearNode(container);
-
     const normalized = resolveProgress(currentData, currentOptions);
     const style = normalizeStyle(currentOptions.style);
+    const linear = !["radial", "ring", "steps", "segmented"].includes(style);
+    const retainedTrack = linear ? root?.querySelector(".ui-progress-track") : null;
     const size = normalizeSize(currentOptions.size);
     const isIndeterminate = Boolean(currentOptions.indeterminate || style === "indeterminate");
     const percentText = `${Math.round(normalized.percent)}%`;
 
-    root = createElement("section", {
-      className: [
+    if (!root) {
+      clearNode(container);
+      root = createElement("section");
+      container.appendChild(root);
+    }
+    // Keep the fill mounted so width transitions and stripe animation retain state.
+    for (const child of Array.from(root.children)) {
+      if (child !== retainedTrack) child.remove();
+    }
+    root.className = [
         "ui-progress",
         `ui-progress--${style}`,
         `ui-progress--${size}`,
@@ -46,22 +54,23 @@ export function createProgress(container, data = {}, options = {}) {
         currentOptions.animate ? "is-animated" : "is-static",
         isIndeterminate ? "is-indeterminate" : "",
         currentOptions.className || "",
-      ].filter(Boolean).join(" "),
-      attrs: {
+      ].filter(Boolean).join(" ");
+    const attrs = {
         role: "progressbar",
         "aria-label": String(currentOptions.ariaLabel || "Progress"),
         "aria-valuemin": String(normalized.min),
         "aria-valuemax": String(normalized.max),
         ...(isIndeterminate ? {} : { "aria-valuenow": String(normalized.value) }),
-      },
-    });
+      };
+    for (const [name, value] of Object.entries(attrs)) root.setAttribute(name, value);
+    if (isIndeterminate) root.removeAttribute("aria-valuenow");
     root.style.setProperty("--ui-progress-pct", String(normalized.percent));
     if (currentOptions.color) {
       root.style.setProperty("--ui-progress-color", String(currentOptions.color));
-    }
+    } else root.style.removeProperty("--ui-progress-color");
     if (currentOptions.trackColor) {
       root.style.setProperty("--ui-progress-track", String(currentOptions.trackColor));
-    }
+    } else root.style.removeProperty("--ui-progress-track");
 
     if (currentOptions.showLabel || currentOptions.showPercent) {
       const header = createElement("div", { className: "ui-progress-header" });
@@ -77,7 +86,7 @@ export function createProgress(container, data = {}, options = {}) {
           text: isIndeterminate ? "..." : percentText,
         }));
       }
-      root.appendChild(header);
+      root.insertBefore(header, retainedTrack);
     }
 
     if (style === "radial" || style === "ring") {
@@ -87,10 +96,13 @@ export function createProgress(container, data = {}, options = {}) {
     } else if (style === "segmented") {
       root.appendChild(buildSegmented(normalized, isIndeterminate));
     } else {
-      root.appendChild(buildLinear(isIndeterminate));
+      if (retainedTrack) {
+        const fill = retainedTrack.querySelector(".ui-progress-fill");
+        fill.classList.toggle("is-indeterminate", isIndeterminate);
+        if (isIndeterminate) fill.style.removeProperty("width");
+        else fill.style.width = `${normalized.percent}%`;
+      } else root.appendChild(buildLinear(isIndeterminate));
     }
-
-    container.appendChild(root);
   }
 
   function buildLinear(isIndeterminate) {

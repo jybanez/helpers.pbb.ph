@@ -80,7 +80,7 @@
   width: 35%;
 }
 
-.ui-progress-fill.is-indeterminate {
+.ui-progress.is-animated .ui-progress-fill.is-indeterminate {
   position: relative;
   animation: ui-progress-indeterminate 1200ms ease-in-out infinite;
 }
@@ -104,7 +104,7 @@
   background: var(--ui-progress-color);
 }
 
-.ui-progress--segmented.is-indeterminate .ui-progress-segment.is-active {
+.ui-progress--segmented.is-indeterminate.is-animated .ui-progress-segment.is-active {
   animation: ui-progress-pulse 900ms ease-in-out infinite;
 }
 
@@ -186,4 +186,12 @@
 @keyframes ui-progress-pulse {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-progress .ui-progress-fill,
+  .ui-progress .ui-progress-segment {
+    animation: none !important;
+    transition: none !important;
+  }
 }
