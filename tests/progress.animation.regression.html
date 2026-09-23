@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Progress animation regression</title>
+<body data-status="pending">
+<div id="host" style="width:500px"></div><pre id="result">Running</pre>
+<script type="module">
+import { uiLoader } from "../dist/helpers.ui.bundle.min.js?v=0.21.203";
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+try {
+  const createProgress = await uiLoader.get("ui.progress");
+  const host = document.querySelector("#host");
+  const progress = createProgress(host, { value: 10 }, { style: "striped", animate: true });
+  const root = host.firstElementChild;
+  const fill = host.querySelector(".ui-progress-fill");
+  await wait(220);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const stripe = fill.getAnimations().find(a => a.animationName === "ui-progress-stripes");
+  const oldWidth = fill.getBoundingClientRect().width;
+  progress.setValue(80);
+  assert(host.firstElementChild === root && host.querySelector(".ui-progress-fill") === fill, "stable root/fill");
+  assert(root.getAttribute("aria-valuenow") === "80", "ARIA updates immediately");
+  assert(root.querySelector(".ui-progress-percent").textContent === "80%", "percent updates");
+  await wait(60);
+  const width = fill.getBoundingClientRect().width;
+  const target = fill.parentElement.clientWidth * 0.8;
+  if (!reduced) {
+    assert(width > oldWidth && width < target - 1, "setValue interpolates width");
+    assert(fill.getAnimations().includes(stripe), "stripe animation identity preserved");
+  } else assert(Math.abs(width - target) < 1 && fill.getAnimations().length === 0, "reduced motion is immediate/static");
+  await wait(200);
+  progress.update({ value: 30, label: "Updated" });
+  await wait(60);
+  if (!reduced) assert(fill.getBoundingClientRect().width > fill.parentElement.clientWidth * 0.3 + 1, "update interpolates width");
+  progress.update({ value: 55 }, { animate: false });
+  assert(Math.abs(fill.getBoundingClientRect().width - fill.parentElement.clientWidth * 0.55) < 1, "static is immediate");
+  assert(fill.getAnimations().length === 0, "static stops stripes");
+  progress.update({}, { indeterminate: true });
+  assert(!root.hasAttribute("aria-valuenow") && fill.style.width === "", "indeterminate clears determinate state");
+  progress.update({ value: 75 }, { indeterminate: false, style: "gradient", min: 50, max: 100 });
+  assert(fill.style.width === "50%" && root.getAttribute("aria-valuenow") === "75", "range normalization and style switch");
+  for (const style of ["steps", "segmented", "ring", "radial", "linear"]) progress.update({}, { style });
+  assert(host.querySelectorAll(".ui-progress-track").length === 1, "structural style switching");
+  progress.destroy();
+  assert(host.children.length === 0, "destroy clears DOM");
+  document.body.dataset.status = "pass";
+  document.querySelector("#result").textContent = `PASS (reduced motion: ${reduced})`;
+} catch (error) {
+  document.body.dataset.status = "fail";
+  document.querySelector("#result").textContent = error.stack;
+}
+</script>
+</body></html>

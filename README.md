@@ -415,6 +415,7 @@ Reusable shared UI utilities live under `js/ui`:
   - `createTreeMindMap(container, options)` Canvas tree mind-map surface for large hierarchical registries with expand/collapse, zoom/pan, single or multi node selection, selected-node object arrays for external detail panels, and object or JSON-loaded theme configuration
 - `ui.progress.js`
   - `createProgress(container, data, options)` progress indicator with multiple styles (linear, segmented, steps, radial, ring, etc.)
+  - Linear/striped/gradient `setValue` and `update` calls retain the fill element: `animate: true` transitions width and preserves running stripes; `animate: false` updates immediately. Reduced-motion preference disables transitions and animations. ARIA values and percentage labels update immediately in either mode. See `tests/progress.animation.regression.html` for browser coverage.
 - `ui.virtual.list.js`
   - `createVirtualList(container, items, options)` virtualized list primitive for very large row sets with optional chrome-less rendering
 - `ui.scheduler.js`
