@@ -48,7 +48,9 @@ async function buildBundle({ entries, fileBaseName, globalName, namedExport, sou
   const jsImports = jsModuleKeys.map((key, index) => `import * as m${index} from "${toRepoImportPath(key)}";`);
   const cssImports = cssAssetKeys.map((key) => `import "${toRepoImportPath(key)}";`);
   const moduleMapLines = jsModuleKeys.map((key, index) => `  ${JSON.stringify(key)}: m${index},`);
-  const entrySource = `${jsImports.join("\n")}
+  const standalone = namedExport === "helperUiBundleModules";
+  const entrySource = `${standalone ? 'import { createBundleLoader } from "./js/ui/ui.bundle.loader.js";' : ""}
+${jsImports.join("\n")}
 ${cssImports.join("\n")}
 
 const modules = {
@@ -61,6 +63,12 @@ if (typeof window !== "undefined") {
 
 export default modules;
 export const ${namedExport} = modules;
+${standalone ? `
+const cssUrl = new URL("./helpers.ui.bundle.min.css", import.meta.url);
+cssUrl.search = new URL(import.meta.url).search;
+export const uiLoader = createBundleLoader(${JSON.stringify(Object.fromEntries(entries))}, modules, cssUrl.href);
+export { AI_ICONS } from "./js/ui/ui.icons.ai.js";
+` : ""}
 ${namedExport === "helperUiBundleModules" ? "" : "export const helperUiBundleModules = modules;"}
 `;
 
