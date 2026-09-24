@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8">
+<title>Datepicker native time theme regression</title>
+<body data-status="pending"><div id="host"></div><pre id="results">Running</pre>
+<script type="module">
+import { uiLoader } from "../dist/helpers.ui.bundle.min.js?v=0.21.204";
+const assert = (ok, message) => { if (!ok) throw new Error(message); };
+try {
+  const createDatePicker = await uiLoader.get("ui.datepicker");
+  const host = document.querySelector("#host");
+  const picker = createDatePicker(host, { showTime: true, timePrecision: "minute", value: "2026-09-25T12:30", panelParent: "self" });
+  host.querySelector("button").click();
+  const input = host.querySelector('input[type="time"]');
+  assert(input && input.step === "60", "native minute time input exists");
+  const forced = matchMedia("(forced-colors: active)").matches;
+  const check = (expected) => {
+    const css = getComputedStyle(input);
+    assert(css.colorScheme === (forced ? "light dark" : expected), `scheme: ${css.colorScheme}, expected ${expected}`);
+    assert(css.forcedColorAdjust === "auto", "UA forced-color adjustment retained");
+    assert(css.filter === "none", "no input inversion");
+  };
+  check("dark");
+  for (const theme of ["dark", "dark-slate", "night-command", "field-contrast", "light", "civic-light", "care-light"]) {
+    document.body.dataset.theme = theme;
+    check(theme.includes("light") ? "light" : "dark");
+    input.disabled = true;
+    check(theme.includes("light") ? "light" : "dark");
+    assert(input.matches(":disabled"), "disabled semantics preserved");
+    input.disabled = false;
+  }
+  host.dataset.theme = "dark";
+  check("dark");
+  host.style.setProperty("--ui-datepicker-color-scheme", "light");
+  check("light");
+  picker.destroy();
+  const disabled = createDatePicker(host, { showTime: true, disabled: true });
+  assert(host.querySelector("button").disabled, "disabled picker cannot open");
+  disabled.destroy();
+  document.body.dataset.theme = "dark";
+  delete host.dataset.theme;
+  host.style.removeProperty("--ui-datepicker-color-scheme");
+  createDatePicker(host, { showTime: true, timePrecision: "minute", value: "2026-09-25T12:30", panelParent: "self" });
+  host.querySelector("button").click();
+  document.body.dataset.status = "pass";
+  document.querySelector("#results").textContent = `PASS (forced colors: ${forced})`;
+} catch (error) {
+  document.body.dataset.status = "fail";
+  document.querySelector("#results").textContent = error.stack;
+}
+</script></body></html>

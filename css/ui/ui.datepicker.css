@@ -77,3 +77,30 @@
   font-size: 11px;
   color: var(--ui-muted, #96add3);
 }
+
+/* Match native time fields (including the browser's picker indicator) to the
+   nearest Helper theme. Do not invert vendor pseudo-elements: that double-inverts
+   browsers which already render native controls using color-scheme. */
+[data-theme="dark"],
+[data-theme="dark-slate"],
+[data-theme="night-command"],
+[data-theme="field-contrast"] {
+  --ui-datepicker-color-scheme: dark;
+}
+
+[data-theme="light"],
+[data-theme="civic-light"],
+[data-theme="care-light"] {
+  --ui-datepicker-color-scheme: light;
+}
+
+.ui-datepicker-time input[type="time"] {
+  color-scheme: var(--ui-datepicker-color-scheme, dark);
+}
+
+@media (forced-colors: active) {
+  .ui-datepicker-time input[type="time"] {
+    color-scheme: light dark;
+    forced-color-adjust: auto;
+  }
+}
