@@ -336,6 +336,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.toggle.group.js`
   - `createToggleGroup(container, options)` grouped toggle composition with `multi` or single-select behavior, `getValue()`, `setItems()`, and `updateItem()`
 - `ui.datepicker.js`
+  - Native time fields follow Helper themes via `--ui-datepicker-color-scheme` (`dark` by default, `light` for light themes). Custom themes can override this token. Forced-colors mode leaves the native indicator and disabled rendering under browser control; no WebKit inversion filter is applied. Browser coverage: `tests/datepicker.time.theme.regression.html`.
   - `createDatepicker(container, options)` single/range date picker with optional time controls, min/max bounds, disabled-date callback, and `setValue/getValue`
 - `ui.elapsed.time.js`
   - `createElapsedTime(container, options)` compact live `dd:hh:mm:ss` elapsed-duration readout with shared ticker, optional thresholds, optional chrome-less rendering, and pause/stop lifecycle methods
