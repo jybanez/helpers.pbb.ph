@@ -240,6 +240,11 @@
   min-width: 0;
 }
 
+.ui-timeline-header-row { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.ui-timeline-header-row > .ui-timeline-header { flex: 1; min-width: 0; }
+.ui-timeline-header-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.ui-timeline .ui-timeline-menu-trigger { padding: 0 6px; min-width: 28px; min-height: 28px; line-height: 1; font-size: 20px; }
+
 .ui-timeline-title {
   margin: 0;
   font-size: 14px;

@@ -443,6 +443,11 @@ export function createMenu(triggerEl, items = [], options = {}) {
 
   function destroy() {
     close();
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+    root?.remove();
     events.clear();
     unbindGlobal();
     if (triggerElEvents) {

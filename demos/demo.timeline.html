@@ -348,6 +348,11 @@ const timeline = createTimeline(host, items, {
         timestamp: "2026-03-09T08:04:00+08:00",
         title: "Call Received",
         subtitle: "Caller connected to hotline",
+        contextMenu: { ariaLabel: "Call actions", items: [
+          { id: "create-task", label: "Create task", icon: "actions.add" },
+          { id: "ack", label: "Acknowledge" },
+          { id: "delete", label: "Delete", variant: "danger", disabled: true },
+        ] },
         description: "Initial intake completed by operator level 1.",
         status: "accepted",
         meta: ["Hotline", "Inbound"],
@@ -387,6 +392,9 @@ const timeline = createTimeline(host, items, {
 
     const vertical = createTimeline(verticalHost, timelineItems, {
       ariaLabel: "Vertical incident timeline",
+      onContextMenuAction(action, item) {
+        writeLog("timeline.context-menu", { actionId: action.id, itemId: item.id });
+      },
       orientation: "vertical",
       groupByDate: true,
       timeZone: "Asia/Manila",

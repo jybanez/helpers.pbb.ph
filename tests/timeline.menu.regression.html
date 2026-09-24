@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Timeline item menu regression</title>
+<body data-status="pending"><div id="host" style="width:620px;height:320px"></div><pre id="results">Running</pre>
+<script type="module">
+import { uiLoader } from "../dist/helpers.ui.bundle.min.js?v=0.21.205";
+const wait = (ms = 320) => new Promise(r => setTimeout(r, ms));
+const assert = (ok, text) => { if (!ok) throw new Error(text); };
+try {
+  const createTimeline = await uiLoader.get("ui.timeline");
+  const host = document.querySelector("#host");
+  const actions = [{id:"create",label:"Create task",icon:"actions.add"},{id:"disabled",label:"Unavailable",disabled:true},{id:"ack",label:"Acknowledge",variant:"danger"}];
+  const item = {id:"a",title:"Message",timestamp:"2026-09-25T12:00:00Z",contextMenu:{ariaLabel:"Message actions",items:actions}};
+  const selected = [];
+  let contentMounts = 0;
+  const timeline = createTimeline(host, [item, {id:"empty",title:"No actions"}], {
+    collapsible:true, groupByDate:false,
+    mountItemContent(el) { contentMounts++; el.textContent="Cached content"; },
+    onContextMenuAction(action, value, ctx) {selected.push({action,value,ctx});},
+  });
+  const trigger = () => host.querySelector('[data-item-id="a"] .ui-timeline-menu-trigger');
+  assert(host.querySelectorAll('.ui-timeline-menu-trigger').length === 1, "no empty trigger");
+  assert(!trigger().parentElement.closest("button"), "trigger is not nested in disclosure");
+  trigger().click(); await wait(50);
+  const menu = document.querySelector('.ui-timeline-item-menu');
+  assert(menu && menu.getAttribute("role") === "menu", "native menu opens");
+  assert(Math.abs(menu.getBoundingClientRect().right - trigger().getBoundingClientRect().right) < 2, "right aligned");
+  assert(menu.querySelector('[data-index="1"]').disabled, "disabled action");
+  assert(menu.querySelector('[data-index="2"]').classList.contains('is-danger'), "danger metadata");
+  document.dispatchEvent(new KeyboardEvent("keydown",{key:"End",bubbles:true}));
+  document.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true}));
+  await wait();
+  assert(selected.length === 1 && selected[0].action.id === "ack" && selected[0].value.id === "a", "keyboard selection payload");
+  assert(selected[0].ctx.timeline === timeline && selected[0].ctx.index === 0, "timeline context");
+  assert(document.activeElement === trigger(), "selection restores focus");
+  timeline.setCollapsed("a",true);
+  trigger().dispatchEvent(new KeyboardEvent("keydown",{key:"ArrowDown",bubbles:true}));
+  await wait(40);
+  assert(timeline.isCollapsed("a") && document.querySelector('.ui-timeline-item-menu'), "collapsed keyboard access");
+  document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true})); await wait();
+  assert(!document.querySelector('.ui-timeline-item-menu') && document.activeElement === trigger(), "escape cleanup/focus");
+  const cached = host.querySelector('[data-item-id="a"] .ui-timeline-custom-content');
+  timeline.invalidateLayout();
+  assert(host.querySelector('[data-item-id="a"] .ui-timeline-custom-content') === cached, "cached custom content retained");
+  trigger().click();
+  timeline.update([{...item,contextMenu:{items:[{id:"new",label:"New action"}]}}]);
+  assert(!document.querySelector('.ui-timeline-item-menu'), "replacement removes old popup synchronously");
+  trigger().click(); await wait(40);
+  assert(document.querySelector('.ui-menu-item-label').textContent === "New action", "updated menu data");
+  document.body.dispatchEvent(new MouseEvent("mousedown",{bubbles:true})); await wait();
+  assert(!document.querySelector('.ui-timeline-item-menu'), "outside dismissal");
+  timeline.append([{...item,id:"b"}]); timeline.prepend([{...item,id:"c"}]);
+  assert(host.querySelectorAll('.ui-timeline-menu-trigger').length === 3, "append/prepend own triggers");
+  timeline.update(Array.from({length:150},(_,i)=>({...item,id:`v${i}`,timestamp:new Date(Date.UTC(2026,8,25,12,0,-i)).toISOString()})),{enableVirtualization:true,virtualThreshold:1,virtualOverscan:40});
+  await wait();
+  host.querySelector('.ui-timeline-menu-trigger').click();
+  const viewport=host.querySelector('.ui-timeline-viewport');
+  assert(viewport,"virtual viewport");
+  viewport.scrollTop=viewport.scrollHeight; viewport.dispatchEvent(new Event('scroll')); await wait();
+  assert(!document.querySelector('.ui-timeline-item-menu'), "eviction removes portaled menu");
+  host.querySelector('.ui-timeline-menu-trigger').click();
+  timeline.destroy(); await wait();
+  assert(!document.querySelector('.ui-timeline-item-menu') && !host.children.length,"destroy cleans popup and timeline");
+  document.body.dataset.status="pass"; document.querySelector('#results').textContent="PASS";
+} catch(error) {document.body.dataset.status="fail";document.querySelector('#results').textContent=error.stack;}
+</script></body></html>
