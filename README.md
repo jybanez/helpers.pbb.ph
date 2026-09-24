@@ -361,6 +361,7 @@ Reusable shared UI utilities live under `js/ui`:
 - `ui.chart.xy.js`
 - `createXyChart(container, options)` generic SVG X/Y chart primitive for line trends, point markers, Y-axis thresholds, shaded bands, and accessible summaries
 - `ui.timeline.js`
+  - Optional `item.contextMenu` and `onContextMenuAction` provide native header action menus independent of custom-content lifecycle. See [timeline item menus](docs/timeline-item-menus.md).
   - `createTimeline(container, items, options)` event timeline with `vertical`/`horizontal` orientation, optional date grouping, lifecycle-managed custom item content, and item/action click hooks
   - `invalidateLayout(ids, { mutate })` refreshes presentation heights while preserving the virtual viewport anchor; `scrollToItem(id, { align, focus })` mounts and navigates to loaded items. See [layout and navigation](docs/timeline-layout-navigation.md).
 - `ui.timeline.scrubber.js`

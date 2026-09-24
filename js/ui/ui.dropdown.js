@@ -1,4 +1,4 @@
-import { createMenu } from "./ui.menu.js";
+import { createMenu } from "./ui.menu.js?v=0.21.205";
 
 export function createDropdown(triggerEl, items = [], options = {}) {
   const align = normalizeAlign(options?.align);

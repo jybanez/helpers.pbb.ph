@@ -19,8 +19,8 @@ const UI_SPLITTER_REV = "0.21.2";
 const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
-const UI_TIMELINE_REV = "0.21.8";
-const UI_BUNDLE_REV = "0.21.204";
+const UI_TIMELINE_REV = "0.21.205";
+const UI_BUNDLE_REV = "0.21.205";
 const UI_GAME_BUNDLE_REV = "0.21.123";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -477,7 +477,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.timeline": {
     js: `./ui.timeline.js?v=${UI_TIMELINE_REV}`,
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.timeline.css?v=${UI_TIMELINE_REV}`],
-    deps: [],
+    deps: ["ui.dropdown", "ui.icons"],
     export: "createTimeline",
   },
   "ui.activity.chart": {
@@ -643,7 +643,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createScheduler",
   },
   "ui.menu": {
-    js: `./ui.menu.js?v=${UI_NAV_REV}`,
+    js: "./ui.menu.js?v=0.21.205",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.nav.css?v=${UI_NAV_REV}`],
     deps: [],
     export: "createMenu",
@@ -655,7 +655,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createPopover",
   },
   "ui.dropdown": {
-    js: `./ui.dropdown.js?v=${UI_NAV_REV}`,
+    js: "./ui.dropdown.js?v=0.21.205",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.nav.css?v=${UI_NAV_REV}`],
     deps: ["ui.menu"],
     export: "createDropdown",

@@ -1,5 +1,7 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
+import { createDropdown } from "./ui.dropdown.js?v=0.21.205";
+import { createIcon } from "./ui.icons.js";
 
 const GENERATED_ITEM_ID = Symbol("generatedTimelineItemId");
 const DEFAULT_ITEM_HEIGHT = 64;
@@ -20,6 +22,7 @@ const DEFAULT_OPTIONS = {
   includeUndatedInRange: false,
   onItemClick: null,
   onActionClick: null,
+  onContextMenuAction: null,
   mountItemContent: null,
   enableVirtualization: false,
   virtualThreshold: 120,
@@ -61,6 +64,7 @@ export function createTimeline(container, items = [], options = {}) {
   let destroyed = false;
   const renderedUnits = new Map();
   const rowEvents = new Map();
+  const rowMenus = new Map();
   const measuredHeights = new Map();
   const collapsedStates = new Map();
   const disclosureIds = new Map();
@@ -523,15 +527,54 @@ export function createTimeline(container, items = [], options = {}) {
         changeCollapsed([item.id], !isCollapsed(item.id));
       });
     }
+    const menuItems = (Array.isArray(item.contextMenu?.items) ? item.contextMenu.items : [])
+      .filter(action => action && action.id != null && action.label && !action.hidden);
+    const headerRow = menuItems.length ? createElement("div", { className: "ui-timeline-header-row" }) : null;
+    const headerActions = menuItems.length ? createElement("div", { className: "ui-timeline-header-actions" }) : header;
     if (item.timestamp) {
-      header.appendChild(createElement("time", {
+      headerActions.appendChild(createElement("time", {
         className: "ui-timeline-time",
         text: formatTimestamp(item.timestamp, currentOptions.locale, currentOptions.timeZone,
           currentOptions.groupByDate && currentOptions.orientation === "vertical"),
         attrs: { datetime: item.timestamp, title: formatTimestamp(item.timestamp, currentOptions.locale, currentOptions.timeZone) },
       }));
     }
-    body.appendChild(header);
+    if (headerRow) {
+      const trigger = createElement("button", {
+        className: "ui-button ui-timeline-menu-trigger",
+        text: "⋯",
+        attrs: { type: "button", "aria-label": item.contextMenu.ariaLabel || `Actions for ${item.title}` },
+      });
+      headerActions.appendChild(trigger);
+      headerRow.append(header, headerActions);
+      body.appendChild(headerRow);
+      const menu = createDropdown(trigger, menuItems.map(action => ({
+        ...action,
+        icon: action.iconHtml || (action.icon ? createIcon(action.icon).outerHTML : ""),
+        danger: Boolean(action.danger || action.variant === "danger"),
+      })), {
+        align: "right",
+        ariaLabel: item.contextMenu.ariaLabel || `Actions for ${item.title}`,
+        className: "ui-timeline-item-menu",
+        onSelect(action, meta) {
+          const selected = menuItems.find(entry => entry.id === action.id);
+          if (!selected || selected.disabled || destroyed || !container.contains(row)) return;
+          currentOptions.onContextMenuAction?.(selected, item, {
+            ...createItemContext(visibleItems.findIndex(entry => entry.id === item.id), visibleItems.length),
+            menu: meta, trigger,
+          });
+        },
+      });
+      rowMenus.set(row, menu);
+      events.on(trigger, "click", event => event.stopPropagation());
+      events.on(trigger, "keydown", event => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          event.stopPropagation();
+          menu.open();
+        }
+      });
+    } else body.appendChild(header);
     const content = disclosure ? createElement("div", {
       className: "ui-timeline-details",
       attrs: { id: disclosureIds.get(String(item.id)) },
@@ -728,6 +771,8 @@ export function createTimeline(container, items = [], options = {}) {
   function clearDetachedRowEvents() {
     for (const [row, bag] of rowEvents) {
       if (!container.contains(row)) {
+        rowMenus.get(row)?.destroy();
+        rowMenus.delete(row);
         bag.clear();
         rowEvents.delete(row);
       }
