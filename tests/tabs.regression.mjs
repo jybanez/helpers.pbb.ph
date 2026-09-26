@@ -28,20 +28,22 @@ if (!browserPath) {
 const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "tabs.regression.html");
 const htmlUrl = pathToFileURL(htmlPath).href;
 
+for (const mode of ["source", "bundle"]) {
 const { stdout, stderr } = await execFileAsync(browserPath, [
   "--headless=new",
   "--disable-gpu",
   "--allow-file-access-from-files",
   "--virtual-time-budget=3000",
   "--dump-dom",
-  htmlUrl,
+  mode === "bundle" ? `${htmlUrl}?bundle` : htmlUrl,
 ], { maxBuffer: 1024 * 1024 * 4 });
 
 const output = `${stdout}\n${stderr}`;
 if (/data-status="pass"/.test(output) && /\bPASS\b/.test(output)) {
-  console.log("Tabs regression test passed.");
+  console.log(`Tabs regression test passed (${mode}).`);
 } else {
   console.error("Tabs regression test failed.");
   console.error(output);
   process.exitCode = 1;
+}
 }

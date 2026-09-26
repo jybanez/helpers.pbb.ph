@@ -39,3 +39,62 @@
   padding: var(--ui-space-3);
   min-height: 56px;
 }
+
+/* Keep the shared edge inside the scrollport so the selected tab can erase it.
+   An inset focus ring remains visible at the scrollport's clipped edges. */
+.ui-tabs.is-attached {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.ui-tabs.is-attached > .ui-tablist {
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(var(--ui-border-strong), var(--ui-border-strong)) bottom / 100% 1px no-repeat;
+}
+
+.ui-tabs.is-attached > .ui-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+.ui-tabs.is-attached > .ui-tablist > .ui-tab {
+  flex: 0 0 auto;
+  margin: 0;
+  border-color: var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm) var(--ui-radius-sm) 0 0;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+.ui-tabs.is-attached > .ui-tablist > .ui-tab + .ui-tab {
+  margin-inline-start: -1px;
+}
+
+.ui-tabs.is-attached > .ui-tablist > .ui-tab:hover {
+  background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-bg));
+}
+
+.ui-tabs.is-attached > .ui-tablist > .ui-tab.is-active {
+  background: var(--ui-bg-soft);
+  border-bottom-color: var(--ui-bg-soft);
+}
+
+.ui-tabs.is-attached > .ui-tablist > .ui-tab:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -3px;
+}
+
+.ui-tabs.is-attached > .ui-tabpanel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border-color: var(--ui-border-strong);
+  border-top: 0;
+  border-radius: 0 0 var(--ui-radius-sm) var(--ui-radius-sm);
+}
