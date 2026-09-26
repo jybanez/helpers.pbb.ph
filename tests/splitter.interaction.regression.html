@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Splitter interaction regression</title>
+<link rel="stylesheet" href="../css/ui/ui.tokens.css">
+<link rel="stylesheet" href="../css/ui/ui.splitter.css">
+<style>body { font:14px system-ui; background:var(--ui-bg); color:var(--ui-text) } .host { width:600px; height:280px; margin:12px; } .host > .ui-splitter { height:100%; box-sizing:border-box; } </style>
+<body data-status="pending">
+<pre id="results">Running...</pre>
+<script type="module">
+const bundled = new URLSearchParams(location.search).has('bundle');
+const createSplitter = bundled
+  ? await (await import('../dist/helpers.ui.bundle.min.js')).uiLoader.get('ui.splitter')
+  : (await import('../js/ui/ui.splitter.js')).createSplitter;
+if (bundled) {
+  document.querySelectorAll('link').forEach(el => el.remove());
+  const css = document.createElement('link'); css.rel='stylesheet'; css.href='../dist/helpers.ui.bundle.min.css';
+  await new Promise((resolve,reject) => { css.onload=resolve; css.onerror=reject; document.head.append(css); });
+}
+let checks=0; const failures=[];
+const assert=(ok,msg)=>{checks++; if(!ok) failures.push(msg);};
+const near=(a,b)=>Math.abs(a-b)<0.001;
+const pointer=(el,type,x=0,y=0,id=1)=>el.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,button:0,isPrimary:true,pointerId:id,clientX:x,clientY:y}));
+const key=(el,key)=>el.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true}));
+function host(){const el=document.createElement('div');el.className='host';document.body.append(el);return el;}
+for(const theme of ['dark','light']) for(const orientation of ['horizontal','vertical']) for(const chrome of [true,false]) {
+  document.body.dataset.theme=theme;
+  const el=host(); let calls=[]; const a=document.createElement('button');a.textContent='Pane action';
+  const split=createSplitter(el,{orientation,chrome,panePadding:0,paneA:a,initialRatio:.35,minRatio:.2,maxRatio:.8,onResize:r=>calls.push(r)});
+  let root=el.firstElementChild, divider=root.children[1];
+  const vertical=orientation==='vertical'; const rect=divider.getBoundingClientRect();
+  assert((vertical?rect.height:rect.width)===24,'24px target '+orientation);
+  const visual=getComputedStyle(divider,'::before');
+  assert(parseFloat(vertical?visual.height:visual.width)===8,'8px visible divider');
+  assert(getComputedStyle(divider).backgroundColor==='rgba(0, 0, 0, 0)','transparent hit track');
+  if(!chrome) assert(getComputedStyle(root).backgroundColor==='rgba(0, 0, 0, 0)' && getComputedStyle(root).borderTopWidth==='0px','chromeless stays transparent/borderless');
+  const paneRect=root.children[0].getBoundingClientRect();
+  assert(vertical?paneRect.bottom<=rect.top+.1:paneRect.right<=rect.left+.1,'target does not overlap pane');
+  assert(a.closest('.ui-splitter-pane')===root.children[0],'pane action stays in pane');
+  split.setRatio(.7);calls=[];
+  divider.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
+  assert(near(split.getState().ratio,.35)&&calls.length===1&&near(calls[0],.35),'reset emits configured ratio once');
+  key(divider,'End');assert(near(split.getState().ratio,.8),'End max');
+  key(divider,'Home');assert(near(split.getState().ratio,.2),'Home min');
+  key(divider,vertical?'ArrowDown':'ArrowRight');assert(near(split.getState().ratio,.22),'arrow increment');
+  key(divider,vertical?'ArrowUp':'ArrowLeft');assert(near(split.getState().ratio,.2),'arrow decrement');
+  split.setRatio(.35);calls=[];
+  const r=divider.getBoundingClientRect(),x=r.left+1,y=r.top+1;
+  const before=getComputedStyle(divider,'::before').backgroundImage;
+  pointer(divider,'pointerdown',x,y);
+  assert(calls.length===0&&near(split.getState().ratio,.35),'press alone does not move/emit');
+  assert(root.classList.contains('is-dragging')&&before!==getComputedStyle(divider,'::before').backgroundImage,'drag affordance');
+  pointer(window,'pointermove',x+50,y+50,2); assert(calls.length===0,'other pointer ignored');
+  pointer(window,'pointerup',x,y,2);assert(root.classList.contains('is-dragging'),'other pointer cannot end drag');
+  pointer(window,'pointermove',x+50,y+50);
+  assert(split.getState().ratio>.35,'drag grows pane');
+  pointer(window,'pointermove',x,y);assert(near(split.getState().ratio,.35),'drag can return to origin');
+  pointer(window,'pointermove',x+2000,y+2000);assert(near(split.getState().ratio,.8),'drag clamps max');
+  pointer(window,'pointercancel');assert(!root.classList.contains('is-dragging'),'cancel clears drag');
+  split.update({initialRatio:.9,maxRatio:.6});divider=el.firstElementChild.children[1];
+  split.setRatio(.25);divider.dispatchEvent(new MouseEvent('dblclick'));
+  assert(near(split.getState().ratio,.6),'updated reset target clamps to limits');
+  split.update({disabled:true});divider=el.firstElementChild.children[1];calls=[];
+  key(divider,'Home');pointer(divider,'pointerdown');divider.dispatchEvent(new MouseEvent('dblclick'));
+  assert(divider.disabled&&calls.length===0&&near(split.getState().ratio,.6),'disabled blocks user mutations');
+  split.update({disabled:false,minRatio:.4,maxRatio:.4});divider=el.firstElementChild.children[1];
+  assert(divider.disabled&&near(split.getState().ratio,.4),'fixed ratio is static');
+  split.update({minRatio:.2,maxRatio:.8});divider=el.firstElementChild.children[1];
+  document.body.style.cursor='crosshair';document.body.style.userSelect='text';
+  pointer(divider,'pointerdown'); split.update({chrome:false});calls=[];
+  pointer(window,'pointermove',300,300);
+  assert(calls.length===0&&document.body.style.cursor==='crosshair'&&document.body.style.userSelect==='text','update cancels/restores active drag');
+  divider=el.firstElementChild.children[1];pointer(divider,'pointerdown');split.destroy();calls=[];
+  pointer(window,'pointermove',400,400);pointer(window,'pointerup');
+  assert(!el.children.length&&calls.length===0&&document.body.style.cursor==='crosshair','destroy cancels listeners/restores styles');
+  document.body.style.cursor='';document.body.style.userSelect='';el.remove();
+}
+const el=host(),nested=document.createElement('div');nested.style.height='100%';
+const outer=createSplitter(el,{chrome:false,panePadding:0,paneB:nested});
+const inner=createSplitter(nested,{chrome:false,orientation:'vertical',initialRatio:.3});
+inner.setRatio(.7);nested.firstElementChild.children[1].dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
+assert(near(inner.getState().ratio,.3)&&near(outer.getState().ratio,.5),'nested reset isolated');
+inner.destroy();outer.destroy();el.remove();
+// Keep a real fixture for pointer/hover/focus browser checks.
+const fixture=host();fixture.id='fixture';window.splitterChanges=[];
+window.splitterFixture=createSplitter(fixture,{chrome:false,initialRatio:.35,paneA:'Pane A',paneB:'Pane B',onResize:r=>window.splitterChanges.push(r)});
+document.body.dataset.status=failures.length?'fail':'pass';
+document.getElementById('results').textContent=failures.length?`FAIL\n${failures.join('\n')}`:`PASS: ${checks} checks (${bundled?'bundle':'source'})`;
+</script>

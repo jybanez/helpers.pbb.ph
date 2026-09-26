@@ -106,7 +106,9 @@
         { factory: "<code>createSplitter(container, options)</code>", arguments: "container and splitter options", returns: "Splitter instance" }
       ],
       methods: [
-        { method: "<code>setSizes(sizes)</code>", arguments: "pane size array", returns: "<code>void</code>" },
+        { method: "<code>setRatio(ratio, { emit })</code>", arguments: "pane A ratio, optional callback emission", returns: "<code>void</code>" },
+        { method: "<code>update(options)</code>", arguments: "splitter options including initialRatio and disabled", returns: "<code>void</code>" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "ratio and options" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
@@ -121,6 +123,7 @@
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Splitter Demo</h1>
+      <p>Drag the transparent area around a divider, or focus it and use Arrow/Home/End keys. Double-click to restore its configured initial ratio. The nested example includes chrome: false. See <a href="../docs/splitter.md">splitter API notes</a>.</p>
     </section>
     <section class="panel">
       <h2 class="ui-title">Horizontal</h2>

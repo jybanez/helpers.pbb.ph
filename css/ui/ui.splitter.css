@@ -15,7 +15,7 @@
 }
 
 .ui-splitter--horizontal {
-  grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
 }
 
 .ui-splitter--chromeless {
@@ -27,7 +27,7 @@
 }
 
 .ui-splitter--vertical {
-  grid-template-rows: minmax(0, 1fr) 8px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 24px minmax(0, 1fr);
 }
 
 .ui-splitter-pane {
@@ -47,44 +47,69 @@
 }
 
 .ui-splitter-divider {
+  position: relative;
   box-sizing: border-box;
-  border: 1px solid var(--ui-border-strong, #344769);
+  border: 0;
+  border-radius: 0;
+  margin: 0;
   padding: 0;
-  width: 8px;
-  min-width: 8px;
+  width: 24px;
+  min-width: 24px;
   height: 100%;
-  background: linear-gradient(180deg, var(--ui-splitter-divider-edge), var(--ui-splitter-divider-core));
+  background: transparent;
   cursor: col-resize;
   touch-action: none;
   user-select: none;
 }
 
-.ui-splitter-divider:hover,
-.ui-splitter-divider:focus-visible,
-.ui-splitter.is-dragging > .ui-splitter-divider,
-.ui-splitter-divider:active {
+.ui-splitter-divider::before {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+  inset: 0 calc(50% - 4px);
+  border: 1px solid var(--ui-border-strong, #344769);
+  background: linear-gradient(180deg, var(--ui-splitter-divider-edge), var(--ui-splitter-divider-core));
+  pointer-events: none;
+}
+
+.ui-splitter-divider:enabled:hover::before,
+.ui-splitter-divider:enabled:focus-visible::before,
+.ui-splitter.is-dragging > .ui-splitter-divider::before,
+.ui-splitter-divider:enabled:active::before {
   border-color: color-mix(in srgb, var(--ui-accent, #6f9cff) 58%, var(--ui-border-strong, #344769));
   background: linear-gradient(180deg, var(--ui-splitter-divider-active-edge), var(--ui-splitter-divider-active-core));
 }
 
 .ui-splitter-divider:focus-visible {
   outline: 2px solid var(--ui-accent, #6f9cff);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+.ui-splitter-divider:disabled {
+  cursor: default;
 }
 
 .ui-splitter--vertical > .ui-splitter-divider {
   width: 100%;
   min-width: 0;
-  height: 8px;
-  background: linear-gradient(90deg, var(--ui-splitter-divider-edge), var(--ui-splitter-divider-core));
+  height: 24px;
   cursor: row-resize;
 }
 
-.ui-splitter--vertical > .ui-splitter-divider:hover,
-.ui-splitter--vertical > .ui-splitter-divider:focus-visible,
-.ui-splitter--vertical.is-dragging > .ui-splitter-divider,
-.ui-splitter--vertical > .ui-splitter-divider:active {
+.ui-splitter--vertical > .ui-splitter-divider::before {
+  inset: calc(50% - 4px) 0;
+  background: linear-gradient(90deg, var(--ui-splitter-divider-edge), var(--ui-splitter-divider-core));
+}
+
+.ui-splitter--vertical > .ui-splitter-divider:enabled:hover::before,
+.ui-splitter--vertical > .ui-splitter-divider:enabled:focus-visible::before,
+.ui-splitter--vertical.is-dragging > .ui-splitter-divider::before,
+.ui-splitter--vertical > .ui-splitter-divider:enabled:active::before {
   background: linear-gradient(90deg, var(--ui-splitter-divider-active-edge), var(--ui-splitter-divider-active-core));
+}
+
+.ui-splitter--vertical > .ui-splitter-divider:disabled {
+  cursor: default;
 }
 
 .ui-splitter-empty {
