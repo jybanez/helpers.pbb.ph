@@ -6,6 +6,7 @@ export function createTabs(container, options = {}) {
   const tabs = Array.isArray(options.tabs) ? options.tabs : [];
   const onChange = typeof options.onChange === "function" ? options.onChange : null;
   const fragmentChildren = new WeakMap();
+  let variant = normalizeVariant(options.variant);
   let activeId = String(options.activeId ?? tabs[0]?.id ?? "");
   const tabsetId = `ui-tabs-${Math.random().toString(36).slice(2, 10)}`;
   let root = null;
@@ -50,7 +51,7 @@ export function createTabs(container, options = {}) {
     events.clear();
     clearNode(container);
 
-    root = createElement("div", { className: "ui-tabs" });
+    root = createElement("div", { className: `ui-tabs${variant === "attached" ? " is-attached" : ""}` });
     tablist = createElement("div", {
       className: "ui-tablist",
       attrs: { role: "tablist", "aria-label": options.ariaLabel || "Tabs" },
@@ -125,6 +126,9 @@ export function createTabs(container, options = {}) {
       return activeId;
     },
     update(nextTabs = [], nextOptions = {}) {
+      if (nextOptions.variant !== undefined) {
+        variant = normalizeVariant(nextOptions.variant);
+      }
       if (Array.isArray(nextTabs)) {
         tabs.length = 0;
         nextTabs.forEach((item) => tabs.push(item));
@@ -165,6 +169,10 @@ export function createTabs(container, options = {}) {
     }
     target.appendChild(document.createTextNode(String(value)));
   }
+}
+
+function normalizeVariant(value) {
+  return typeof value === "string" && value.trim().toLowerCase() === "attached" ? "attached" : "pill";
 }
 
 function isDocumentFragment(value) {

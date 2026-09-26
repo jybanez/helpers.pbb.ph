@@ -37,6 +37,7 @@
       defaultSampleCode: `const summary = document.createElement("div");\nsummary.textContent = "DOM node content.";\n\ncreateTabs(host, {\n  activeId: "one",\n  tabs: [\n    { id: "one", label: "Tab One", content: "Tab one content." },\n    { id: "two", label: "Tab Two", content: summary },\n    { id: "three", label: "Tab Three", render(panel) { panel.textContent = "Rendered content."; } },\n  ],\n  onChange(tab, id) {\n    writeLog("tabs.change", { id, label: tab?.label });\n  },\n});`,
       constructor: [{ factory: "<code>createTabs(container, options)</code>", arguments: "<code>container</code>, tabs <code>options</code>", returns: "Tabs instance" }],
       options: [
+        { option: "<code>variant</code>", default: "<code>pill</code>", description: "Use attached for adjacent rectangular tabs joined to the panel. Unknown values use pills. See docs/tabs.md." },
         { option: "<code>activeId</code>", default: "first tab", description: "Initial active tab id." },
         { option: "<code>tabs</code>", default: "<code>[]</code>", description: "Tab definitions with id, label, content, or render callback. <code>render(panel, tab)</code> takes precedence. <code>content</code> accepts text, DOM nodes, DocumentFragments, and arrays of nodes/text." },
         { option: "<code>onChange</code>", default: "<code>null</code>", description: "Callback when the active tab changes." }
@@ -45,7 +46,8 @@
       events: [{ event: "<code>onChange</code>", arguments: "<code>(tab, id)</code>", returns: "<code>void</code>" }],
       methods: [
         { method: "<code>setActive(id)</code>", arguments: "tab id", returns: "<code>void</code>" },
-        { method: "<code>getState()</code>", arguments: "none", returns: "Tabs state snapshot" },
+        { method: "<code>getActiveId()</code>", arguments: "none", returns: "Active tab id" },
+        { method: "<code>update(tabs, options)</code>", arguments: "new tabs; optional activeId and variant", returns: "<code>void</code>" },
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
@@ -82,6 +84,12 @@ createTabs(host, {
 });</pre>
       <pre id="log" class="log">No events yet.</pre>
     </section>
+    <section class="panel" style="min-width:0">
+      <h2 class="ui-title">Attached tabs</h2>
+      <p class="muted">Adjacent tabs share the panel edge. At narrow widths, swipe or use Arrow/Home/End keys to reveal tabs, then Enter/Space to select.</p>
+      <div id="attachedTabsHost" style="min-width:0"></div>
+      <pre>createTabs(host, { variant: "attached", tabs });</pre>
+    </section>
   </main>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
@@ -100,6 +108,13 @@ createTabs(host, {
     });
     const nodeContent = document.createElement("div");
     nodeContent.textContent = "DOM node content.";
+    createTabs(document.getElementById("attachedTabsHost"), {
+      variant: "attached",
+      ariaLabel: "Project details",
+      tabs: ["Overview", "Activity history", "Team members", "Project settings"].map(label => ({
+        id: label, label, content: `${label} content shares the selected tab background.`,
+      })),
+    });
     createTabs(document.getElementById("tabsHost"), {
       activeId: "one",
       tabs: [

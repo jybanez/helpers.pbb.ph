@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added the reusable `ui.tabs` attached variant with tokenized themes, horizontal overflow and inset focus styling; pills remain the default. Tabs and main UI bundle revision `0.21.206`; see `docs/tabs.md`.
+
 - Added opt-in native timeline disclosure: per-item and bulk APIs, accessible header toggles, responsive collapsed previews, and durable virtualized state. Timeline revision `0.21.8`, UI bundle `0.21.185`; see `docs/timeline-disclosure.md`.
 
 - Added `people.agent` as the shared small robot-style identity icon for agent badges. Bumped `UI_ICONS_REV`, `UI_BUNDLE_REV`, and `UI_GAME_BUNDLE_REV`.

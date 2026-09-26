@@ -11,7 +11,17 @@
   <div id="tabsHost"></div>
   <pre id="result">Running...</pre>
   <script type="module">
-    import { createTabs } from "../js/ui/ui.tabs.js";
+    const bundled = new URLSearchParams(location.search).has("bundle");
+    const createTabs = bundled
+      ? await (await import("../dist/helpers.ui.bundle.min.js")).uiLoader.get("ui.tabs")
+      : (await import("../js/ui/ui.tabs.js")).createTabs;
+    if (bundled) {
+      document.querySelectorAll('link[rel="stylesheet"]').forEach(link => link.remove());
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "../dist/helpers.ui.bundle.min.css";
+      await new Promise((resolve, reject) => { css.onload = resolve; css.onerror = reject; document.head.append(css); });
+    }
 
     const host = document.getElementById("tabsHost");
     const result = document.getElementById("result");
@@ -37,6 +47,7 @@
     renderNode.textContent = "Ignored content";
 
     const tabs = createTabs(host, {
+      variant: "attached",
       activeId: "text",
       tabs: [
         { id: "text", label: "Text", content: "Text content" },
@@ -98,6 +109,63 @@
 
     tabs.destroy();
     assert(host.children.length === 0, "destroy() should clear the host");
+
+    for (const variant of [undefined, "pill", "default", "unknown", null, {}, "attached", " ATTACHED "]) {
+      const attached = typeof variant === "string" && variant.trim().toLowerCase() === "attached";
+      let changes = 0;
+      const definitions = () => ["one", "two", "three", "four"].map(id => ({ id, label: `Long tab label ${id}`, content: `Content ${id}` }));
+      const instance = createTabs(host, { variant, tabs: definitions(), onChange() { changes++; } });
+      const buttons = () => [...host.querySelectorAll('[role="tab"]')];
+      const key = (index, value) => buttons()[index].dispatchEvent(new KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true }));
+      assert(host.firstElementChild.classList.contains("is-attached") === attached, `variant normalization: ${String(variant)}`);
+      assert(host.querySelector('[role="tablist"]'), "tablist role is preserved");
+      assert(buttons()[0].getAttribute("aria-selected") === "true" && buttons()[0].tabIndex === 0 && buttons().slice(1).every(b => b.tabIndex === -1), "selected state and roving tab stop preserved");
+      buttons()[0].focus();
+      key(0, "ArrowRight");
+      assert(document.activeElement === buttons()[1] && instance.getActiveId() === "one", "Right moves focus without selecting");
+      key(1, "ArrowLeft");
+      assert(document.activeElement === buttons()[0], "Left moves focus");
+      key(0, "End");
+      assert(document.activeElement === buttons()[3], "End focuses last tab");
+      key(3, "Home");
+      assert(document.activeElement === buttons()[0], "Home focuses first tab");
+      key(0, "ArrowLeft");
+      assert(document.activeElement === buttons()[0], "Left clamps at first tab");
+      key(1, "Enter");
+      assert(instance.getActiveId() === "two" && changes === 1, "Enter selects and emits once");
+      key(2, " ");
+      assert(instance.getActiveId() === "three" && changes === 2, "Space selects and emits once");
+      const selected = buttons()[2];
+      const panel = host.querySelector('[role="tabpanel"]');
+      assert(selected.getAttribute("aria-controls") === panel.id && panel.getAttribute("aria-labelledby") === selected.id, "panel and selected tab ARIA references match");
+      assert(selected.tabIndex === 0 && selected.getAttribute("aria-selected") === "true" && buttons().filter(b => b.tabIndex === 0).length === 1, "selection updates the single tab stop");
+      if (attached) {
+        host.style.cssText = "display:grid;width:220px";
+        for (const theme of ["dark", "light"]) {
+          host.dataset.theme = theme;
+          const list = host.querySelector('[role="tablist"]');
+          const activeStyle = getComputedStyle(selected);
+          const panelStyle = getComputedStyle(panel);
+          assert(activeStyle.backgroundColor === panelStyle.backgroundColor && activeStyle.borderBottomColor === panelStyle.backgroundColor, `${theme}: active tab has seamless panel background`);
+          assert(panelStyle.borderTopWidth === "0px" && Math.abs(list.getBoundingClientRect().bottom - panel.getBoundingClientRect().top) < 1, `${theme}: no gap at shared edge`);
+          assert(list.scrollWidth > list.clientWidth && list.clientWidth <= 220 && host.firstElementChild.getBoundingClientRect().width <= 220, `${theme}: narrow list overflows without expanding grid`);
+          buttons()[0].blur();
+          list.scrollLeft = list.scrollWidth;
+          assert(list.scrollLeft > 0, "overflowed tabs are scrollable");
+          buttons()[0].focus();
+          assert(list.scrollLeft < 10, "keyboard focus reveals clipped first tab");
+        }
+        host.style.cssText = "";
+        delete host.dataset.theme;
+      }
+      instance.update(definitions());
+      assert(host.firstElementChild.classList.contains("is-attached") === attached, "update preserves variant when omitted");
+      instance.update(definitions(), { variant: "attached" });
+      assert(host.firstElementChild.classList.contains("is-attached"), "update can select attached variant");
+      instance.update(definitions(), { variant: "invalid" });
+      assert(!host.firstElementChild.classList.contains("is-attached"), "update unknown variant restores pills");
+      instance.destroy();
+    }
 
     if (failures.length) {
       document.body.dataset.status = "fail";
