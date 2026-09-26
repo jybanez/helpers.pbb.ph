@@ -1,4 +1,4 @@
-import { ICON_DEFINITIONS } from "./ui.icons.catalog.js?v=0.21.122";
+import { ICON_DEFINITIONS } from "./ui.icons.catalog.js?v=0.21.208";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const definitions = new Map(Object.entries(ICON_DEFINITIONS));

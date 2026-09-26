@@ -87,6 +87,12 @@
       <p class="muted"><a href="../docs/ui-icon-packs.md">Pack setup and usage guide</a> · <a href="../docs/icon-packs-sources.json">Artwork sources and versions</a>. Brand marks remain their owners' trademarks; file-format artwork is original Helper artwork.</p>
     </section>
     <section class="panel">
+      <h2 class="ui-title">Add integration</h2>
+      <p class="muted">A plug and add mark for creating external-system connections. Core icon key: <code>actions.integration-add</code>.</p>
+      <div id="integrationPreview" class="row"></div>
+      <pre>createIcon("actions.integration-add", { size: 16 }); // beside “Add integration” menu text</pre>
+    </section>
+    <section class="panel">
       <h2 class="ui-title">Curated Icon Pack</h2>
       <p class="muted">This catalog is generated from the live registry, so new shared icons appear here automatically as the pack expands.</p>
       <div class="row">
@@ -126,6 +132,12 @@ document.getElementById("your-icon-host").append(attachment, github, claude, unk
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     const groupsHost = document.getElementById("iconGroups");
+    for (const size of [16, 20, 24]) {
+      const sample = document.createElement("span");
+      sample.style.cssText = "display:inline-flex;align-items:center;gap:8px;padding:8px";
+      sample.append(createIcon("actions.integration-add", { size }), `Add integration · ${size}px`);
+      document.getElementById("integrationPreview").append(sample);
+    }
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
