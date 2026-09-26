@@ -10,6 +10,16 @@
     .page { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
     .panel { border: 1px solid var(--demo-border, var(--ui-border, #263146)); border-radius: 10px; background: var(--demo-panel-bg, var(--ui-bg-soft, #111826)); padding: 14px; display: grid; gap: 10px; }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .panel, .page, .multi-column-workspace > div { min-width: 0; }
+    .playground-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .playground-controls label { display: flex; gap: 6px; align-items: center; }
+    .playground-controls select { padding: 6px; background: var(--ui-bg-soft); color: var(--ui-text); border: 1px solid var(--ui-border-strong); border-radius: 6px; }
+    #hostPlayground { height: 320px; min-width: 0; background: repeating-conic-gradient(var(--ui-bg) 0% 25%, var(--ui-bg-soft) 0% 50%) 0 / 24px 24px; }
+    #hostPlayground > .ui-splitter { height: 100%; box-sizing: border-box; }
+    .playground-content { overflow-wrap: anywhere; }
+    .playground-content input { box-sizing: border-box; width: 100%; max-width: 240px; }
+    .playground-state { font-variant-numeric: tabular-nums; color: var(--ui-muted); }
+    @media (max-width: 700px) { .multi-column-workspace { grid-template-columns: minmax(0, 1fr); } }
     .back { color: var(--demo-link, var(--ui-accent, #8db5ff)); text-decoration: none; font-size: 13px; }
     #hostHorizontal, #hostVertical, #hostMultiColumn {
       border: 1px solid var(--demo-border, var(--ui-border, #2b3750));
@@ -105,6 +115,15 @@
       constructor: [
         { factory: "<code>createSplitter(container, options)</code>", arguments: "container and splitter options", returns: "Splitter instance" }
       ],
+      options: [
+        { option: "<code>orientation</code>", default: "horizontal", description: "Left/right panes, or vertical for top/bottom." },
+        { option: "<code>chrome</code>", default: "true", description: "Set false for a transparent, borderless container." },
+        { option: "<code>initialRatio</code>", default: "0.5", description: "Starting pane A share and double-click reset destination." },
+        { option: "<code>minRatio / maxRatio</code>", default: "0.2 / 0.8", description: "Resize limits; equal values make the divider static." },
+        { option: "<code>disabled</code>", default: "false", description: "Disables pointer and keyboard resizing while retaining the layout." },
+        { option: "<code>panePadding</code>", default: "null", description: "Optional padding in pixels; null keeps stylesheet defaults." },
+        { option: "<code>onResize</code>", default: "null", description: "Receives (ratio, state) after user resizing or double-click reset." }
+      ],
       methods: [
         { method: "<code>setRatio(ratio, { emit })</code>", arguments: "pane A ratio, optional callback emission", returns: "<code>void</code>" },
         { method: "<code>update(options)</code>", arguments: "splitter options including initialRatio and disabled", returns: "<code>void</code>" },
@@ -124,6 +143,25 @@
       </div>
       <h1 class="ui-title">Splitter Demo</h1>
       <p>Drag the transparent area around a divider, or focus it and use Arrow/Home/End keys. Double-click to restore its configured initial ratio. The nested example includes chrome: false. See <a href="../docs/splitter.md">splitter API notes</a>.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Interactive playground</h2>
+      <p>Try the transparent layout over the checkerboard. Grab beside the slim divider, use Arrow/Home/End keys, or double-click to reset. Pane controls stay clickable.</p>
+      <div class="playground-controls">
+        <label>Direction <select id="playDirection"><option value="horizontal">Left / right</option><option value="vertical">Top / bottom</option></select></label>
+        <label>Reset ratio <select id="playDefault"><option value="0.35">35 / 65</option><option value="0.5">50 / 50</option><option value="0.65">65 / 35</option></select></label>
+        <label><input id="playChrome" type="checkbox"> Container chrome</label>
+        <label><input id="playDisabled" type="checkbox"> Disable resizing</label>
+        <label><input id="playStatic" type="checkbox"> Lock at 50 / 50</label>
+      </div>
+      <div class="row">
+        <button id="playReset" class="ui-button" type="button">Reset panes</button>
+        <button id="playMinimum" class="ui-button" type="button">Minimum</button>
+        <button id="playMaximum" class="ui-button" type="button">Maximum</button>
+      </div>
+      <output id="playState" class="playground-state"></output>
+      <div id="hostPlayground"></div>
+      <details><summary>Current configuration</summary><pre id="playCode" class="sample-code"></pre></details>
     </section>
     <section class="panel">
       <h2 class="ui-title">Horizontal</h2>
@@ -178,6 +216,7 @@ createSplitter(nestedHost, {
     </section>
     <section class="panel">
       <h2 class="ui-title">Event Log</h2>
+      <button id="clearLog" class="ui-button" type="button">Clear log</button>
       <pre id="log" class="log">No events yet.</pre>
     </section>
   </main>
@@ -191,8 +230,43 @@ createSplitter(nestedHost, {
     const log = document.getElementById("log");
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
+      log.textContent = (log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`).slice(0, 12000);
     }
+    document.getElementById("clearLog").addEventListener("click", () => { log.textContent = "No events yet."; });
+    const control = id => document.getElementById(id);
+    const editor = createElement("div", { className: "playground-content" });
+    editor.innerHTML = '<h3>Work pane</h3><p>Resize this pane without losing your notes.</p><label>Notes <input class="ui-input" placeholder="Type a note, then change direction"></label>';
+    const preview = createElement("div", { className: "playground-content" });
+    preview.innerHTML = '<h3>Preview pane</h3><p>The larger transparent target stays between the panes.</p><button class="ui-button" type="button">Try pane action</button><p class="action-result" aria-live="polite">No pane actions yet.</p>';
+    let actions = 0;
+    preview.querySelector("button").addEventListener("click", () => {
+      preview.querySelector(".action-result").textContent = `Pane action clicked ${++actions} times.`;
+    });
+    const playground = createSplitter(control("hostPlayground"), {
+      chrome: false, initialRatio: .35, paneA: editor, paneB: preview,
+      onResize(ratio) { showPlaygroundState(); writeLog("playground.resize", { ratio: Number(ratio.toFixed(3)) }); },
+    });
+    function showPlaygroundState() {
+      const { ratio, options } = playground.getState();
+      const locked = options.minRatio === options.maxRatio;
+      control("playState").textContent = `Pane A ${Math.round(ratio * 100)}% / Pane B ${Math.round((1 - ratio) * 100)}% · ${locked ? "Locked at 50%" : options.disabled ? "Resizing disabled" : "Limits 20–80%"} · Reset ${Math.round(options.initialRatio * 100)}%`;
+      for (const id of ["playReset", "playMinimum", "playMaximum"]) control(id).disabled = options.disabled || locked;
+      control("playCode").textContent = `createSplitter(host, ${JSON.stringify({ orientation: options.orientation, chrome: options.chrome, disabled: options.disabled, initialRatio: options.initialRatio, minRatio: options.minRatio, maxRatio: options.maxRatio }, null, 2)});`;
+    }
+    for (const id of ["playDirection", "playDefault", "playChrome", "playDisabled", "playStatic"]) {
+      control(id).addEventListener("change", () => {
+        const locked = control("playStatic").checked;
+        const options = { orientation: control("playDirection").value, chrome: control("playChrome").checked, disabled: control("playDisabled").checked, minRatio: locked ? .5 : .2, maxRatio: locked ? .5 : .8 };
+        if (id === "playDefault") options.initialRatio = Number(control(id).value);
+        playground.update(options);
+        showPlaygroundState();
+        writeLog("playground.options", options);
+      });
+    }
+    for (const [id, key] of [["playReset", "initialRatio"], ["playMinimum", "minRatio"], ["playMaximum", "maxRatio"]]) {
+      control(id).addEventListener("click", () => playground.setRatio(playground.getState().options[key], { emit: true }));
+    }
+    showPlaygroundState();
     function pane(title, body) {
       return createElement("div", {
         className: "multi-column-pane",
