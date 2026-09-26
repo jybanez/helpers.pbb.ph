@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Enlarged the splitter hit target to a reserved 24px transparent track around its existing 8px divider, added double-click reset through `onResize`, disabled/static interaction guards and active-drag cleanup. Splitter/main bundle revision `0.21.207`; see `docs/splitter.md`.
+
 - Added the reusable `ui.tabs` attached variant with tokenized themes, horizontal overflow and inset focus styling; pills remain the default. Tabs and main UI bundle revision `0.21.206`; see `docs/tabs.md`.
 
 - Added opt-in native timeline disclosure: per-item and bulk APIs, accessible header toggles, responsive collapsed previews, and durable virtualized state. Timeline revision `0.21.8`, UI bundle `0.21.185`; see `docs/timeline-disclosure.md`.

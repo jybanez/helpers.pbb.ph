@@ -5,6 +5,7 @@ const DEFAULT_OPTIONS = {
   className: "",
   panePadding: null,
   chrome: true,
+  disabled: false,
   orientation: "horizontal", // horizontal = left/right, vertical = top/bottom
   initialRatio: 0.5,
   minRatio: 0.2,
@@ -22,11 +23,17 @@ export function createSplitter(container, options = {}) {
   let divider = null;
   let paneA = null;
   let paneB = null;
+  let cancelDrag = null;
+
+  function isInteractive() {
+    return !currentOptions.disabled && currentOptions.minRatio < currentOptions.maxRatio;
+  }
 
   function render() {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    cancelDrag?.();
     events.clear();
     clearNode(container);
 
@@ -47,6 +54,8 @@ export function createSplitter(container, options = {}) {
       className: "ui-splitter-divider",
       attrs: { type: "button", "aria-label": "Resize panes" },
     });
+    divider.disabled = !isInteractive();
+    divider.title = "Drag or use arrow keys to resize; double-click to reset";
 
     setSlot(paneA, currentOptions.paneA, "Pane A");
     setSlot(paneB, currentOptions.paneB, "Pane B");
@@ -59,9 +68,15 @@ export function createSplitter(container, options = {}) {
     events.on(divider, "mousedown", startDragMouse);
     events.on(divider, "touchstart", startDragTouch, { passive: false });
     events.on(divider, "keydown", onDividerKeyDown);
+    events.on(divider, "dblclick", () => {
+      if (!isInteractive()) return;
+      cancelDrag?.();
+      setRatio(currentOptions.initialRatio, { emit: true });
+    });
   }
 
   function startDrag(event) {
+    if (!isInteractive() || event.button !== 0 || event.isPrimary === false || cancelDrag) return;
     event.preventDefault();
     try {
       if (typeof divider?.setPointerCapture === "function" && event.pointerId != null) {
@@ -74,11 +89,12 @@ export function createSplitter(container, options = {}) {
       moveEvent: "pointermove",
       endEvents: ["pointerup", "pointercancel"],
       extract: (moveEvent) => ({ x: moveEvent.clientX, y: moveEvent.clientY }),
+      pointerId: event.pointerId,
     });
   }
 
   function startDragMouse(event) {
-    if (typeof window.PointerEvent !== "undefined") {
+    if (typeof window.PointerEvent !== "undefined" || !isInteractive() || event.button !== 0 || cancelDrag) {
       return;
     }
     event.preventDefault();
@@ -90,7 +106,7 @@ export function createSplitter(container, options = {}) {
   }
 
   function startDragTouch(event) {
-    if (!event.touches || !event.touches[0]) {
+    if (typeof window.PointerEvent !== "undefined" || !isInteractive() || cancelDrag || !event.touches || !event.touches[0]) {
       return;
     }
     event.preventDefault();
@@ -106,9 +122,15 @@ export function createSplitter(container, options = {}) {
   }
 
   function beginDrag(getStartPoint, config) {
-    const rect = root.getBoundingClientRect();
+    const dragRoot = root;
+    const dragDivider = divider;
+    const vertical = currentOptions.orientation === "vertical";
+    const size = vertical ? root.clientHeight - divider.offsetHeight : root.clientWidth - divider.offsetWidth;
+    const startRatio = ratio;
+    const start = getStartPoint();
     const docEl = document.documentElement;
     const body = document.body;
+    const previousStyles = [docEl, body].filter(Boolean).map(el => ({ el, userSelect: el.style.userSelect, cursor: el.style.cursor }));
     root.classList.add("is-dragging");
     if (docEl) {
       docEl.style.userSelect = "none";
@@ -118,38 +140,37 @@ export function createSplitter(container, options = {}) {
       body.style.userSelect = "none";
       body.style.cursor = currentOptions.orientation === "vertical" ? "row-resize" : "col-resize";
     }
-    const start = getStartPoint();
-    if (start && Number.isFinite(start.x) && Number.isFinite(start.y)) {
-      const rawStart = currentOptions.orientation === "vertical"
-        ? ((start.y - rect.top) / Math.max(1, rect.height))
-        : ((start.x - rect.left) / Math.max(1, rect.width));
-      setRatio(rawStart, { emit: true });
-    }
     const onMove = (moveEvent) => {
+      if (config.pointerId !== undefined && moveEvent.pointerId !== config.pointerId) return;
       if (typeof moveEvent.preventDefault === "function") {
         moveEvent.preventDefault();
       }
       const point = config.extract(moveEvent);
-      const raw = currentOptions.orientation === "vertical"
-        ? ((point.y - rect.top) / Math.max(1, rect.height))
-        : ((point.x - rect.left) / Math.max(1, rect.width));
-      setRatio(raw, { emit: true });
+      const delta = vertical ? point.y - start.y : point.x - start.x;
+      const nextRatio = clamp(startRatio + delta / Math.max(1, size), currentOptions.minRatio, currentOptions.maxRatio);
+      if (nextRatio !== ratio) setRatio(nextRatio, { emit: true });
     };
-    const onUp = () => {
+    const onUp = (event) => {
+      if (event?.pointerId !== undefined && config.pointerId !== undefined && event.pointerId !== config.pointerId) return;
       window.removeEventListener(config.moveEvent, onMove, config.moveOptions);
+      window.removeEventListener("blur", onUp);
+      dragDivider.removeEventListener("lostpointercapture", onUp);
       for (const eventName of config.endEvents) {
         window.removeEventListener(eventName, onUp);
       }
-      root.classList.remove("is-dragging");
-      if (docEl) {
-        docEl.style.userSelect = "";
-        docEl.style.cursor = "";
+      dragRoot.classList.remove("is-dragging");
+      cancelDrag = null;
+      for (const { el, userSelect, cursor } of previousStyles) {
+        el.style.userSelect = userSelect;
+        el.style.cursor = cursor;
       }
-      if (body) {
-        body.style.userSelect = "";
-        body.style.cursor = "";
-      }
+      try {
+        if (config.pointerId !== undefined && dragDivider.hasPointerCapture?.(config.pointerId)) dragDivider.releasePointerCapture(config.pointerId);
+      } catch (_) { /* Detached dividers may already have lost capture. */ }
     };
+    cancelDrag = onUp;
+    window.addEventListener("blur", onUp);
+    dragDivider.addEventListener("lostpointercapture", onUp);
     window.addEventListener(config.moveEvent, onMove, config.moveOptions);
     for (const eventName of config.endEvents) {
       window.addEventListener(eventName, onUp);
@@ -157,6 +178,7 @@ export function createSplitter(container, options = {}) {
   }
 
   function onDividerKeyDown(event) {
+    if (!isInteractive()) return;
     const step = 0.02;
     let handled = true;
     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
@@ -184,10 +206,10 @@ export function createSplitter(container, options = {}) {
     root.style.setProperty("--ui-splitter-ratio-a", String(ratio));
     root.style.setProperty("--ui-splitter-ratio-b", String(1 - ratio));
     if (currentOptions.orientation === "vertical") {
-      root.style.gridTemplateRows = `${ratioA} 8px ${ratioB}`;
+      root.style.gridTemplateRows = `${ratioA} 24px ${ratioB}`;
       root.style.gridTemplateColumns = "";
     } else {
-      root.style.gridTemplateColumns = `${ratioA} 8px ${ratioB}`;
+      root.style.gridTemplateColumns = `${ratioA} 24px ${ratioB}`;
       root.style.gridTemplateRows = "";
     }
   }
@@ -201,6 +223,7 @@ export function createSplitter(container, options = {}) {
   }
 
   function update(nextOptions = {}) {
+    cancelDrag?.();
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
     if (Object.prototype.hasOwnProperty.call(nextOptions, "initialRatio")) {
       ratio = clamp(currentOptions.initialRatio, currentOptions.minRatio, currentOptions.maxRatio);
@@ -218,6 +241,7 @@ export function createSplitter(container, options = {}) {
   }
 
   function destroy() {
+    cancelDrag?.();
     events.clear();
     clearNode(container);
     root = null;
@@ -261,6 +285,7 @@ function normalizeOptions(options) {
   next.panePadding = typeof next.panePadding === "number" && Number.isFinite(next.panePadding) && next.panePadding >= 0
     ? next.panePadding : DEFAULT_OPTIONS.panePadding;
   next.chrome = next.chrome !== false;
+  next.disabled = next.disabled === true;
   next.orientation = String(next.orientation || "horizontal").toLowerCase() === "vertical"
     ? "vertical"
     : "horizontal";
