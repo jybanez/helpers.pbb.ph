@@ -151,6 +151,13 @@
       assert(names.includes("actions.options"), "icons registry should include actions.options");
       assert(names.includes("actions.tools"), "icons registry should include actions.tools");
       assert(names.includes("actions.integration-add"), "catalog exposes the Add integration action");
+      for (const [name, lineCount] of [["actions.integration", 2], ["actions.integration-remove", 3]]) {
+        assert(names.includes(name), `${name} is in the core catalog`);
+        const glyph = createIcon(name, { size: 16 });
+        assert(glyph.getAttribute("stroke") === "currentColor" && glyph.getAttribute("aria-hidden") === "true", `${name} inherits color and is decorative by default`);
+        assert(glyph.querySelectorAll("line").length === lineCount && glyph.querySelectorAll("path").length === 2, `${name} has the expected plug/cable and action mark`);
+        assert(createIcon(name, { ariaLabel: "Integration" }).getAttribute("aria-label") === "Integration", `${name} supports accessible naming`);
+      }
       const integrationIcon = createIcon("actions.integration-add", { size: 16 });
       assert(integrationIcon.getAttribute("stroke") === "currentColor", "integration icon inherits text color");
       assert(integrationIcon.getAttribute("width") === "16" && integrationIcon.getAttribute("viewBox") === "0 0 24 24", "integration icon uses canonical compact sizing");

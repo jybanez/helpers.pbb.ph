@@ -1,4 +1,17 @@
 export const ICON_DEFINITIONS = {
+  "actions.integration": icon("actions", [
+    path("M7 8h10v3a5 5 0 0 1-10 0V8Z"),
+    line(9, 4, 9, 8),
+    line(15, 4, 15, 8),
+    path("M12 16v3a2 2 0 0 0 2 2h2"),
+  ]),
+  "actions.integration-remove": icon("actions", [
+    path("M3 8h10v3a5 5 0 0 1-10 0V8Z"),
+    line(5, 4, 5, 8),
+    line(11, 4, 11, 8),
+    path("M8 16v3a2 2 0 0 0 2 2h2"),
+    line(14, 17, 22, 17),
+  ]),
   "actions.integration-add": icon("actions", [
     path("M3 8h10v3a5 5 0 0 1-10 0V8Z"),
     line(5, 4, 5, 8),
