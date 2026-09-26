@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `actions.integration` for participant identity and `actions.integration-remove` for detach actions; existing add artwork is unchanged. Icon/main/game revision `0.21.209`.
+
 - Added core `actions.integration-add`, a plug-and-plus action icon for external-system integrations. Icon/main/game bundle cache revision `0.21.208`; see `docs/integration-icon.md`.
 
 - Enlarged the splitter hit target to a reserved 24px transparent track around its existing 8px divider, added double-click reset through `onResize`, disabled/static interaction guards and active-drag cleanup. Splitter/main bundle revision `0.21.207`; see `docs/splitter.md`.
