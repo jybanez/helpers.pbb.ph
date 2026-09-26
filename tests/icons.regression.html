@@ -150,6 +150,14 @@
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
       assert(names.includes("actions.options"), "icons registry should include actions.options");
       assert(names.includes("actions.tools"), "icons registry should include actions.tools");
+      assert(names.includes("actions.integration-add"), "catalog exposes the Add integration action");
+      const integrationIcon = createIcon("actions.integration-add", { size: 16 });
+      assert(integrationIcon.getAttribute("stroke") === "currentColor", "integration icon inherits text color");
+      assert(integrationIcon.getAttribute("width") === "16" && integrationIcon.getAttribute("viewBox") === "0 0 24 24", "integration icon uses canonical compact sizing");
+      assert(integrationIcon.getAttribute("aria-hidden") === "true", "integration icon is decorative beside menu text");
+      const namedIntegration = createIcon("actions.integration-add", { ariaLabel: "Add integration" });
+      assert(namedIntegration.getAttribute("role") === "img" && namedIntegration.getAttribute("aria-label") === "Add integration", "standalone integration icon supports accessible naming");
+      assert(integrationIcon.querySelectorAll("path").length === 2 && integrationIcon.querySelectorAll("line").length === 4, "integration icon renders plug, cable and add mark");
       assert(names.includes("actions.lock"), "icons registry should include actions.lock");
       assert(names.includes("actions.unlock"), "icons registry should include actions.unlock");
       assert(names.includes("actions.volume"), "icons registry should include actions.volume");

@@ -1,4 +1,12 @@
 export const ICON_DEFINITIONS = {
+  "actions.integration-add": icon("actions", [
+    path("M3 8h10v3a5 5 0 0 1-10 0V8Z"),
+    line(5, 4, 5, 8),
+    line(11, 4, 11, 8),
+    path("M8 16v3a2 2 0 0 0 2 2h2"),
+    line(18, 13, 18, 21),
+    line(14, 17, 22, 17),
+  ]),
   "actions.add": icon("actions", [
     line(12, 5, 12, 19),
     line(5, 12, 19, 12),
