@@ -4,7 +4,7 @@
 <body class="demo-shell-sidebar"><link rel="stylesheet" href="../css/demo/demo.shell.css"><style>body{max-width:none;margin:0;padding:24px}.page{max-width:1100px;margin:auto}.panel{padding:14px;border:1px solid var(--ui-border);border-radius:10px} .fields{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}</style><main class="page"><section class="panel"><h1>Project planning</h1><p>Edit fields in place. Move work using its drag handle, or focus the handle and press Space to begin a keyboard move.</p>
 <div class="controls"><label><input id="readonly" type="checkbox"> Read-only</label><label><input id="fail" type="checkbox"> Fail next save</label><label><input id="theme" type="checkbox"> Light theme</label><span id="status" role="status">Local demo · no server requests</span></div><div id="planning"></div><h2>Last change</h2><pre id="log">No changes yet.</pre>
 </section></main><script type="module">
-import { uiLoader } from '../js/ui/ui.loader.js?v=0.21.210';
+import { uiLoader } from '../js/ui/ui.loader.js?v=0.21.211';
 await uiLoader.loadMany(['ui.reorder.groups','ui.inline.text','ui.inline.select','ui.inline.date']);
 const [createGroups,createText,createSelect,createDate]=await Promise.all(['ui.reorder.groups','ui.inline.text','ui.inline.select','ui.inline.date'].map(n=>uiLoader.get(n)));
 const data=[{id:'plan',label:'Planning',items:[{id:'scope',label:'Confirm scope',status:'open',date:'2026-10-01'},{id:'design',label:'Review designs',status:'open',date:'2026-10-03'}]},{id:'build',label:'Implementation',items:[{id:'prototype',label:'Build prototype',status:'active',date:null}]},{id:'release',label:'Release',items:[]}];
@@ -19,5 +19,5 @@ onReorder:async change=>{if(pending)return;pending=true;const before=records;rec
 document.querySelector('#readonly').onchange=e=>groupApi.update(records,{readOnly:e.target.checked});
 document.querySelector('#theme').onchange=e=>document.documentElement.dataset.theme=e.target.checked?'light':'dark';
 window.demoMeta={title:'Planning Overview',overview:'Combine grouped reordering with independent inline text, select, and date editors.',description:'Local simulated saves and rollback. Individual component pages are available in the Planning navigation group.',useWhen:['Use when tasks need editable fields and ordering across milestones.'],avoidWhen:['Keep persistence, authorization, and version conflict handling in the application.']};
-await import('../js/demo/demo.shell.js?v=0.21.210');
+await import('../js/demo/demo.shell.js?v=0.21.211');
 </script></body></html>

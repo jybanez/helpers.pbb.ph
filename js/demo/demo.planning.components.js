@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.210";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.211";
 
 const kind = document.body.dataset.component;
 const reorder = kind === "reorder.groups";
@@ -46,4 +46,4 @@ if (reorder) {
   }
 }
 for (const control of [readOnly, disabled]) control.addEventListener("change", () => { const options = { readOnly: readOnly.checked, disabled: disabled.checked }; if (reorder) api.update(undefined, options); else api.update(options); });
-await import("./demo.shell.js?v=0.21.210");
+await import("./demo.shell.js?v=0.21.211");

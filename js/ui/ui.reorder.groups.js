@@ -62,6 +62,14 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
     drag.targetGroupId = groupId; drag.targetIndex = index;
     root.querySelectorAll(".is-insertion-before,.is-insertion-end").forEach(n => n.classList.remove("is-insertion-before", "is-insertion-end"));
     const candidates = group.items.filter(i => i.id !== drag.id);
+    if (!drag.placeholder) {
+      drag.placeholder = createElement("div", { className: "ui-reorder-placeholder", attrs: { "aria-hidden": "true" } });
+      drag.placeholder.style.height = `${rows.get(drag.id).node.getBoundingClientRect().height}px`;
+    }
+    const list = sections.get(groupId).list;
+    const before = candidates[index] ? rows.get(candidates[index].id).node : null;
+    if (drag.placeholder.parentNode !== list || drag.placeholder.nextSibling !== before) list.insertBefore(drag.placeholder, before);
+    sections.forEach((s, id) => { s.empty.hidden = id === groupId || groups.find(g => g.id === id).items.length > 0; });
     if (candidates[index]) rows.get(candidates[index].id).node.classList.add("is-insertion-before");
     else sections.get(groupId).section.classList.add("is-insertion-end");
     live.textContent = `Move to ${group.label || group.id}, position ${index + 1}.`;
@@ -69,6 +77,8 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
   function finish(commit) {
     if (!drag) return false;
     const d = drag; drag = null;
+    d.ghost?.remove(); d.placeholder?.remove();
+    sections.forEach((s, id) => { s.empty.hidden = groups.find(g => g.id === id).items.length > 0; });
     const record = rows.get(d.id);
     record?.node.classList.remove("is-picked-up"); record?.handle.setAttribute("aria-pressed", "false");
     root.querySelectorAll(".is-insertion-before,.is-insertion-end").forEach(n => n.classList.remove("is-insertion-before", "is-insertion-end"));
@@ -101,6 +111,20 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
   function pointerStart(e, id) {
     if (e.button !== 0 || e.isPrimary === false || !start(id, "pointer")) return;
     e.preventDefault(); drag.pointerId = e.pointerId;
+    const row = rows.get(id).node, rect = row.getBoundingClientRect();
+    const ghost = row.cloneNode(true);
+    ghost.classList.add("ui-reorder-ghost"); ghost.classList.remove("is-picked-up");
+    ghost.inert = true; ghost.setAttribute("aria-hidden", "true");
+    for (const node of [ghost, ...ghost.querySelectorAll("*")]) {
+      for (const attr of ["id", "name", "data-item-id", "aria-describedby", "aria-controls", "aria-labelledby"]) node.removeAttribute(attr);
+    }
+    const style = host.ownerDocument.defaultView.getComputedStyle(row);
+    for (const property of style) if (property.startsWith("--ui-")) ghost.style.setProperty(property, style.getPropertyValue(property));
+    ghost.style.font = style.font; ghost.style.color = style.color;
+    ghost.style.width = `${rect.width}px`;
+    drag.ghost = ghost; drag.offsetX = e.clientX - rect.left; drag.offsetY = e.clientY - rect.top;
+    host.ownerDocument.body.appendChild(ghost);
+    positionGhost(e);
     rows.get(id).handle.focus({ preventScroll: true });
     rows.get(id).handle.setPointerCapture?.(e.pointerId);
     const doc = host.ownerDocument;
@@ -109,12 +133,25 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
   }
   function pointerMove(e) {
     if (!drag || e.pointerId !== drag.pointerId) return;
-    e.preventDefault(); const hit = host.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest(".ui-reorder-group");
-    if (!hit || !root.contains(hit)) { drag.overTarget = false; return; }
+    e.preventDefault(); positionGhost(e);
+    const hit = host.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest(".ui-reorder-group");
+    if (!hit || !root.contains(hit) || groups.find(g => g.id === hit.dataset.groupId)?.disabled) {
+      drag.overTarget = false; drag.placeholder?.remove();
+      sections.forEach((s, id) => { s.empty.hidden = groups.find(g => g.id === id).items.length > 0; });
+      root.querySelectorAll(".is-insertion-before,.is-insertion-end").forEach(n => n.classList.remove("is-insertion-before", "is-insertion-end"));
+      return;
+    }
     const g = groups.find(g => g.id === hit.dataset.groupId); drag.overTarget = !g.disabled;
+    const gap = drag.placeholder?.getBoundingClientRect();
+    if (drag.placeholder?.isConnected && hit.dataset.groupId === drag.targetGroupId && e.clientY >= gap.top && e.clientY <= gap.bottom) return;
     const candidates = g.items.filter(i => i.id !== drag.id);
     const at = candidates.findIndex(i => { const rect = rows.get(i.id).node.getBoundingClientRect(); return e.clientY < rect.top + rect.height / 2; });
     preview(g.id, at < 0 ? candidates.length : at);
+  }
+  function positionGhost(e) {
+    if (!drag?.ghost) return;
+    drag.ghost.style.left = `${e.clientX - drag.offsetX}px`;
+    drag.ghost.style.top = `${e.clientY - drag.offsetY}px`;
   }
   function pointerEnd(e) { if (drag?.pointerId === e.pointerId) finish(Boolean(drag.overTarget)); }
   function pointerCancel() { finish(false); }

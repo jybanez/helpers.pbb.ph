@@ -1,6 +1,6 @@
 # Grouped reordering and inline editors
 
-Candidate UI revision 0.21.210 adds `ui.reorder.groups`, `ui.inline.text`,
+Candidate UI revision 0.21.211 adds `ui.reorder.groups`, `ui.inline.text`,
 `ui.inline.select`, and `ui.inline.date`. Load the names with `uiLoader.loadMany`,
 then obtain their factories with `uiLoader.get`. Source imports and the main UI
 bundle provide the same API. See `demos/demo.planning.html` for a local save/failure demo.
@@ -69,8 +69,12 @@ Options: `disabled`, `readOnly`, `emptyText`, `isItemLocked(item,group)`,
 authoritative refresh/rollback, not on every keystroke. Finish/reconcile active
 edits before replacing rows. `setItemLocked` changes the item's disabled flag.
 
-Only the handle initiates pointer/touch moves. Keyboard: Space/Enter picks up or
-drops; Up/Down changes insertion position; Left/Right moves to an enabled group,
+Only the handle initiates pointer/touch moves.
+Pointer dragging displays an inert translucent copy while the original stays dimmed.
+A row-height placeholder reserves the proposed destination. Drop, cancellation,
+update, and destruction remove both previews. The slim borderless handle highlights
+on hover, keyboard focus, or pickup, retaining a larger touch target.
+Keyboard: Space/Enter picks up or drops; Up/Down changes insertion position; Left/Right moves to an enabled group,
 including an empty group; Escape cancels. Feedback and a live announcement expose
 the insertion target. Each item remains a list item with independent controls.
 Inline editor `ui:inline-state` events and `data-inline-active` suspend dragging
