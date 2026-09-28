@@ -12,7 +12,7 @@ export const createInlineDate = (host, options = {}) => createInline(host, optio
 function createInline(host, options, kind) {
   if (!host?.appendChild) throw new TypeError("Inline editor requires a host element.");
   let opts = { label: "Value", value: null, placeholder: "Not set", valueMode: "wall-clock", showTime: false, ...options };
-  let value = opts.value, draft = value, phase = "view", error = "", destroyed = false, generation = 0, control = null, input = null;
+  let value = opts.value, draft = value, phase = "view", error = "", destroyed = false, generation = 0, control = null, input = null, interactionLocked = false;
   const root = createElement("div", { className: `ui-inline ui-inline-${kind}` });
   const view = createElement("button", { className: "ui-inline-view", attrs: { type: "button" } });
   const editor = createElement("div", { className: "ui-inline-editor" });
@@ -29,7 +29,7 @@ function createInline(host, options, kind) {
   root.append(view, editor); host.appendChild(root);
   const target = () => field.querySelector("input,textarea,button");
   const active = () => phase !== "view";
-  const locked = () => opts.disabled || opts.readOnly || opts.readonly;
+  const locked = () => interactionLocked || opts.disabled || opts.readOnly || opts.readonly;
   function display() {
     if (typeof opts.formatValue === "function") return opts.formatValue(value);
     if (value == null || value === "") return opts.placeholder;
@@ -44,15 +44,15 @@ function createInline(host, options, kind) {
     view.textContent = display(); view.disabled = Boolean(opts.disabled);
     view.setAttribute("aria-label", `${opts.label}: ${display()}${locked() ? "" : ". Edit"}`);
     view.setAttribute("aria-disabled", String(Boolean(locked())));
-    saveButton.disabled = cancelButton.disabled = phase === "saving";
-    field.inert = phase === "saving";
+    saveButton.disabled = cancelButton.disabled = phase === "saving" || interactionLocked;
+    field.inert = phase === "saving" || interactionLocked;
     status.textContent = phase === "saving" ? "Saving…" : "";
     setFieldError(target(), feedback, error);
     root.dispatchEvent(new CustomEvent("ui:inline-state", { bubbles: true, detail: getState() }));
     opts.onStateChange?.(getState());
   }
   function changed(next) {
-    if (phase === "saving" || destroyed) return;
+    if (phase === "saving" || interactionLocked || destroyed) return;
     draft = next; error = ""; phase = "edit";
     // Canonical select/date controls rerender their trigger after onChange.
     queueMicrotask(() => { if (!destroyed && active()) sync(); });
@@ -75,7 +75,7 @@ function createInline(host, options, kind) {
     sync(); target()?.focus(); return true;
   }
   function cancel() {
-    if (destroyed || !active() || phase === "saving") return false;
+    if (destroyed || !active() || phase === "saving" || interactionLocked) return false;
     generation++; control?.destroy(); control = null; field.replaceChildren(); phase = "view"; draft = value; error = ""; sync(); view.focus(); return true;
   }
   function validate(next) {
@@ -126,6 +126,14 @@ function createInline(host, options, kind) {
     opts = { ...opts, ...next }; if (Object.hasOwn(next, "value")) value = next.value;
     draft = value; phase = "view"; error = ""; sync();
   }
+  root.addEventListener("ui:interaction-lock", event => {
+    const next = Boolean(event.detail?.locked);
+    if (interactionLocked === next || destroyed) return;
+    interactionLocked = next;
+    // Close any portaled control, retaining the inline editor and selected draft.
+    if (next && control?.getState().open) { draft = control.getValue(); mount(); }
+    sync();
+  });
   view.addEventListener("click", edit); saveButton.addEventListener("click", save); cancelButton.addEventListener("click", cancel);
   root.addEventListener("keydown", e => {
     if (e.key === "Escape" && active() && !control?.getState().open) { e.preventDefault(); e.stopPropagation(); cancel(); }

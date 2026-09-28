@@ -1,4 +1,4 @@
-export function mountGuide({ kind, create, api, factoryName }) {
+export function mountGuide({ kind, create, api, factoryName, createText }) {
   const reorder = kind === "reorder.groups";
   const page = document.querySelector("main.page");
   const el = (tag, text, className) => { const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node; };
@@ -55,14 +55,59 @@ export function mountGuide({ kind, create, api, factoryName }) {
     const label = el("label"), toggle = el("input"); toggle.type = "checkbox"; toggle.checked = true; toggle.onchange = () => board.setItemLocked("locked", toggle.checked); label.append(toggle, " Lock second item"); gallery.append(label);
     sample(gallery, `const board = createReorderGroups(host, ${JSON.stringify(groups, null, 2)}, {\n  emptyText: "Move ready work here",\n  onReorder(change) { console.log(change); }\n});\nboard.setItemLocked("locked", false);`);
   }
+  if (reorder) {
+    const recipe = section("Editable milestones and group ordering");
+    recipe.append(el("p", "Move a milestone using its header grip, or edit its title. A group containing an active editor cannot be moved. The simulated request locks the board for 900ms without rebuilding any editors."));
+    const target = el("div"), events = el("pre", "No group moves yet.", "log");
+    let board;
+    const saveOrder = async change => {
+      board.setInteractionLocked(true); events.textContent = "Saving order...";
+      await new Promise(resolve => setTimeout(resolve, 900));
+      board.setInteractionLocked(false); events.textContent = JSON.stringify(change, null, 2);
+    };
+    board = create(target, [
+      { id: "discover", label: "Discovery", items: [{ id: "interview", label: "Interview users" }] },
+      { id: "ship", label: "Delivery", items: [{ id: "publish", label: "Publish release" }] }
+    ], {
+      reorderGroups: true,
+      renderGroupHeader(host, group) {
+        const editor = createText(host, { label: "Milestone title", value: group.label, onSave: value => { board.setGroupLabel(group.id, value); } });
+        return () => editor.destroy();
+      }, onGroupReorder: saveOrder, onReorder: saveOrder
+    });
+    instances.push(board);
+    const lock = el("button", "Simulate pending request (900ms)"); lock.type = "button";
+    lock.onclick = async () => { if (board.getState().interactionLocked) return; lock.disabled = true; board.setInteractionLocked(true); await new Promise(resolve => setTimeout(resolve, 900)); board.setInteractionLocked(false); lock.disabled = false; };
+    const controls = el("div", null, "controls"); controls.append(lock);
+    recipe.append(controls, target, events);
+    sample(recipe, `const board = createReorderGroups(host, groups, {
+  reorderGroups: true,
+  renderGroupHeader(host, group, { groupId, index }) {
+    const editor = createInlineText(host, {
+      label: "Milestone title", value: group.label,
+      async onSave(value) {
+        await saveMilestoneTitle(group.id, value);
+        board.setGroupLabel(group.id, value);
+      }
+    });
+    return () => editor.destroy();
+  },
+  onGroupReorder(change) {
+    // Application: persist change.orderedGroupIds with versions atomically.
+    console.log(change.groupId, change.fromIndex, change.toIndex);
+  }
+});
+board.setInteractionLocked(true); // preserves drafts and permission flags
+board.setInteractionLocked(false);`);
+  }
   const integration = section("Application integration");
   list(integration, reorder ? [
     "IDs: group IDs must be unique; item IDs must be globally unique across every group. IDs normalize to strings.",
     "onReorder fires after the local move with itemId, source/destination IDs and zero-based indices, previousGroups, groups, and orderedIdsByGroup. toIndex is the final index after source removal.",
-    "Persist membership and both affected order arrays atomically with server authorization and version checks. Lock during the request with update(change.groups, { disabled: true }).",
+    "Persist membership and both affected order arrays atomically with server authorization and version checks. Lock during the request with setInteractionLocked(true); unlock only after confirmation or reconciliation.",
     "On confirmed success, update with authoritative server data. On definite failure, restore previousGroups. Reconcile an uncertain outcome before allowing another write; no automatic retry is provided.",
     "renderItem(host, item, { groupId }) can return a cleanup function or { destroy() }. DOM survives moves; groupId is initial mount context. update() rebuilds rows and runs cleanup.",
-    "Rows with active inline editors cannot be dragged. Custom editors should call setItemLocked. Finish active edits before refreshing the whole board."
+    "Rows with active inline editors cannot be dragged; groups containing active editors cannot be moved. Custom editors should use isItemLocked/isGroupLocked. Finish or preserve drafts before update(), which still rebuilds the whole board."
   ] : [
     "validate(value, { value: previousValue }) is synchronous: return an error string or false to reject; return true or an empty value to accept. Server validation belongs in onSave.",
     "onSave(value, { previousValue }) may return a Promise. Resolve only on confirmed success; reject with an actionable message or return false on failure. The old committed value remains until success.",
@@ -73,17 +118,18 @@ export function mountGuide({ kind, create, api, factoryName }) {
   ]);
   const meta = window.demoMeta;
   meta.methods = (reorder ? [
-    ["getState()", "none", "{ groups, dragging }; groups is a snapshot"], ["update(groups?, options?)", "replacement groups and/or options", "Rebuild rows; cancels active move and invokes cleanup"], ["setItemLocked(id, locked)", "item ID, boolean", "Update item disabled flag without rebuilding"], ["cancel()", "none", "Cancel current move"], ["destroy()", "none", "Dispose rows, previews and listeners"]
+    ["setGroupLabel(id, label)", "group ID, string", "boolean; refresh group state and accessible labels without remounting custom content"], ["setInteractionLocked(locked)", "boolean", "Suspend board interaction without rebuilding editors or clearing permission flags"], ["getState()", "none", "{ groups, dragging, interactionLocked }; groups is a snapshot"], ["update(groups?, options?)", "replacement groups and/or options", "Rebuild rows; cancels active move and invokes cleanup"], ["setItemLocked(id, locked)", "item ID, boolean", "Update item disabled flag without rebuilding"], ["cancel()", "none", "Cancel current move"], ["destroy()", "none", "Dispose rows, previews and listeners"]
   ] : [
     ["edit()", "none", "boolean: whether editing started"], ["save()", "none", "Promise<boolean>: confirmed save or false"], ["cancel()", "none", "boolean: false while saving or inactive"], ["update(options)", "partial options", "Exit editing and replace supplied options/value"], ["getValue()", "none", "Committed value (not draft)"], ["getState()", "none", "{ state, value, draft, error, active, disabled, readOnly }"], ["destroy()", "none", "Dispose editor and popup controls"]
   ]).map(([method, args, returns]) => ({ method, arguments: args, returns }));
   meta.options.push(...(reorder ? [
-    ["emptyText", "Drop an item here", "Text for an empty group."], ["isItemLocked(item, group)", "unset", "Return true to prevent pickup."], ["groups/items disabled", "false", "Disable a group or individual item."]
+    ["reorderGroups", "false", "Opt in to group handles; existing item moves remain available."], ["renderGroupHeader(host, group, context)", "plain heading", "Mount header controls; context has groupId and initial index. Return cleanup function or { destroy() }."], ["isGroupLocked(group)", "unset", "Return true to prevent group pickup."], ["emptyText", "Drop an item here", "Text for an empty group."], ["isItemLocked(item, group)", "unset", "Return true to prevent pickup."], ["groups/items disabled", "false", "Disable a group or individual item."]
   ] : [
     ["placeholder", "Not set", "Display for an empty value."], ["formatValue(value)", "built-in formatting", "Custom display text; does not change stored value."], ["onStateChange(state)", "unset", "Observe editing, saving and error states."],
     ...(kind === "inline.text" ? [["multiline", "false", "Use a textarea; Ctrl/Command+Enter saves."], ["minLength / maxLength", "unset", "Length validation before saving."]] : [])
   ]).map(([option, value, description]) => ({ option, default: value, description })));
   meta.propertiesText = reorder ? "Use getState() to inspect groups and the current insertion target. Do not mutate the returned snapshot to update the component." : "Use getState() for the full lifecycle snapshot. value is committed; draft is the current edit. The root emits bubbling ui:inline-state events for editor/reorder coordination.";
+  if (reorder) meta.events.push({ event: "onGroupReorder", arguments: "{ groupId, fromIndex, toIndex, orderedGroupIds, previousGroups, groups }", returns: "Notification after local move; application owns persistence and rollback" });
   if (!reorder) meta.events.push({ event: "onStateChange", arguments: "state snapshot", returns: "void; observation only" });
 
 }
