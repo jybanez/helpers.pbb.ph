@@ -7,7 +7,10 @@ bundle provide the same API. See `demos/demo.planning.html` for a local save/fai
 
 The shared demo navigation's Planning section also links dedicated component pages:
 `demo.reorder.groups.html`, `demo.inline.text.html`, `demo.inline.select.html`, and
-`demo.inline.date.html`. Each includes an interactive example and API reference.
+`demo.inline.date.html`. Each includes an interactive playground, live recipes with code, keyboard guidance,
+setup instructions, lifecycle and persistence notes, and method/option references.
+The overview composes the four helpers and includes an optional shared column header;
+that header is page content rather than a reorder component option.
 
 ## Inline editors
 
