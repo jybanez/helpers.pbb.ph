@@ -1,5 +1,6 @@
 import { createElement } from "./ui.dom.js";
 import { setFieldError } from "./ui.field.error.js";
+import { createIcon } from "./ui.icons.js";
 import { createSelect } from "./ui.select.js";
 import { createDatepicker } from "./ui.datepicker.js?v=0.21.204";
 import { parseCivil } from "./ui.datepicker.civil.js?v=0.21.191";
@@ -18,8 +19,10 @@ function createInline(host, options, kind) {
   const field = createElement("div", { className: "ui-inline-field" });
   const feedback = createElement("p", { attrs: { role: "alert" } });
   const status = createElement("span", { className: "ui-inline-status", attrs: { role: "status" } });
-  const saveButton = createElement("button", { className: "ui-button", text: "Save", attrs: { type: "button" } });
-  const cancelButton = createElement("button", { className: "ui-button", text: "Cancel", attrs: { type: "button" } });
+  const saveButton = createElement("button", { className: "ui-inline-action", attrs: { type: "button", "aria-label": "Save", title: "Save" } });
+  const cancelButton = createElement("button", { className: "ui-inline-action", attrs: { type: "button", "aria-label": "Cancel", title: "Cancel" } });
+  saveButton.appendChild(createIcon("actions.check"));
+  cancelButton.appendChild(createIcon("actions.close"));
   editor.append(field, feedback, saveButton, cancelButton, status);
   root.append(view, editor); host.appendChild(root);
   const target = () => field.querySelector("input,textarea,button");

@@ -5,5 +5,13 @@
 .ui-inline-editor[hidden], .ui-inline-view[hidden] { display: none; }
 .ui-inline-field { flex: 1 1 160px; min-width: 0; }
 .ui-inline-field > input, .ui-inline-field > textarea { box-sizing: border-box; width: 100%; }
+.ui-inline-field > .ui-datepicker, .ui-inline-field > .ui-select { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.ui-inline-field .ui-datepicker-trigger, .ui-inline-field .ui-select-trigger { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.ui-inline-action { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; padding: 6px; border: 0; border-radius: 5px; background: transparent; color: var(--ui-text); cursor: pointer; }
+.ui-inline-action svg { width: 18px; height: 18px; }
+.ui-inline-action:hover:not(:disabled) { background: var(--ui-bg-soft); }
+.ui-inline-action:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.ui-inline-action:disabled { opacity: .45; cursor: default; }
+@media (pointer: coarse) { .ui-inline-action { flex-basis: 44px; width: 44px; height: 44px; } }
 .ui-inline-editor > .ui-form-error { flex-basis: 100%; margin: 0; }
 .ui-inline-status { color: var(--ui-muted); font-size: 12px; }
