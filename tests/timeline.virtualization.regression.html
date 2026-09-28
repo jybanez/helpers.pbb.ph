@@ -24,7 +24,11 @@
     }
   </script>
   <script type="module">
-    import { createTimeline } from "../js/ui/ui.timeline.js?v=0.21.8";
+    const bundled = new URLSearchParams(location.search).has("bundle");
+    const { uiLoader } = await import("../js/ui/ui.loader.js?v=0.21.212");
+    uiLoader.setPreferBundles(bundled);
+    await uiLoader.load("ui.timeline");
+    const createTimeline = await uiLoader.get("ui.timeline");
 
     const host = document.getElementById("host");
     const results = document.getElementById("results");
@@ -158,6 +162,25 @@
 
     timeline.destroy();
     assert(host.childNodes.length === 0, "destroy should clear the virtual timeline");
+
+    // A bordered/padded viewport must not turn anchor restores into a scroll loop.
+    const drift = createTimeline(host, items, {
+      enableVirtualization: true, virtualThreshold: 1, virtualOverscan: 240, groupByDate: false,
+    });
+    const driftViewport = host.querySelector(".ui-timeline-viewport");
+    driftViewport.style.border = "1px solid transparent";
+    driftViewport.style.paddingTop = "7px";
+    const fractionalStyle = document.createElement("style");
+    fractionalStyle.textContent = "#host .ui-timeline-virtual-unit { height: 100.25px; box-sizing: border-box; overflow: hidden; }";
+    document.head.append(fractionalStyle);
+    await frames(5);
+    driftViewport.scrollTop = 1200;
+    await frames(8);
+    const settledTop = driftViewport.scrollTop;
+    await frames(15);
+    assert(Math.abs(driftViewport.scrollTop - settledTop) <= 1, "border, padding and fractional heights must not cause idle scroll drift");
+    drift.destroy();
+    fractionalStyle.remove();
 
     const horizontalHost = document.createElement("div");
     document.body.appendChild(horizontalHost);
