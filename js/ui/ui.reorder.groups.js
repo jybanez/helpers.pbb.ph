@@ -48,7 +48,7 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
       const result = opts.renderGroupHeader?.(content, g, { groupId: g.id, index: groups.indexOf(g) });
       if (!opts.renderGroupHeader) content.append(title);
       if (!opts.reorderGroups && !opts.renderGroupHeader) header.replaceWith(title);
-      sections.set(g.id, { section, node: section, handle, list, empty, cleanup: typeof result === "function" ? result : result?.destroy?.bind(result) });
+      sections.set(g.id, { section, node: section, handle, list, empty, title: opts.renderGroupHeader ? null : title, cleanup: typeof result === "function" ? result : result?.destroy?.bind(result) });
       for (const item of g.items) {
         const node = createElement("div", { className: "ui-reorder-row", attrs: { role: "listitem", "data-item-id": item.id } });
         const handle = createElement("button", { className: "ui-reorder-handle", text: "⠿", attrs: { type: "button", "aria-label": `Move ${item.label || item.id}`, "aria-describedby": help.id, "aria-pressed": "false" } });
@@ -70,7 +70,7 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
       const record = sections.get(g.id);
       if (previous.nextElementSibling !== record.section) root.insertBefore(record.section, previous.nextElementSibling);
       previous = record.section;
-      if (record.handle) record.handle.setAttribute("aria-label", `Move group ${g.label || g.id}, ${groupIndex + 1} of ${groups.length}`);
+      syncGroupLabel(g, groupIndex);
       const section = sections.get(g.id);
       g.items.forEach((item, index) => {
         const row = rows.get(item.id).node;
@@ -79,6 +79,21 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
       });
       section.empty.hidden = g.items.length > 0;
     }
+  }
+  function syncGroupLabel(group, index) {
+    const record = sections.get(group.id), label = group.label || group.id;
+    record.section.setAttribute("aria-label", label);
+    record.list.setAttribute("aria-label", label);
+    if (record.handle) record.handle.setAttribute("aria-label", `Move group ${label}, ${index + 1} of ${groups.length}`);
+    if (record.title) record.title.textContent = label;
+  }
+  function setGroupLabel(id, label) {
+    if (destroyed) return false;
+    const index = groups.findIndex(group => group.id === String(id));
+    if (index < 0) return false;
+    groups[index].label = String(label ?? "");
+    syncGroupLabel(groups[index], index);
+    return true;
   }
   function start(id, mode) {
     if (drag || blocked(id)) return false;
@@ -256,6 +271,7 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
   return {
     getState: () => ({ groups: snapshot(), interactionLocked, dragging: drag ? (drag.kind === "group" ? { kind: "group", groupId: drag.id, index: drag.targetIndex } : { itemId: drag.id, groupId: drag.targetGroupId, index: drag.targetIndex }) : null }),
     setInteractionLocked,
+    setGroupLabel,
     cancel: () => finish(false),
     update(nextGroups = groups, nextOptions = {}) { if (destroyed) return; const checked = normalize(nextGroups); finish(false); groups = checked; opts = { ...opts, ...nextOptions }; build(); },
     setItemLocked(id, locked) { const loc = locate(id); if (!loc) return; loc.item.disabled = Boolean(locked); syncHandles(); },

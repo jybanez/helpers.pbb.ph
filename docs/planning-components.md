@@ -149,7 +149,10 @@ const board = createReorderGroups(host, groups, {
   renderGroupHeader(slot, milestone) {
     const title = createInlineText(slot, {
       label: "Milestone title", value: milestone.label, required: true,
-      onSave: value => saveMilestoneTitle(milestone.id, value),
+      async onSave(value) {
+        await saveMilestoneTitle(milestone.id, value);
+        board.setGroupLabel(milestone.id, value);
+      },
     });
     return () => title.destroy();
   },
@@ -157,6 +160,23 @@ const board = createReorderGroups(host, groups, {
   onReorder: change => { void persistOrder("items", change); },
 });
 ```
+
+### Non-rebuilding label refresh
+
+After confirmed title persistence, call `board.setGroupLabel(groupId, label)`.
+It returns true when found, or false for an unknown group/destroyed board. IDs
+normalize to strings; null/undefined labels become empty strings, with the group
+ID used as the accessible/display fallback. This updates internal group state,
+the section and list accessible labels, the move-handle label and subsequent
+announcements/payloads. Default plain headings also update. Custom header DOM is
+application-owned: the inline editor commits its own value after onSave resolves.
+The setter does not replace custom content or invoke cleanup, reset drafts,
+change order/membership, or alter interaction/permission locks. It can therefore
+be called inside onSave after server confirmation without invalidating the save.
+If the server normalizes the displayed title, reconcile that editor's value after
+its save completes using the inline API; the label setter alone does not change
+custom editors. Do not rely on mutating the render-time group object to refresh
+component-owned labels.
 
 ### Non-rebuilding pending lock
 

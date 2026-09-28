@@ -71,7 +71,7 @@ export function mountGuide({ kind, create, api, factoryName, createText }) {
     ], {
       reorderGroups: true,
       renderGroupHeader(host, group) {
-        const editor = createText(host, { label: "Milestone title", value: group.label, onSave: value => { group.label = value; } });
+        const editor = createText(host, { label: "Milestone title", value: group.label, onSave: value => { board.setGroupLabel(group.id, value); } });
         return () => editor.destroy();
       }, onGroupReorder: saveOrder, onReorder: saveOrder
     });
@@ -83,7 +83,13 @@ export function mountGuide({ kind, create, api, factoryName, createText }) {
     sample(recipe, `const board = createReorderGroups(host, groups, {
   reorderGroups: true,
   renderGroupHeader(host, group, { groupId, index }) {
-    const editor = createInlineText(host, { label: "Milestone title", value: group.label });
+    const editor = createInlineText(host, {
+      label: "Milestone title", value: group.label,
+      async onSave(value) {
+        await saveMilestoneTitle(group.id, value);
+        board.setGroupLabel(group.id, value);
+      }
+    });
     return () => editor.destroy();
   },
   onGroupReorder(change) {
@@ -112,7 +118,7 @@ board.setInteractionLocked(false);`);
   ]);
   const meta = window.demoMeta;
   meta.methods = (reorder ? [
-    ["setInteractionLocked(locked)", "boolean", "Suspend board interaction without rebuilding editors or clearing permission flags"], ["getState()", "none", "{ groups, dragging, interactionLocked }; groups is a snapshot"], ["update(groups?, options?)", "replacement groups and/or options", "Rebuild rows; cancels active move and invokes cleanup"], ["setItemLocked(id, locked)", "item ID, boolean", "Update item disabled flag without rebuilding"], ["cancel()", "none", "Cancel current move"], ["destroy()", "none", "Dispose rows, previews and listeners"]
+    ["setGroupLabel(id, label)", "group ID, string", "boolean; refresh group state and accessible labels without remounting custom content"], ["setInteractionLocked(locked)", "boolean", "Suspend board interaction without rebuilding editors or clearing permission flags"], ["getState()", "none", "{ groups, dragging, interactionLocked }; groups is a snapshot"], ["update(groups?, options?)", "replacement groups and/or options", "Rebuild rows; cancels active move and invokes cleanup"], ["setItemLocked(id, locked)", "item ID, boolean", "Update item disabled flag without rebuilding"], ["cancel()", "none", "Cancel current move"], ["destroy()", "none", "Dispose rows, previews and listeners"]
   ] : [
     ["edit()", "none", "boolean: whether editing started"], ["save()", "none", "Promise<boolean>: confirmed save or false"], ["cancel()", "none", "boolean: false while saving or inactive"], ["update(options)", "partial options", "Exit editing and replace supplied options/value"], ["getValue()", "none", "Committed value (not draft)"], ["getState()", "none", "{ state, value, draft, error, active, disabled, readOnly }"], ["destroy()", "none", "Dispose editor and popup controls"]
   ]).map(([method, args, returns]) => ({ method, arguments: args, returns }));

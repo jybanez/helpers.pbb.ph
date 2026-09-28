@@ -34,7 +34,7 @@ const groupApi=createGroups(document.querySelector('#planning'),records,{
   ]){
    const slot=document.createElement('div');if(key==='label'){slot.setAttribute('role','heading');slot.setAttribute('aria-level','3');}grid.append(slot);
    editors.push(factory(slot,{...extra,label,value:group[key]??(key==='status'?'open':null),readOnly:document.querySelector('#readonly').checked,onSave:async value=>{
-    await persist();group[key]=value;records=records.map(g=>g.id===group.id?{...g,[key]:value}:g);note({groupId:group.id,field:key,value});
+    await persist();if(key==='label')groupApi.setGroupLabel(group.id,value);else group[key]=value;records=records.map(g=>g.id===group.id?{...g,[key]:value}:g);note({groupId:group.id,field:key,value});
    }}));
   }
   return()=>editors.forEach(editor=>editor.destroy());

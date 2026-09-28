@@ -94,6 +94,21 @@ try {
  gb.update(groupData,{readOnly:true});assert([...gh.querySelectorAll('.ui-reorder-handle')].every(n=>n.disabled),'read-only disables group and item handles');
  gb.destroy();assert(headerCleanups===headerMounts,'all group header mounts cleaned exactly once');
  const legacyHost=host();const legacy=createGroups(legacyHost,groupData);assert(!legacyHost.querySelector('.ui-reorder-group-handle') && legacyHost.querySelector('.ui-reorder-group > h3'),'default keeps legacy group headings and item-only reordering');legacy.destroy();
+ const lh=host();let renameEditor,otherEditor,renameCleanup=0,renameEvent;
+ const lb=createGroups(lh,[{id:'milestone',label:'Planning',items:[{id:'permission',disabled:true}]},{id:'other',label:'Other',items:[]}],{
+  reorderGroups:true,renderGroupHeader(el,g){const editor=createText(el,{label:'Milestone title',value:g.label,onSave:async value=>{await Promise.resolve();lb.setGroupLabel(g.id,value);}});if(g.id==='milestone')renameEditor=editor;else otherEditor=editor;return()=>{renameCleanup++;editor.destroy();};},onGroupReorder:change=>renameEvent=change
+ });
+ const labelSection=lh.querySelector('[data-group-id="milestone"]'),labelRow=lh.querySelector('[data-item-id="permission"]'),labelHeader=labelSection.querySelector('.ui-inline'),labelGrip=labelSection.querySelector('.ui-reorder-group-handle');
+ otherEditor.edit();const retainedInput=lh.querySelector('[data-group-id="other"] input');retainedInput.value='Keep draft';retainedInput.dispatchEvent(new Event('input'));
+ renameEditor.edit();labelSection.querySelector('input').value='Discovery';assert(await renameEditor.save(),'confirmed title save completes with label refresh');
+ assert(labelSection.getAttribute('aria-label')==='Discovery' && labelSection.querySelector('[role="list"]').getAttribute('aria-label')==='Discovery' && labelGrip.getAttribute('aria-label')==='Move group Discovery, 1 of 2','rename refreshes region list and move handle labels');
+ assert(lb.getState().groups[0].label==='Discovery' && renameEditor.getValue()==='Discovery','rename refreshes internal state and committed editor');
+ assert(labelSection===lh.querySelector('[data-group-id="milestone"]') && labelRow===lh.querySelector('[data-item-id="permission"]') && labelHeader===labelSection.querySelector('.ui-inline') && renameCleanup===0 && retainedInput.value==='Keep draft' && otherEditor.getState().state==='edit','rename preserves DOM editors cleanup and unrelated draft');
+ lb.setInteractionLocked(true);assert(lb.setGroupLabel('milestone','Discovery ready') && lb.getState().interactionLocked && lh.querySelector('[data-item-id="permission"] button').disabled,'label refresh preserves pending and permission locks');lb.setInteractionLocked(false);
+ key(labelGrip,' ');assert(lh.querySelector('[role="status"]').textContent.includes('Discovery ready'),'pickup announcement uses refreshed label');key(labelGrip,'ArrowDown');key(labelGrip,' ');
+ assert(renameEvent.groups[1].label==='Discovery ready' && lh.querySelector('[role="status"]').textContent.includes('Discovery ready') && labelGrip.getAttribute('aria-label')==='Move group Discovery ready, 2 of 2','drop announcement payload and position use refreshed label');
+ assert(!lb.setGroupLabel('missing','No change'),'unknown group label returns false');lb.destroy();assert(!lb.setGroupLabel('milestone','Gone') && renameCleanup===2,'destroyed label setter is inert and cleanup remains exact');
+ const plainHost=host();const plain=createGroups(plainHost,[{id:7,label:'Before',items:[]}]);assert(plain.setGroupLabel(7,'After') && plainHost.querySelector('h3').textContent==='After','plain legacy heading refreshes without group handles');plain.setGroupLabel(7,null);assert(plainHost.querySelector('h3').textContent==='7','empty group label uses ID fallback');plain.destroy();
  const lateHost=host();let lateResolve;const late=createText(lateHost,{value:'before',onSave:()=>new Promise(r=>lateResolve=r)});late.edit();lateHost.querySelector('input').value='after';const pending=late.save();late.destroy();lateResolve();assert(await pending===false && lateHost.children.length===0,'destroy ignores late mutation completion');
  t.destroy();s.destroy();d.destroy();
  document.body.dataset.status='pass'; results.textContent+=`${count} assertions passed`;
