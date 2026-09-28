@@ -337,7 +337,7 @@ export function createTimeline(container, items = [], options = {}) {
     for (const entry of entries || []) {
       const measureKey = entry.target?.dataset?.measureKey;
       if (!measureKey) continue;
-      const height = Math.max(1, Math.ceil(entry.target.getBoundingClientRect().height));
+      const height = Math.max(1, entry.target.getBoundingClientRect().height);
       if (measuredHeights.get(measureKey) !== height) {
         measuredHeights.set(measureKey, height);
         changed = true;
@@ -356,7 +356,7 @@ export function createTimeline(container, items = [], options = {}) {
       const index = Number(node.dataset.virtualIndex);
       const unit = units[index];
       if (!unit) return;
-      const height = Math.max(1, Math.ceil(node.getBoundingClientRect().height));
+      const height = Math.max(1, node.getBoundingClientRect().height);
       if (measuredHeights.get(unit.key) !== height) {
         measuredHeights.set(unit.key, height);
       }
@@ -398,8 +398,7 @@ export function createTimeline(container, items = [], options = {}) {
       if (!virtualViewport || !snapshot.anchorId || anchorRestoreToken !== token) return;
       const anchor = findVirtualItemNode(virtualViewport, snapshot.anchorId);
       if (!anchor) return;
-      const viewportRect = virtualViewport.getBoundingClientRect();
-      const delta = (anchor.getBoundingClientRect().top - viewportRect.top) - snapshot.anchorOffset;
+      const delta = (anchor.getBoundingClientRect().top - getVirtualContentOrigin(virtualViewport)) - snapshot.anchorOffset;
       if (Math.abs(delta) > 1) setVirtualScrollTop(virtualViewport.scrollTop + delta);
       layoutSnapshot = captureVirtualSnapshot();
       if (!["layout", "jump", "position", "measure"].includes(snapshot.reason)) checkReachEnd("anchor");
@@ -1118,13 +1117,19 @@ function getItemDayKey(item, timeZone) {
   }).format(new Date(item.timestamp));
 }
 
+// Offsets are relative to the scroll content, not the outer border box. Using
+// the latter feeds border/padding offsets back into every programmatic scroll.
+function getVirtualContentOrigin(viewport) {
+  return viewport.firstElementChild.getBoundingClientRect().top + viewport.scrollTop;
+}
+
 function getFirstVisibleVirtualItem(viewport) {
   const viewportRect = viewport.getBoundingClientRect();
   const nodes = Array.from(viewport.querySelectorAll(".ui-timeline-virtual-unit[data-item-id]"));
   const node = nodes.find((candidate) => candidate.getBoundingClientRect().bottom > viewportRect.top + 2);
   return node ? {
     id: node.dataset.itemId || null,
-    offset: node.getBoundingClientRect().top - viewportRect.top,
+    offset: node.getBoundingClientRect().top - getVirtualContentOrigin(viewport),
   } : null;
 }
 
