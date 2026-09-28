@@ -220,3 +220,37 @@ that a pending lock preserves drafts in another group. More concurrent products
 can retain their drafts keyed by stable IDs and restore them during reconciliation.
 Persistence, versions, transactions and uncertain-outcome handling stay outside
 Helper. The optional shared column header remains page-owned.
+
+
+## Item label refresh (0.21.214)
+
+After confirmed deliverable-title persistence, call `board.setItemLabel(itemId, label)`.
+It returns `true` for a known item and `false` for unknown IDs or a destroyed board.
+IDs normalize to strings. Null or undefined labels become an empty string; an empty
+label uses the item ID for accessible names and default visible content.
+
+This updates the stored label, Move handle name, future pickup/drop announcements,
+and subsequent reorder payload snapshots. Default row content updates in place.
+Custom renderers are not called again: their inline editor commits its own visible
+value after `onSave` resolves. Existing row/editor DOM, unrelated drafts, membership,
+order, pending interaction locks, and permission flags remain intact. No reorder
+event is emitted by a label change.
+
+```js
+renderItem(host, item) {
+  const editor = createInlineText(host, {
+    label: "Deliverable title", value: item.label,
+    async onSave(value) {
+      await saveDeliverableTitle(item.id, value);
+      board.setItemLabel(item.id, value);
+    }
+  });
+  return () => editor.destroy();
+}
+```
+
+Update application-owned records separately after confirmation. Do not use
+`board.update()` for this label-only refresh: it rebuilds the board and loses drafts.
+Keep server authorization, version checks, and uncertain-outcome reconciliation in
+the application. As with `setGroupLabel`, the setter does not persist data or change
+custom editor values on its own.
