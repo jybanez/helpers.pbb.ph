@@ -23,7 +23,9 @@ function createInline(host, options, kind) {
   const cancelButton = createElement("button", { className: "ui-inline-action", attrs: { type: "button", "aria-label": "Cancel", title: "Cancel" } });
   saveButton.appendChild(createIcon("actions.check"));
   cancelButton.appendChild(createIcon("actions.close"));
-  editor.append(field, feedback, saveButton, cancelButton, status);
+  const actions = createElement("div", { className: "ui-inline-actions" });
+  actions.append(status, saveButton, cancelButton);
+  editor.append(field, feedback, actions);
   root.append(view, editor); host.appendChild(root);
   const target = () => field.querySelector("input,textarea,button");
   const active = () => phase !== "view";
