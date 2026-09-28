@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Planning component regression</title></head><body data-status="pending"><pre id="results"></pre><div id="fixtures"></div><script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: new URLSearchParams(location.search).has('bundle') });
+const results = document.querySelector('#results'); let count = 0;
+function assert(value, message) { if (!value) throw new Error(message); count++; results.textContent += `PASS ${message}\n`; }
+const host = () => { const n = document.createElement('div'); document.querySelector('#fixtures').append(n); return n; };
+const key = (n, value) => n.dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true }));
+try {
+ const names=['ui.inline.text','ui.inline.select','ui.inline.date','ui.reorder.groups']; await loader.loadMany(names);
+ const [createText, createSelect, createDate, createGroups] = await Promise.all(names.map(n => loader.get(n)));
+ let calls=0, resolveSave; const a=host(); const t=createText(a,{label:'Title',value:'Before',required:true,onSave:()=>{calls++;return new Promise(r=>resolveSave=r);}});
+ t.edit(); const input=a.querySelector('input'); input.value=''; input.dispatchEvent(new Event('input'));
+ assert(await t.save()===false && calls===0,'required validation before save'); assert(input.getAttribute('aria-invalid')==='true','accessible invalid field');
+ input.value='After'; input.dispatchEvent(new Event('input')); const saving=t.save(); t.save(); assert(calls===1 && t.getState().state==='saving','duplicate submit blocked'); assert(t.cancel()===false,'pending mutation cannot be cancelled'); assert(t.getValue()==='Before','committed value retained during save'); resolveSave(); await saving; assert(t.getValue()==='After' && t.getState().state==='view','successful commit'); assert(document.activeElement===a.querySelector('.ui-inline-view'),'focus restored');
+ t.update({onSave:()=>Promise.reject(new Error('Version conflict. Reload before retrying.'))}); t.edit(); a.querySelector('input').value='Draft'; await t.save(); assert(t.getValue()==='After' && t.getState().draft==='Draft','failed save retains draft and prior value'); assert(t.getState().error.includes('Version conflict'),'actionable save error'); key(a.querySelector('input'),'Escape'); assert(t.getState().state==='view','Escape cancels edit');
+ t.update({disabled:true}); assert(!t.edit(),'disabled blocks edit'); t.update({disabled:false,readOnly:true}); assert(!t.edit(),'read-only blocks edit');
+ t.update({readOnly:false,onSave:()=>new Promise(r=>resolveSave=r)}); t.edit(); a.querySelector('input').value='Old request'; const stale=t.save(); t.update({value:'New context'}); resolveSave(); await stale; assert(t.getValue()==='New context','late save ignored after context update');
+ const b=host(); let selected; const s=createSelect(b,{label:'Status',value:'open',items:[{id:'open',label:'Open'},{id:'done',label:'Done'}],onSave:v=>selected=v}); s.edit(); b.querySelector('.ui-select-trigger').click(); const choice=[...document.querySelectorAll('.ui-select-option')].find(n=>n.textContent.includes('Done')); assert(Boolean(choice),'canonical select mounted'); choice.click(); await s.save(); assert(selected==='done','select saves canonical ID');
+ const c=host(); let savedDate; const d=createDate(c,{label:'Target',value:'2026-09-28',min:'2026-09-01',max:'2026-10-01',onSave:v=>savedDate=v}); d.edit(); c.querySelector('.ui-datepicker-trigger').click(); assert(!document.querySelector('.ui-datepicker-time'),'date-only has no time control'); await d.save(); assert(savedDate==='2026-09-28','date-only civil output');
+ d.update({value:'2026-10-02'}); d.edit(); assert(await d.save()===false,'date maximum enforced before save'); d.cancel(); d.update({value:'2026-09-28',disabledDates:v=>v==='2026-09-28'}); d.edit(); assert(await d.save()===false,'disabled dates validated'); d.cancel();
+ d.update({disabledDates:null,showTime:true,value:'2026-09-28T13:45:00'}); d.edit(); await d.save(); assert(savedDate==='2026-09-28T13:45:00','wall-clock date-time preserved');
+ const h=host(); let payload, inline; let cleanups=0; const groups=createGroups(h,[{id:'a',label:'First',items:[{id:'one',label:'One'},{id:'two',label:'Two'}]},{id:'b',label:'Empty',items:[]}],{onReorder:p=>payload=p,renderItem:(el,item)=>{ if(item.id==='one'){inline=createText(el,{value:'One'});return()=>{inline.destroy();cleanups++;};} el.textContent=item.label;}});
+ const handle=()=>h.querySelector('[data-item-id="one"] button'); const row=h.querySelector('[data-item-id="one"]');
+ inline.edit(); assert(handle().disabled,'inline editing locks drag handle'); inline.cancel(); assert(!handle().disabled,'cancel unlocks drag handle');
+ key(handle(),' '); key(handle(),'ArrowDown'); key(handle(),' '); assert(payload.toIndex===1 && payload.orderedIdsByGroup.a.join(',')==='two,one','keyboard within-group order'); assert(row===h.querySelector('[data-item-id="one"]'),'row identity preserved');
+ key(handle(),' '); key(handle(),'ArrowRight'); key(handle(),' '); assert(payload.toGroupId==='b' && payload.orderedIdsByGroup.b[0]==='one' && payload.orderedIdsByGroup.a[0]==='two','keyboard move into empty group with atomic payload');
+ key(handle(),' '); key(handle(),'ArrowLeft'); key(handle(),'Escape'); assert(groups.getState().groups[1].items[0].id==='one','Escape cancels movement');
+ groups.update(undefined,{readOnly:true}); assert([...h.querySelectorAll('.ui-reorder-handle')].every(n=>n.disabled),'read-only reorder'); groups.update(undefined,{readOnly:false}); groups.setItemLocked('one',true); assert(handle().disabled,'explicit row lock');
+ let duplicate=false; try{createGroups(host(),[{id:'x',items:[{id:'a'},{id:'a'}]}]);}catch{duplicate=true;} assert(duplicate,'duplicate stable IDs rejected');
+ groups.destroy(); assert(cleanups===3,'render lifecycle cleaned on rebuild and destroy');
+ const ph=host();let moves=0;const pg=createGroups(ph,[{id:'from',items:[{id:'p',label:'Pointer item'}]},{id:'to',items:[]}],{onReorder:()=>moves++});
+ const grip=ph.querySelector('.ui-reorder-handle'), empty=ph.querySelector('[data-group-id="to"]');
+ const originalHit=document.elementFromPoint.bind(document);document.elementFromPoint=()=>empty;
+ const pointer=(target,type,id=2)=>target.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:true,button:0,bubbles:true,cancelable:true,clientX:10,clientY:10}));
+ // Synthetic pointer IDs cannot acquire capture; exercise the same document handlers.
+ grip.setPointerCapture=()=>{};pointer(grip,'pointerdown');pointer(document,'pointermove');pointer(document,'pointerup');
+ assert(moves===1 && pg.getState().groups[1].items[0].id==='p','touch pointer drop into empty group');
+ pointer(grip,'pointerdown');pointer(document,'pointercancel');assert(!pg.getState().dragging && moves===1,'pointer cancellation does not commit');
+ pointer(grip,'pointerdown');key(document,'Escape');assert(!pg.getState().dragging && moves===1,'Escape cancels pointer drag');
+ pointer(grip,'pointerdown');pg.destroy();pointer(document,'pointerup');assert(moves===1,'destroy removes active pointer listeners');document.elementFromPoint=originalHit;
+ const lateHost=host();let lateResolve;const late=createText(lateHost,{value:'before',onSave:()=>new Promise(r=>lateResolve=r)});late.edit();lateHost.querySelector('input').value='after';const pending=late.save();late.destroy();lateResolve();assert(await pending===false && lateHost.children.length===0,'destroy ignores late mutation completion');
+ t.destroy();s.destroy();d.destroy();
+ document.body.dataset.status='pass'; results.textContent+=`${count} assertions passed`;
+} catch(e){document.body.dataset.status='fail';results.textContent+=e.stack;}
+</script></body></html>

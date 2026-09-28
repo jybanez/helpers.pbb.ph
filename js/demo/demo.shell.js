@@ -60,6 +60,16 @@ const DEMO_GROUPS = [
     ],
   },
   {
+    label: "Planning",
+    items: [
+      { href: "./demo.planning.html", label: "Planning Overview" },
+      { href: "./demo.reorder.groups.html", label: "Grouped Reorder" },
+      { href: "./demo.inline.text.html", label: "Inline Text" },
+      { href: "./demo.inline.select.html", label: "Inline Select" },
+      { href: "./demo.inline.date.html", label: "Inline Date" },
+    ],
+  },
+  {
     label: "Charts",
     items: [
       { href: "./demo.charts.html", label: "Summary Charts" },
