@@ -2,6 +2,12 @@
 .ui-reorder-help { color: var(--ui-muted); font-size: 12px; margin: 0; }
 .ui-reorder-group { border: 1px solid var(--ui-border); border-radius: 8px; padding: 12px; background: var(--ui-bg); }
 .ui-reorder-group h3 { margin: 0 0 10px; font-size: 14px; }
+.ui-reorder-group-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.ui-reorder-group-header h3 { margin: 6px 0; }
+.ui-reorder-group-content { flex: 1; min-width: 0; }
+.ui-reorder-group.is-picked-up > .ui-reorder-group-header,
+.ui-reorder-group.is-picked-up > .ui-reorder-list,
+.ui-reorder-group.is-picked-up > .ui-reorder-empty { opacity: .4; }
 .ui-reorder-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--ui-border); }
 .ui-reorder-content { flex: 1; min-width: 0; }
 .ui-reorder-handle { touch-action: none; cursor: grab; color: var(--ui-muted); background: transparent; border: 0; border-radius: 4px; padding: 6px 2px; width: 20px; flex: 0 0 20px; font: inherit; opacity: .4; }

@@ -1,6 +1,6 @@
 # Grouped reordering and inline editors
 
-Candidate UI revision 0.21.211 adds `ui.reorder.groups`, `ui.inline.text`,
+UI revision 0.21.211 introduced `ui.reorder.groups`, `ui.inline.text`,
 `ui.inline.select`, and `ui.inline.date`. Load the names with `uiLoader.loadMany`,
 then obtain their factories with `uiLoader.get`. Source imports and the main UI
 bundle provide the same API. See `demos/demo.planning.html` for a local save/failure demo.
@@ -88,9 +88,9 @@ for that row while editing, saving, or showing a save error. Custom editors can 
 `{itemId,fromGroupId,fromIndex,toGroupId,toIndex,orderedIdsByGroup,previousGroups,groups}`.
 Indices are zero-based, and toIndex is the final index **after removal** from the
 source. `orderedIdsByGroup` contains complete order arrays for affected groups.
-The UI applies the move immediately. Call `update` with the accepted data to lock
-reordering during persistence; restore the previous authoritative data on a definite
-failure. The component never sends requests or automatically rolls back server data.
+The UI applies the move immediately. In 0.21.213 use `setInteractionLocked(true)`
+during persistence to retain mounted editors. Reconciliation with `update` rebuilds
+content, so preserve or finish drafts before restoring authoritative data on failure. The component never sends requests or automatically rolls back server data.
 
 Persist source/destination membership and **both** affected orders in one atomic
 transaction with server authorization and optimistic concurrency/version checks.
@@ -103,3 +103,100 @@ normalization using `update`. Keep app persistence out of renderer cleanup hooks
 `tests/planning.regression.html` and `?bundle` exercise the same behavior against
 source and distributable factories. Physical touch and other browser engines require
 their own platform validation; emulated pointer events are not physical-device proof.
+
+
+## Movable, editable groups (0.21.213)
+
+Group movement is opt-in with `reorderGroups: true`. Omitted/false retains the
+existing item-only behavior and plain group headings. The new callback
+`onGroupReorder(change)` receives:
+
+```js
+{
+  groupId, fromIndex, toIndex, // zero-based final index after removal
+  orderedGroupIds,            // complete final order of every group
+  previousGroups, groups      // shallow group/item snapshots
+}
+```
+
+It fires once after a changed local drop, independently of `onReorder` for item
+moves. Neither callback awaits promises or performs requests, rollback, retries,
+or version checks. Item membership and item order are unchanged by a group move.
+Group and item IDs may overlap; IDs must still be unique within their respective
+namespaces. Disabled groups cannot be picked up or receive moved items. Moving
+another group past a disabled group may change its index; disabled is a pickup
+restriction, not a fixed-position constraint. `isGroupLocked(group)` supplies an
+additional application pickup predicate, analogous to `isItemLocked(item,group)`.
+
+Group handles use Space/Enter to pick up/drop, Up/Down for insertion position,
+and Escape to cancel. Pointer moves use the same translucent clone and reserved
+gap as item moves. Drop restores handle focus and announces the new position.
+Groups containing an active inline editor (header or item) cannot be picked up.
+Moving a different group preserves all existing DOM and drafts.
+
+`renderGroupHeader(host, group, {groupId,index})` mounts arbitrary canonical
+header components and returns a cleanup function or `{destroy()}`. Context is
+initial mount context, not live group position. Return cleanup for every mounted
+editor. This hook also works without enabling group dragging. The region/list
+keeps its accessible group label; custom header content must provide meaningful
+field labels and any desired heading semantics. `update()` rebuilds headers and
+rows and calls their cleanup once; `destroy()` disposes both. Normal moves do not
+remount either. Use current state/event payloads for current position.
+
+```js
+const board = createReorderGroups(host, groups, {
+  reorderGroups: true,
+  renderGroupHeader(slot, milestone) {
+    const title = createInlineText(slot, {
+      label: "Milestone title", value: milestone.label, required: true,
+      onSave: value => saveMilestoneTitle(milestone.id, value),
+    });
+    return () => title.destroy();
+  },
+  onGroupReorder: change => { void persistOrder("groups", change); },
+  onReorder: change => { void persistOrder("items", change); },
+});
+```
+
+### Non-rebuilding pending lock
+
+`board.setInteractionLocked(true)` cancels any active drag and makes the board
+inert/busy, disabling both kinds of handles and suspending composed inline
+Save/Cancel/edit APIs. `false` releases only this temporary lock; it never clears
+board disabled/readOnly or group/item/predicate permission restrictions. The
+value is exposed as `getState().interactionLocked`. Repeating the same value is
+idempotent. Locking does not call renderer cleanup or replace header/row/editor
+DOM. Text drafts, inline phase/errors and selected date/select drafts remain.
+An open date/select popup is closed (its transient picker may be remounted) so
+portaled choices cannot stay interactive. Closed popups do not reopen on unlock.
+Focus returns to the prior connected control when the document body still holds
+focus; the library does not take focus back from an outside control.
+
+The lock does not abort a running request. Inline save already in progress may
+complete while locked, but further saves are blocked. Arbitrary custom controls
+with external portals or their own programmatic mutation methods must honor the
+application's pending gate; inert only covers DOM descendants. Application-owned
+server validation and authorization remain mandatory. `disabled`/`readOnly` in
+`update()` retain their original behavior and do not automatically set nested
+editor options; use the explicit interaction lock for pending operations.
+
+### Reconciliation and failure
+
+Use one authorized transactional mutation for complete group order, or for
+item membership plus both affected item orders, with application-held versions.
+Catch errors in the persistence workflow: rejected callback promises are not
+handled by the board. Lock immediately before awaiting the request. On confirmed
+success update the application's authoritative records; if server normalization
+requires `board.update(...)`, first preserve or resolve unrelated drafts because
+update remains a deliberate rebuild. On a definite failure display canonical
+error feedback and restore prior authoritative records; on an uncertain result
+keep writes gated and fetch/reconcile authoritative state before unlocking.
+Never automatically replay the write.
+
+The combined demo prevents any reorder while a field draft is active using
+`isItemLocked` and `isGroupLocked`, then demonstrates async lock/unlock and safe
+failure restoration. The dedicated Grouped Reorder guide separately demonstrates
+that a pending lock preserves drafts in another group. More concurrent products
+can retain their drafts keyed by stable IDs and restore them during reconciliation.
+Persistence, versions, transactions and uncertain-outcome handling stay outside
+Helper. The optional shared column header remains page-owned.
