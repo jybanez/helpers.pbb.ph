@@ -56,7 +56,7 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
         node.append(handle, content); list.append(node);
         const result = opts.renderItem?.(content, item, { groupId: g.id });
         if (!opts.renderItem) content.textContent = item.label || item.id;
-        rows.set(item.id, { node, handle, cleanup: typeof result === "function" ? result : result?.destroy?.bind(result) });
+        rows.set(item.id, { node, handle, labelContent: opts.renderItem ? null : content, cleanup: typeof result === "function" ? result : result?.destroy?.bind(result) });
         handle.addEventListener("keydown", e => keyboard(e, item.id));
         handle.addEventListener("pointerdown", e => pointerStart(e, item.id));
       }
@@ -86,6 +86,16 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
     record.list.setAttribute("aria-label", label);
     if (record.handle) record.handle.setAttribute("aria-label", `Move group ${label}, ${index + 1} of ${groups.length}`);
     if (record.title) record.title.textContent = label;
+  }
+  function setItemLabel(id, label) {
+    if (destroyed) return false;
+    const loc = locate(id);
+    if (!loc) return false;
+    loc.item.label = String(label ?? "");
+    const record = rows.get(loc.item.id), name = loc.item.label || loc.item.id;
+    record.handle.setAttribute("aria-label", `Move ${name}`);
+    if (record.labelContent) record.labelContent.textContent = name;
+    return true;
   }
   function setGroupLabel(id, label) {
     if (destroyed) return false;
@@ -272,6 +282,7 @@ export function createReorderGroups(host, initialGroups = [], options = {}) {
     getState: () => ({ groups: snapshot(), interactionLocked, dragging: drag ? (drag.kind === "group" ? { kind: "group", groupId: drag.id, index: drag.targetIndex } : { itemId: drag.id, groupId: drag.targetGroupId, index: drag.targetIndex }) : null }),
     setInteractionLocked,
     setGroupLabel,
+    setItemLabel,
     cancel: () => finish(false),
     update(nextGroups = groups, nextOptions = {}) { if (destroyed) return; const checked = normalize(nextGroups); finish(false); groups = checked; opts = { ...opts, ...nextOptions }; build(); },
     setItemLocked(id, locked) { const loc = locate(id); if (!loc) return; loc.item.disabled = Boolean(locked); syncHandles(); },

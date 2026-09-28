@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.212";
-const UI_BUNDLE_REV = "0.21.213";
+const UI_BUNDLE_REV = "0.21.214";
 const UI_GAME_BUNDLE_REV = "0.21.209";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -49,7 +49,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createInlineDate",
   },
   "ui.reorder.groups": {
-    js: "./ui.reorder.groups.js?v=0.21.213",
+    js: "./ui.reorder.groups.js?v=0.21.214",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.reorder.groups.css?v=0.21.213"],
     deps: [],
     export: "createReorderGroups",
