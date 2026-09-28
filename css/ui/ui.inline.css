@@ -1,0 +1,9 @@
+.ui-inline { min-width: 0; color: var(--ui-text); }
+.ui-inline-view { font: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 5px; padding: 6px 8px; text-align: start; max-width: 100%; overflow-wrap: anywhere; }
+.ui-inline-view:not([aria-disabled="true"]):hover { border-color: var(--ui-border); background: var(--ui-bg-soft); cursor: pointer; }
+.ui-inline-editor { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ui-inline-editor[hidden], .ui-inline-view[hidden] { display: none; }
+.ui-inline-field { flex: 1 1 160px; min-width: 0; }
+.ui-inline-field > input, .ui-inline-field > textarea { box-sizing: border-box; width: 100%; }
+.ui-inline-editor > .ui-form-error { flex-basis: 100%; margin: 0; }
+.ui-inline-status { color: var(--ui-muted); font-size: 12px; }
