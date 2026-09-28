@@ -33,11 +33,14 @@ try {
  const originalHit=document.elementFromPoint.bind(document);document.elementFromPoint=()=>empty;
  const pointer=(target,type,id=2)=>target.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:true,button:0,bubbles:true,cancelable:true,clientX:10,clientY:10}));
  // Synthetic pointer IDs cannot acquire capture; exercise the same document handlers.
- grip.setPointerCapture=()=>{};pointer(grip,'pointerdown');pointer(document,'pointermove');pointer(document,'pointerup');
+ grip.setPointerCapture=()=>{};pointer(grip,'pointerdown');
+ assert(document.querySelector('.ui-reorder-ghost')?.inert && !document.querySelector('.ui-reorder-ghost [data-item-id]'),'drag clone is inert and has no item identity');
+ pointer(document,'pointermove');assert(Boolean(empty.querySelector('.ui-reorder-placeholder')),'drop target reserves a row-sized gap');pointer(document,'pointerup');
+ assert(!document.querySelector('.ui-reorder-ghost,.ui-reorder-placeholder'),'drop removes clone and gap');
  assert(moves===1 && pg.getState().groups[1].items[0].id==='p','touch pointer drop into empty group');
  pointer(grip,'pointerdown');pointer(document,'pointercancel');assert(!pg.getState().dragging && moves===1,'pointer cancellation does not commit');
  pointer(grip,'pointerdown');key(document,'Escape');assert(!pg.getState().dragging && moves===1,'Escape cancels pointer drag');
- pointer(grip,'pointerdown');pg.destroy();pointer(document,'pointerup');assert(moves===1,'destroy removes active pointer listeners');document.elementFromPoint=originalHit;
+ pointer(grip,'pointerdown');pg.destroy();pointer(document,'pointerup');assert(moves===1 && !document.querySelector('.ui-reorder-ghost,.ui-reorder-placeholder'),'destroy removes active pointer listeners and previews');document.elementFromPoint=originalHit;
  const lateHost=host();let lateResolve;const late=createText(lateHost,{value:'before',onSave:()=>new Promise(r=>lateResolve=r)});late.edit();lateHost.querySelector('input').value='after';const pending=late.save();late.destroy();lateResolve();assert(await pending===false && lateHost.children.length===0,'destroy ignores late mutation completion');
  t.destroy();s.destroy();d.destroy();
  document.body.dataset.status='pass'; results.textContent+=`${count} assertions passed`;
