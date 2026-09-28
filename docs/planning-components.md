@@ -5,6 +5,10 @@ Candidate UI revision 0.21.210 adds `ui.reorder.groups`, `ui.inline.text`,
 then obtain their factories with `uiLoader.get`. Source imports and the main UI
 bundle provide the same API. See `demos/demo.planning.html` for a local save/failure demo.
 
+The shared demo navigation's Planning section also links dedicated component pages:
+`demo.reorder.groups.html`, `demo.inline.text.html`, `demo.inline.select.html`, and
+`demo.inline.date.html`. Each includes an interactive example and API reference.
+
 ## Inline editors
 
 `createInlineText(host, options)`, `createInlineSelect(host, options)`, and

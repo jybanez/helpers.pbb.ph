@@ -1,0 +1,5 @@
+body { margin: 0; padding: 24px; background: var(--ui-bg, #0c1420); color: var(--ui-text, #d7e0f4); font-family: "Segoe UI", sans-serif; }
+.page { max-width: 1100px; margin: auto; display: grid; gap: 14px; }
+.panel { border: 1px solid var(--ui-border, #2b3750); border-radius: 10px; background: var(--ui-bg, #0c1420); padding: 16px; display: grid; gap: 14px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; }
+.log { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; color: var(--ui-muted); }
