@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Form select groups</title></head><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+let count=0;const results=document.querySelector('#results');const assert=(ok,msg)=>{if(!ok)throw Error(msg);count++;results.textContent+=`PASS ${msg}\n`;};
+try{
+await loader.load('ui.form.modal');const create=await loader.get('ui.form.modal');
+const options=[{label:'No deliverable',value:''},{label:'Discovery',options:[{label:'Brief',value:1},{label:'Interviews',value:2,disabled:true}]},{label:'Delivery',disabled:true,options:[{label:'Release',value:3}]},{label:'Other',value:4,disabled:true},{label:'Empty',options:[]}];
+const form=create({title:'Grouped',rows:[[{type:'select',name:'deliverable',label:'Deliverable',value:1,options}],[{type:'select',name:'flat',label:'Flat',value:'b',options:['a','b',7,{label:'Disabled',value:'x',disabled:true}]}]]});form.open();
+const select=document.querySelector('select[name="deliverable"]');
+assert([...select.children].map(n=>n.tagName).join(',')==='OPTION,OPTGROUP,OPTGROUP,OPTION,OPTGROUP','mixed standalone/group order');
+assert([...select.querySelectorAll('optgroup')].map(n=>n.label).join(',')==='Discovery,Delivery,Empty','semantic group labels and order');
+assert([...select.options].map(n=>n.value).join(',')===',1,2,3,4','child order and string values');
+assert(select.value==='1'&&form.getValues().deliverable==='1','initial value selected inside group');
+assert(select.options[2].disabled&&select.options[3].matches(':disabled')&&select.options[4].disabled,'option and inherited group disabled behavior');
+assert(!select.options[1].disabled&&!select.options[1].matches(':disabled'),'enabled child unaffected');
+form.setValues({deliverable:3});assert(select.value==='3'&&form.getValues().deliverable==='3','disabled current value preserved programmatically');
+form.setValues({deliverable:''});assert(select.value===''&&form.getValues().deliverable==='','standalone empty value preserved');
+form.setValues({deliverable:1});form.setBusy(true);form.setBusy(false);assert(select.value==='1'&&select.options[3].matches(':disabled'),'busy cycle preserves selection and option restrictions');
+const flat=document.querySelector('select[name="flat"]');assert(flat.value==='b'&&[...flat.options].map(n=>n.value).join(',')==='a,b,7,x'&&!flat.querySelector('optgroup'),'legacy flat strings numbers and objects');assert(flat.options[3].disabled,'flat disabled option respected');
+select.value='1';select.dispatchEvent(new Event('change',{bubbles:true}));assert(form.getValues().deliverable==='1','change reads canonical selected value');form.destroy();
+assert(!document.querySelector('select[name="deliverable"]'),'destroy cleans up select');
+document.body.dataset.status='pass';results.textContent+=`${count} assertions passed`;
+}catch(e){document.body.dataset.status='fail';results.textContent+=e.stack;}
+</script></body></html>
