@@ -799,15 +799,28 @@ export function createFormModal(options = {}) {
           ...(item.readonly ? { disabled: "disabled" } : {}),
         },
       });
-      normalizeOptionsList(item.options).forEach((option) => {
+      const appendOption = (parent, option) => {
         const optionEl = createElement("option", {
           text: option.label,
           attrs: { value: option.value },
         });
+        optionEl.disabled = Boolean(option.disabled);
         if (String(option.value) === String(value ?? "")) {
           optionEl.selected = true;
         }
-        control.appendChild(optionEl);
+        parent.appendChild(optionEl);
+      };
+      (Array.isArray(item.options) ? item.options : []).forEach((entry) => {
+        if (entry && Array.isArray(entry.options)) {
+          const group = createElement("optgroup", { attrs: { label: String(entry.label ?? "") } });
+          group.disabled = Boolean(entry.disabled);
+          // Native optgroups are one level deep; ignore nested groups.
+          normalizeOptionsList(entry.options.filter(child => !Array.isArray(child?.options)))
+            .forEach(option => appendOption(group, option));
+          control.appendChild(group);
+        } else {
+          normalizeOptionsList([entry]).forEach(option => appendOption(control, option));
+        }
       });
     } else if (type === "checkbox") {
       control = createElement("input", {

@@ -236,7 +236,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.216";
     window.__demoLoaderReady = uiLoader.loadMany([
       "ui.dom",
       "ui.modal",
@@ -253,6 +253,13 @@
         <h1>Schema Form Modal</h1>
         <p>Shared modal-form shell for short operational workflows. This page focuses on the base helper contract plus the PBB HQ acceptance-proof mappings for hub add/edit, uplink update, and grouped resource-picking flows.</p>
       </section>
+
+    <section class="panel"><h2>Deliverables grouped by milestone</h2>
+      <p>Native select options can mix an unassigned option, milestone groups and individual choices. Disabled groups and options remain visible.</p>
+      <button id="open-grouped-deliverables" class="ui-button" type="button">Try grouped deliverables</button>
+      <a href="../docs/form-select-groups.md">Grouped option schema reference</a>
+      <pre id="grouped-deliverables-result">No selection saved.</pre>
+    </section>
 
       <section class="demo-stack-list">
         <article class="demo-stack">
@@ -712,7 +719,7 @@ const payload = {
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.216";
 
     await window.__demoLoaderReady;
     const createFormModal = await uiLoader.get("ui.form.modal");
@@ -1484,6 +1491,23 @@ const payload = {
     document.getElementById("prescriptionColumnsDemoBtn").addEventListener("click", () => openPrescriptionColumnsModal());
     document.getElementById("conditionalVisibilityDemoBtn").addEventListener("click", () => openConditionalVisibilityModal());
   </script>
-</body>
+<script type="module">
+import { uiLoader } from '../js/ui/ui.loader.js?v=0.21.216';
+const createFormModal = await uiLoader.get('ui.form.modal');
+let groupedModal;
+document.querySelector('#open-grouped-deliverables').onclick = () => {
+  if (groupedModal?.getState().open) return;
+  groupedModal?.destroy();
+  groupedModal = createFormModal({title:'Choose deliverable',submitLabel:'Save',rows:[[
+    {type:'select',name:'deliverable_id',label:'Deliverable',value:'brief',options:[
+      {label:'No deliverable',value:''},
+      {label:'Discovery',options:[{label:'Project brief',value:'brief'},{label:'Interviews',value:'interviews',disabled:true}]},
+      {label:'Delivery',disabled:true,options:[{label:'Release',value:'release'}]},
+      {label:'Other',value:'other'}
+    ]}
+  ]],onSubmit:values=>{document.querySelector('#grouped-deliverables-result').textContent=JSON.stringify(values,null,2);return true;}});
+  groupedModal.open();
+};
+</script></body>
 </html>
 
