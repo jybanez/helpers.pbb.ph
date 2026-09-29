@@ -254,3 +254,54 @@ Update application-owned records separately after confirmation. Do not use
 Keep server authorization, version checks, and uncertain-outcome reconciliation in
 the application. As with `setGroupLabel`, the setter does not persist data or change
 custom editor values on its own.
+
+
+## Inline action placement (0.21.215)
+
+All three inline factories accept `actionsPlacement: "below" | "inline" | "overlay"`.
+The default is `"below"` and unknown values fall back to it.
+
+| Option | Layout | Responsive behavior |
+| --- | --- | --- |
+| `below` | Borderless Save/Cancel row below the field | Existing behavior |
+| `inline` | Actions at the end beside the field | Below when the editor is narrower than 280px |
+| `overlay` | Canonical popover anchored below/end, flipping above as needed; action bar adds no row height | Below when the viewport or modal is narrower than 360px or shorter than 180px |
+
+```js
+const editor = createInlineText(host, {
+  label: "Deliverable title", value: item.label,
+  actionsPlacement: "overlay",
+  async onSave(value) {
+    await saveDeliverableTitle(item.id, value);
+    board.setItemLabel(item.id, value);
+  }
+});
+```
+
+The same option works with `createInlineSelect` and `createInlineDate`.
+`getState().actionsPlacement` reports the effective placement. Resize-driven layout
+changes keep the editor and draft intact; `update(options)` still resets editing
+as documented. The planning demo prevents changing its layout selector while any
+editor is active, since its selector rebuilds the composition.
+
+Overlay actions remain explicit buttons, with accessible Save/Cancel names.
+Tab from the field reaches Save, Shift+Tab returns to the field, and Escape cancels
+only the active edit after any select/date popup has handled Escape first. Saving
+blocks further submission/cancellation; validation happens before saving. Errors
+remain beside and associated with their fields and may increase row height.
+Clicking outside or activating another field never saves or discards a draft.
+Multiple active editors retain their own action bars. Board interaction locks also
+make portaled actions inert without destroying drafts. Cancel, success, update,
+and destroy remove the action portal; dismissal restores focus to the value.
+
+Overlay actions use `createPopover` with automatic click toggling disabled,
+no focus stealing, and a boundary matching the owning canonical modal. This
+escapes scroll-container clipping while retaining modal focus ownership. The
+popover clamps to the intersection of its boundary and the visual viewport,
+and tracks scrolling and resizing. On narrow screens the fallback is intentionally
+in normal flow, prioritizing reachable actions over fixed row height.
+
+`createPopover` now additionally supports `triggerOnClick: false` for manual
+open/close and `boundary: HTMLElement` for viewport-intersected positioning;
+existing defaults are unchanged. Modal Escape handling gives nested controls the
+opportunity to consume the key before closing the modal.
