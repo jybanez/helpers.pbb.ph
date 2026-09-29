@@ -17,3 +17,10 @@
 .ui-inline-editor > .ui-form-error { margin: 0; }
 .ui-inline-status { color: var(--ui-muted); font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
 .ui-inline-status:empty { display: none; }
+.ui-inline[data-actions-placement="inline"] .ui-inline-editor { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.ui-inline[data-actions-placement="inline"] .ui-inline-field { grid-column: 1; grid-row: 1; }
+.ui-inline[data-actions-placement="inline"] .ui-inline-actions { grid-column: 2; grid-row: 1; align-self: center; }
+.ui-inline[data-actions-placement="inline"] .ui-form-error { grid-column: 1 / -1; }
+.ui-popover.ui-inline-actions-popover { min-width: 0; transition: none; transform: none; }
+.ui-inline-actions-popover .ui-popover-content { padding: 4px; }
+.ui-inline-actions-popover .ui-inline-status { max-width: 90px; }

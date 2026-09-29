@@ -114,6 +114,17 @@ export function mountGuide({ kind, create, api, factoryName, createText }) {
 board.setInteractionLocked(true); // preserves drafts and permission flags
 board.setInteractionLocked(false);`);
   }
+  if (!reorder) {
+    const placements = section("Save and Cancel placement");
+    placements.append(el("p", "Choose actionsPlacement: below (default), inline, or overlay. Inline stacks below in fields narrower than 280px. Overlay uses the canonical popover without adding an action row; it falls back below in a viewport/modal narrower than 360px or shorter than 180px. Errors stay associated with the field. Activating another editor keeps every unsaved draft."));
+    for (const actionsPlacement of ["below", "inline", "overlay"]) {
+      const card = el("article", null, "recipe"), target = el("div");
+      card.append(el("h3", actionsPlacement), target); placements.append(card);
+      const options = { label: "Example value", actionsPlacement, value: kind === "inline.date" ? "2026-10-01" : kind === "inline.select" ? "open" : "Edit this title", ...(kind === "inline.select" ? { items: [{id:"open",label:"Open"},{id:"done",label:"Done"}] } : {}), onSave: () => new Promise(resolve => setTimeout(resolve, 700)) };
+      instances.push(create(target, options));
+      sample(card, `${factoryName}(host, { ...options, actionsPlacement: "${actionsPlacement}" });`);
+    }
+  }
   const integration = section("Application integration");
   list(integration, reorder ? [
     "IDs: group IDs must be unique; item IDs must be globally unique across every group. IDs normalize to strings.",
@@ -140,7 +151,7 @@ board.setInteractionLocked(false);`);
   meta.options.push(...(reorder ? [
     ["reorderGroups", "false", "Opt in to group handles; existing item moves remain available."], ["renderGroupHeader(host, group, context)", "plain heading", "Mount header controls; context has groupId and initial index. Return cleanup function or { destroy() }."], ["isGroupLocked(group)", "unset", "Return true to prevent group pickup."], ["emptyText", "Drop an item here", "Text for an empty group."], ["isItemLocked(item, group)", "unset", "Return true to prevent pickup."], ["groups/items disabled", "false", "Disable a group or individual item."]
   ] : [
-    ["placeholder", "Not set", "Display for an empty value."], ["formatValue(value)", "built-in formatting", "Custom display text; does not change stored value."], ["onStateChange(state)", "unset", "Observe editing, saving and error states."],
+    ["actionsPlacement", "below", "below | inline | overlay; responsive fallback preserves drafts and explicit Save/Cancel."], ["placeholder", "Not set", "Display for an empty value."], ["formatValue(value)", "built-in formatting", "Custom display text; does not change stored value."], ["onStateChange(state)", "unset", "Observe editing, saving and error states."],
     ...(kind === "inline.text" ? [["multiline", "false", "Use a textarea; Ctrl/Command+Enter saves."], ["minLength / maxLength", "unset", "Length validation before saving."]] : [])
   ]).map(([option, value, description]) => ({ option, default: value, description })));
   meta.propertiesText = reorder ? "Use getState() to inspect groups and the current insertion target. Do not mutate the returned snapshot to update the component." : "Use getState() for the full lifecycle snapshot. value is committed; draft is the current edit. The root emits bubbling ui:inline-state events for editor/reorder coordination.";

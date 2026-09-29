@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inline actions regression</title><style>body{margin:20px}.fixture{width:420px;margin:12px}.fixture input{min-width:0}#results{white-space:pre-wrap}</style></head><body data-status="pending"><div id="fixtures"></div><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+const results=document.querySelector('#results');let count=0;
+const assert=(ok,message)=>{if(!ok)throw Error(message);count++;results.textContent+=`PASS ${message}\n`;};
+const tick=()=>new Promise(r=>setTimeout(r,35));
+const key=(n,key,shiftKey=false)=>n.dispatchEvent(new KeyboardEvent('keydown',{key,shiftKey,bubbles:true,cancelable:true}));
+const host=()=>{const n=document.createElement('div');n.className='fixture';document.querySelector('#fixtures').append(n);return n;};
+try{
+const names=['ui.inline.text','ui.inline.select','ui.inline.date','ui.modal'];await loader.loadMany(names);const [text,select,date,modal]=await Promise.all(names.map(n=>loader.get(n)));
+for(const [kind,create,value,extra] of [['text',text,'Old',{}],['select',select,'a',{items:[{id:'a',label:'Alpha'},{id:'b',label:'Beta'}]}],['date',date,'2026-10-01',{}]]){
+ for(const placement of ['below','inline','overlay']){
+  const h=host();let calls=0,finish;const api=create(h,{label:kind,value,...extra,actionsPlacement:placement,onSave:()=>{calls++;return new Promise(r=>finish=r);}});api.edit();await tick();
+  const root=h.querySelector('.ui-inline'),field=h.querySelector('.ui-inline-field'),panel=document.querySelector('.ui-inline-actions-popover');const action=panel||h.querySelector('.ui-inline-actions');
+  assert(api.getState().actionsPlacement===placement,`${kind} ${placement} effective layout`);
+  if(placement==='inline')assert(Math.abs(action.getBoundingClientRect().top-field.getBoundingClientRect().top)<25,`${kind} inline beside field`);
+  if(placement==='overlay'){
+   field.click();assert(document.querySelector('.ui-inline-actions-popover')===panel,`${kind} field click does not toggle manual actions`);
+   assert(panel && !root.contains(panel) && root.getBoundingClientRect().height<=field.getBoundingClientRect().height+1,`${kind} overlay has no action-row reflow`);
+   const rect=panel.getBoundingClientRect();assert(rect.left>=0&&rect.right<=innerWidth&&rect.top>=0&&rect.bottom<=innerHeight,`${kind} overlay bounded`);
+  }
+  if(kind!=='text'){
+   field.querySelector('button').click();await tick();assert(document.querySelector(kind==='select'?'.ui-select-menu':'.ui-datepicker-panel'),`${kind} popup opens in ${placement}`);
+   const popupTarget=kind==='select'?document.querySelector('.ui-select-search'):document.querySelector('.ui-datepicker-panel button');key(popupTarget,'Escape');await tick();assert(api.getState().active,`${kind} first Escape preserves edit`);
+  }
+  const pending=api.save();assert(calls===1&&api.getState().state==='saving'&&action.querySelector('[aria-label="Save"]').disabled,`${kind} ${placement} explicit busy save`);assert(api.cancel()===false,`${kind} ${placement} cannot cancel mutation`);finish();assert(await pending,`${kind} ${placement} confirmed save`);assert(document.activeElement===h.querySelector('.ui-inline-view')&&!document.querySelector('.ui-inline-actions-popover'),`${kind} ${placement} cleanup and focus restore`);api.destroy();h.remove();
+ }
+}
+const h=host();let saves=0;const a=text(h,{label:'Title',value:'Old',required:true,actionsPlacement:'overlay',onSave:()=>{saves++;throw Error('Try again');}});a.edit();h.querySelector('input').value='';assert(!await a.save()&&saves===0&&h.querySelector('input').getAttribute('aria-invalid')==='true','overlay validation before request with field association');h.querySelector('input').value='New';assert(!await a.save()&&saves===1&&a.getState().draft==='New'&&a.getState().state==='error','overlay failure retains draft');
+const other=host(),b=text(other,{value:'Second',actionsPlacement:'overlay'});b.edit();assert(a.getState().draft==='New'&&a.getState().active&&b.getState().active,'second editor never discards first draft');b.destroy();other.remove();
+const root=h.querySelector('.ui-inline');root.dispatchEvent(new CustomEvent('ui:interaction-lock',{detail:{locked:true}}));assert(document.querySelector('.ui-inline-actions-popover .ui-inline-actions').inert&&await a.save()===false&&a.cancel()===false,'overlay obeys interaction lock');root.dispatchEvent(new CustomEvent('ui:interaction-lock',{detail:{locked:false}}));
+const input=h.querySelector('input');input.focus();key(input,'Tab');assert(document.activeElement.getAttribute('aria-label')==='Save','Tab reaches portaled Save');key(document.activeElement,'Tab',true);assert(document.activeElement===input,'Shift Tab returns to field');key(input,'Escape');assert(!a.getState().active&&!document.querySelector('.ui-inline-actions-popover'),'Escape cancels overlay');
+a.update({actionsPlacement:'inline'});h.style.width='180px';a.edit();await tick();assert(a.getState().actionsPlacement==='below','narrow inline field stacks');a.destroy();h.remove();
+const content=host();content.style.minHeight='220px';const m=modal({title:'Placement test',content,width:520});m.open();await tick();const mh=document.createElement('div');content.append(mh);const ma=text(mh,{value:'Modal draft',actionsPlacement:'overlay'});ma.edit();await tick();let r=document.querySelector('.ui-inline-actions-popover').getBoundingClientRect(),bound=content.closest('.ui-modal').getBoundingClientRect();assert(r.left>=bound.left&&r.right<=bound.right&&r.top>=bound.top&&r.bottom<=bound.bottom,'overlay remains within modal boundary');assert(document.querySelector('.ui-inline-actions-popover').dataset.uiModalPortalOwner,'modal focus ownership stamped');key(mh.querySelector('input'),'Escape');await tick();assert(!ma.getState().active&&m.getState().open,'first modal Escape cancels editor only');ma.destroy();
+for(const [create,options,popupSelector] of [[select,{value:'a',items:[{id:'a',label:'Alpha'}]},'.ui-select-search'],[date,{value:'2026-10-01'},'.ui-datepicker-panel button']]){
+ const nested=create(mh,{...options,actionsPlacement:'overlay'});nested.edit();mh.querySelector('.ui-inline-field button').click();await tick();key(document.querySelector(popupSelector),'Escape');await tick();assert(m.getState().open&&nested.getState().active,'popup Escape leaves modal and inline editor open');key(mh.querySelector('.ui-inline-field button'),'Escape');await tick();assert(m.getState().open&&!nested.getState().active,'next Escape cancels inline only inside modal');nested.destroy();
+}
+m.destroy();content.remove();
+// Keep a mounted editor for viewport resizing checks by the browser runner.
+const responsiveHost=host();const responsive=text(responsiveHost,{value:'Responsive',actionsPlacement:'overlay'});responsive.edit();window.responsive=responsive;
+document.body.dataset.status='pass';results.textContent+=`${count} assertions passed`;
+}catch(e){document.body.dataset.status='fail';results.textContent+=e.stack;}
+</script></body></html>
