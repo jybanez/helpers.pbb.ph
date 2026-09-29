@@ -1,7 +1,7 @@
 const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
-const UI_OVERLAY_ROUTING_REV = "0.21.201";
+const UI_OVERLAY_ROUTING_REV = "0.21.215";
 const UI_AUDIO_REV = "0.21.62";
 const UI_ICONS_REV = "0.21.209";
 const UI_FILE_INPUT_REV = "0.21.108";
@@ -10,7 +10,7 @@ const UI_PASSWORD_REV = "0.21.66";
 const UI_PROPERTY_VIEWER_REV = "0.21.1";
 const UI_DATE_REV = "0.21.204";
 const UI_NAV_REV = "0.21.4";
-const UI_POPOVER_REV = "0.21.1";
+const UI_POPOVER_REV = "0.21.215";
 const UI_SELECT_REV = "0.21.1";
 const UI_MEDIA_REV = "0.21.3";
 const UI_PDF_REV = "0.21.1";
@@ -31,20 +31,20 @@ const UI_INSPECTION_BUNDLE_JS = `../../dist/helpers.inspection.bundle.min.js?v=$
 
 export const DEFAULT_COMPONENT_REGISTRY = {
   "ui.inline.text": {
-    js: "./ui.inline.js?v=0.21.213",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.213", "../../css/ui/ui.field.error.css"],
+    js: "./ui.inline.js?v=0.21.215",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.215", "../../css/ui/ui.popover.css?v=0.21.215", "../../css/ui/ui.field.error.css"],
     deps: [],
     export: "createInlineText",
   },
   "ui.inline.select": {
-    js: "./ui.inline.js?v=0.21.213",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.213", "../../css/ui/ui.field.error.css"],
+    js: "./ui.inline.js?v=0.21.215",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.215", "../../css/ui/ui.popover.css?v=0.21.215", "../../css/ui/ui.field.error.css"],
     deps: ["ui.select"],
     export: "createInlineSelect",
   },
   "ui.inline.date": {
-    js: "./ui.inline.js?v=0.21.213",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.213", "../../css/ui/ui.field.error.css"],
+    js: "./ui.inline.js?v=0.21.215",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.inline.css?v=0.21.215", "../../css/ui/ui.popover.css?v=0.21.215", "../../css/ui/ui.field.error.css"],
     deps: ["ui.datepicker"],
     export: "createInlineDate",
   },

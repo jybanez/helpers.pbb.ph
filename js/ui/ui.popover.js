@@ -17,6 +17,8 @@ const DEFAULT_OPTIONS = {
   restoreFocus: true,
   initialFocus: "first", // first | panel | false | selector | HTMLElement | function
   onOpenChange: null,
+  triggerOnClick: true,
+  boundary: null, // optional element limiting the panel within the viewport
 };
 
 export function createPopover(triggerEl, options = {}) {
@@ -211,16 +213,25 @@ export function createPopover(triggerEl, options = {}) {
     if (!open || !panel?.isConnected) return;
     const triggerRect = triggerEl.getBoundingClientRect();
     const viewport = win.visualViewport;
-    const viewportWidth = viewport?.width || doc.documentElement.clientWidth || win.innerWidth;
-    const viewportHeight = viewport?.height || doc.documentElement.clientHeight || win.innerHeight;
-    const viewportLeft = viewport?.offsetLeft || 0;
-    const viewportTop = viewport?.offsetTop || 0;
+    let viewportWidth = viewport?.width || doc.documentElement.clientWidth || win.innerWidth;
+    let viewportHeight = viewport?.height || doc.documentElement.clientHeight || win.innerHeight;
+    let viewportLeft = viewport?.offsetLeft || 0;
+    let viewportTop = viewport?.offsetTop || 0;
+    const boundary = currentOptions.boundary?.getBoundingClientRect?.();
+    if (boundary) {
+      const right = Math.min(viewportLeft + viewportWidth, boundary.right);
+      const bottom = Math.min(viewportTop + viewportHeight, boundary.bottom);
+      viewportLeft = Math.max(viewportLeft, boundary.left);
+      viewportTop = Math.max(viewportTop, boundary.top);
+      viewportWidth = Math.max(0, right - viewportLeft);
+      viewportHeight = Math.max(0, bottom - viewportTop);
+    }
     const margin = 8;
     const gap = currentOptions.offset;
 
     panel.style.width = currentOptions.matchTriggerWidth ? `${Math.round(triggerRect.width)}px` : "";
-    panel.style.minWidth = currentOptions.matchTriggerWidth ? `${Math.round(triggerRect.width)}px` : "";
-    panel.style.maxWidth = `${Math.max(120, Math.round(viewportWidth - margin * 2))}px`;
+    panel.style.minWidth = currentOptions.matchTriggerWidth ? `${Math.min(Math.round(triggerRect.width), Math.max(0, viewportWidth - margin * 2))}px` : boundary ? "0px" : "";
+    panel.style.maxWidth = `${Math.max(boundary ? 0 : 120, Math.round(viewportWidth - margin * 2))}px`;
     panel.style.maxHeight = "";
     panel.style.left = "0px";
     panel.style.top = "0px";
@@ -236,16 +247,16 @@ export function createPopover(triggerEl, options = {}) {
       ? !(panelHeight > spaceAbove && spaceBelow > spaceAbove)
       : panelHeight > spaceBelow && spaceAbove > spaceBelow;
     actualPlacement = `${useTop ? "top" : "bottom"}-${preferred.endsWith("end") ? "end" : "start"}`;
-    const availableHeight = Math.max(80, useTop ? spaceAbove : spaceBelow);
+    const availableHeight = Math.max(boundary ? 0 : 80, useTop ? spaceAbove : spaceBelow);
     panel.style.maxHeight = `${Math.round(availableHeight)}px`;
 
     let left = preferred.endsWith("end") ? triggerRect.right - panelWidth : triggerRect.left;
     const minLeft = viewportLeft + margin;
     const maxLeft = viewportLeft + viewportWidth - panelWidth - margin;
-    left = Math.max(minLeft, Math.min(left + viewportLeft, Math.max(minLeft, maxLeft)));
+    left = Math.max(minLeft, Math.min(left, Math.max(minLeft, maxLeft)));
     const top = useTop
-      ? triggerRect.top + viewportTop - Math.min(panelHeight, availableHeight) - gap
-      : triggerRect.bottom + viewportTop + gap;
+      ? triggerRect.top - Math.min(panelHeight, availableHeight) - gap
+      : triggerRect.bottom + gap;
     const minTop = viewportTop + margin;
     const maxTop = viewportTop + viewportHeight - Math.min(panelHeight, availableHeight) - margin;
     panel.style.left = `${Math.round(left)}px`;
@@ -327,6 +338,7 @@ export function createPopover(triggerEl, options = {}) {
   triggerEl.setAttribute("aria-expanded", "false");
   triggerEl.setAttribute("aria-controls", panelId);
   triggerEvents.on(triggerEl, "click", (event) => {
+    if (!currentOptions.triggerOnClick) return;
     event.preventDefault();
     toggle({ reason: "trigger" });
   });

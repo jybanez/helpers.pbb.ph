@@ -280,8 +280,13 @@ export function createModal(options = {}) {
         event.preventDefault();
         return;
       }
-      event.preventDefault();
-      close({ reason: "escape" });
+      // Defer beyond native event dispatch: microtasks can run between listeners.
+      // Nested editors and portaled controls get first refusal of Escape.
+      setTimeout(() => {
+        if (!open || event.defaultPrevented) return;
+        event.preventDefault();
+        close({ reason: "escape" });
+      });
       return;
     }
     if (event.key === "Tab" && currentOptions.trapFocus) {

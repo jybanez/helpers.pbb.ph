@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.214";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.215";
 
 const kind = document.body.dataset.component;
 const reorder = kind === "reorder.groups";
@@ -48,5 +48,5 @@ if (reorder) {
 for (const control of [readOnly, disabled]) control.addEventListener("change", () => { const options = { readOnly: readOnly.checked, disabled: disabled.checked }; if (reorder) api.update(undefined, options); else api.update(options); });
 await uiLoader.load("ui.inline.text");
 const createText = await uiLoader.get("ui.inline.text");
-await (await import("./demo.planning.guide.js?v=3")).mountGuide({ kind, create, api, factoryName, createText });
-await import("./demo.shell.js?v=0.21.214");
+await (await import("./demo.planning.guide.js?v=4")).mountGuide({ kind, create, api, factoryName, createText });
+await import("./demo.shell.js?v=0.21.215");

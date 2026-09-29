@@ -2,6 +2,7 @@ import { createElement } from "./ui.dom.js";
 import { setFieldError } from "./ui.field.error.js";
 import { createIcon } from "./ui.icons.js";
 import { createSelect } from "./ui.select.js";
+import { createPopover } from "./ui.popover.js?v=0.21.215";
 import { createDatepicker } from "./ui.datepicker.js?v=0.21.204";
 import { parseCivil } from "./ui.datepicker.civil.js?v=0.21.191";
 
@@ -11,7 +12,7 @@ export const createInlineDate = (host, options = {}) => createInline(host, optio
 
 function createInline(host, options, kind) {
   if (!host?.appendChild) throw new TypeError("Inline editor requires a host element.");
-  let opts = { label: "Value", value: null, placeholder: "Not set", valueMode: "wall-clock", showTime: false, ...options };
+  let opts = { label: "Value", value: null, placeholder: "Not set", valueMode: "wall-clock", showTime: false, actionsPlacement: "below", ...options };
   let value = opts.value, draft = value, phase = "view", error = "", destroyed = false, generation = 0, control = null, input = null, interactionLocked = false;
   const root = createElement("div", { className: `ui-inline ui-inline-${kind}` });
   const view = createElement("button", { className: "ui-inline-view", attrs: { type: "button" } });
@@ -30,6 +31,39 @@ function createInline(host, options, kind) {
   const target = () => field.querySelector("input,textarea,button");
   const active = () => phase !== "view";
   const locked = () => interactionLocked || opts.disabled || opts.readOnly || opts.readonly;
+  const doc = host.ownerDocument, win = doc.defaultView;
+  let actionPopover = null, actualPlacement = "below";
+  function clearPopover() {
+    const focused = actions.contains(doc.activeElement) ? doc.activeElement : null;
+    actionPopover?.destroy(); actionPopover = null;
+    if (active() && focused?.isConnected) focused.focus({ preventScroll: true });
+  }
+  function layoutActions() {
+    if (destroyed) return;
+    const requested = ["inline", "overlay"].includes(opts.actionsPlacement) ? opts.actionsPlacement : "below";
+    const boundary = root.closest(".ui-modal");
+    const viewport = win.visualViewport;
+    const availableWidth = Math.min(viewport?.width || win.innerWidth, boundary?.clientWidth || Infinity);
+    const availableHeight = Math.min(viewport?.height || win.innerHeight, boundary?.clientHeight || Infinity);
+    actualPlacement = requested === "inline" && root.clientWidth < 280 || requested === "overlay" && (availableWidth < 360 || availableHeight < 180) ? "below" : requested;
+    root.dataset.actionsPlacement = actualPlacement;
+    if (!active() || !root.getClientRects().length || actualPlacement !== "overlay") { clearPopover(); return; }
+    if (!actionPopover) {
+      const focused = actions.contains(doc.activeElement) ? doc.activeElement : null;
+      actionPopover = createPopover(field, {
+        content: actions, placement: "bottom-end", offset: 4, boundary,
+        triggerOnClick: false, initialFocus: false, restoreFocus: false,
+        closeOnEscape: false, closeOnOutsideClick: false,
+        panelRole: "group", ariaLabel: `${opts.label} actions`, className: "ui-inline-actions-popover"
+      });
+      actionPopover.open();
+      focused?.focus({ preventScroll: true });
+    } else actionPopover.position();
+  }
+  const resizeObserver = new win.ResizeObserver(layoutActions);
+  resizeObserver.observe(root);
+  win.addEventListener("resize", layoutActions);
+  win.visualViewport?.addEventListener("resize", layoutActions);
   function display() {
     if (typeof opts.formatValue === "function") return opts.formatValue(value);
     if (value == null || value === "") return opts.placeholder;
@@ -46,8 +80,10 @@ function createInline(host, options, kind) {
     view.setAttribute("aria-disabled", String(Boolean(locked())));
     saveButton.disabled = cancelButton.disabled = phase === "saving" || interactionLocked;
     field.inert = phase === "saving" || interactionLocked;
+    actions.inert = interactionLocked;
     status.textContent = phase === "saving" ? "Saving…" : "";
     setFieldError(target(), feedback, error);
+    layoutActions();
     root.dispatchEvent(new CustomEvent("ui:inline-state", { bubbles: true, detail: getState() }));
     opts.onStateChange?.(getState());
   }
@@ -119,7 +155,7 @@ function createInline(host, options, kind) {
       phase = "error"; error = e?.message || `${opts.label} could not be saved.`; sync(); target()?.focus(); return false;
     }
   }
-  function getState() { return { state: phase, value, draft, error, active: active(), disabled: Boolean(opts.disabled), readOnly: Boolean(opts.readOnly || opts.readonly) }; }
+  function getState() { return { state: phase, value, draft, error, actionsPlacement: actualPlacement, active: active(), disabled: Boolean(opts.disabled), readOnly: Boolean(opts.readOnly || opts.readonly) }; }
   function update(next = {}) {
     if (destroyed) return;
     generation++; control?.destroy(); control = null; field.replaceChildren();
@@ -135,10 +171,22 @@ function createInline(host, options, kind) {
     sync();
   });
   view.addEventListener("click", edit); saveButton.addEventListener("click", save); cancelButton.addEventListener("click", cancel);
-  root.addEventListener("keydown", e => {
+  function onKeydown(e) {
+    if (e.defaultPrevented) return;
     if (e.key === "Escape" && active() && !control?.getState().open) { e.preventDefault(); e.stopPropagation(); cancel(); }
+    if (e.key === "Tab" && actionPopover && !control?.getState().open && phase !== "saving") {
+      if (!e.shiftKey && field.contains(e.target)) { e.preventDefault(); saveButton.focus(); }
+      else if (e.shiftKey && e.target === saveButton) { e.preventDefault(); target()?.focus(); }
+      else if (!e.shiftKey && e.target === cancelButton) {
+        const candidates = [...doc.querySelectorAll('button,input,textarea,select,a[href],[tabindex="0"]')].filter(n => !n.disabled && n.getClientRects().length && !n.closest('[inert]') && !actions.contains(n));
+        const next = candidates.find(n => !root.contains(n) && (root.compareDocumentPosition(n) & 4));
+        if (next) { e.preventDefault(); next.focus(); }
+      }
+    }
     if (kind === "text" && e.key === "Enter" && e.target === input && (!opts.multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
-  });
+  }
+  root.addEventListener("keydown", onKeydown);
+  actions.addEventListener("keydown", e => { if (!root.contains(actions)) onKeydown(e); });
   sync();
-  return { edit, save, cancel, update, getState, getValue: () => value, destroy() { if (destroyed) return; generation++; destroyed = true; control?.destroy(); phase = "view"; root.dataset.inlineActive = "false"; root.dispatchEvent(new CustomEvent("ui:inline-state", { bubbles: true })); root.remove(); } };
+  return { edit, save, cancel, update, getState, getValue: () => value, destroy() { if (destroyed) return; generation++; destroyed = true; clearPopover(); resizeObserver.disconnect(); win.removeEventListener("resize", layoutActions); win.visualViewport?.removeEventListener("resize", layoutActions); control?.destroy(); phase = "view"; root.dataset.inlineActive = "false"; root.dispatchEvent(new CustomEvent("ui:inline-state", { bubbles: true })); root.remove(); } };
 }
