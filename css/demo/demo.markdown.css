@@ -1,0 +1,15 @@
+@import url("./demo.planning.css");
+.page, .panel, .comparison { min-width: 0; }
+.page.demo-workbench { display: grid; grid-template-columns: minmax(0, 1fr); }
+.page a { color: var(--ui-accent, #8db5ff); }
+.comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.panel h1, .panel h2, .panel p { margin: 0; }
+.panel p, .panel li { line-height: 1.6; }
+.muted, output { color: var(--ui-muted); font-size: .9rem; }
+textarea, select, .controls button { font: inherit; color: var(--ui-text); background: var(--ui-bg-soft); border: 1px solid var(--ui-border); border-radius: 6px; padding: 8px; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+.panel > pre { max-width: 100%; overflow: auto; padding: 12px; background: var(--ui-bg-soft); }
+.table-wrap { overflow: auto; }
+.table-wrap table { border-collapse: collapse; width: 100%; }
+.table-wrap th, .table-wrap td { border: 1px solid var(--ui-border); padding: 10px; text-align: start; }
+@media (max-width: 850px) { .comparison { grid-template-columns: minmax(0, 1fr); } }

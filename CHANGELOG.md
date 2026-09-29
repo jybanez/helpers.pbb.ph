@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added `ui.markdown` with compact/full safe Markdown profiles, literal HTML and disabled images, strict links, sanitized fragments, bounded fallback, developer demo and CSP/security regressions. Main UI bundle cache revision `0.21.217`; see `docs/markdown.md`.
+
 - Added `actions.integration` for participant identity and `actions.integration-remove` for detach actions; existing add artwork is unchanged. Icon/main/game revision `0.21.209`.
 
 - Added core `actions.integration-add`, a plug-and-plus action icon for external-system integrations. Icon/main/game bundle cache revision `0.21.208`; see `docs/integration-icon.md`.

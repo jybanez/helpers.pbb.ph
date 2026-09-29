@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Safe Markdown · Helper</title>
+<link rel="stylesheet" href="../css/demo/demo.shell.css"><link rel="stylesheet" href="../css/demo/demo.markdown.css?v=0.21.217"></head>
+<body class="demo-shell-sidebar"><main class="page demo-workbench">
+<header class="panel"><h1>Safe Markdown</h1><p>Render authored messages and long descriptions through one canonical component. Edit the source below to compare a compact timeline preview with a full detail view.</p><p><a href="../docs/markdown.md">API, security policy and integration reference</a></p></header>
+<section class="panel"><h2>Try it</h2><div class="controls"><label>Example <select id="example"><option value="research">Research brief</option><option value="safety">Unsafe markup and links</option><option value="long">Wide code and table</option><option value="empty">Empty content</option></select></label><label>Preview lines <select id="lines"><option>2</option><option selected>3</option><option>5</option><option value="0">Unlimited</option></select></label><label><input type="checkbox" id="tables" checked> Full tables</label><label><input type="checkbox" id="blank"> Open links in new tab</label><button id="reset" type="button">Reset example</button></div><label for="source">Markdown source</label><textarea id="source" rows="12" spellcheck="false"></textarea><p class="muted">Source is preserved exactly. HTML is displayed literally. Images are replaced with their alt text and never loaded.</p></section>
+<div class="comparison"><section class="panel"><h2>Compact preview</h2><p class="muted">Collapsed content has no hidden links. Show more restores emphasis, inline code and links.</p><div id="compact"></div><output id="state" aria-live="polite"></output></section><section class="panel"><h2>Full description</h2><p class="muted">Headings are offset by two so the document outline remains inside this section.</p><div id="full"></div></section></div>
+<section class="panel"><h2>Integration recipe</h2><pre><code>import { uiLoader } from "../js/ui/ui.loader.js";
+const createMarkdownView = await uiLoader.get("ui.markdown");
+const view = createMarkdownView(host, {
+  markdown: message.body,
+  profile: "compact",
+  maxLines: 3,
+  showMoreLabel: "Show more",
+  showLessLabel: "Show less"
+});
+
+view.update({ markdown: updatedMessage.body });
+const originalSource = view.getSource(); // Use this when editing.
+view.destroy(); // Release observers and listeners on unmount.</code></pre><p>The standalone bundle exports the same <code>uiLoader</code> from <code>dist/helpers.ui.bundle.min.js?v=0.21.217</code>. Direct module consumers must load the token and Markdown stylesheets.</p></section>
+<section class="panel"><h2>Choose a profile</h2><div class="table-wrap"><table><thead><tr><th>Option</th><th>Compact</th><th>Full</th></tr></thead><tbody><tr><th>Use case</th><td>Cards, previews, dense timelines</td><td>Task details, research, acceptance criteria</td></tr><tr><th>Formatting</th><td>Paragraphs, breaks, emphasis, inline code, links</td><td>Also headings, lists, quotes, code blocks, optional tables</td></tr><tr><th>maxLines</th><td>1–20; null for unlimited</td><td>Ignored; full content remains visible</td></tr><tr><th>Other structures</th><td>Degrade to readable text</td><td>Semantic HTML with internal code/table scrolling</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Security and lifecycle checklist</h2><ul><li>Pass original Markdown as a string. Never pass rendered content through another HTML formatter.</li><li>Links permit absolute HTTP, HTTPS and mailto only. Relative links, credentials and dangerous schemes become plain labels.</li><li>Images, custom renderers, sanitizer overrides and executable HTML are unavailable.</li><li>Inputs above 256 KiB UTF-8 display a bounded plain-text preview. <code>getState().reason</code> explains fallback; <code>getSource()</code> retains the complete input.</li><li>Invalid options throw before updating the existing view. Parse or sanitizer failure produces safe text. Updates reset expansion.</li><li>Translate empty/fallback, Show more/less, code and table labels through options. Labels are text, never HTML.</li><li>For Trusted Types, allow the <code>dompurify</code> policy. See the reference for CSP configuration and failure behavior.</li></ul><p>Use Tab and Enter/Space to expand a preview. Links and full code/table scroll regions remain keyboard reachable. Resize the page to check wrapping.</p></section>
+</main><script type="module" src="../js/demo/demo.markdown.js?v=0.21.217"></script></body></html>
