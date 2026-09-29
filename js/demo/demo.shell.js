@@ -57,6 +57,7 @@ const DEMO_GROUPS = [
       { href: "./demo.map.markers.html", label: "Map Markers" },
       { href: "./demo.map.drawing.html", label: "Map Drawing" },
       { href: "./demo.inspector.html", label: "Inspector" },
+      { href: "./demo.markdown.html", label: "Markdown" },
     ],
   },
   {
