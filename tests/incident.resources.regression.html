@@ -24,9 +24,9 @@ const data = (entries = []) => ({
 });
 const needed = (id, quantity) => ({ resource_type_id: id, quantity_needed: quantity });
 const host = () => document.body.appendChild(document.createElement('div'));
-const rows = element => [...element.querySelectorAll('.hh-row-resource')].map(row =>
-  [row.querySelector('.hh-row-label').textContent, row.querySelector('.hh-row-value').textContent]);
-const hasSection = element => [...element.querySelectorAll('h5')].some(title => title.textContent === 'Resources Needed');
+const rows = element => [...element.querySelectorAll('[data-section-id="resources"] .ui-property-viewer-row')].map(row =>
+  [row.querySelector('.ui-property-viewer-label').textContent, row.querySelector('.ui-property-viewer-display').textContent]);
+const hasSection = element => [...element.querySelectorAll('.ui-property-viewer-section-title')].some(title => title.textContent === 'Resources Needed');
 try {
   for (const preferBundles of [new URLSearchParams(location.search).has('bundle')]) {
     const mode = preferBundles ? 'bundle' : 'source';

@@ -142,6 +142,14 @@
     assert(host.querySelectorAll(".ui-property-viewer-row").length === 1, "setSections should replace section rows");
     assert(viewer.getState().sections[0].id === "status", "getState should expose normalized sections");
 
+    assert(!viewer.root.classList.contains("is-chrome-less"), "existing viewers retain card chrome by default");
+    viewer.update({ sections: [{ title: "", properties: [{ label: "Name", value: "Ana" }] }] }, { chrome: false, dense: true, showSelectionLabel: false });
+    assert(viewer.root.classList.contains("is-chrome-less"), "chrome false uses shared embedded styling");
+    assert(!host.querySelector(".ui-property-viewer-section-header"), "explicit empty title omits empty header");
+    assert(getComputedStyle(host.querySelector(".ui-property-viewer-section")).borderTopWidth === "0px", "embedded section has no border");
+    viewer.update({ sections: [{ properties: [{ label: "Name", value: "Ana" }] }] }, { chrome: true });
+    assert(host.querySelector(".ui-property-viewer-section-title")?.textContent === "Section 1", "omitted title retains default heading");
+    assert(!viewer.root.classList.contains("is-chrome-less"), "chrome can be restored by update");
     viewer.destroy();
     assert(host.childNodes.length === 0, "destroy should clear host");
 

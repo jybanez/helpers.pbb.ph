@@ -2144,6 +2144,9 @@ Field support:
 Purpose:
 
 - Read-only version of incident-type details card.
+- Composes `ui.property.viewer` with dense, chrome-free sections. Repeatable groups use labelled `Group #N` sections; scalar fields use their own labels without a generic Fields heading.
+- Person/patient groups show the computed complete name once, retaining legacy/partial names and other populated details. Resources Needed is a separate section containing positive quantities only.
+- Loader users receive the Property Viewer dependency and styles automatically. Direct source imports must also load `css/ui/ui.property.viewer.css` alongside the incident styles. Stored data and editor inputs are unchanged.
 
 Methods:
 

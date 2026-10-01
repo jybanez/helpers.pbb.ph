@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Incident properties viewport harness</title>
+<style>body { margin: 0; } iframe { display: block; border: 0; height: 1600px; }</style>
+<body data-status="pending">
+<script>
+const params = new URLSearchParams(location.search);
+const frame = document.createElement('iframe');
+frame.title = 'Incident property viewer at the requested viewport';
+frame.style.width = Number(params.get('width')) + 'px';
+frame.src = 'incident.properties.regression.html' + (params.has('bundle') ? '?bundle' : '');
+document.body.append(frame);
+const poll = setInterval(() => {
+  const status = frame.contentDocument?.body?.dataset.status;
+  if (status !== 'pass' && status !== 'fail') return;
+  clearInterval(poll);
+  document.body.dataset.status = status;
+  const result = document.createElement('pre');
+  result.hidden = true;
+  result.textContent = frame.contentDocument.getElementById('results').textContent;
+  document.body.append(result);
+}, 25);
+</script>
+</body>
+</html>

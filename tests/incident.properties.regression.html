@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incident property composition</title>
+<style>
+  body { margin: 0; padding: 12px; font: 14px system-ui; background: #f4f7fa; }
+  #host { max-width: 720px; margin: auto; }
+  #results { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<body data-status="pending" data-theme="care-light">
+<div id="host"></div><pre id="results">Running...</pre>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert = (value, message) => { if (!value) throw new Error(message); };
+const host = document.getElementById('host');
+const results = document.getElementById('results');
+const patients = [{ last_name: 'Santos', first_name: 'Ana', gender: 'Female', age: 24, condition: 'Stable' },
+  { name: 'Legacy Patient', gender: 'Male', condition: 'Serious' }];
+const makeData = (items = patients, quantity = 2) => ({
+  incident_type_id: 10, name: 'Medical assistance', incident_type_category_name: 'Emergency response',
+  fields: [
+    { field_key: 'location', field_label: 'Location', sort_order: 1 },
+    { field_key: 'patients', field_label: 'Patient Details', input_type: 'group', preset: 'casualtyPatient', repeatable: true, sort_order: 2 },
+    { field_key: 'notes', field_label: 'Additional information', sort_order: 3 },
+  ],
+  detail_entries: [{ field_key: 'location', field_value: 'Barangay Hall' },
+    { field_key: 'patients', field_value: JSON.stringify(items) },
+    { field_key: 'notes', field_value: '<img src=x onerror=alert(1)> ' + 'LongText'.repeat(24) }],
+  resources: [{ id: 1, name: 'Ambulance' }, { id: 2, name: 'Fire truck' }],
+  resources_needed: [{ resource_type_id: 1, quantity_needed: quantity }, { resource_type_id: 2, quantity_needed: 0 }],
+});
+try {
+  const bundle = new URLSearchParams(location.search).has('bundle');
+  const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: bundle });
+  const factory = await loader.get('incident.types');
+  const initial = makeData();
+  const options = { editable: false, headerText: '', categories: [], incidentTypes: [], theme: 'care-light' };
+  const api = factory(host, [initial], options);
+  const titles = () => [...host.querySelectorAll('.ui-property-viewer-section-title')].map(node => node.textContent);
+  assert(JSON.stringify(titles()) === JSON.stringify(['Patient Details #1', 'Patient Details #2', 'Resources Needed']), 'labelled patient/resource groups without generic Fields heading');
+  assert(host.querySelector('.hh-type-header').textContent.includes('Medical assistance') && host.querySelector('.hh-type-header').textContent.includes('Emergency response'), 'preserve incident title/category');
+  assert(host.querySelectorAll('.ui-property-viewer').length === 1, 'compose one canonical viewer');
+  assert(!host.querySelector('img') && host.textContent.includes('<img src=x onerror=alert(1)>'), 'render values as literal text');
+  assert(host.querySelectorAll('[data-property-id="name"]').length === 2 && !host.querySelector('[data-property-id="first_name"]'), 'complete names only');
+  assert(!host.textContent.includes('Fire truck'), 'omit zero resource');
+  assert(api.getData()[0].detail_entries[2].field_value === initial.detail_entries[2].field_value, 'preserve original data');
+  const section = host.querySelector('.ui-property-viewer-section');
+  assert(getComputedStyle(section).borderTopWidth === '0px' && getComputedStyle(section).backgroundColor === 'rgba(0, 0, 0, 0)', 'no nested property cards');
+  assert(document.documentElement.scrollWidth <= innerWidth + 1, 'no horizontal overflow at viewport width');
+  for (const row of host.querySelectorAll('.ui-property-viewer-row')) {
+    assert(row.getBoundingClientRect().right <= host.getBoundingClientRect().right + 1, 'rows fit host');
+    if (innerWidth <= 640) assert(getComputedStyle(row).gridTemplateColumns.split(' ').length === 1, 'mobile rows stack');
+  }
+  const oldRoot = host.querySelector('.ui-property-viewer');
+  api.update([makeData([{ first_name: 'Bea', last_name: 'Santos', gender: 'Female' }], 0)]);
+  assert(!oldRoot.isConnected && host.querySelectorAll('.ui-property-viewer').length === 1, 'replace and dispose previous viewer');
+  assert(host.textContent.includes('Santos, Bea') && !host.textContent.includes('Legacy Patient') && !titles().includes('Resources Needed'), 'realtime patient/resource removal');
+  api.update([makeData(patients, 3)]);
+  assert(titles().includes('Patient Details #2') && host.querySelector('[data-section-id="resources"] .ui-property-viewer-display').textContent === '3', 'realtime patient/resource recovery');
+  api.update([]);
+  assert(!host.querySelector('.ui-property-viewer'), 'empty list removes viewer');
+  api.update([initial]);
+  api.destroy(); api.destroy();
+  assert(host.childNodes.length === 0, 'destroy clears composed viewer');
+  factory(host, [initial], options);
+  if (bundle) assert(window.__PBB_HELPER_UI_BUNDLE__, 'bundle actually loaded');
+  document.body.dataset.status = 'pass'; results.textContent = 'PASS: canonical properties, safe values, mobile layout, repeated patients and lifecycle';
+} catch (error) {
+  document.body.dataset.status = 'fail'; results.textContent = 'FAIL: ' + error.stack;
+}
+</script>
+</body>
+</html>

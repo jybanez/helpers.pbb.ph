@@ -5,10 +5,13 @@ import {
   resolveFieldGroupFields,
 } from "../ui/ui.field.group.js";
 
+import { createPropertyViewer } from "../ui/ui.property.viewer.js?v=0.21.220";
+
 export function incidentTypesDetailsViewer(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
   let currentOptions = normalizeIncidentOptions(options);
   let missingRequired = false;
+  let propertyViewer = null;
 
   function validateRequired() {
     const missing = [];
@@ -72,160 +75,74 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     root.appendChild(header);
   }
 
-  function renderFieldsSection(root) {
-    if (!safeArray(currentData.detail_entries).length) {
-      return;
-    }
-
+  function buildFieldSections() {
+    if (!safeArray(currentData.detail_entries).length) return [];
     const fields = [...safeArray(currentData.fields)].sort(
       (a, b) => Number(a?.sort_order || 0) - Number(b?.sort_order || 0)
     );
-    if (!fields.length) {
-      return;
-    }
-
-    const section = document.createElement("section");
-    section.className = "hh-type-section";
-
-    const sectionTitle = document.createElement("h5");
-    sectionTitle.className = "hh-title ui-title";
-    sectionTitle.textContent = "Fields";
-    section.appendChild(sectionTitle);
-
-    const content = document.createElement("div");
-    content.className = "hh-content";
-
-    fields.forEach((field) => {
-      if (getFieldType(field) === "group") {
-        renderGroupField(content, field);
+    const sections = [];
+    let scalarSection = null;
+    fields.forEach((field, fieldIndex) => {
+      if (getFieldType(field) !== "group") {
+        if (!scalarSection) {
+          scalarSection = { id: 'fields-' + fieldIndex, title: "", properties: [] };
+          sections.push(scalarSection);
+        }
+        scalarSection.properties.push({
+          id: getFieldKey(field) || 'field-' + fieldIndex,
+          label: getFieldLabel(field, getFieldKey(field) || "Field"),
+          value: getFieldValue(field),
+        });
         return;
       }
-
-      const row = document.createElement("div");
-      row.className = "hh-row";
+      scalarSection = null;
       const label = getFieldLabel(field, getFieldKey(field) || "Field");
-      const labelEl = document.createElement("span");
-      labelEl.className = "hh-row-label";
-      labelEl.textContent = label;
-      const valueEl = document.createElement("span");
-      valueEl.className = "hh-row-value";
-      valueEl.textContent = getFieldValue(field) || "-";
-      row.append(labelEl, valueEl);
-      content.appendChild(row);
-    });
-
-    section.appendChild(content);
-    root.appendChild(section);
-  }
-
-  function renderGroupField(content, field) {
-    const row = document.createElement("div");
-    row.className = "hh-row hh-row-group";
-
-    const labelEl = document.createElement("span");
-    labelEl.className = "hh-row-label";
-    labelEl.textContent = getFieldLabel(field, getFieldKey(field) || "Field");
-
-    const valueEl = document.createElement("span");
-    valueEl.className = "hh-row-value hh-group-value";
-
-    const childFields = resolveFieldGroupFields(field);
-    const completeNameField = childFields.find((child) => {
-      const template = child?.computed?.template;
-      return getFieldKey(child) === "name" && typeof template === "string"
-        && template.includes("{first_name}") && template.includes("{last_name}");
-    });
-    const parsed = parseFieldGroupValue(field, getRawFieldValue(field));
-    const isRepeatable = isRepeatableFieldGroup(field);
-    const items = isRepeatable ? parsed : [parsed];
-    const nonEmptyItems = items.filter((item) => !isEmptyGroupItem(item, childFields));
-
-    if (!nonEmptyItems.length) {
-      valueEl.textContent = "-";
-    } else {
-      nonEmptyItems.forEach((item, index) => {
-        const itemEl = document.createElement("div");
-        itemEl.className = "hh-group-value-item";
-
-        if (isRepeatable) {
-          const title = document.createElement("span");
-          title.className = "hh-group-value-title";
-          title.textContent = `#${index + 1}`;
-          itemEl.appendChild(title);
-        }
-
-        childFields.forEach((child) => {
-          const childKey = getFieldKey(child);
-          // The canonical computed name already includes these editable parts.
-          if (completeNameField && String(item?.name ?? "").trim()
-            && (childKey === "first_name" || childKey === "last_name")) {
-            return;
-          }
-          const childValue = String(item?.[childKey] ?? "").trim();
-          if (!childValue) {
-            return;
-          }
-          const childRow = document.createElement("span");
-          childRow.className = "hh-group-value-row";
-
-          const childLabel = document.createElement("span");
-          childLabel.className = "hh-group-value-label";
-          childLabel.textContent = getFieldLabel(child, childKey);
-
-          const childText = document.createElement("span");
-          childText.className = "hh-group-value-text";
-          childText.textContent = childValue;
-
-          childRow.append(childLabel, childText);
-          itemEl.appendChild(childRow);
-        });
-
-        valueEl.appendChild(itemEl);
+      const childFields = resolveFieldGroupFields(field);
+      const completeNameField = childFields.find((child) => {
+        const template = child?.computed?.template;
+        return getFieldKey(child) === "name" && typeof template === "string"
+          && template.includes("{first_name}") && template.includes("{last_name}");
       });
-    }
-
-    row.append(labelEl, valueEl);
-    content.appendChild(row);
+      const parsed = parseFieldGroupValue(field, getRawFieldValue(field));
+      const repeatable = isRepeatableFieldGroup(field);
+      const items = (repeatable ? parsed : [parsed]).filter((item) => !isEmptyGroupItem(item, childFields));
+      if (!items.length) {
+        sections.push({ id: 'group-' + fieldIndex, title: "", properties: [{ id: getFieldKey(field), label, value: "-" }] });
+      }
+      items.forEach((item, index) => {
+        const properties = childFields.flatMap((child) => {
+          const key = getFieldKey(child);
+          if (completeNameField && String(item?.name ?? "").trim()
+            && (key === "first_name" || key === "last_name")) return [];
+          const value = String(item?.[key] ?? "").trim();
+          return value ? [{ id: key, label: getFieldLabel(child, key), value }] : [];
+        });
+        sections.push({
+          id: 'group-' + fieldIndex + '-' + index,
+          title: repeatable ? label + ' #' + (index + 1) : label,
+          properties,
+        });
+      });
+    });
+    return sections;
   }
 
-  function renderResourcesSection(root) {
-    const resources = safeArray(currentData.resources).filter(
-      (resource) => getResourceQuantity(resource?.id ?? resource?.resource_type_id) > 0
-    );
-    if (!resources.length) {
-      return;
-    }
-
-    const section = document.createElement("section");
-    section.className = "hh-type-section";
-
-    const title = document.createElement("h5");
-    title.className = "hh-title ui-title";
-    title.textContent = "Resources Needed";
-    section.appendChild(title);
-
-    const content = document.createElement("div");
-    content.className = "hh-content";
-
-    resources.forEach((resource) => {
+  function buildResourcesSection() {
+    const properties = safeArray(currentData.resources).flatMap((resource) => {
       const resourceTypeId = resource?.id ?? resource?.resource_type_id;
-      const row = document.createElement("div");
-      row.className = "hh-row hh-row-resource";
-      const labelEl = document.createElement("span");
-      labelEl.className = "hh-row-label";
-      labelEl.textContent = resource?.name || resource?.resource_type?.name || `Resource #${resourceTypeId ?? "-"}`;
-      const valueEl = document.createElement("span");
-      valueEl.className = "hh-row-value";
-      valueEl.textContent = String(getResourceQuantity(resourceTypeId));
-      row.append(labelEl, valueEl);
-      content.appendChild(row);
+      const quantity = getResourceQuantity(resourceTypeId);
+      return quantity > 0 ? [{
+        id: String(resourceTypeId),
+        label: resource?.name || resource?.resource_type?.name || 'Resource #' + (resourceTypeId ?? "-"),
+        value: quantity,
+      }] : [];
     });
-
-    section.appendChild(content);
-    root.appendChild(section);
+    return properties.length ? [{ id: "resources", title: "Resources Needed", properties }] : [];
   }
 
   function render() {
+    propertyViewer?.destroy();
+    propertyViewer = null;
     const root = createRoot(container, "hh-incident-types-details-viewer", currentOptions);
     if (!root) {
       return;
@@ -235,8 +152,14 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
       return;
     }
     renderHeader(root);
-    renderFieldsSection(root);
-    renderResourcesSection(root);
+    const sections = [...buildFieldSections(), ...buildResourcesSection()];
+    if (sections.length) {
+      const host = document.createElement("div");
+      root.appendChild(host);
+      propertyViewer = createPropertyViewer(host, { sections }, {
+        chrome: false, dense: true, showSelectionLabel: false, labelWidth: "minmax(120px, 35%)",
+      });
+    }
   }
 
   function validate() {
@@ -250,6 +173,8 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
 
   return {
     destroy() {
+      propertyViewer?.destroy();
+      propertyViewer = null;
       if (container && container.nodeType === 1) {
         container.innerHTML = "";
       }
