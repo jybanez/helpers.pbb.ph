@@ -212,6 +212,33 @@
   color: var(--ui-danger, #ff5f67);
 }
 
+.ui-property-viewer.is-mobile-columns .ui-property-viewer-row {
+  min-width: 0;
+}
+
+.ui-property-viewer.is-mobile-columns .ui-property-viewer-row:has(.ui-property-viewer-actions:not(:empty)) {
+  grid-template-columns: var(--ui-property-viewer-label-width) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.ui-property-viewer.is-mobile-columns .ui-property-viewer-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ui-property-viewer.is-mobile-columns .ui-property-viewer-action {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ui-property-viewer.is-mobile-columns .ui-property-viewer-chip {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .ui-property-viewer-selection,
   .ui-property-viewer-row {
@@ -225,4 +252,24 @@
   .ui-property-viewer.is-dense .ui-property-viewer-row {
     gap: 2px;
   }
+
+  .ui-property-viewer.is-mobile-columns .ui-property-viewer-selection,
+  .ui-property-viewer.is-mobile-columns .ui-property-viewer-row,
+  .ui-property-viewer.is-mobile-columns .ui-property-viewer-row:has(.ui-property-viewer-actions:not(:empty)) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    column-gap: 12px;
+  }
+
+  .ui-property-viewer.is-mobile-columns .ui-property-viewer-selection-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-property-viewer.is-mobile-columns .ui-property-viewer-actions {
+    grid-column: 1 / -1;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+
 }

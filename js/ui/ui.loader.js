@@ -7,7 +7,7 @@ const UI_ICONS_REV = "0.21.209";
 const UI_FILE_INPUT_REV = "0.21.108";
 const UI_CHAT_REV = "0.21.120";
 const UI_PASSWORD_REV = "0.21.66";
-const UI_PROPERTY_VIEWER_REV = "0.21.220";
+const UI_PROPERTY_VIEWER_REV = "0.21.221";
 const UI_DATE_REV = "0.21.204";
 const UI_NAV_REV = "0.21.4";
 const UI_POPOVER_REV = "0.21.215";
@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.212";
-const UI_BUNDLE_REV = "0.21.220";
+const UI_BUNDLE_REV = "0.21.221";
 const UI_GAME_BUNDLE_REV = "0.21.209";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -801,7 +801,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "incidentTypesDetailsEditor",
   },
   "incident.types.details.viewer": {
-    js: "../incident/incident.types.details.viewer.js?v=0.21.220",
+    js: "../incident/incident.types.details.viewer.js?v=0.21.221",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -814,7 +814,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "incidentTypesDetailsViewer",
   },
   "incident.types": {
-    js: "../incident/incident.types.js?v=0.21.220",
+    js: "../incident/incident.types.js?v=0.21.221",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,

@@ -5,7 +5,7 @@ import {
   resolveFieldGroupFields,
 } from "../ui/ui.field.group.js";
 
-import { createPropertyViewer } from "../ui/ui.property.viewer.js?v=0.21.220";
+import { createPropertyViewer } from "../ui/ui.property.viewer.js?v=0.21.221";
 
 export function incidentTypesDetailsViewer(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
@@ -158,6 +158,7 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
       root.appendChild(host);
       propertyViewer = createPropertyViewer(host, { sections }, {
         chrome: false, dense: true, showSelectionLabel: false, labelWidth: "minmax(120px, 35%)",
+        mobileLayout: currentOptions.propertyViewerOptions?.mobileLayout,
       });
     }
   }

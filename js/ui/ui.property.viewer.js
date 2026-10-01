@@ -8,6 +8,7 @@ const DEFAULT_OPTIONS = {
   selectionLabelPlaceholder: "No selection",
   labelWidth: null,
   dense: false,
+  mobileLayout: "stack",
   showSectionDescriptions: true,
   showPropertyHelp: true,
   emptyValue: "—",
@@ -41,6 +42,7 @@ export function createPropertyViewer(container, data = {}, options = {}) {
         "ui-property-viewer",
         currentOptions.chrome ? "" : "is-chrome-less",
         currentOptions.dense ? "is-dense" : "",
+        currentOptions.mobileLayout === "columns" ? "is-mobile-columns" : "",
         currentOptions.className || "",
       ].filter(Boolean).join(" "),
     });
@@ -574,6 +576,7 @@ function normalizeOptions(options = {}) {
     showSelectionLabel: options?.showSelectionLabel !== false,
     labelWidth: options?.labelWidth ?? null,
     dense: Boolean(options?.dense),
+    mobileLayout: options?.mobileLayout === "columns" ? "columns" : "stack",
     showSectionDescriptions: options?.showSectionDescriptions !== false,
     showPropertyHelp: options?.showPropertyHelp !== false,
     emptyValue: options?.emptyValue == null ? DEFAULT_OPTIONS.emptyValue : String(options.emptyValue),
