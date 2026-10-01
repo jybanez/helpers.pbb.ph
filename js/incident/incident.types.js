@@ -4,7 +4,7 @@ import {
   safeArray,
 } from "./incident.base.js";
 import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js";
-import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js?v=0.21.218";
+import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js?v=0.21.219";
 import { createEventBag } from "../ui/ui.events.js";
 import { createDrawer } from "../ui/ui.drawer.js";
 import { createElement } from "../ui/ui.dom.js";

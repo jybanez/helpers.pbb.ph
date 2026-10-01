@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Incident Types read-only patient/person groups show the computed complete name without duplicate first/last rows, retaining legacy and partial names and other details. Editor inputs, validation and stored data are unchanged. Main UI bundle cache revision `0.21.219`.
+
 - Incident Types read-only viewers now show only positive Resources Needed quantities and omit the section when none remain. Editable resource controls are unchanged. Main UI bundle cache revision `0.21.218`.
 
 - Added `ui.markdown` with compact/full safe Markdown profiles, literal HTML and disabled images, strict links, sanitized fragments, bounded fallback, developer demo and CSP/security regressions. Main UI bundle cache revision `0.21.217`; see `docs/markdown.md`.

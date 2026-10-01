@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Incident patient names regression</title>
+<body data-status="pending">
+<pre id="results">Running...</pre>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const results = document.getElementById('results');
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const field = { field_key: 'patients', field_label: 'Patient Details', input_type: 'group', preset: 'casualtyPatient', repeatable: true };
+const patients = [
+  { name: 'Stale name', last_name: 'Santos', first_name: 'Ana', gender: 'Female', age: 24, condition: 'Stable' },
+  { name: 'Legacy Patient', gender: 'Male' },
+  { first_name: 'Maria' },
+  { last_name: 'Cruz' },
+  { gender: 'Female' },
+];
+const data = (items, schema = field) => ({ incident_type_id: 10, name: 'Medical', fields: [schema],
+  detail_entries: [{ field_key: 'patients', field_value: JSON.stringify(items) }] });
+const host = () => document.body.appendChild(document.createElement('div'));
+const displayed = element => [...element.querySelectorAll('.hh-group-value-item')].map(item =>
+  Object.fromEntries([...item.querySelectorAll('.hh-group-value-row')].map(row =>
+    [row.querySelector('.hh-group-value-label').textContent, row.querySelector('.hh-group-value-text').textContent])));
+try {
+  const preferBundles = new URLSearchParams(location.search).has('bundle');
+  const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles });
+  const viewer = await loader.get('incident.types.details.viewer');
+  const list = await loader.get('incident.types');
+  const editorFactory = await loader.get('incident.types.details.editor');
+  for (const useList of [false, true]) {
+    const element = host();
+    const wrap = item => useList ? [item] : item;
+    const api = (useList ? list : viewer)(element, wrap(data(patients)), { editable: false, categories: [], incidentTypes: [] });
+    const rows = displayed(element);
+    assert(rows.length === 5, 'retain every nonempty patient');
+    assert(JSON.stringify(rows.map(row => row['Complete name'] || '')) === JSON.stringify(['Santos, Ana', 'Legacy Patient', 'Maria', 'Cruz', '']), 'computed, legacy, partial and missing names');
+    assert(rows.every(row => !('First name' in row) && !('Last name / Family name' in row)), 'no duplicate name parts');
+    assert(rows[0].Gender === 'Female' && rows[0].Age === '24' && rows[0].Condition === 'Stable', 'retain other patient details');
+    assert(rows[4].Gender === 'Female', 'retain unnamed patient details');
+    const retained = useList ? api.getData()[0] : api.getData();
+    assert(retained.detail_entries[0].field_value === JSON.stringify(patients), 'viewer must not rewrite stored names');
+    api.update(wrap(data([{ ...patients[0], first_name: 'Bea' }])));
+    assert(displayed(element)[0]['Complete name'] === 'Santos, Bea', 'update recomputes name after edit');
+    assert(displayed(element).length === 1 && !element.textContent.includes('Santos, Ana'), 'update removes old entries');
+    api.update(wrap(data({ last_name: 'Lim', first_name: 'Kai' }, { ...field, repeatable: false })));
+    assert(displayed(element)[0]['Complete name'] === 'Lim, Kai', 'nonrepeatable patient');
+    const custom = { ...field, preset: undefined, fields: [
+      { key: 'name', label: 'Nickname' }, { key: 'first_name', label: 'First' }, { key: 'last_name', label: 'Last' },
+    ] };
+    api.update(wrap(data([{ name: 'Ace', first_name: 'Ana', last_name: 'Santos' }], custom)));
+    assert(displayed(element)[0].First === 'Ana' && displayed(element)[0].Last === 'Santos', 'unrelated name fields remain visible without computed-name schema');
+    api.destroy(); element.remove();
+  }
+  const element = host();
+  const editor = editorFactory(element, data([{ first_name: 'Ana', last_name: 'Santos' }]), { removeIncidentType() {} });
+  const first = element.querySelector('[data-field-key="first_name"] input');
+  const last = element.querySelector('[data-field-key="last_name"] input');
+  assert(first && last, 'editor retains separate inputs');
+  first.value = ''; first.dispatchEvent(new Event('input', { bubbles: true }));
+  assert(!editor.validate().status, 'editor retains required name validation');
+  first.value = 'Bea'; first.dispatchEvent(new Event('input', { bubbles: true }));
+  assert(editor.validate().status, 'valid edited name passes validation');
+  const saved = JSON.parse(editor.getData().detail_entries[0].field_value)[0];
+  assert(saved.first_name === 'Bea' && saved.last_name === 'Santos' && saved.name === 'Santos, Bea', 'editor stores name parts and computed name');
+  editor.destroy(); element.remove();
+  if (preferBundles) assert(window.__PBB_HELPER_UI_BUNDLE__, 'bundle loaded');
+  document.body.dataset.status = 'pass';
+  results.textContent = 'PASS: patient name display, legacy/partial names, repeatable and single records, updates, custom fields, editor data/validation';
+} catch (error) {
+  document.body.dataset.status = 'fail'; results.textContent = `FAIL: ${error.stack}`;
+}
+</script>
+</body>
+</html>
