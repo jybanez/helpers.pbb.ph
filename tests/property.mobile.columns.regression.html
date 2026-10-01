@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobile property columns</title>
+<style>
+  body { margin: 0; padding: 12px; font: 14px system-ui; background: #f4f7fa; }
+  #host, #incident { max-width: 720px; margin: auto; }
+  #results { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<body data-status="pending" data-theme="care-light">
+<div id="incident"></div><div id="host"></div><pre id="results">Running...</pre>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert = (value, message) => { if (!value) throw new Error(message); };
+const results = document.getElementById('results');
+const host = document.getElementById('host');
+const incident = document.getElementById('incident');
+const long = 'LongUnbrokenText'.repeat(12);
+const columns = row => getComputedStyle(row).gridTemplateColumns.split(' ').length;
+const checkOverflow = root => {
+  assert(root.scrollWidth <= root.clientWidth + 1, 'host must not overflow');
+  for (const node of root.querySelectorAll('.ui-property-viewer-row, .ui-property-viewer-label, .ui-property-viewer-value, .ui-property-viewer-chip, button')) {
+    assert(node.scrollWidth <= node.clientWidth + 1, 'content must wrap: ' + node.className);
+    assert(node.getBoundingClientRect().right <= root.getBoundingClientRect().right + 1, 'content stays within host');
+  }
+};
+try {
+  const bundle = new URLSearchParams(location.search).has('bundle');
+  const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: bundle });
+  const createViewer = await loader.get('ui.property.viewer');
+  const createList = await loader.get('incident.types');
+  const createDetail = await loader.get('incident.types.details.viewer');
+  const actions = [];
+  const data = { selectionLabel: long, sections: [{ title: 'Action and wrapping coverage', properties: [
+    { id: 'short', label: 'Gender', value: 'Male' },
+    { id: 'long', label: long, value: long },
+    { id: 'actions', label: 'Record', value: 'Long name ' + long, actions: [{ id: 'open', label: 'Open record' }, { id: 'long-action', label: long }], copyable: true },
+    { id: 'tags', label: 'Tags', value: [long] },
+    { id: 'primary', label: 'Action', kind: 'action', value: long },
+  ] }] };
+  const api = createViewer(host, data, { dense: true, onAction: (property, action) => actions.push(action.id), onCopy() {} });
+  const row = () => host.querySelector('[data-property-id="short"]');
+  const defaultFont = getComputedStyle(row().querySelector('.ui-property-viewer-display')).fontSize;
+  if (innerWidth <= 640) assert(columns(row()) === 1, 'existing default stacks');
+  api.update({}, { mobileLayout: 'columns' });
+  assert(getComputedStyle(row().querySelector('.ui-property-viewer-display')).fontSize === defaultFont, 'text size unchanged');
+  if (innerWidth <= 640) {
+    assert(columns(row()) === 2, 'opt-in uses two columns');
+    assert(columns(host.querySelector('.ui-property-viewer-selection')) === 2, 'selection uses two columns');
+    const label = row().querySelector('.ui-property-viewer-label').getBoundingClientRect();
+    const value = row().querySelector('.ui-property-viewer-value').getBoundingClientRect();
+    assert(value.left > label.left && Math.abs(value.top - label.top) < 1, 'label and value sit beside one another');
+    const actionCell = host.querySelector('[data-property-id="actions"] .ui-property-viewer-actions');
+    assert(getComputedStyle(actionCell).gridColumnStart === '1' && getComputedStyle(actionCell).gridColumnEnd === '-1', 'actions occupy full-width line');
+  } else assert(columns(row()) === 3, 'desktop columns unchanged');
+  checkOverflow(host);
+  const open = [...host.querySelectorAll('button')].find(button => button.textContent === 'Open record');
+  open.focus(); assert(document.activeElement === open, 'action remains focusable'); open.click();
+  assert(actions.includes('open'), 'action callback retained');
+  assert(host.querySelector('.ui-property-viewer-copy').getAttribute('aria-label') === 'Copy', 'copy accessible name retained');
+  api.update({}, { mobileLayout: 'stack' });
+  if (innerWidth <= 640) assert(columns(row()) === 1, 'update restores stacking');
+  api.update({}, { mobileLayout: 'invalid' });
+  assert(!api.root.classList.contains('is-mobile-columns'), 'invalid option falls back to default');
+  api.update({}, { mobileLayout: 'columns' });
+  api.setSections(data.sections);
+  assert(api.root.classList.contains('is-mobile-columns'), 'data updates retain option');
+  const item = { incident_type_id: 10, name: 'Medical assistance', fields: [{ field_key: 'patients', field_label: 'Patient Details', input_type: 'group', preset: 'casualtyPatient', repeatable: true }],
+    detail_entries: [{ field_key: 'patients', field_value: JSON.stringify([{ first_name: 'Me', last_name: 'Mini', gender: 'Male', condition: 'Serious', injury_type: 'Fracture', consciousness: 'Conscious', transported: 'No' }, { name: long, gender: 'Female' }]) }] };
+  for (const isList of [false, true]) {
+    const wrap = value => isList ? [value] : value;
+    const config = { editable: false, headerText: '', categories: [], incidentTypes: [], theme: 'care-light', propertyViewerOptions: { mobileLayout: 'columns' } };
+    const viewer = (isList ? createList : createDetail)(incident, wrap(item), config);
+    assert(incident.querySelector('.is-mobile-columns'), 'incident option forwarded to canonical viewer');
+    if (innerWidth <= 640) { assert(columns(incident.querySelector('.ui-property-viewer-row')) === 2, 'incident mobile columns'); checkOverflow(incident); }
+    viewer.update(wrap(item), { propertyViewerOptions: { mobileLayout: 'stack' } });
+    if (innerWidth <= 640) assert(columns(incident.querySelector('.ui-property-viewer-row')) === 1, 'incident update restores stack');
+    viewer.update(wrap(item), { propertyViewerOptions: { mobileLayout: 'columns' } });
+    viewer.destroy(); assert(!incident.firstChild, 'incident destroy cleanup');
+  }
+  createList(incident, [item], { editable: false, headerText: '', categories: [], incidentTypes: [], theme: 'care-light', propertyViewerOptions: { mobileLayout: 'columns' } });
+  if (bundle) assert(window.__PBB_HELPER_UI_BUNDLE__, 'bundle loaded');
+  document.body.dataset.status = 'pass'; results.textContent = 'PASS: default/opt-in layout, long values/actions, accessibility and incident update/destroy';
+} catch (error) { document.body.dataset.status = 'fail'; results.textContent = 'FAIL: ' + error.stack; }
+</script>
+</body>
+</html>

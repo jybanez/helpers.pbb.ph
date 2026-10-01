@@ -105,6 +105,9 @@ Do not return raw HTML strings expecting them to be parsed. Helper treats string
 - `selectionLabelPlaceholder`
 - `labelWidth`
 - `dense`
+- `mobileLayout`: `"stack"` (default) stacks labels/values below 640px; `"columns"` keeps them side by side in shrinkable 40%/60% columns with wrapping. Mobile columns use this proportional split rather than `labelWidth`; desktop still uses `labelWidth`. Actions wrap on a separate full-width line so they do not squeeze values. Text size is unchanged. Supported by `update(data, options)`.
+
+With `mobileLayout:"columns"`, desktop action-bearing rows share remaining width equally between value and actions, and long action labels/chips wrap. Ordinary desktop rows retain their existing layout. Default consumers are unchanged.
 - `showSectionDescriptions`
 - `showPropertyHelp`
 - `emptyValue`

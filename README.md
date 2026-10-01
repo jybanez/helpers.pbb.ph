@@ -2147,6 +2147,7 @@ Purpose:
 - Composes `ui.property.viewer` with dense, chrome-free sections. Repeatable groups use labelled `Group #N` sections; scalar fields use their own labels without a generic Fields heading.
 - Person/patient groups show the computed complete name once, retaining legacy/partial names and other populated details. Resources Needed is a separate section containing positive quantities only.
 - Loader users receive the Property Viewer dependency and styles automatically. Direct source imports must also load `css/ui/ui.property.viewer.css` alongside the incident styles. Stored data and editor inputs are unchanged.
+- Opt into side-by-side mobile properties with `propertyViewerOptions: { mobileLayout: "columns" }` on either `incidentTypesDetailsViewer(...)` or `incidentTypes(..., { editable: false, ... })`. Only `mobileLayout` is forwarded; default is `"stack"`. Pass the option again through `update(nextData, nextOptions)` to change layout. Long labels and values wrap; desktop layout and editors are unchanged.
 
 Methods:
 
