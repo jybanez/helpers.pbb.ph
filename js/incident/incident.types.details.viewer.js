@@ -130,6 +130,11 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     valueEl.className = "hh-row-value hh-group-value";
 
     const childFields = resolveFieldGroupFields(field);
+    const completeNameField = childFields.find((child) => {
+      const template = child?.computed?.template;
+      return getFieldKey(child) === "name" && typeof template === "string"
+        && template.includes("{first_name}") && template.includes("{last_name}");
+    });
     const parsed = parseFieldGroupValue(field, getRawFieldValue(field));
     const isRepeatable = isRepeatableFieldGroup(field);
     const items = isRepeatable ? parsed : [parsed];
@@ -151,6 +156,11 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
 
         childFields.forEach((child) => {
           const childKey = getFieldKey(child);
+          // The canonical computed name already includes these editable parts.
+          if (completeNameField && String(item?.name ?? "").trim()
+            && (childKey === "first_name" || childKey === "last_name")) {
+            return;
+          }
           const childValue = String(item?.[childKey] ?? "").trim();
           if (!childValue) {
             return;
