@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Incident resource viewer regression</title>
+<body data-status="pending">
+<pre id="results">Running...</pre>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const results = document.getElementById('results');
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const resources = [
+  { id: 1, name: 'Ambulance' },
+  { resource_type_id: 2, resource_type: { name: 'Fire truck' } },
+  { id: 3, name: 'Missing quantity' },
+  { id: 4, name: 'Invalid quantity' },
+  { id: 5, name: 'Negative quantity' },
+  { id: 6, name: 'Nonfinite quantity' },
+];
+const data = (entries = []) => ({
+  incident_type_id: 10, name: 'Fire', resources,
+  fields: [{ field_key: 'location', field_label: 'Location' }],
+  detail_entries: [{ field_key: 'location', field_value: 'Main Street' }],
+  resources_needed: entries,
+});
+const needed = (id, quantity) => ({ resource_type_id: id, quantity_needed: quantity });
+const host = () => document.body.appendChild(document.createElement('div'));
+const rows = element => [...element.querySelectorAll('.hh-row-resource')].map(row =>
+  [row.querySelector('.hh-row-label').textContent, row.querySelector('.hh-row-value').textContent]);
+const hasSection = element => [...element.querySelectorAll('h5')].some(title => title.textContent === 'Resources Needed');
+try {
+  for (const preferBundles of [new URLSearchParams(location.search).has('bundle')]) {
+    const mode = preferBundles ? 'bundle' : 'source';
+    const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles });
+    const viewer = await loader.get('incident.types.details.viewer');
+    const list = await loader.get('incident.types');
+    for (const useList of [false, true]) {
+      const label = `${mode}/${useList ? 'list' : 'detail'}`;
+      const element = host();
+      const options = { editable: false, categories: [], incidentTypes: [] };
+      const wrap = item => useList ? [item] : item;
+      const api = (useList ? list : viewer)(element, wrap(data([
+        needed(1, 0), needed('2', '3'), needed(4, 'invalid'), needed(5, -2), needed(6, Infinity),
+      ])), options);
+      assert(JSON.stringify(rows(element)) === JSON.stringify([['Fire truck', '3']]), `${label}: only positive row`);
+      assert(element.textContent.includes('Main Street'), `${label}: retain detail fields`);
+      const retained = useList ? api.getData()[0] : api.getData();
+      assert(retained.resources.length === 6 && retained.resources_needed.length === 5, `${label}: preserve unfiltered data`);
+      for (const entries of [[needed(1, 0), needed(2, '0')], []]) {
+        api.update(wrap(data(entries)));
+        assert(!hasSection(element) && rows(element).length === 0, `${label}: omit zero/missing section`);
+      }
+      api.update(wrap(data([needed('1', '2')])));
+      assert(JSON.stringify(rows(element)) === JSON.stringify([['Ambulance', '2']]), `${label}: zero to positive`);
+      api.update(wrap(data([needed(1, 0)])));
+      assert(!hasSection(element), `${label}: positive to zero`);
+      api.destroy();
+      element.remove();
+    }
+    const element = host();
+    const editor = list(element, [data()], {
+      editable: true, categories: [], incidentTypes: [], removeIncidentType() {},
+    });
+    assert(element.querySelectorAll('.hh-resource-row').length === resources.length, `${mode}: retain all editor rows`);
+    const increase = element.querySelector('button[aria-label="Increase Ambulance"]');
+    assert(increase && !increase.disabled, `${mode}: zero quantity remains editable`);
+    increase.click();
+    assert(editor.getData()[0].resources_needed.some(entry => entry.resource_type_id === 1 && entry.quantity_needed === 1), `${mode}: operator can add resource quantity`);
+    editor.destroy();
+    element.remove();
+    if (preferBundles) {
+      assert(window.__PBB_HELPER_UI_BUNDLE__, 'bundle was loaded');
+    }
+  }
+  document.body.dataset.status = 'pass';
+  results.textContent = 'PASS: source and bundle, detail/list viewers, mixed/zero/missing quantities, update transitions, editor increment';
+} catch (error) {
+  document.body.dataset.status = 'fail';
+  results.textContent = `FAIL: ${error.stack}`;
+}
+</script>
+</body>
+</html>
