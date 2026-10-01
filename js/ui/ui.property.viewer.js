@@ -3,6 +3,7 @@ import { createIcon } from "./ui.icons.js";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  chrome: true,
   showSelectionLabel: true,
   selectionLabelPlaceholder: "No selection",
   labelWidth: null,
@@ -38,6 +39,7 @@ export function createPropertyViewer(container, data = {}, options = {}) {
     root = createElement("div", {
       className: [
         "ui-property-viewer",
+        currentOptions.chrome ? "" : "is-chrome-less",
         currentOptions.dense ? "is-dense" : "",
         currentOptions.className || "",
       ].filter(Boolean).join(" "),
@@ -97,7 +99,9 @@ export function createPropertyViewer(container, data = {}, options = {}) {
         text: section.description,
       }));
     }
-    node.appendChild(header);
+    if (section.title || (currentOptions.showSectionDescriptions && section.description)) {
+      node.appendChild(header);
+    }
 
     const body = createElement("div", { className: "ui-property-viewer-section-body" });
     section.properties.forEach((property) => {
@@ -566,6 +570,7 @@ function normalizeOptions(options = {}) {
     ...DEFAULT_OPTIONS,
     ...(options || {}),
     className: String(options?.className || ""),
+    chrome: options?.chrome !== false,
     showSelectionLabel: options?.showSelectionLabel !== false,
     labelWidth: options?.labelWidth ?? null,
     dense: Boolean(options?.dense),

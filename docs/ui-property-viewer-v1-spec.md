@@ -100,6 +100,7 @@ Do not return raw HTML strings expecting them to be parsed. Helper treats string
 ## Options
 
 - `className`
+- `chrome` defaults to `true`; use `false` to remove section card borders/backgrounds and horizontal inset padding inside an existing panel.
 - `showSelectionLabel`
 - `selectionLabelPlaceholder`
 - `labelWidth`
@@ -148,6 +149,8 @@ Use `kind: "password"` for passwords, tokens, secrets, or other sensitive values
 Property rows accept `neutral`, `success`, `info`, `warning`, and `danger`. Each tone applies a theme-aware text color to the displayed property value.
 
 ## Methods
+
+Set a section's `title` explicitly to `""` to omit its header when it has no visible description. Omitted titles retain the default `Section N` heading. `dense: true` uses compact stacked label/value spacing on mobile.
 
 - `update(data?, options?)`
 - `setSections(sections)`

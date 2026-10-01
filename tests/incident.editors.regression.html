@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="../css/incident/incident.types.css">
   <link rel="stylesheet" href="../css/incident/incident.types.details.editor.css">
   <link rel="stylesheet" href="../css/incident/incident.types.details.viewer.css">
+  <link rel="stylesheet" href="../css/ui/ui.property.viewer.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.editor.css">
   <link rel="stylesheet" href="../css/incident/incident.teams.assignments.viewer.css">
@@ -224,26 +225,22 @@
       incidentTypes: [{ id: 10, category_id: 1, name: "Building Fire", description: "Fire affecting a house, building, or other structure." }],
     });
     assert(
-      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Dela Cruz, Juan"),
+      document.querySelector("#incidentTypesViewerHost .ui-property-viewer")?.textContent.includes("Dela Cruz, Juan"),
       "incident type viewer should render repeatable group values"
     );
     assert(
-      document.querySelector("#incidentTypesViewerHost .hh-group-value-title")?.textContent === "#1",
+      document.querySelector("#incidentTypesViewerHost .ui-property-viewer-section-title")?.textContent === "Missing Persons #1",
       "incident type viewer repeatable group titles should match editor #number labels"
     );
     assert(
-      document.querySelector("#incidentTypesViewerHost .hh-group-value")?.textContent.includes("Last seen location"),
+      document.querySelector("#incidentTypesViewerHost .ui-property-viewer")?.textContent.includes("Last seen location"),
       "incident type viewer should resolve preset group labels without fields[]"
     );
-    const viewerGroupRow = document.querySelector("#incidentTypesViewerHost .hh-row-group");
-    const viewerGroupValue = document.querySelector("#incidentTypesViewerHost .hh-group-value");
-    const viewerGroupItem = document.querySelector("#incidentTypesViewerHost .hh-group-value-item");
-    const viewerGroupRowStyle = getComputedStyle(viewerGroupRow);
-    const viewerGroupRowRect = viewerGroupRow?.getBoundingClientRect();
-    const viewerGroupItemRect = viewerGroupItem?.getBoundingClientRect();
-    assert(viewerGroupRowStyle.gridTemplateColumns.split(" ").length === 1, "incident type viewer group rows should use a stacked full-width layout");
-    assert(viewerGroupItemRect?.right <= viewerGroupRowRect?.right + 1, "incident type viewer group cards should stay inside the viewer row");
-    assert(getComputedStyle(viewerGroupValue).width !== "0px", "incident type viewer group values should receive usable width");
+    const viewerRoot = document.querySelector("#incidentTypesViewerHost .ui-property-viewer");
+    const viewerSection = viewerRoot.querySelector(".ui-property-viewer-section");
+    assert(viewerRoot.classList.contains("is-chrome-less"), "incident viewer should use canonical chrome-free properties");
+    assert(viewerSection.getBoundingClientRect().right <= viewerRoot.getBoundingClientRect().right + 1, "patient sections stay within viewer");
+
 
     const resourceIncrementButton = document.querySelector("#incidentTypesHost .hh-resource-row .ui-number-stepper-button-increment");
     assert(Boolean(resourceIncrementButton), "incident type resource rows should render the shared numeric stepper");

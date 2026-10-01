@@ -19,9 +19,9 @@ const patients = [
 const data = (items, schema = field) => ({ incident_type_id: 10, name: 'Medical', fields: [schema],
   detail_entries: [{ field_key: 'patients', field_value: JSON.stringify(items) }] });
 const host = () => document.body.appendChild(document.createElement('div'));
-const displayed = element => [...element.querySelectorAll('.hh-group-value-item')].map(item =>
-  Object.fromEntries([...item.querySelectorAll('.hh-group-value-row')].map(row =>
-    [row.querySelector('.hh-group-value-label').textContent, row.querySelector('.hh-group-value-text').textContent])));
+const displayed = element => [...element.querySelectorAll('.ui-property-viewer-section')].map(item =>
+  Object.fromEntries([...item.querySelectorAll('.ui-property-viewer-row')].map(row =>
+    [row.querySelector('.ui-property-viewer-label').textContent, row.querySelector('.ui-property-viewer-display').textContent])));
 try {
   const preferBundles = new URLSearchParams(location.search).has('bundle');
   const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles });
