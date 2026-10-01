@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Incident Types read-only viewers now show only positive Resources Needed quantities and omit the section when none remain. Editable resource controls are unchanged. Main UI bundle cache revision `0.21.218`.
+
 - Added `ui.markdown` with compact/full safe Markdown profiles, literal HTML and disabled images, strict links, sanitized fragments, bounded fallback, developer demo and CSP/security regressions. Main UI bundle cache revision `0.21.217`; see `docs/markdown.md`.
 
 - Added `actions.integration` for participant identity and `actions.integration-remove` for detach actions; existing add artwork is unchanged. Icon/main/game revision `0.21.209`.

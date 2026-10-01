@@ -179,7 +179,9 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
   }
 
   function renderResourcesSection(root) {
-    const resources = safeArray(currentData.resources);
+    const resources = safeArray(currentData.resources).filter(
+      (resource) => getResourceQuantity(resource?.id ?? resource?.resource_type_id) > 0
+    );
     if (!resources.length) {
       return;
     }
