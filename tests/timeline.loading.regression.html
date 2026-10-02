@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Timeline loading regression</title></head><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader, DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const bundled=new URLSearchParams(location.search).has('bundle');
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:bundled});
+const create=await loader.get('ui.timeline');
+const results=document.querySelector('#results');let count=0;
+function assert(ok,message){if(!ok)throw Error(message);count++;results.textContent+=`PASS ${message}\n`;}
+try{
+if(bundled)assert(create===window.__PBB_HELPER_UI_BUNDLE__['./ui.timeline.js'].createTimeline,'generated factory used');
+for(const virtual of [false,true]){
+ const host=document.createElement('div');host.style.cssText='width:400px;height:240px;overflow:auto';document.body.prepend(host);
+ let mounts=0,destroys=0,ends=0;
+ const items=Array.from({length:40},(_,i)=>({id:`row-${i}`,title:`Row ${i}`,description:'Retained content'}));
+ const view=create(host,items,{groupByDate:false,enableVirtualization:virtual,virtualThreshold:0,isLoading:true,endThreshold:100000,onReachEnd:()=>ends++,mountItemContent(body){mounts++;const input=document.createElement('input');input.value='draft';body.append(input);return {destroy(){destroys++;}};}});
+ const root=host.querySelector('.ui-timeline'),slot=host.querySelector('.ui-timeline-loading'),status=host.querySelector('[role=status]');
+ assert(root.getAttribute('aria-busy')==='true'&&getComputedStyle(slot).visibility==='visible','initial loading visible and busy');
+ assert(status.textContent.includes('Loading')&&!root.contains(status),'live status outside busy region');
+ const scroll=host.querySelector('.ui-timeline-viewport')||host;
+ const rows=[...host.querySelectorAll('.ui-timeline-item')],input=rows[0].querySelector('input');input.focus();input.value='unsaved';
+ const beforeMounts=mounts,beforeDestroy=destroys,beforeHeight=scroll.scrollHeight;
+ scroll.scrollTop=35;const top=scroll.scrollTop,anchor=rows[0].getBoundingClientRect().top;
+ view.update(undefined,{isLoading:false,hasMore:true});
+ assert(root===host.querySelector('.ui-timeline')&&rows.every(row=>row.isConnected),'state-only update retains root and rows');
+ assert(mounts===beforeMounts&&destroys===beforeDestroy&&input.value==='unsaved'&&document.activeElement===input,'mount state and focus retained');
+ assert(scroll.scrollTop===top&&scroll.scrollHeight===beforeHeight&&rows[0].getBoundingClientRect().top===anchor,'loading clear preserves scroll bounds and anchor');
+ assert(root.getAttribute('aria-busy')==='false'&&status.textContent===''&&getComputedStyle(slot).visibility==='hidden','clear removes announcement and visible indicator');
+ const endCount=ends;view.update(undefined,{isLoading:true,loadingText:'<img src=x> Fetching older messages'});view.update(undefined,{isLoading:false});
+ assert(ends===endCount,'same end boundary remains latched');
+ assert(!slot.querySelector('img'),'localized loading label is literal');
+ view.update(undefined,{isLoading:true});view.resetReachEnd();assert(ends===endCount,'busy state suppresses explicit end check');
+ view.update(undefined,{isLoading:false,hasMore:false});assert(ends===endCount,'hasMore false suppresses callback');
+ view.update(undefined,{hasMore:true});assert(ends===endCount+(virtual?1:0),'virtual end resumes once; static mode retains existing no-callback contract');
+ scroll.scrollTop=scroll.scrollHeight;const bottom=scroll.scrollTop;
+ view.update(undefined,{isLoading:true});view.update(undefined,{isLoading:false});assert(scroll.scrollTop===bottom,'bottom scroll position retained');
+ view.destroy();view.update(undefined,{isLoading:true});assert(host.childElementCount===0,'destroy removes status and prevents late loading updates');host.remove();
+}
+const host=document.createElement('div');document.body.prepend(host);const empty=create(host,[],{isLoading:true});
+assert(host.querySelector('.ui-timeline-empty').hidden&&host.querySelector('.ui-timeline-loading').textContent,'empty loading replaces empty message');
+empty.update(undefined,{isLoading:false});assert(!host.querySelector('.ui-timeline-empty').hidden,'empty state returns after loading');
+empty.update([{id:'loaded',title:'Loaded'}],{isLoading:false});assert(host.querySelector('.ui-timeline-item')&&host.querySelectorAll('[role=status]').length===1,'first page renders with one status region');
+empty.update(undefined,{orientation:'horizontal',isLoading:true});assert(host.querySelector('.ui-timeline-loading.is-active'),'horizontal loading supported');empty.destroy();
+document.body.dataset.status='pass';results.textContent+=`${count} assertions passed`;
+}catch(error){document.body.dataset.status='fail';results.textContent+=error.stack;}
+</script></body></html>
