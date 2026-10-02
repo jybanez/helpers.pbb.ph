@@ -94,7 +94,8 @@ timeline.destroy(); // release the entire view`,
     { option: "<code>emptyText</code>", default: '<code>"No timeline items."</code>', description: "Message displayed when the collection or linked range contains no visible items." },
     { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for scoped application styling." },
     { option: "<code>onRangeChange</code>", default: "<code>null</code>", description: "Receives the mounted virtual range and state, not the full set of records in view." },
-    { option: "<code>onReachEnd</code>", default: "<code>null</code>", description: "Notifies once per end boundary when within endThreshold; your app owns fetching, loading/error UI, and retries." },
+    { option: "<code>onReachEnd</code>", default: "<code>null</code>", description: "Virtual vertical feeds notify once per end boundary within endThreshold; your app owns fetching, errors and retries. Timeline owns the isLoading presentation." },
+    { option: "<code>loadingText</code>", default: "Loading timeline items…", description: "Localized plain-text loading label at the pagination end, announced through a status region. A stable 36px end slot prevents scroll shifts." },
   );
   meta.options.find(row => row.option === "<code>groupByDate</code>").description = "Groups vertical items by day. Grouped timestamps show time only; virtual feeds keep an active floating date after the inline heading scrolls away. Horizontal timelines keep full timestamps.";
   meta.methods.unshift(

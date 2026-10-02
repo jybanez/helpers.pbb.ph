@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS = {
   endThreshold: 320,
   topAnchorThreshold: 48,
   isLoading: false,
+  loadingText: "Loading timeline items…",
   hasMore: true,
   onRangeChange: null,
   onReachEnd: null,
@@ -45,6 +46,8 @@ export function createTimeline(container, items = [], options = {}) {
   let currentOptions = normalizeOptions(options);
   let visibleItems = [];
   let root = null;
+  let loadingIndicator = null;
+  let loadingStatus = null;
   let api = null;
   let virtualViewport = null;
   let floatingDate = null;
@@ -69,6 +72,28 @@ export function createTimeline(container, items = [], options = {}) {
   const collapsedStates = new Map();
   const disclosureIds = new Map();
   const disclosurePrefix = `ui-timeline-disclosure-${++disclosureInstance}`;
+
+  function syncLoading() {
+    if (!root) return;
+    root.setAttribute("aria-busy", String(currentOptions.isLoading));
+    if (!loadingIndicator || !root.contains(loadingIndicator)) {
+      // Keep a fixed end slot even when idle so clearing loading cannot clamp
+      // the viewport's scrollTop or move a retained row at the lower boundary.
+      loadingIndicator = createElement("div", { className: "ui-timeline-loading", attrs: { "aria-hidden": "true" } });
+      (virtualBottomSpacer?.parentNode || root).appendChild(loadingIndicator);
+    }
+    loadingIndicator.classList.toggle("is-active", currentOptions.isLoading);
+    loadingIndicator.textContent = currentOptions.isLoading ? currentOptions.loadingText : "";
+    const empty = root.querySelector(":scope > .ui-timeline-empty");
+    if (empty) empty.hidden = currentOptions.isLoading;
+    if (!loadingStatus || loadingStatus.parentNode !== container) {
+      // Outside aria-busy: loading announcements must not wait for completion.
+      loadingStatus = createElement("div", { className: "ui-timeline-loading-status", attrs: { role: "status", "aria-live": "polite", "aria-atomic": "true" } });
+      container.appendChild(loadingStatus);
+    }
+    const label = currentOptions.isLoading ? currentOptions.loadingText : "";
+    if (loadingStatus.textContent !== label) loadingStatus.textContent = label;
+  }
 
   function syncDisclosure() {
     if (!currentOptions.collapsible && !collapsedStates.size) return;
@@ -147,6 +172,7 @@ export function createTimeline(container, items = [], options = {}) {
         text: currentOptions.emptyText,
       }));
       container.appendChild(root);
+      syncLoading();
       return;
     }
 
@@ -157,6 +183,7 @@ export function createTimeline(container, items = [], options = {}) {
     }
 
     container.appendChild(root);
+    syncLoading();
     clearDetachedRowEvents();
   }
 
@@ -259,6 +286,7 @@ export function createTimeline(container, items = [], options = {}) {
     if (virtualViewport && root?.isConnected) {
       root.className = buildRootClassName(currentOptions, true);
       root.setAttribute("aria-label", currentOptions.ariaLabel);
+      syncLoading();
       return;
     }
     teardownVirtualRoot();
@@ -284,6 +312,7 @@ export function createTimeline(container, items = [], options = {}) {
     });
     root.appendChild(floatingDate);
     container.appendChild(root);
+    syncLoading();
     virtualViewport.addEventListener("scroll", onVirtualScroll, { passive: true });
     if (typeof ResizeObserver === "function") {
       resizeObserver = new ResizeObserver(onVirtualResize);
@@ -841,10 +870,18 @@ export function createTimeline(container, items = [], options = {}) {
     return { found: true, id: key };
   }
 
-  function update(nextItems = currentItems, nextOptions = {}) {
+  function update(nextItems = undefined, nextOptions = {}) {
+    if (destroyed) return;
+    const optionKeys = Object.keys(nextOptions || {});
+    if (nextItems === undefined && optionKeys.length > 0 && optionKeys.every(key => ["isLoading", "hasMore", "loadingText"].includes(key))) {
+      currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
+      syncLoading();
+      checkReachEnd("update");
+      return;
+    }
     navigationToken += 1;
     const snapshot = captureVirtualSnapshot();
-    currentItems = normalizeItems(nextItems);
+    currentItems = normalizeItems(nextItems === undefined ? currentItems : nextItems);
     const disclosureChanged = nextOptions?.collapsible != null && Boolean(nextOptions.collapsible) !== currentOptions.collapsible;
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
     if (disclosureChanged) measuredHeights.clear();
@@ -892,6 +929,8 @@ export function createTimeline(container, items = [], options = {}) {
     clearNode(container);
     clearDetachedRowEvents();
     root = null;
+    loadingIndicator = null;
+    loadingStatus = null;
   }
 
   function getState() {
@@ -951,6 +990,7 @@ function normalizeOptions(options) {
   next.endThreshold = normalizeNonNegativeNumber(next.endThreshold, 320);
   next.topAnchorThreshold = normalizeNonNegativeNumber(next.topAnchorThreshold, 48);
   next.isLoading = Boolean(next.isLoading);
+  next.loadingText = String(next.loadingText ?? DEFAULT_OPTIONS.loadingText);
   next.hasMore = next.hasMore !== false;
   next.onRangeChange = typeof next.onRangeChange === "function" ? next.onRangeChange : null;
   next.onReachEnd = typeof next.onReachEnd === "function" ? next.onReachEnd : null;

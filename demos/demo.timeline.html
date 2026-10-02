@@ -102,7 +102,7 @@
     .timeline-guide code { overflow-wrap: anywhere; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.185";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.222";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.timeline"]);
   </script>
   <script>
@@ -135,7 +135,7 @@
         { option: "<code>estimateItemHeight</code>", default: "<code>null</code>", description: "Optional (item, { startsGroup }) callback returning the full virtual unit height in pixels. Use presentation state for collapsed/expanded estimates; mounted rows are measured." },
         { option: "<code>endThreshold</code>", default: "<code>320</code>", description: "Distance in pixels from the end that triggers <code>onReachEnd</code>." },
         { option: "<code>topAnchorThreshold</code>", default: "<code>48</code>", description: "Distance from the top where prepending keeps the viewport pinned to the top." },
-        { option: "<code>isLoading</code>", default: "<code>false</code>", description: "Suppresses end callbacks while the app is already loading." },
+        { option: "<code>isLoading</code>", default: "<code>false</code>", description: "Shows the built-in loading indicator and aria-busy state; suppresses end callbacks while loading." },
         { option: "<code>hasMore</code>", default: "<code>true</code>", description: "Disables end callbacks when no additional page exists." },
         { option: "<code>onItemClick</code>", default: "<code>null</code>", description: "Called when a timeline item is activated outside nested custom content." },
         { option: "<code>onActionClick</code>", default: "<code>null</code>", description: "Called when an item action button is clicked." },
@@ -257,6 +257,7 @@ const timeline = createTimeline(host, items, {
         <label for="timelineJumpId">Event number</label>
         <input id="timelineJumpId" class="ui-input" type="number" step="1" value="120">
         <button id="timelineJumpBtn" class="ui-button" type="button">Jump to Event</button>
+        <label><input id="timelineLoadingToggle" type="checkbox"> Show pagination loading</label>
       </div>
       <p id="timelineVirtualStatus" role="status" aria-live="polite">160 events loaded. Details expanded. Try event 120 for an offscreen jump, or 999 for a missing event.</p>
       <div class="row">
@@ -281,7 +282,7 @@ const timeline = createTimeline(host, items, {
         </details>
         <details><summary>Height estimates, paging, and cleanup</summary>
           <p>Give the host a height, for example <code>height: 480px; min-height: 0</code>. Virtualization activates only for vertical feeds at or above <code>virtualThreshold</code>. The helper measures mounted rows; <code>estimateItemHeight(item, { startsGroup })</code> predicts the complete offscreen unit, including date heading and spacing. Tune estimates for your own renderer and narrow layout.</p>
-          <p>In <code>onReachEnd</code>, let your application load the next page. Set <code>isLoading: true</code> with <code>update</code> while fetching, append the returned older records, then update <code>hasMore</code> and clear loading. Supply the full current item collection when calling <code>update</code>. On failure, clear loading and expose a retry button that calls <code>resetReachEnd()</code>. Avoid automatically retrying in a loop.</p>
+          <p>In <code>onReachEnd</code>, let your application load the next page. Use <code>update(undefined, { isLoading: true })</code> while fetching: Timeline shows its own accessible loading indicator at the end. Append returned records, then update <code>hasMore</code> and clear loading. State-only updates retain rows, focus and scroll position. On failure, clear loading and offer an explicit <code>resetReachEnd()</code> retry. See the <a href="../docs/timeline-loading.md">loading API guide</a>.</p>
           <p>Return <code>destroy()</code> from custom mounts to release listeners, media, timers, and observers. Call the timeline's <code>destroy()</code> when leaving the view. Neither the helper nor this demo persists your messages.</p>
         </details>
         <p><a href="../docs/timeline-layout-navigation.md">Detailed layout and navigation contract</a></p>
@@ -315,7 +316,7 @@ const timeline = createTimeline(host, items, {
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.185";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.222";
     await window.__demoLoaderReady;
     const createTimeline = await uiLoader.get("ui.timeline");
 
@@ -487,6 +488,10 @@ const timeline = createTimeline(host, items, {
       reportVirtual(`All details ${expanded ? "expanded" : "collapsed"}. New rows will use this mode.`);
       writeLog("timeline.virtual.layout", { expanded, count: virtualItems.length });
     }
+    document.getElementById("timelineLoadingToggle").addEventListener("change", event => {
+      virtualTimeline.update(undefined, { isLoading: event.target.checked, loadingText: "Loading older messages…" });
+      reportVirtual("Loading presentation updated. Scroll to the pagination end to see it; existing rows remain usable.");
+    });
     document.getElementById("timelineCollapseBtn").addEventListener("click", () => setAllExpanded(false));
     document.getElementById("timelineExpandBtn").addEventListener("click", () => setAllExpanded(true));
     async function jumpToEvent() {

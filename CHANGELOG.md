@@ -10,6 +10,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Timeline now includes accessible pagination loading via `isLoading` / `loadingText`, with state-only updates preserving mounted rows, focus and scroll position. Timeline/main bundle revision `0.21.222`; see `docs/timeline-loading.md`.
+
 - Added opt-in Property Viewer `mobileLayout:"columns"` for wrapping side-by-side mobile labels/values, with full-width wrapping actions. Incident viewers expose it through `propertyViewerOptions.mobileLayout`; stacking remains the default. Main UI / Property Viewer revision `0.21.221`.
 
 - Incident Types read-only details now compose the canonical Property Viewer with labelled patient groups, compact mobile rows, no generic Fields heading and no nested card chrome. Added Property Viewer `chrome:false` and empty-title header suppression. Name/resource filtering and editor data remain unchanged. Main UI and Property Viewer cache revision `0.21.220`.
