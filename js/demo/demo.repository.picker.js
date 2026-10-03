@@ -1,9 +1,9 @@
-import {uiLoader} from '../ui/ui.loader.js?v=0.21.224';
-import './demo.shell.js?v=0.21.224';
+import {uiLoader} from '../ui/ui.loader.js?v=0.21.225';
+import './demo.shell.js?v=0.21.225';
 const createPicker = await uiLoader.get('ui.repository.picker');
 const createComposer = await uiLoader.get('ui.chat.composer');
 const scenario = document.querySelector('#scenario');
-const data = new Map([[null,[{id:'brief',name:'Project brief.md'}]],['design',[{id:'mockup',name:'Mobile mockup.png'},{id:'locked',name:'Restricted draft.pdf',selectable:false}]]]);
+const data = new Map([[null,[{id:'brief',name:'Project brief.md'},{id:'metrics',name:'Metrics.csv'},{id:'config',name:'Settings.json'},{id:'unknown',name:'Unrecognized file.bin'}]],['design',[{id:'mockup',name:'Mobile mockup.png'},{id:'locked',name:'Restricted draft.pdf',selectable:false}]]]);
 const delay = ms => new Promise(resolve=>setTimeout(resolve,ms));
 let serial=0;
 const picker = createPicker({

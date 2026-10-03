@@ -1,8 +1,8 @@
-# Repository file picker and composer attachments (0.21.224)
+# Repository file picker and composer attachments (0.21.225)
 
 `ui.repository.picker` exports `createRepositoryPicker(options)`, a complete
 canonical Modal + Breadcrumbs workflow. There was no existing complete repository
-picker; the component owns accessible native folder buttons and file checkboxes,
+picker; the component owns accessible native folder and file row buttons,
 selection summary, upload controls, busy/error states and cancellation. It does
 not implement transport, authorization, storage, overwrite/conflict resolution,
 chunking or resumable uploads. No form modal is needed: this is file selection,
@@ -51,6 +51,15 @@ offscreen selections cannot establish current authorization.
 
 ## Selection and lifecycle
 
+The picker shows canonical breadcrumb ancestors as individual underlined navigation
+controls at the top, with the current folder marked `aria-current`. Rows sort by name
+within folders-first and files-second groups. Folder rows use Helper's `files.folder`
+icon; file rows use the canonical `getFileIconName(name, mimeType || type)` resolver
+and file icon pack, with the unknown-file fallback. The complete file row is a native
+toggle button (`aria-pressed`), activated by click, Enter or Space. Selected rows have
+a full-row highlight and decorative checkmark. There are no native checkboxes or
+duplicate lower filename list; a count and Clear selection cover all folders.
+
 | API | Behavior |
 | --- | --- |
 | `open()` | Mount immediately, enter modal busy state, then invoke `loadFolder`. Returns boolean; duplicate calls do not reload. |
@@ -64,7 +73,7 @@ offscreen selections cannot establish current authorization.
 Options include `title`, `context`, `folderId` (default null), `multiple` (default
 true), `loadFolder`, `onUpload`, `onClose`, and `open` (default false). Each opening
 starts a fresh selection; navigation retains it. Selection is explicit and visible
-across folders, with remove controls. `multiple:false` keeps one file. There is no
+across folders, with a compact Clear selection action. `multiple:false` keeps one file. There is no
 remote search or server pagination contract in this version: supply appropriately
 bounded folder results. The list scrolls within the responsive modal.
 
@@ -73,7 +82,7 @@ show an explicit empty message. Reads show dismissible loading; failures keep th
 dialog open with an alert and Reload folder. Attach stays disabled without a ready
 listing and selected files. Folder controls and file inputs are unavailable while
 loading/uploading; close, Escape and backdrop dismissal remain available. Modal
-focus trapping and return focus are canonical; controls support standard Tab,
+focus trapping and return focus are canonical; file row toggle buttons expose aria-pressed and a whole-row highlight; controls support standard Tab,
 Enter and Space behavior. Avoid reopening while the close transition is running.
 
 ## Upload responsibilities
