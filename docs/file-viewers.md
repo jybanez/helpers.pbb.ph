@@ -103,6 +103,10 @@ non-HTTP(S)/blob schemes are rejected. The caller owns blob URL revocation.
 Open source and Download link to the original safe URL; links use `noopener noreferrer`.
 Download depends on browser/server Content-Disposition behavior for cross-origin
 sources and may open a new tab instead. No generated preview replaces the source.
+URL previews read the response body through fetch, including authorized responses with
+`Content-Disposition: attachment` and `application/octet-stream`; those headers do not
+navigate the page or force the preview to download. Format selection comes from the
+chosen viewer, while the same parsing, size and access restrictions still apply.
 
 Modal focus trapping, close controls and scroll locking remain canonical. State feedback
 uses a polite status region. Fullscreen is viewport layout, not the browser Fullscreen
@@ -118,3 +122,5 @@ API. Narrow views keep content scrolling within the dialog.
 Run `node --test tests/file.viewer.data.mjs`, `node tests/file.viewer.regression.mjs`,
 `node tests/ui.bundle.contract.mjs`, and `node tests/registry.contract.mjs` after
 `npm run build:ui-bundle`.
+The browser runner serves real HTTP attachment fixtures for all three formats and
+checks both source and bundle loading, rendered values and unchanged page navigation.

@@ -18,8 +18,20 @@ if (!browserPath) throw new Error("File viewer regression requires Chrome or Edg
 const testsDir = path.dirname(fileURLToPath(import.meta.url));
 let server;
 try {
-  server = await startStaticServer({ rootDir: path.resolve(testsDir, ".."), port: 0 });
-  for (const page of ["file.viewer.regression.html"]) for (const suffix of ["", "?bundle"]) {
+  const fixtures = Object.fromEntries([
+    ['json', '{"attachmentMarker":"downloaded JSON"}'],
+    ['md', '# Downloaded Markdown'],
+    ['csv', 'Name,Code\nDownloaded CSV,0012'],
+  ].map(([extension, body]) => [`/attachments/viewer.${extension}`, {
+    body,
+    headers: {
+      'content-type': 'application/octet-stream',
+      'content-disposition': `attachment; filename="viewer.${extension}"`,
+      'x-content-type-options': 'nosniff',
+    },
+  }]));
+  server = await startStaticServer({ rootDir: path.resolve(testsDir, ".."), port: 0, fixtures });
+  for (const page of ["file.viewer.regression.html"]) for (const suffix of ["?attachments", "?bundle&attachments"]) {
   const { stdout } = await execFileAsync(browserPath, [
     "--headless=new",
     "--disable-gpu",

@@ -49,6 +49,29 @@ try {
   assert(view.refs.panel.classList.contains('is-size-full'),'canonical fullscreen');
   assert(view.refs.panel.getBoundingClientRect().width <= innerWidth,'dialog fits viewport');
   view.destroy(); assert(view.open() === false,'destroy is terminal');
+  window.fetch = nativeFetch;
+  if (new URLSearchParams(location.search).has('attachments')) {
+    const pageUrl = location.href;
+    for (const [factory, extension, marker] of [
+      [json, 'json', 'downloaded JSON'],
+      [markdown, 'md', 'Downloaded Markdown'],
+      [csv, 'csv', 'Downloaded CSV'],
+    ]) {
+      const url = `/attachments/viewer.${extension}`;
+      const response = await nativeFetch(url);
+      assert(response.ok && response.headers.get('content-disposition')?.startsWith('attachment;') &&
+        response.headers.get('content-type') === 'application/octet-stream', `${extension} real HTTP attachment fixture`);
+      await response.arrayBuffer();
+      view = factory({url, open:false});
+      view.open();
+      assert(view.getState().open && view.getState().status === 'loading', `${extension} opens before attachment fetch completes`);
+      for (let attempt = 0; attempt < 100 && view.getState().status === 'loading'; attempt++) await tick();
+      assert(view.getState().status === 'ready' && view.refs.content.textContent.includes(marker), `${extension} renders attachment URL response`);
+      if (extension === 'csv') assert(view.refs.content.textContent.includes('0012'), 'attachment CSV preserves string values');
+      assert(location.href === pageUrl, `${extension} attachment preview keeps page navigation unchanged`);
+      view.destroy();
+    }
+  }
   document.body.dataset.status = 'pass';
 } catch(error) { output.textContent += `FAIL ${error.stack}`; document.body.dataset.status='fail'; }
 finally { window.fetch = nativeFetch; view?.destroy(); }
