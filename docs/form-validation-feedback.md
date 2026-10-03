@@ -103,7 +103,7 @@ Combined candidate includes foreground-modal keyboard ownership and picker Escap
 
 ## Empty select options (0.21.198)
 
-An explicit option `{value: '', label: 'Choose…'}` retains its empty value.
+An explicit option `{value: '', label: 'Chooseâ€¦'}` retains its empty value.
 Optional fields submit an empty string; required fields report the required-field
 error before submission. Labels are fallback values only when value is null or
 omitted. Numeric zero and boolean false retain their string representations.
