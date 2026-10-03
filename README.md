@@ -9,6 +9,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
 - Agent Working Protocol: `docs/agent-working-protocol.md`
 - Safe Markdown renderer: [API and security guide](docs/markdown.md) · [interactive demo](demos/demo.markdown.html)
+- JSON, Markdown and CSV file viewers: [API and limits](docs/file-viewers.md) · [JSON demo](demos/demo.json.viewer.html) · [Markdown demo](demos/demo.markdown.viewer.html) · [CSV demo](demos/demo.csv.viewer.html)
 
 Latest documented release: `v0.21.70`
 
