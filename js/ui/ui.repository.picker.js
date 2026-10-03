@@ -1,9 +1,12 @@
 import { createModal } from './ui.modal.js';
 import { createBreadcrumbs } from './ui.breadcrumbs.js';
+import { createIcon, registerIconPack } from './ui.icons.js';
+import { FILE_ICONS, getFileIconName } from './ui.icons.files.js?v=0.21.225';
 
 // Transport and authorization belong to the application. Records are opaque except
 // for stable id, name, and optional selectable:false presentation metadata.
 export function createRepositoryPicker(supplied = {}) {
+  registerIconPack(FILE_ICONS);
   let options = { title: 'Choose repository files', folderId: null, multiple: true, ...supplied };
   let folderId = options.folderId, listing = null, status = 'idle', error = '';
   let revision = 0, controller = null, destroyed = false, closing = false, active = false;
@@ -19,7 +22,8 @@ export function createRepositoryPicker(supplied = {}) {
   const list = document.createElement('ul'); list.className = 'ui-repository-picker-list'; list.setAttribute('aria-label', 'Folders and files');
   const summary = document.createElement('section'); summary.className = 'ui-repository-picker-selection'; summary.setAttribute('aria-label', 'Selected files');
   const count = document.createElement('p'); count.setAttribute('aria-live', 'polite');
-  const selections = document.createElement('ul'); summary.append(count, selections);
+  const clearSelection = button('Clear selection', () => { selected.clear(); render(); clearSelection.disabled ? cancel.focus() : clearSelection.focus(); });
+  summary.append(count, clearSelection);
   root.append(crumbsHost, tools, notice, list, summary);
   const footer = document.createElement('div'); footer.className = 'ui-repository-picker-tools';
   const cancel = button('Cancel', () => void close());
@@ -75,30 +79,37 @@ export function createRepositoryPicker(supplied = {}) {
     // Modal busy restores prior disabled attributes, so apply these after setBusy.
     cancel.disabled = false;
     list.replaceChildren();
-    for (const folder of listing?.folders || []) {
-      const li = document.createElement('li'); const node = button(`Open folder: ${folder.name}`, () => void navigate(folder.id));
-      node.disabled = busy() || !active; li.append(node); list.append(li);
+    const byName = (a,b) => a.name.localeCompare(b.name, undefined, {numeric:true,sensitivity:'base'});
+    for (const folder of [...(listing?.folders || [])].sort(byName)) {
+      const node = row(folder, 'folder', 'files.folder', () => void navigate(folder.id));
+      node.setAttribute('aria-label', `Open folder: ${folder.name}`);
+      node.disabled = busy() || !active;
     }
-    for (const file of listing?.files || []) {
-      const li = document.createElement('li'), label = document.createElement('label'), check = document.createElement('input');
-      check.type = 'checkbox'; check.checked = selected.has(key(file.id));
-      check.disabled = busy() || !active || file.selectable === false || status !== 'ready';
-      check.addEventListener('change', () => {
-        if (check.disabled) return;
-        if (check.checked) { if (!options.multiple) selected.clear(); selected.set(key(file.id), file); }
+    for (const file of [...(listing?.files || [])].sort(byName)) {
+      const node = row(file, 'file', getFileIconName(file.name,file.mimeType || file.type), () => {
+        if (node.disabled) return;
+        if (!selected.has(key(file.id))) { if (!options.multiple) selected.clear(); selected.set(key(file.id), file); }
         else selected.delete(key(file.id));
-        render(); const replacement = [...list.querySelectorAll('input')].find(node => node.dataset.id === key(file.id)); replacement?.focus();
+        render(); const replacement = [...list.querySelectorAll('[data-kind="file"]')].find(node => node.dataset.id === key(file.id)); replacement?.focus({preventScroll:true});
       });
-      check.dataset.id = key(file.id); label.append(check, document.createTextNode(file.name)); li.append(label); list.append(li);
+      const chosen = selected.has(key(file.id));
+      node.setAttribute('aria-pressed', String(chosen)); node.classList.toggle('is-selected',chosen);
+      node.disabled = busy() || !active || file.selectable === false || status !== 'ready';
+      const state = createIcon('actions.check', {className:'ui-repository-picker-selected-icon'}); if (!chosen) state.setAttribute('hidden',''); node.append(state);
     }
     if (status === 'ready' && !list.childNodes.length) { const li = document.createElement('li'); li.textContent = 'This folder is empty.'; list.append(li); }
     count.textContent = `${selected.size} file${selected.size === 1 ? '' : 's'} selected across folders`;
-    selections.replaceChildren();
-    for (const [id, file] of selected) {
-      const li = document.createElement('li'); li.append(document.createTextNode(file.name));
-      const remove = button(`Remove ${file.name}`, () => { selected.delete(id); render(); confirm.disabled ? cancel.focus() : confirm.focus(); });
-      remove.disabled = busy() || !active; li.append(remove); selections.append(li);
-    }
+    clearSelection.disabled = busy() || !active || !selected.size;
+  }
+  function row(record, kind, icon, activate) {
+    const li = document.createElement('li');
+    // Native buttons provide Enter/Space activation and expose file toggle state.
+    const node = button('',activate); node.className = 'ui-repository-picker-row';
+    node.dataset.kind = kind; node.dataset.id = key(record.id);
+    const name = document.createElement('span'); name.className = 'ui-repository-picker-name'; name.textContent = record.name;
+    node.append(createIcon(icon),name);
+    if (kind === 'folder') node.append(createIcon('navigation.chevron-right',{className:'ui-repository-picker-folder-arrow'}));
+    li.append(node); list.append(li); return node;
   }
   async function navigate(id = folderId) {
     if (!active || destroyed || status === 'uploading') return false;
@@ -169,6 +180,6 @@ export function createRepositoryPicker(supplied = {}) {
   }
   const api = {open,pick,close,update,navigate,reload:()=>navigate(folderId),uploadFiles,destroy,
     getState:()=>({open:active,status,error,folderId,selection:[...selected.values()],destroyed}),
-    refs:{...modal.refs,list,summary,confirm,cancel,upload,input,retry,notice,breadcrumbs:crumbsHost}};
+    refs:{...modal.refs,list,summary,confirm,cancel,upload,input,retry,notice,clearSelection,breadcrumbs:crumbsHost}};
   render(); if (options.open) open(); return api;
 }
