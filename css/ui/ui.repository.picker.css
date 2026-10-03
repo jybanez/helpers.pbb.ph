@@ -24,3 +24,9 @@
 .ui-repository-picker-header-actions .ui-button[hidden] { display: none; }
 .ui-repository-picker-header-actions .ui-button:hover:not(:disabled) { background: var(--ui-bg-soft, #182238); }
 .ui-repository-picker-header-actions .ui-button:focus-visible { outline: 2px solid var(--ui-primary, #60a5fa); outline-offset: -2px; }
+
+/* Full-height mobile modals already provide a bounded, scrollable body.
+   Keep one scroll owner and let short folders use the available space. */
+@media (max-width: 640px) {
+  .ui-repository-picker-list { max-height: none; overflow: visible; }
+}

@@ -120,6 +120,16 @@ try {
   composer.update({}, {attachmentAdapter:{mode:'custom',open:async()=>{throw Error('Picker unavailable');}}});
   host.querySelector('.ui-chat-composer-attach').click(); await tick();
   assert(host.querySelector('[role=alert]')?.textContent.includes('Picker unavailable') && !host.querySelector('.ui-chat-composer-attach').disabled,'custom rejection is visible and recoverable');
-  composer.destroy(); document.body.dataset.status='pass';
+  composer.destroy();
+  for (const width of [375,1024]) {
+    const frame=document.createElement('iframe'); frame.style.cssText=`width:${width}px;height:667px;border:0`;
+    const script=new URL('./repository.picker.layout.browser.js',location.href); if(location.search.includes('bundle')) script.search='?bundle';
+    frame.srcdoc=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><pre id="results"></pre><script type="module" src="${script}"></script></body></html>`;
+    document.body.append(frame);
+    for(let n=0;n<150 && !frame.contentDocument?.body?.dataset.status;n++) await tick();
+    const results=frame.contentDocument?.querySelector('#results')?.textContent;
+    assert(frame.contentDocument?.body?.dataset.status==='pass',`layout ${width}x667: ${results}`); frame.remove();
+  }
+  document.body.dataset.status='pass';
 } catch(error) {output.textContent+=`FAIL ${error.stack}`;document.body.dataset.status='fail';}
 finally {picker?.destroy();composer?.destroy();}

@@ -1,4 +1,4 @@
-# Repository file picker and composer attachments (0.21.226)
+# Repository file picker and composer attachments (0.21.227)
 
 `ui.repository.picker` exports `createRepositoryPicker(options)`, a complete
 canonical Modal + Breadcrumbs workflow. There was no existing complete repository
@@ -79,7 +79,10 @@ selected files and keeps the dialog open; a subsequent Escape closes it. Cancel
 and the close button always dismiss directly. While loading or uploading, Escape
 also dismisses directly and aborts/invalidates pending work. `multiple:false` keeps one file. There is no
 remote search or server pagination contract in this version: supply appropriately
-bounded folder results. The list scrolls within the responsive modal.
+bounded folder results. Desktop retains the 40vh scrollable list. At widths of 640px or less, the list
+has no independent height cap or scrolling; the canonical modal body is the only
+scroll region. Short folders use the available full-height space, while long
+folders scroll beneath the fixed header/footer with canonical safe-area padding.
 
 States: idle, loading, ready, uploading, error, upload-error, destroyed. Empty folders
 show an explicit empty message. Reads show dismissible loading; failures keep the
