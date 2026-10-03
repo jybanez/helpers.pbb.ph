@@ -9,6 +9,7 @@ const DEFAULT_OPTIONS = {
   busy: false,
   sendLabel: "Send",
   attachmentLabel: "Attach",
+  attachmentPlacement: "leading",
   showAttachmentButton: true,
   accept: "",
   multiple: true,
@@ -79,10 +80,13 @@ export function createChatComposer(container, data = {}, options = {}) {
     });
     root.addEventListener("paste", handlePaste);
 
+    const helperPlacement = currentOptions.attachmentPlacement === "helper";
+    const metadata = createElement("div", {className:"ui-chat-composer-metadata"});
+    refs.root = root; refs.metadata = metadata;
     const controls = createElement("div", {
       className: [
         "ui-chat-composer-controls",
-        hasAttachments() ? "" : "is-no-attachment",
+        hasAttachments() && !helperPlacement ? "" : "is-no-attachment",
       ].filter(Boolean).join(" "),
     });
     const inputWrap = createElement("div", { className: "ui-chat-composer-input-wrap" });
@@ -125,7 +129,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       }
 
       const attach = createElement("button", {
-        className: "ui-chat-composer-attach",
+        className: "ui-chat-composer-attach" + (helperPlacement ? " is-helper-action" : ""),
         attrs: {
           type: "button",
           title: currentOptions.attachmentLabel,
@@ -133,14 +137,17 @@ export function createChatComposer(container, data = {}, options = {}) {
           ...((isInteractionBlocked() || attachmentBusy) ? { disabled: "disabled" } : {}),
         },
       });
-      const attachIcon = createIcon("data.upload", { className: "ui-chat-composer-attach-icon" });
+      const attachIcon = createIcon(helperPlacement ? "actions.attach" : "data.upload", { className: "ui-chat-composer-attach-icon" });
       if (attachIcon) {
         attach.appendChild(attachIcon);
       } else {
         attach.textContent = currentOptions.attachmentLabel;
       }
+      if (helperPlacement) {
+        attach.replaceChildren(...(attachIcon ? [attachIcon] : []), createElement("span", {className:"ui-chat-composer-attach-label", text:currentOptions.attachmentLabel}));
+      }
       attach.addEventListener("click", () => void openAttachment());
-      controls.appendChild(attach);
+      (helperPlacement ? metadata : controls).appendChild(attach);
       refs.attach = attach;
     }
 
@@ -161,11 +168,14 @@ export function createChatComposer(container, data = {}, options = {}) {
     root.appendChild(controls);
 
     if (String(currentOptions.helperText || "").trim()) {
-      root.appendChild(createElement("div", {
+      const helper = createElement("div", {
         className: "ui-chat-composer-helper",
         text: String(currentOptions.helperText).trim(),
-      }));
+      });
+      refs.helper = helper;
+      (helperPlacement ? metadata : root).appendChild(helper);
     }
+    if (helperPlacement && metadata.childNodes.length) root.appendChild(metadata);
 
     container.appendChild(root);
     if (attachmentError) {
@@ -317,7 +327,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   render();
-  return { update, destroy, setValue, getValue, clear, focus, setBusy, getState };
+  return { update, destroy, setValue, getValue, clear, focus, setBusy, getState, get refs() { return {...refs}; } };
 }
 
 function getClipboardFiles(clipboardData) {

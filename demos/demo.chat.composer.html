@@ -18,7 +18,7 @@
     .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.228";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.composer", "ui.chat.upload.queue"]);
   </script>
   <script>
@@ -39,13 +39,14 @@
         { factory: "<code>createChatComposer(container, data, options)</code>", arguments: "target container, initial data, composer options", returns: "Chat composer instance" }
       ],
       options: [
+        {option:"<code>attachmentPlacement</code>", default:"leading", description:"Set helper for a labeled paperclip action beside helper text below the input."},
         { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific composition." },
         { option: "<code>placeholder</code>", default: '<code>"Type a message..."</code>', description: "Input placeholder copy." },
         { option: "<code>helperText</code>", default: '<code>""</code>', description: "Optional muted helper line below the controls." },
         { option: "<code>disabled</code>", default: '<code>false</code>', description: "Disables the composer controls without implying an active send lifecycle." },
         { option: "<code>busy</code>", default: '<code>false</code>', description: "Disables sending and file picking during an active submit/upload phase." },
         { option: "<code>sendLabel</code>", default: '<code>"Send"</code>', description: "Visible label for the send action." },
-        { option: "<code>attachmentLabel</code>", default: '<code>"Attach"</code>', description: "Accessible label/title for the helper-owned attach action." },
+        { option: "<code>attachmentLabel</code>", default: '<code>"Attach"</code>', description: "Accessible label/title; also visible in helper placement." },
         { option: "<code>showAttachmentButton</code>", default: '<code>true</code>', description: "Shows or hides the attach action and helper-owned paste attachment handling." },
         { option: "<code>accept</code>", default: '<code>""</code>', description: "Native file-input <code>accept</code> filter passed to the hidden picker and pasted clipboard files." },
         { option: "<code>multiple</code>", default: '<code>true</code>', description: "Allows multiple files to be selected or pasted in one operation." },
@@ -54,7 +55,7 @@
         { option: "<code>multiline</code>", default: '<code>true</code>', description: "Uses a textarea by default; when false, uses a single-line input." },
         { option: "<code>submitOnEnter</code>", default: '<code>true</code>', description: "When true, Enter submits and Shift+Enter adds a newline." }
       ],
-      propertiesText: "No stable public instance properties are documented. Use <code>getValue()</code> and <code>getState()</code> instead of reading internal refs.",
+      propertiesText: "<code>refs</code> returns current root, input, send, attach, fileInput, metadata and helper nodes. Read again after update; absent controls are undefined.",
       events: [
         { event: "<code>onChange(value)</code>", arguments: "current input string", returns: "<code>void</code>", description: "Fires on every text input change." },
         { event: "<code>onSend({ text })</code>", arguments: "plain text payload", returns: "<code>void | Promise&lt;void&gt;</code>", description: "Fires when the helper accepts a send action." },
@@ -88,6 +89,7 @@
         <button id="focusBtn" class="ui-button ui-button-ghost" type="button">Focus</button>
       </div>
       <div class="preview-stack">
+        <div class="preview"><p class="preview-label">Helper-row attachment</p><div id="composerHelperHost"></div><p class="muted">attachmentPlacement: helper, attachmentLabel: Attach files. The action and helper text wrap on small screens.</p></div>
         <div class="preview">
           <p class="preview-label">Attachment Button Enabled</p>
           <div id="composerHost"></div>
@@ -102,7 +104,7 @@
     </section>
   </main>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.228";
     await window.__demoLoaderReady;
     const createChatComposer = await uiLoader.get("ui.chat.composer");
     const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
@@ -179,6 +181,12 @@
       },
     });
 
+    const helperComposer = createChatComposer(document.getElementById('composerHelperHost'), {}, {
+      attachmentPlacement:'helper', attachmentLabel:'Attach files',
+      helperText:'Enter sends. Shift+Enter adds a new line.',
+      onSend:({text})=>writeLog('helper.send',{text}),
+      onFilesSelected:(files,meta)=>writeLog('helper.files',{names:files.map(file=>file.name),source:meta.source}),
+    });
     const noAttachComposer = createChatComposer(noAttachHost, { value: "Attachment-free composer sample." }, {
       helperText: "This variant uses showAttachmentButton: false.",
       showAttachmentButton: false,
@@ -192,7 +200,7 @@
 
     document.getElementById("toggleBusyBtn").addEventListener("click", () => {
       busy = !busy;
-      composer.setBusy(busy);
+      composer.setBusy(busy); helperComposer.setBusy(busy);
       noAttachComposer.setBusy(busy);
       writeLog("composer.busy", { busy });
     });

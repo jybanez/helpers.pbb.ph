@@ -26,6 +26,17 @@ try {
   scroller.scrollTop=scroller.scrollHeight; await tick();
   assert(scroller.scrollTop>0 && Math.abs(header.getBoundingClientRect().top-beforeHeader)<1 && Math.abs(footer.getBoundingClientRect().top-beforeFooter)<1,'scrolling leaves header/footer fixed');
   assert(footer.getBoundingClientRect().bottom<=innerHeight+1 && list.lastElementChild.getBoundingClientRect().bottom<=footer.getBoundingClientRect().top+1,'last row and footer reachable');
+  picker.destroy();
+  const host=document.createElement('div'); host.style.width='100%'; document.body.append(host);
+  const createComposer=await uiLoader.get('ui.chat.composer');
+  const composer=createComposer(host,{}, {attachmentPlacement:'helper',attachmentLabel:'Attach files',helperText:'Enter sends. Shift+Enter adds a new line. '+ 'long-helper-text'.repeat(12)});
+  const action=composer.refs.attach, metadata=composer.refs.metadata;
+  assert(getComputedStyle(action).borderTopWidth==='0px' && getComputedStyle(action).fontSize===getComputedStyle(composer.refs.helper).fontSize,'helper action borderless with helper typography');
+  assert(action.getBoundingClientRect().height>=36 && metadata.getBoundingClientRect().top>=composer.refs.input.getBoundingClientRect().bottom,'helper action has touch target below input');
+  assert(host.scrollWidth<=host.clientWidth && metadata.scrollWidth<=metadata.clientWidth,'helper row wraps long text without horizontal overflow');
+  assert(action.querySelector('[data-icon="actions.attach"]') && action.textContent==='Attach files','responsive helper row keeps icon and visible label');
+  if(!mobile) assert(composer.refs.helper.getBoundingClientRect().left>action.getBoundingClientRect().right,'wide helper text sits beside attachment');
+  composer.destroy(); host.remove();
   document.body.dataset.status='pass';
 } catch(error) {output.textContent+=`FAIL ${error.stack}`;document.body.dataset.status='fail';}
 finally {picker?.destroy();}

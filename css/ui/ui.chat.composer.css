@@ -71,3 +71,12 @@
   font-size: 12px;
   line-height: 1.35;
 }
+
+.ui-chat-composer-metadata { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; font-size: 12px; line-height: 1.35; }
+.ui-chat-composer-metadata .ui-chat-composer-helper { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+.ui-chat-composer-attach.is-helper-action { flex: 0 0 auto; width: auto; max-width: 100%; min-height: 36px; padding: 6px 8px; gap: 6px; border: 0; background: transparent; box-shadow: none; font-size: 12px; line-height: 1.35; }
+.ui-chat-composer-attach.is-helper-action .ui-chat-composer-attach-icon { flex: 0 0 16px; width: 16px; height: 16px; fill: none; }
+.ui-chat-composer-attach-label { min-width: 0; overflow-wrap: anywhere; }
+.ui-chat-composer-attach.is-helper-action:hover:not(:disabled) { background: var(--ui-bg-soft, #101c31); }
+.ui-chat-composer-attach.is-helper-action:focus-visible { outline: 2px solid var(--ui-primary, #60a5fa); outline-offset: 2px; }
+.ui-chat-composer-attach.is-helper-action:disabled { opacity: .5; cursor: not-allowed; }

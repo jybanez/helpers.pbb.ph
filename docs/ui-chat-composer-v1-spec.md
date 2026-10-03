@@ -65,6 +65,7 @@ type ChatComposerOptions = {
   busy?: boolean;
   sendLabel?: string;
   attachmentLabel?: string;
+  attachmentPlacement?: "leading" | "helper";
   showAttachmentButton?: boolean;
   accept?: string;
   multiple?: boolean;
@@ -89,6 +90,7 @@ type ChatComposerOptions = {
   busy: false,
   sendLabel: "Send",
   attachmentLabel: "Attach",
+  attachmentPlacement: "leading",
   showAttachmentButton: true,
   accept: "",
   multiple: true,
@@ -245,3 +247,25 @@ The eventual demo should show:
 - native file picker trigger
 - multiline behavior
 - enter vs shift+enter behavior
+
+
+## Helper-row attachment presentation (0.21.228)
+
+Set `attachmentPlacement: 'helper'` and `attachmentLabel: 'Attach files'` to show
+an `actions.attach` paperclip with visible text beside `helperText` in the metadata
+row below the input. The default is `'leading'`, preserving the existing button.
+The helper action is borderless, 12px like helper text, with a 36px minimum touch
+target, visible keyboard focus, and disabled/busy feedback. The action stays together
+while helper text wraps; the row wraps at narrow widths without horizontal overflow.
+
+This option is presentation-only: native/custom/none adapters, paste, cancellation,
+stale results, errors, send shortcuts and lifecycle behavior retain their contracts.
+`showAttachmentButton:false` and adapter `'none'` omit the action, while helper text
+can remain. Empty helper text still allows the action.
+
+`composer.refs` returns a snapshot of current nodes: `root`, `metadata`, `helper`,
+`attach`, `input`, `send`, and native-only `fileInput`. Re-read after updates or picker
+completion because rendering replaces nodes; absent controls are undefined. The
+metadata node is detached when unused. Stable classes are
+`.ui-chat-composer-metadata`, `.ui-chat-composer-attach.is-helper-action`, and
+`.ui-chat-composer-attach-label`. Use supported options instead of moving these nodes.
