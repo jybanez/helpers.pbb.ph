@@ -49,6 +49,10 @@ try {
   await picker.navigate('other');
   await picker.uploadFiles([new File(['hi'],'new.txt')]);
   assert(picker.refs.list.textContent.includes('new.txt'),'uploaded canonical records appear for selection');
+  const success=document.querySelector('.ui-repository-picker-toasts .ui-toast--success');
+  assert(success?.textContent.includes('Upload completed') && success.getAttribute('role')==='status','confirmed upload uses canonical success toast');
+  assert(getComputedStyle(success.parentElement).position==='fixed' && !picker.refs.body.contains(success),'toast has loaded styling outside picker body');
+  assert(picker.refs.notice.hidden && !picker.refs.notice.textContent && picker.getState().status==='ready' && picker.getState().selection.length===2,'success adds no inline notice and preserves selection/ready state');
   picker.refs.list.querySelector('[data-id="string:uploaded"]').click(); picker.refs.confirm.click(); await tick(350);
   assert((await result).length===3,'confirmation returns cross-folder canonical files');
   picker.update({loadFolder:async({folderId})=>({...folder(folderId),permissions:{showUpload:true,canUpload:false}})});
@@ -65,6 +69,8 @@ try {
   picker.update({onUpload:async()=>{attempts++;throw Error('Connection lost');}}); await tick();
   await picker.uploadFiles([new File(['x'],'x')]);
   assert(picker.getState().status==='upload-error' && !picker.refs.cancel.disabled && picker.refs.upload.disabled,'uncertain upload stays dismissible without replay');
+  assert(!picker.refs.notice.hidden && picker.refs.notice.getAttribute('role')==='alert' && picker.refs.notice.textContent.includes('Check the repository'),'uncertain failure retains actionable inline feedback');
+  assert(!document.querySelector('.ui-repository-picker-toasts .ui-toast--success:not(.is-closing)'),'failure does not show success toast');
   await picker.reload(); assert(attempts===1,'reload does not replay upload');
   picker.update({loadFolder:async()=>{throw Error('Access denied');}}); await tick();
   assert(picker.getState().status==='error' && !picker.refs.retry.disabled && picker.refs.confirm.disabled,'read failure has actionable retry with selection disabled');
@@ -85,6 +91,7 @@ try {
   escape(); await tick(); assert(picker.getState().open && picker.getState().selection.length===0 && picker.refs.confirm.disabled,'Escape clears single selection without closing');
   const uploadPending=picker.uploadFiles([new File(['x'],'late.txt')]); external.abort();
   resolveUpload([{id:'late',name:'late.txt'}]); await uploadPending; await tick(350);
+  assert(!document.querySelector('.ui-repository-picker-toasts .ui-toast--success:not(.is-closing)'),'late cancelled upload does not show success toast');
   assert(uploadAborted && (await pending).length===0 && !picker.getState().open && !picker.refs.list.textContent.includes('late.txt'),'external cancellation ignores late upload results');
   picker.destroy();
   for (const action of ['escape','closeButton','cancel']) {

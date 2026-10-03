@@ -1,3 +1,4 @@
+import { createToastStack } from './ui.toast.js';
 import { createModal } from './ui.modal.js';
 import { createBreadcrumbs } from './ui.breadcrumbs.js';
 import { createIcon, registerIconPack } from './ui.icons.js';
@@ -10,6 +11,7 @@ export function createRepositoryPicker(supplied = {}) {
   let options = { title: 'Choose repository files', folderId: null, multiple: true, ...supplied };
   let folderId = options.folderId, listing = null, status = 'idle', error = '';
   let revision = 0, controller = null, destroyed = false, closing = false, active = false;
+  let toastStack = null, successToast = null;
   let selected = new Map(), settle = null, promise = null, detachSignal = null, opener = null;
   const root = document.createElement('section'); root.className = 'ui-repository-picker';
   const crumbsHost = document.createElement('div');
@@ -74,7 +76,7 @@ export function createRepositoryPicker(supplied = {}) {
       return {...record};
     });
   }
-  function invalidate() { revision++; controller?.abort(); controller = null; }
+  function invalidate() { successToast?.close(); successToast = null; revision++; controller?.abort(); controller = null; }
   function finish(result) { detachSignal?.(); detachSignal = null; const resolve = settle; settle = null; promise = null; resolve?.(result); }
   function busy() { return status === 'loading' || status === 'uploading'; }
   function canUpload() { return active && status === 'ready' && listing?.permissions?.canUpload === true && typeof options.onUpload === 'function'; }
@@ -158,7 +160,9 @@ export function createRepositoryPicker(supplied = {}) {
       const uploaded = records(result);
       const merged = new Map(listing.files.map(file => [key(file.id),file]));
       for (const file of uploaded) merged.set(key(file.id),file);
-      listing.files = [...merged.values()]; setStatus('ready', 'Upload completed. Select the files to attach.'); return true;
+      listing.files = [...merged.values()]; setStatus('ready');
+      toastStack ||= createToastStack({className:'ui-repository-picker-toasts', max:1});
+      successToast = toastStack.success('Upload completed. Select the files to attach.'); return true;
     } catch (cause) {
       if (active && token === revision && !signal.aborted) setStatus('upload-error', `Upload did not confirm completion. ${cause?.message || ''} Check the repository before uploading again. Reloading only reads the folder; it never retries the upload.`);
       return false;
@@ -188,7 +192,7 @@ export function createRepositoryPicker(supplied = {}) {
   }
   function destroy() {
     if (destroyed) return;
-    destroyed = true; active = false; invalidate(); finish([]); crumbs.destroy(); modal.destroy(); selected.clear(); listing = null; status = 'destroyed';
+    destroyed = true; active = false; invalidate(); toastStack?.destroy(); toastStack = null; finish([]); crumbs.destroy(); modal.destroy(); selected.clear(); listing = null; status = 'destroyed';
     if (opener?.isConnected) opener.focus({preventScroll:true});
   }
   const api = {open,pick,close,update,navigate,reload:()=>navigate(folderId),uploadFiles,destroy,

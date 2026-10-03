@@ -1,4 +1,4 @@
-# Repository file picker and composer attachments (0.21.227)
+# Repository file picker and composer attachments (0.21.229)
 
 `ui.repository.picker` exports `createRepositoryPicker(options)`, a complete
 canonical Modal + Breadcrumbs workflow. There was no existing complete repository
@@ -100,7 +100,8 @@ to hide it. These are presentation guards only, never server authorization.
 
 `onUpload(files, {folderId, context, signal})` receives native `File[]` and returns
 canonical file records after confirmed success. They appear in the current list
-and can be selected normally. The application owns validation, conflict prompts,
+and can be selected normally. Confirmed success uses a canonical success toast,
+without inserting an inline body notice. Failures retain actionable inline alerts. The application owns validation, conflict prompts,
 chunking, permission checks and all uncertain-outcome reconciliation. A failure
 disables Upload until a read reload and shows guidance to check the repository;
 Reload never replays the upload. Aborting the signal cannot guarantee a server-side
