@@ -13,12 +13,18 @@ const MIME_TYPES = {
   ".txt": "text/plain; charset=utf-8",
 };
 
-export async function startStaticServer({ rootDir, host = "127.0.0.1", port }) {
+export async function startStaticServer({ rootDir, host = "127.0.0.1", port, fixtures = {} }) {
   const resolvedRoot = path.resolve(rootDir);
   const server = http.createServer(async (req, res) => {
     try {
       const requestUrl = new URL(req.url || "/", `http://${host}:${port}`);
       const pathname = decodeURIComponent(requestUrl.pathname);
+      if (Object.hasOwn(fixtures, pathname)) {
+        const fixture = fixtures[pathname];
+        res.writeHead(200, { "cache-control": "no-store", ...fixture.headers });
+        res.end(fixture.body);
+        return;
+      }
       const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
       const filePath = path.resolve(resolvedRoot, relativePath);
 

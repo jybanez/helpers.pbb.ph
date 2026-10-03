@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Markdown Viewer · Helper</title>
+<link rel="stylesheet" href="../css/demo/demo.shell.css">
+<style>.page{display:block;max-width:1100px;margin:auto;padding:24px}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}textarea{box-sizing:border-box;width:100%;font-family:monospace}pre{overflow:auto}label{display:block;margin:.6rem 0}button{cursor:pointer}.panel{margin-bottom:20px}</style></head>
+<body class="demo-shell-sidebar" data-format="markdown"><main class="page demo-workbench">
+<header class="panel"><h1>Markdown Viewer</h1><p>A complete file-viewing workflow, using canonical Helper components from open to close.</p><p>Full canonical Markdown formatting: headings, tables, lists and code. HTML is literal text, images never load, unsafe links are removed. Preview limit: 256 KiB.</p><a href="../docs/file-viewers.md">Complete API and integration reference</a></header>
+<section class="panel"><h2>Try the viewer</h2><label for="example">Example</label><select id="example"><option value="normal">Project sample</option><option value="empty">Empty</option><option value="invalid">Malformed / unsafe content</option><option value="large">Large sample</option></select>
+<label for="source">File content</label><textarea id="source" rows="10" spellcheck="false"></textarea>
+<div class="controls"><button disabled id="preview">Open content</button><button disabled id="blob">Load content through URL</button><button disabled id="error">Try a missing URL</button><label><input id="full" type="checkbox"> Open fullscreen</label></div><p id="state" role="status"></p></section>
+<section class="panel"><h2>Integration</h2><pre><code>const createViewer = await uiLoader.get("ui.markdown.viewer");
+const viewer = createViewer({ title: "Project file", url: fileUrl });
+viewer.open(); // Visible loading before fetch starts.
+// Reuse after the user selects another file:
+viewer.update({ url: nextFileUrl });
+// Or supply text already loaded by your application:
+viewer.update({ content: sourceText, sourceUrl: downloadUrl });
+await viewer.close();
+viewer.destroy(); // Abort pending reads and release listeners.</code></pre>
+<p>For the bundle use <code>dist/helpers.ui.bundle.min.js?v=0.21.223</code>. Preload the factory during application initialization so a click can open its modal immediately.</p></section>
+<section class="panel"><h2>States and lifecycle</h2><ul><li>URL reads show loading with a working close button, Escape and backdrop cancellation.</li><li>Empty files have an explicit message. Invalid files show the parse problem. Fetch failures include a Retry control.</li><li>Retry repeats only a read. Closing, destroying or selecting another source aborts reads and ignores late results.</li><li>Open source and Download preserve the original URL. Cross-origin download behavior depends on the server and browser.</li><li>Fullscreen uses the modal's viewport layout. Tab stays inside the dialog; closing restores the opener's focus.</li></ul></section>
+<section class="panel"><h2>Developer reference</h2><p><code>content</code> and <code>url</code> are mutually exclusive. Content is text, not HTML or a parsed object. Updating one clears the other. <code>sourceUrl</code> supplies optional source links for loaded content. <code>limits</code> can lower the documented budgets. Invalid options throw before changing the current viewer.</p><p><code>getState()</code> reports <code>format, open, destroyed, status, error, rowCount, fullscreen</code>. Status is idle, loading, ready, empty, parse-error, fetch-error or destroyed. Reload an open URL viewer with <code>reload()</code>.</p><p>Files use UTF-8 (optional BOM), HTTP(S) or caller-owned blob URLs. Same-origin credentials are used; cross-origin URLs require CORS. Server authorization remains the application's responsibility. This viewer never edits files or interprets spreadsheet formulas.</p></section>
+</main><script type="module" src="../js/demo/demo.file.viewer.js?v=0.21.223"></script></body></html>
