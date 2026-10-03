@@ -19,12 +19,47 @@ const DEFAULT_OPTIONS = {
   onChange: null,
   onSend: null,
   onFilesSelected: null,
+  attachmentAdapter: 'native',
+  onAttachmentsSelected: null,
+  onAttachmentError: null,
 };
 
 export function createChatComposer(container, data = {}, options = {}) {
   let currentValue = String(data?.value || "");
   let currentOptions = { ...DEFAULT_OPTIONS, ...(options || {}) };
   let refs = {};
+  let attachmentController = null, attachmentRevision = 0, attachmentBusy = false, destroyed = false;
+  let attachmentError = '';
+  function adapter() {
+    const value = currentOptions.attachmentAdapter;
+    return typeof value === 'string' ? {mode:value} : (value || {mode:'native'});
+  }
+  function hasAttachments() { return currentOptions.showAttachmentButton && adapter().mode !== 'none'; }
+  function cancelAttachment() { attachmentRevision++; attachmentController?.abort(); attachmentController = null; attachmentBusy = false; }
+  async function openAttachment() {
+    if (destroyed || isInteractionBlocked() || attachmentBusy || !hasAttachments()) return;
+    if (adapter().mode === 'native') { refs.fileInput?.click(); return; }
+    if (adapter().mode !== 'custom' || typeof adapter().open !== 'function') {
+      attachmentError = 'Configure a custom attachment picker.'; render(); return;
+    }
+    attachmentError = ''; attachmentBusy = true; attachmentController = new AbortController();
+    const signal = attachmentController.signal, token = ++attachmentRevision, snapshot = currentOptions;
+    syncButtons();
+    try {
+      const records = await adapter().open({signal});
+      if (destroyed || signal.aborted || token !== attachmentRevision) return;
+      if (records == null || (Array.isArray(records) && !records.length)) return;
+      if (!Array.isArray(records) || records.some(record => !record || record.id == null || typeof record.name !== 'string')) throw new TypeError('The picker must return canonical file records.');
+      snapshot.onAttachmentsSelected?.(snapshot.multiple === false ? records.slice(0,1) : records, {kind:'repository',source:'picker'});
+    } catch (error) {
+      if (!destroyed && !signal.aborted && token === attachmentRevision) {
+        attachmentError = `Unable to attach files. ${error?.message || 'Open the picker again.'}`;
+        currentOptions.onAttachmentError?.(error);
+      }
+    } finally {
+      if (!destroyed && token === attachmentRevision) { attachmentBusy = false; attachmentController = null; render(); refs.attach?.focus(); }
+    }
+  }
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -47,7 +82,7 @@ export function createChatComposer(container, data = {}, options = {}) {
     const controls = createElement("div", {
       className: [
         "ui-chat-composer-controls",
-        currentOptions.showAttachmentButton ? "" : "is-no-attachment",
+        hasAttachments() ? "" : "is-no-attachment",
       ].filter(Boolean).join(" "),
     });
     const inputWrap = createElement("div", { className: "ui-chat-composer-input-wrap" });
@@ -72,7 +107,8 @@ export function createChatComposer(container, data = {}, options = {}) {
     inputWrap.appendChild(input);
     refs.input = input;
 
-    if (currentOptions.showAttachmentButton) {
+    if (hasAttachments()) {
+      if (adapter().mode === 'native') {
       const fileInput = createElement("input", {
         className: "ui-chat-composer-file-input",
         attrs: buildFileInputAttrs(),
@@ -86,6 +122,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       });
       refs.fileInput = fileInput;
       root.appendChild(fileInput);
+      }
 
       const attach = createElement("button", {
         className: "ui-chat-composer-attach",
@@ -93,7 +130,7 @@ export function createChatComposer(container, data = {}, options = {}) {
           type: "button",
           title: currentOptions.attachmentLabel,
           "aria-label": currentOptions.attachmentLabel,
-          ...(isInteractionBlocked() ? { disabled: "disabled" } : {}),
+          ...((isInteractionBlocked() || attachmentBusy) ? { disabled: "disabled" } : {}),
         },
       });
       const attachIcon = createIcon("data.upload", { className: "ui-chat-composer-attach-icon" });
@@ -102,7 +139,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       } else {
         attach.textContent = currentOptions.attachmentLabel;
       }
-      attach.addEventListener("click", () => refs.fileInput?.click?.());
+      attach.addEventListener("click", () => void openAttachment());
       controls.appendChild(attach);
       refs.attach = attach;
     }
@@ -131,6 +168,9 @@ export function createChatComposer(container, data = {}, options = {}) {
     }
 
     container.appendChild(root);
+    if (attachmentError) {
+      root.appendChild(createElement('p', {text:attachmentError, attrs:{role:'alert'}}));
+    }
   }
 
   function buildInputAttrs() {
@@ -170,7 +210,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function handlePaste(event) {
-    if (!currentOptions.showAttachmentButton || isInteractionBlocked()) {
+    if (!hasAttachments() || adapter().mode !== 'native' || isInteractionBlocked()) {
       return;
     }
     const files = getClipboardFiles(event.clipboardData);
@@ -191,6 +231,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       return;
     }
     currentOptions.onFilesSelected?.(selectedFiles, { source });
+    currentOptions.onAttachmentsSelected?.(selectedFiles, { kind:'native', source });
   }
 
   async function submit() {
@@ -206,6 +247,8 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function update(nextData = {}, nextOptions = {}) {
+    if (destroyed) return;
+    cancelAttachment(); attachmentError = '';
     if (Object.prototype.hasOwnProperty.call(nextData || {}, "value")) {
       currentValue = String(nextData.value || "");
     }
@@ -214,6 +257,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function destroy() {
+    destroyed = true; cancelAttachment();
     refs = {};
     clearNode(container);
   }
@@ -239,6 +283,8 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function setBusy(busy) {
+    if (destroyed) return;
+    if (busy) cancelAttachment();
     currentOptions = { ...currentOptions, busy: Boolean(busy) };
     render();
   }
@@ -255,7 +301,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       refs.send.disabled = isSendDisabled();
     }
     if (refs.attach) {
-      refs.attach.disabled = isInteractionBlocked();
+      refs.attach.disabled = isInteractionBlocked() || attachmentBusy;
     }
     if (refs.fileInput) {
       refs.fileInput.disabled = isInteractionBlocked();

@@ -90,6 +90,7 @@ const DEMO_GROUPS = [
       { href: "./demo.json.viewer.html", label: "JSON Viewer" },
       { href: "./demo.markdown.viewer.html", label: "Markdown Viewer" },
       { href: "./demo.csv.viewer.html", label: "CSV Viewer" },
+      { href: "./demo.repository.picker.html", label: "Repository File Picker" },
       { href: "./demo.h4.html", label: "QR & PNG" },
       { href: "./demo.timeline.html", label: "Timeline" },
       { href: "./demo.timeline.scrubber.html", label: "Timeline Scrubber" },
