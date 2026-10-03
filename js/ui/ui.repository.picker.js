@@ -14,17 +14,13 @@ export function createRepositoryPicker(supplied = {}) {
   const root = document.createElement('section'); root.className = 'ui-repository-picker';
   const crumbsHost = document.createElement('div');
   const notice = document.createElement('p'); notice.setAttribute('role', 'status'); notice.setAttribute('aria-live', 'polite');
-  const retry = button('Reload folder', () => void navigate(folderId));
-  const upload = button('Upload files', () => { if (canUpload()) input.click(); });
+  const retry = iconButton('Reload folder', 'actions.refresh', () => void navigate(folderId));
+  const upload = iconButton('Upload files', 'data.upload', () => { if (canUpload()) input.click(); });
   const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.hidden = true;
   input.addEventListener('change', () => { const files = Array.from(input.files || []); input.value = ''; void uploadFiles(files); });
-  const tools = document.createElement('div'); tools.className = 'ui-repository-picker-tools'; tools.append(retry, upload, input);
+  const headerActions = document.createElement('div'); headerActions.className = 'ui-repository-picker-header-actions'; headerActions.append(retry, upload);
   const list = document.createElement('ul'); list.className = 'ui-repository-picker-list'; list.setAttribute('aria-label', 'Folders and files');
-  const summary = document.createElement('section'); summary.className = 'ui-repository-picker-selection'; summary.setAttribute('aria-label', 'Selected files');
-  const count = document.createElement('p'); count.setAttribute('aria-live', 'polite');
-  const clearSelection = button('Clear selection', () => { selected.clear(); render(); clearSelection.disabled ? cancel.focus() : clearSelection.focus(); });
-  summary.append(count, clearSelection);
-  root.append(crumbsHost, tools, notice, list, summary);
+  root.append(crumbsHost, input, notice, list);
   const footer = document.createElement('div'); footer.className = 'ui-repository-picker-tools';
   const cancel = button('Cancel', () => void close());
   const confirm = button('Attach selected files', () => {
@@ -34,9 +30,24 @@ export function createRepositoryPicker(supplied = {}) {
   });
   footer.append(cancel, confirm);
   const crumbs = createBreadcrumbs(crumbsHost, {}, {onNavigate: item => void navigate(item.id)});
-  const modal = createModal({ title: options.title, ariaLabel: options.title, content: root, footer, size: 'lg',
+  const modal = createModal({ title: options.title, ariaLabel: options.title, content: root, footer, headerActions, size: 'lg',
     closeWhileBusy: true, escapeCloseWhileBusy: true, backdropCloseWhileBusy: true,
-    onBeforeClose() { closing = true; active = false; invalidate(); return true; },
+    onBeforeClose(meta) {
+      // Only ready-state Escape consumes selection. Explicit dismissal and busy
+      // cancellation must still invalidate pending work immediately.
+      if (meta?.reason === 'escape' && active && status === 'ready' && selected.size) {
+        const focused = document.activeElement;
+        const rowId = list.contains(focused) ? focused.dataset.id : null;
+        const kind = focused?.dataset?.kind;
+        selected.clear(); render();
+        if (!focused?.isConnected || focused.disabled) {
+          const replacement = [...list.querySelectorAll('[data-id]')].find(node => node.dataset.id === rowId && node.dataset.kind === kind);
+          (replacement || modal.refs.closeButton).focus({preventScroll:true});
+        }
+        return false;
+      }
+      closing = true; active = false; invalidate(); return true;
+    },
     onClose(meta) {
       closing = false; finish(meta?.records || []); selected.clear(); listing = null; render();
       options.onClose?.(meta);
@@ -45,6 +56,10 @@ export function createRepositoryPicker(supplied = {}) {
   function button(label, action) {
     const node = document.createElement('button'); node.type = 'button'; node.className = 'ui-button';
     node.textContent = label; node.addEventListener('click', action); return node;
+  }
+  function iconButton(label, icon, action) {
+    const node = button('', action); node.classList.add('ui-button-borderless');
+    node.setAttribute('aria-label', label); node.title = label; node.append(createIcon(icon)); return node;
   }
   function key(id) {
     if ((typeof id !== 'string' && typeof id !== 'number') || String(id) === '') throw new TypeError('Each record needs a stable id.');
@@ -98,8 +113,6 @@ export function createRepositoryPicker(supplied = {}) {
       const state = createIcon('actions.check', {className:'ui-repository-picker-selected-icon'}); if (!chosen) state.setAttribute('hidden',''); node.append(state);
     }
     if (status === 'ready' && !list.childNodes.length) { const li = document.createElement('li'); li.textContent = 'This folder is empty.'; list.append(li); }
-    count.textContent = `${selected.size} file${selected.size === 1 ? '' : 's'} selected across folders`;
-    clearSelection.disabled = busy() || !active || !selected.size;
   }
   function row(record, kind, icon, activate) {
     const li = document.createElement('li');
@@ -180,6 +193,6 @@ export function createRepositoryPicker(supplied = {}) {
   }
   const api = {open,pick,close,update,navigate,reload:()=>navigate(folderId),uploadFiles,destroy,
     getState:()=>({open:active,status,error,folderId,selection:[...selected.values()],destroyed}),
-    refs:{...modal.refs,list,summary,confirm,cancel,upload,input,retry,notice,clearSelection,breadcrumbs:crumbsHost}};
+    refs:{...modal.refs,list,confirm,cancel,upload,input,retry,notice,breadcrumbs:crumbsHost}};
   render(); if (options.open) open(); return api;
 }

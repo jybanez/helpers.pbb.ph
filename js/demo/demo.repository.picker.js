@@ -1,5 +1,5 @@
-import {uiLoader} from '../ui/ui.loader.js?v=0.21.225';
-import './demo.shell.js?v=0.21.225';
+import {uiLoader} from '../ui/ui.loader.js?v=0.21.226';
+import './demo.shell.js?v=0.21.226';
 const createPicker = await uiLoader.get('ui.repository.picker');
 const createComposer = await uiLoader.get('ui.chat.composer');
 const scenario = document.querySelector('#scenario');
