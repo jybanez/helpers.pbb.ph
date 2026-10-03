@@ -1,9 +1,9 @@
-# Repository file picker and composer attachments (0.21.225)
+# Repository file picker and composer attachments (0.21.226)
 
 `ui.repository.picker` exports `createRepositoryPicker(options)`, a complete
 canonical Modal + Breadcrumbs workflow. There was no existing complete repository
 picker; the component owns accessible native folder and file row buttons,
-selection summary, upload controls, busy/error states and cancellation. It does
+header icon actions, upload controls, busy/error states and cancellation. It does
 not implement transport, authorization, storage, overwrite/conflict resolution,
 chunking or resumable uploads. No form modal is needed: this is file selection,
 not a custom form submission.
@@ -58,7 +58,9 @@ icon; file rows use the canonical `getFileIconName(name, mimeType || type)` reso
 and file icon pack, with the unknown-file fallback. The complete file row is a native
 toggle button (`aria-pressed`), activated by click, Enter or Space. Selected rows have
 a full-row highlight and decorative checkmark. There are no native checkboxes or
-duplicate lower filename list; a count and Clear selection cover all folders.
+selection summary or Clear selection control. Reload folder and Upload files are
+borderless icon buttons in the canonical modal header, with accessible names and
+tooltips. Attach remains disabled until at least one file is selected.
 
 | API | Behavior |
 | --- | --- |
@@ -72,8 +74,10 @@ duplicate lower filename list; a count and Clear selection cover all folders.
 
 Options include `title`, `context`, `folderId` (default null), `multiple` (default
 true), `loadFolder`, `onUpload`, `onClose`, and `open` (default false). Each opening
-starts a fresh selection; navigation retains it. Selection is explicit and visible
-across folders, with a compact Clear selection action. `multiple:false` keeps one file. There is no
+starts a fresh selection; navigation retains it. Selection persists across folders. In the ready state, Escape first clears all
+selected files and keeps the dialog open; a subsequent Escape closes it. Cancel
+and the close button always dismiss directly. While loading or uploading, Escape
+also dismisses directly and aborts/invalidates pending work. `multiple:false` keeps one file. There is no
 remote search or server pagination contract in this version: supply appropriately
 bounded folder results. The list scrolls within the responsive modal.
 

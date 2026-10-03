@@ -3,6 +3,7 @@ const assert = (ok,text) => {if(!ok) throw Error(text); output.textContent += `P
 const tick = (ms=20) => new Promise(resolve=>setTimeout(resolve,ms));
 const {uiLoader} = await import(location.search.includes('bundle') ? '../dist/helpers.ui.bundle.min.js' : '../js/ui/ui.loader.js');
 let picker, composer;
+const escape = () => document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
 const folder = id => ({folder:{id,name:id || 'Root'}, breadcrumbs:id ? [{id:null,name:'Root'},{id,name:id}] : [{id:null,name:'Root'}],
   folders:id ? [] : [{id:'other',name:'Other'}],files:[{id:id || 'root-file',name:id ? 'Other file' : '<script>safe</script>'}],permissions:{canUpload:true}});
 try {
@@ -13,6 +14,7 @@ try {
   const cancelled=picker.pick(); picker.open();
   assert(picker.getState().open && picker.getState().status==='loading' && !picker.refs.closeButton.disabled,'immediate dismissible loading');
   assert(reads===1,'duplicate open does not reload');
+  assert(picker.refs.retry.disabled && picker.refs.upload.hidden && picker.refs.confirm.disabled,'loading header and attach controls unavailable');
   await picker.close(); resolveRead(folder(null)); await tick(350);
   assert((await cancelled).length===0 && aborted && picker.getState().selection.length===0,'dismissal aborts and ignores late load'); picker.destroy();
   picker=createPicker({loadFolder:async({folderId})=>folder(folderId),onUpload:async(files,context)=>{
@@ -31,8 +33,16 @@ try {
   picker.refs.list.querySelector('[data-kind=file]').click();
   picker.refs.list.querySelector('button').click(); await tick();
   picker.refs.list.querySelector('[data-kind=file]').click();
-  assert(picker.getState().selection.length===2 && picker.refs.summary.textContent.includes('2 files selected'),'selection persists across folders');
-  assert(!picker.refs.summary.querySelector('ul') && !picker.refs.summary.textContent.includes('Remove'),'compact count replaces duplicate filenames');
+  assert(picker.getState().selection.length===2,'selection persists across folders');
+  assert(!picker.refs.body.querySelector('.ui-repository-picker-tools, .ui-repository-picker-selection') && !picker.refs.panel.textContent.includes('Clear selection'),'no body action row or selection summary');
+  for (const [node,label,icon] of [[picker.refs.retry,'Reload folder','actions.refresh'],[picker.refs.upload,'Upload files','data.upload']]) {
+    assert(picker.refs.headerActions.contains(node) && !picker.refs.body.contains(node) && node.textContent==='' && node.getAttribute('aria-label')===label && node.title===label && node.querySelector(`[data-icon="${icon}"]`),'accessible icon-only header action: '+label);
+    assert(getComputedStyle(node).borderTopWidth==='0px','borderless header action: '+label);
+  }
+  picker.refs.list.querySelector('[data-kind=file]').focus(); escape(); await tick();
+  assert(picker.getState().open && !picker.getState().selection.length && picker.refs.confirm.disabled && document.activeElement.dataset.kind==='file','first ready Escape clears cross-folder selection and preserves row focus');
+  await picker.navigate(null); picker.refs.list.querySelector('[data-kind=file]').click();
+  await picker.navigate('other'); picker.refs.list.querySelector('[data-kind=file]').click();
   assert(picker.refs.breadcrumbs.querySelector('button')?.textContent==='Root' && picker.refs.breadcrumbs.querySelector('[aria-current=page]')?.textContent==='other','canonical ancestor and current breadcrumbs');
   picker.refs.breadcrumbs.querySelector('button').click(); await tick();
   assert(picker.getState().folderId===null,'ancestor breadcrumb navigates');
@@ -44,6 +54,8 @@ try {
   picker.update({loadFolder:async({folderId})=>({...folder(folderId),permissions:{showUpload:true,canUpload:false}})});
   picker.open(); await tick(); assert(!picker.refs.upload.hidden && picker.refs.upload.disabled,'upload permission can show disabled control');
   assert(await picker.uploadFiles([new File(['x'],'x')])===false,'upload callback protected by presentation permission');
+  picker.update({loadFolder:async({folderId})=>({...folder(folderId),permissions:{showUpload:false,canUpload:false}})}); await tick();
+  assert(picker.refs.upload.hidden && picker.refs.upload.disabled,'upload permission can hide header control');
   let resolveStale;
   picker.update({context:'old',loadFolder:()=>new Promise(resolve=>resolveStale=resolve)});
   picker.update({context:'new',folderId:'new',loadFolder:async({folderId})=>folder(folderId)}); await tick();
@@ -70,11 +82,28 @@ try {
   const external=new AbortController(), pending=picker.pick({signal:external.signal}); await tick();
   picker.refs.list.querySelector('[data-kind=file]').click(); await picker.navigate('other'); picker.refs.list.querySelector('[data-kind=file]').click();
   assert(picker.getState().selection.length===1 && picker.getState().selection[0].id==='other','single mode replaces prior cross-folder selection');
-  picker.refs.clearSelection.click(); assert(picker.getState().selection.length===0 && picker.refs.confirm.disabled,'clear selection resets count and confirmation');
+  escape(); await tick(); assert(picker.getState().open && picker.getState().selection.length===0 && picker.refs.confirm.disabled,'Escape clears single selection without closing');
   const uploadPending=picker.uploadFiles([new File(['x'],'late.txt')]); external.abort();
   resolveUpload([{id:'late',name:'late.txt'}]); await uploadPending; await tick(350);
   assert(uploadAborted && (await pending).length===0 && !picker.getState().open && !picker.refs.list.textContent.includes('late.txt'),'external cancellation ignores late upload results');
   picker.destroy();
+  for (const action of ['escape','closeButton','cancel']) {
+    picker=createPicker({loadFolder:async({folderId})=>folder(folderId)});
+    const completion=picker.pick(); await tick(); picker.refs.list.querySelector('[data-kind=file]').click();
+    if (action==='escape') {
+      picker.refs.confirm.focus(); escape(); await tick();
+      assert(picker.getState().open && !picker.refs.confirm.contains(document.activeElement),'Escape moves focus off newly disabled Attach');
+      escape();
+    } else picker.refs[action].click();
+    await tick(350); assert(!picker.getState().open && (await completion).length===0,action+' dismisses with expected selection behavior'); picker.destroy();
+  }
+  let completeBusy, busyAborted=false;
+  picker=createPicker({loadFolder:({folderId,signal})=>folderId===null ? folder(null) : new Promise(resolve=>{
+    completeBusy=resolve; signal.addEventListener('abort',()=>busyAborted=true);
+  })});
+  const busyCompletion=picker.pick(); await tick(); picker.refs.list.querySelector('[data-kind=file]').click();
+  const busyRead=picker.navigate('other'); escape(); await tick(); completeBusy(folder('other')); await busyRead; await tick(350);
+  assert(busyAborted && !picker.getState().open && (await busyCompletion).length===0,'busy Escape dismisses immediately despite retained selection and ignores late read'); picker.destroy();
   const host=document.querySelector('#composer'); let legacy=0, unified=[];
   composer=createComposer(host,{}, {onFilesSelected:files=>legacy+=files.length,onAttachmentsSelected:(records,meta)=>unified.push({records,meta})});
   const paste=new Event('paste',{bubbles:true,cancelable:true}); Object.defineProperty(paste,'clipboardData',{value:{files:[new File(['a'],'a.txt')]}}); host.firstChild.dispatchEvent(paste);
