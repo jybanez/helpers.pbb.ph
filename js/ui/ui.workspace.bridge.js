@@ -386,7 +386,7 @@ async function handleRequest(method, payload, modalParent, context) {
       (await context.getToastStack()).clear();
       return true;
     case "dialog.alert": {
-      const { uiAlert } = await import("./ui.dialog.js?v=0.21.233");
+      const { uiAlert } = await import("./ui.dialog.js?v=0.21.235");
       return uiAlert(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -394,7 +394,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.confirm": {
-      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.233");
+      const { uiConfirm } = await import("./ui.dialog.js?v=0.21.235");
       return uiConfirm(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -402,7 +402,7 @@ async function handleRequest(method, payload, modalParent, context) {
       });
     }
     case "dialog.prompt": {
-      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.233");
+      const { uiPrompt } = await import("./ui.dialog.js?v=0.21.235");
       return uiPrompt(String(payload.message ?? ""), {
         ...(payload.options || {}),
         parent: modalParent,
@@ -428,7 +428,7 @@ function openWorkspaceActionModal(payload = {}, parent) {
   return new Promise((resolve) => {
     let settled = false;
     let modal = null;
-    import("./ui.modal.js?v=0.21.61").then(({ createActionModal }) => {
+    import("./ui.modal.js?v=0.21.235").then(({ createActionModal }) => {
       modal = createActionModal({
       title: String(payload.title || "Notice"),
       content: buildActionModalContent(payload),

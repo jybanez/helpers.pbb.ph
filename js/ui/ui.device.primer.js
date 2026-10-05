@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createActionModal } from "./ui.modal.js?v=0.21.61";
+import { createActionModal } from "./ui.modal.js?v=0.21.235";
 import { createIcon } from "./ui.icons.js?v=0.21.65";
 
 const CHECK_KINDS = new Set([

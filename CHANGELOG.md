@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Modal close now restores focus before setting `aria-hidden`, makes the closing subtree inert, and preserves foreground modal ownership. Confirmation settlement still waits for full unmount. UI bundle revision 0.21.235.
+
 - Added opt-in `ui-actions-borderless` scope and per-action `ui-action-borderless` styling, preserving semantic backgrounds, dimensions, input/card outlines and keyboard focus. Shared components CSS and UI/game bundles revised to 0.21.234.
 
 - Confirm dialogs now settle after full close/unmount and support `onConfirm` returning `{ close: true, value: false }` for a negative result that closes. Literal `false` still keeps the dialog open; thrown errors remain inline. UI bundle revision 0.21.233.

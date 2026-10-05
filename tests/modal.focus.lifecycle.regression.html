@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Modal focus lifecycle</title>
+<body><button id="opener">Open</button><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+window.createModal=await loader.get('ui.modal');window.confirmDialog=await loader.get('ui.dialog.confirm');
+window.ready=true;
+</script></body></html>
