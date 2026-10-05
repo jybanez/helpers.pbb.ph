@@ -4076,9 +4076,46 @@ Returned values:
 
 | Helper | Returns |
 |---|---|
-| `uiAlert(...)` | `Promise<void>` |
+| `uiAlert(...)` | `Promise<boolean>`; true for acknowledgement/dismissal, false for explicit signal cancellation |
 | `uiConfirm(...)` | `Promise<boolean>` |
 | `uiPrompt(...)` | `Promise<string \| null>` |
+
+Alert lifecycle options:
+
+`uiAlert` accepts an optional `signal: AbortSignal` and `onClose(meta)` observer.
+These options keep the alert local instead of delegating to a workspace host.
+`onAcknowledge(value, { kind, signal, isActive })` receives the alert's lifetime
+signal and an activity check. The lifetime ends when closing starts, before the
+close animation. `onClose` runs once after unmount with the modal close `reason`
+and the invalidated lifetime signal. An already-aborted caller signal opens no
+modal and reports `reason: "abort"` once. Caller-signal listeners are removed on
+close. Observer exceptions are logged and do not prevent cleanup or settlement.
+
+Escape, backdrop and the close button remain blocked during a busy action.
+Explicit caller cancellation closes even a busy alert and resolves false after
+unmount without waiting for the pending handler. Late handler results/errors are
+ignored by Helper. Cancellation does **not** undo a request or authorize retrying
+an uncertain mutation. Callers must check the lifetime after every await before
+their own side effects, and separately compare captured manager/context and
+failure generation where applicable. Ordinary dismissal continues to resolve
+true. With lifecycle options, successful acknowledgement also resolves after
+unmount; legacy alerts retain their existing settlement timing.
+
+```js
+const contextLifetime = new AbortController();
+const result = uiAlert("Storage is unavailable", {
+  signal: contextLifetime.signal,
+  okText: "Retry storage",
+  onAcknowledge: async (_value, lifetime) => {
+    const status = await checkStorage();
+    if (!lifetime.isActive()) return false;
+    showCurrentStatus(status);
+  },
+  onClose: ({ reason }) => console.log("Alert closed", reason),
+});
+// On surface replacement or context disposal:
+contextLifetime.abort();
+```
 
 Example:
 

@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Add optional `uiAlert` AbortSignal cancellation, post-unmount close observation, and handler lifetime guards; suppress late async results after disposal and rebuild UI bundle revision `.236`.
+
 - Modal close now restores focus before setting `aria-hidden`, makes the closing subtree inert, and preserves foreground modal ownership. Confirmation settlement still waits for full unmount. UI bundle revision 0.21.235.
 
 - Added opt-in `ui-actions-borderless` scope and per-action `ui-action-borderless` styling, preserving semantic backgrounds, dimensions, input/card outlines and keyboard focus. Shared components CSS and UI/game bundles revised to 0.21.234.

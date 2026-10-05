@@ -1,7 +1,7 @@
 import { createElement } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.235";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
-import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.235";
+import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.236";
 
 export function uiAlert(message, options = {}) {
   return new Promise((resolve) => {
@@ -59,6 +59,34 @@ export function uiPrompt(message, options = {}) {
 
 function openLocalAlert(resolve, message, options = {}) {
   let settled = false;
+  let cancelled = false;
+  let closed = false;
+  const lifetime = new AbortController();
+  const lifecycleEnabled = Boolean(options.signal || typeof options.onClose === "function");
+  const actionContext = { kind: "alert", signal: lifetime.signal, isActive: () => !lifetime.signal.aborted };
+  const invalidate = () => lifetime.abort();
+  const notifyClose = (meta) => {
+    if (closed) return;
+    closed = true;
+    options.signal?.removeEventListener("abort", abort);
+    invalidate();
+    settled = true;
+    resolve(!cancelled);
+    try { options.onClose?.({ ...meta, signal: lifetime.signal }); }
+    catch (error) { console.error("uiAlert onClose callback failed", error); }
+  };
+  const abort = () => {
+    cancelled = true;
+    invalidate();
+    // Context cancellation is explicit disposal, including during a busy action.
+    // It never replays or assumes cancellation of the caller's operation.
+    void modal.close({ reason: "abort" });
+  };
+  if (options.signal?.aborted) {
+    cancelled = true;
+    notifyClose({ reason: "abort" });
+    return;
+  }
   const dialogVariant = normalizeDialogVariant(options.variant);
   const { content, setError, clearError } = createDialogContent(message, options, dialogVariant);
 
@@ -87,9 +115,10 @@ function openLocalAlert(resolve, message, options = {}) {
             kind: "alert",
             value: true,
             setError,
+            actionContext,
             onSuccess() {
               settled = true;
-              resolve(true);
+              if (!lifecycleEnabled) resolve(true);
             },
           });
         },
@@ -102,17 +131,16 @@ function openLocalAlert(resolve, message, options = {}) {
     parent: options.parent || null,
     className: buildDialogClassName(options.className, dialogVariant),
     showCloseButton: Boolean(options.showCloseButton),
-    onClose() {
-      if (settled) {
-        modal.destroy();
-        return;
-      }
-      settled = true;
-      resolve(true);
+    onBeforeClose() {
+      invalidate();
+    },
+    onClose(meta) {
       modal.destroy();
+      notifyClose(meta);
     },
   });
   modal.open();
+  options.signal?.addEventListener("abort", abort, { once: true });
   speakDialog(options, {
     title: options.title || "Notice",
     message,
@@ -307,7 +335,7 @@ function hasLocalAsyncDialogHandler(options = {}, kind) {
     return false;
   }
   if (kind === "alert") {
-    return typeof options.onAcknowledge === "function";
+    return typeof options.onAcknowledge === "function" || Boolean(options.signal) || typeof options.onClose === "function";
   }
   if (kind === "confirm") {
     return typeof options.onConfirm === "function";
@@ -318,15 +346,16 @@ function hasLocalAsyncDialogHandler(options = {}, kind) {
   return false;
 }
 
-function runDialogPrimaryAction({ options, kind, value, setError, onSuccess }) {
+function runDialogPrimaryAction({ options, kind, value, setError, onSuccess, actionContext = { kind } }) {
   const handler = resolvePrimaryHandler(options, kind);
   if (typeof handler !== "function") {
     onSuccess?.();
     return true;
   }
   return Promise.resolve()
-    .then(() => handler(value, { kind }))
+    .then(() => actionContext.signal?.aborted ? false : handler(value, actionContext))
     .then((result) => {
+      if (actionContext.signal?.aborted) return false;
       if (result === false) {
         return false;
       }
@@ -340,6 +369,7 @@ function runDialogPrimaryAction({ options, kind, value, setError, onSuccess }) {
       return true;
     })
     .catch((error) => {
+      if (actionContext.signal?.aborted) return false;
       setError(resolveDialogActionErrorMessage(error, options));
       return false;
     });
