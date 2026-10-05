@@ -7179,3 +7179,27 @@ Density passes through the complete editor into repeat groups and can be changed
 with `update`. Unknown density values use standard. Field Group also accepts
 `config.fieldLayoutDensity`. Refresh source, loader and UI bundles together at
 revision 0.21.232. Demo selectors include a compact choice.
+
+### Confirmation settlement and follow-up alerts
+
+`uiConfirm` resolves only after its confirmation has closed, unmounted, and restored focus. Its result is still boolean. `onConfirm` returning literal `false` keeps the dialog open; throwing preserves inline error feedback. Return `{ close: true, value: false }` to close after a confirmed rejection without reporting success, or `{ close: true, value: true }` for success. Objects using either reserved settlement key (`close` or `value`) must provide both own properties, with `close: true` and a boolean `value`; malformed results keep the dialog open with an error. Other existing successful return values (including legacy objects without either key) retain their behavior. Pending handlers keep the existing busy and dismissal protections.
+
+```js
+let blocker = '';
+const confirmed = await uiConfirm('Resolve this incident?', {
+  confirmText: 'Resolve',
+  onConfirm: async () => {
+    const outcome = await requestResolution(); // Application validates the server response.
+    if (outcome.confirmedRequirementRejection) {
+      blocker = outcome.userFacingReason;
+      return { close: true, value: false };
+    }
+    if (!outcome.confirmedSuccess) throw new Error('Check current status before trying again.');
+    return true;
+  },
+});
+if (blocker) await uiAlert(blocker, { title: 'Cannot resolve incident', variant: 'warning' });
+if (confirmed) refreshResolvedIncident();
+```
+
+Keep confirmed rejection distinct from uncertain outcomes; this API does not retry requests. Cancellation returns `false` without invoking `onConfirm`. Awaiting the confirmation is sufficient to sequence the canonical draggable alert without timers or DOM inspection. Messages render as text. Local handlers remain local instead of being serialized through the workspace bridge; handler-free delegated confirmations settle when the host's complete confirmation has closed.
