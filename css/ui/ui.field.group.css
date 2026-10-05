@@ -147,7 +147,7 @@
   grid-column: 1 / -1;
 }
 
-@container field-pair (min-width: 420px) {
+@container field-pair (min-width: 240px) {
   .ui-field-group.is-horizontal .ui-field-group-child {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     align-items: start;

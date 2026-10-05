@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.65";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.222";
-const UI_BUNDLE_REV = "0.21.230";
+const UI_BUNDLE_REV = "0.21.231";
 const UI_GAME_BUNDLE_REV = "0.21.209";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -254,8 +254,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createCheckboxGroup",
   },
   "ui.field.group": {
-    js: "./ui.field.group.js?v=0.21.230",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css?v=0.21.230", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css", "../../css/ui/ui.number.stepper.css", "../../css/ui/ui.combobox.css"],
+    js: "./ui.field.group.js?v=0.21.231",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.field.group.css?v=0.21.231", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css", "../../css/ui/ui.number.stepper.css", "../../css/ui/ui.combobox.css"],
     deps: ["ui.checkbox", "ui.checkbox.group", "ui.combobox", "ui.field.group.presets", "ui.icons", "ui.number.stepper"],
     export: "createFieldGroup",
   },
@@ -363,7 +363,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
   },
   "ui.fieldset": {
     js: `./ui.fieldset.js?v=${UI_PASSWORD_REV}`,
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.fieldset.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css", "../../css/ui/ui.field.group.css?v=0.21.230", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css"],
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.fieldset.css", "../../css/ui/ui.select.css", "../../css/ui/ui.password.css", "../../css/ui/ui.field.group.css?v=0.21.231", "../../css/ui/ui.checkbox.css", "../../css/ui/ui.checkbox.group.css"],
     deps: ["ui.select", "ui.password", "ui.field.group", "ui.checkbox", "ui.checkbox.group"],
     export: "createFieldset",
   },
@@ -806,7 +806,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "incidentTeamsAssignments",
   },
   "incident.types.details.editor": {
-    js: "../incident/incident.types.details.editor.js?v=0.21.230",
+    js: "../incident/incident.types.details.editor.js?v=0.21.231",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -814,8 +814,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/ui/ui.number.stepper.css",
       "../../css/incident/incident.base.css",
       "../../css/incident/incident.types.css",
-      "../../css/ui/ui.field.group.css?v=0.21.230",
-      "../../css/incident/incident.types.details.editor.css?v=0.21.230",
+      "../../css/ui/ui.field.group.css?v=0.21.231",
+      "../../css/incident/incident.types.details.editor.css?v=0.21.231",
     ],
     deps: ["incident.base", "ui.field.group", "ui.field.error"],
     export: "incidentTypesDetailsEditor",
@@ -834,7 +834,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "incidentTypesDetailsViewer",
   },
   "incident.types": {
-    js: "../incident/incident.types.js?v=0.21.230",
+    js: "../incident/incident.types.js?v=0.21.231",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -842,8 +842,8 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/ui/ui.number.stepper.css",
       "../../css/incident/incident.base.css",
       "../../css/incident/incident.types.css",
-      "../../css/ui/ui.field.group.css?v=0.21.230",
-      "../../css/incident/incident.types.details.editor.css?v=0.21.230",
+      "../../css/ui/ui.field.group.css?v=0.21.231",
+      "../../css/incident/incident.types.details.editor.css?v=0.21.231",
       "../../css/incident/incident.types.details.viewer.css?v=0.21.220",
     ],
     deps: ["incident.base", "incident.types.details.editor", "incident.types.details.viewer"],

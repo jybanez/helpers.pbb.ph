@@ -59,7 +59,7 @@
   container: incident-fields / inline-size;
 }
 
-@container incident-fields (min-width: 420px) {
+@container incident-fields (min-width: 240px) {
   .hh-incident-types-details-editor.is-horizontal .hh-field-row:not(.is-group) {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     column-gap: 16px;

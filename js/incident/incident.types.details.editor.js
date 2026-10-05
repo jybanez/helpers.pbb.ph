@@ -6,7 +6,7 @@ import {
   parseFieldGroupValue,
   serializeFieldGroupValue,
   validateFieldGroup,
-} from "../ui/ui.field.group.js?v=0.21.230";
+} from "../ui/ui.field.group.js?v=0.21.231";
 
 const instancePrefix = Math.random().toString(36).slice(2);
 let editorSequence = 0;

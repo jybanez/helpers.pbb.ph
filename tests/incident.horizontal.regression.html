@@ -22,7 +22,7 @@ const sample = {incident_type_id:7,name:'Traffic collision',fields:[
 const columns = row => getComputedStyle(row).gridTemplateColumns.split(' ').length;
 const checkPairs = root => {
  for(const row of root.querySelectorAll('.ui-field-group-child:not([data-control-type="checkbox"]):not([data-control-type="checkbox-group"]), .hh-field-row:not(.is-group)')) {
-   const wide=row.parentElement.clientWidth>=420;
+   const wide=row.parentElement.clientWidth>=240;
    assert(columns(row)===(wide?2:1),'pair follows its container width: '+row.dataset.fieldKey);
    const label=row.querySelector('label');const control=label?.control;
    assert(control,'label associated: '+row.dataset.fieldKey);
@@ -34,6 +34,7 @@ try {
  const create=await loader.get('incident.types.details.editor');
  const createList=await loader.get('incident.types');
  const group=await loader.get('ui.field.group');
+ const presets=await loader.get('ui.field.group.presets');
  const options={editable:true,categories:[],incidentTypes:[],removeIncidentType(){},fieldLayout:'horizontal'};
  for(const useList of [false,true]) {
    const el=host();const api=(useList?createList:create)(el,useList?[structuredClone(sample)]:structuredClone(sample),options);
@@ -67,6 +68,25 @@ try {
  const fallback=host();const base=group(fallback,{name:'default',fields,value:{plate:'A',vehicle:'Car'}});
  assert(!base.root.classList.contains('is-horizontal'),'stacked default');base.update({fieldLayout:'invalid'});assert(!base.root.classList.contains('is-horizontal'),'invalid fallback');
  const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);assert(ids.length===new Set(ids).size,'unique IDs across components');
+ // Real Vehicle Involved preset at desktop workbench host widths, including all nested padding.
+ for(const width of [270,330,360,400]) {
+   const panel=host(width+'px');
+   const data={incident_type_id:8,name:'Vehicle collision',fields:[{field_key:'vehicles',field_label:'Vehicles Involved',input_type:'group',...presets.vehicleInvolved()}]};
+   const editor=create(panel,data,options);
+   checkPairs(panel);
+   const rows=[...panel.querySelectorAll('.ui-field-group-child')];
+   const pairWidth=rows[0].parentElement.clientWidth;
+   assert(width===270?columns(rows[0])===1:columns(rows[0])===2,'actual preset must fit host '+width+' pair '+pairWidth);
+   for(const control of panel.querySelectorAll('.ui-combobox-input,.ui-number-stepper,input,select')) {
+     assert(control.getBoundingClientRect().right<=panel.getBoundingClientRect().right+1,'control within host '+width);
+   }
+   const number=panel.querySelector('.ui-number-stepper-input');
+   assert(number.getBoundingClientRect().width>=30,'stepper value remains usable at '+width);
+   if(width===330 && innerWidth>=768) {
+     panel.dataset.example="workbench-330";
+     document.body.insertBefore(panel,document.getElementById("results").nextSibling);
+   } else { editor.destroy();panel.remove(); }
+ }
  const demo=host();create(demo,structuredClone(sample),options);checkPairs(demo);
  document.body.dataset.status='pass';document.getElementById('results').textContent='PASS: responsive layout, source/bundle API, labels, errors, checkboxes, repeating items, values and updates';
 } catch(error){document.body.dataset.status='fail';document.getElementById('results').textContent='FAIL: '+error.stack;}
