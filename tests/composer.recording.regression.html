@@ -1,0 +1,11 @@
+<!doctype html><html><meta charset="utf-8"><body><div id="composer"></div>
+<script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+const create=await loader.get('ui.chat.composer');
+window.files=[];window.sent=0;window.tracks=[];window.options={attachments:['files','video','audio'],attachmentPlacement:'helper',attachmentLabel:'Attach file',onFilesSelected:f=>files.push(...f),onSend:()=>sent++};
+const acquire=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+window.acquire=acquire;
+navigator.mediaDevices.getUserMedia=async constraints=>{const s=await acquire(constraints);tracks.push(...s.getTracks());return s};
+window.composer=create(document.querySelector('#composer'),{value:'Existing draft'},options);window.ready=true;
+</script></body></html>

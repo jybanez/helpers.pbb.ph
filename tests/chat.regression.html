@@ -199,7 +199,7 @@
 
       const queue = createChatUploadQueue(queueHost, { items: [] }, {
         onOpen(item) {
-          events.push({ type: "queue-open", itemId: item.id });
+          events.push({ type: "queue-open", itemId: item.id, progress: item.progress });
         },
         onRemove(item) {
           events.push({ type: "queue-remove", itemId: item.id });
@@ -222,6 +222,35 @@
           events.push({ type: "composer-files", count: files.length, names: files.map((file) => file.name), source: meta?.source });
         },
       });
+
+      const sendHost = document.createElement('div'); document.body.append(sendHost);
+      const sends = [];
+      const attachmentComposer = createChatComposer(sendHost, {attachmentCount:1}, {onSend:payload=>sends.push(payload)});
+      assert(attachmentComposer.refs.send.disabled, 'legacy default must require text even with attachments');
+      attachmentComposer.update({}, {allowAttachmentOnly:true});
+      assert(!attachmentComposer.refs.send.disabled, 'opt-in attachment-only Send should enable');
+      attachmentComposer.refs.send.click();
+      assert(sends.length === 1 && sends[0].text === '', 'attachment-only click sends unchanged empty text payload');
+      const preservedInput = attachmentComposer.refs.input;
+      attachmentComposer.setAttachmentCount(0);
+      assert(attachmentComposer.refs.input === preservedInput && attachmentComposer.refs.send.disabled, 'removing last attachment disables Send without rebuilding input');
+      attachmentComposer.setValue('   ');
+      attachmentComposer.refs.input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+      assert(sends.length === 1, 'whitespace and no attachments must not submit');
+      attachmentComposer.setAttachmentCount(2);
+      attachmentComposer.refs.input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+      assert(sends.length === 2, 'attachment-only Enter should submit');
+      for (const count of [-1, Infinity, NaN, 1.5]) {
+        attachmentComposer.setAttachmentCount(count);
+        assert(attachmentComposer.refs.send.disabled, 'invalid attachment counts must not enable Send');
+      }
+      attachmentComposer.setAttachmentCount(1); attachmentComposer.setBusy(true);
+      assert(attachmentComposer.refs.send.disabled, 'busy blocks attachment-only send');
+      attachmentComposer.setBusy(false); attachmentComposer.update({}, {disabled:true});
+      assert(attachmentComposer.refs.send.disabled, 'disabled blocks attachment-only send');
+      attachmentComposer.update({attachmentCount:0}, {disabled:false}); attachmentComposer.setValue('Text only');
+      assert(!attachmentComposer.refs.send.disabled, 'opt-in still permits text-only sends');
+      attachmentComposer.destroy(); sendHost.remove();
 
       const input = composerHost.querySelector(".ui-chat-composer-input");
       const sendButton = composerHost.querySelector(".ui-chat-composer-send");
@@ -314,20 +343,35 @@
         { id: "file1", kind: "file", name: "route-plan.pdf", sizeLabel: "1.2 MB", status: "uploading", progress: 64, progressLabel: "64%" },
       ]);
       assert(queueHost.querySelector(".ui-media-strip"), "queue should render media strip for image/video items");
+      assert(queueHost.querySelector('video.ui-media-thumb-video'), "video URLs must render through a video thumbnail, not a broken image");
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-overlay").length === 2, "queue media items should render overlay remove actions");
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-file").length === 2, "queue should render audio/file items individually");
       assert(queueHost.querySelectorAll(".ui-chat-upload-queue-remove.is-inline").length === 2, "queue file/audio rows should render inline trailing remove actions");
-      assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-progress-fill.is-uploading"), "queue should render media uploading progress inside the thumb");
+      assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-progress-fill"), "queue should render media uploading progress inside the thumb");
       assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-progress-label"), "queue should render media progress label inside the thumb");
       assert(queueHost.querySelector(".ui-chat-upload-queue-media-thumb .ui-chat-upload-queue-media-state.is-uploaded"), "queue should render uploaded media state inside the thumb");
       assert(queueHost.textContent.includes("Upload failed"), "queue should render failed-state error text");
+      const retainedFill = queueHost.querySelector('.ui-progress-fill');
+      queue.setItems(queue.getItems().map(item => ({...item,progress:75})));
+      assert(queueHost.querySelector('.ui-progress-fill') === retainedFill, "progress updates must retain the fill for animation");
+      assert(retainedFill.style.width === '75%', "shared progress should receive updated value");
       queueHost.querySelector(".ui-media-thumb").click();
       await wait(40);
       assert(document.querySelector(".ui-media-viewer-shell.is-open"), "queue image click should open media viewer");
-      assert(events.some((event) => event.type === "queue-open" && event.itemId === "img1"), "queue should emit media open callback");
+      assert(events.some((event) => event.type === "queue-open" && event.itemId === "img1" && event.progress === 75), "queue should emit media open callback");
       queueHost.querySelector(".ui-chat-upload-queue-file .ui-chat-upload-queue-remove").click();
       assert(events.some((event) => event.type === "queue-remove" && event.itemId === "aud1"), "queue should emit remove callback");
       composer.destroy();
+      queue.setItems([{ id: "poster-video", kind: "video", previewUrl: "clip.webm", posterUrl: inlinePreview }]);
+      assert(queueHost.querySelector('.ui-media-thumb-image')?.getAttribute('src') === inlinePreview, "video should support an explicit image poster");
+      queue.setItems([{ id: "audio-preview", kind: "audio", name: "voice.webm", previewUrl: "voice.webm" }]);
+      const audioPreview = queueHost.querySelector('audio');
+      assert(audioPreview?.hidden && !audioPreview.controls && audioPreview.getAttribute('src') === 'voice.webm', "audio attachments should use a hidden playback source");
+      assert(queueHost.querySelector('.ui-audio-player-toggle svg') && queueHost.querySelector('.ui-audio-player-seek'), "audio attachments should render Helper player controls");
+      assert(!queueHost.querySelector('.ui-chat-upload-queue-file-name'), "playable audio should replace the filename");
+      queue.setItems([{ id: "no-preview", kind: "audio", name: "voice.webm" }]);
+      assert(!audioPreview.hasAttribute('src') && audioPreview.paused, "queue updates should stop and release audio playback");
+      assert(queueHost.querySelector('.ui-chat-upload-queue-file-name'), "audio without a preview should retain filename fallback");
       queue.destroy();
       thread.destroy();
       virtualThread.destroy();

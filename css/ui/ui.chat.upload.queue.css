@@ -26,7 +26,14 @@
   display: grid;
   gap: 4px;
   pointer-events: none;
+  min-width: 0;
 }
+
+.ui-chat-upload-queue-media-state > div,
+.ui-chat-upload-queue-media-state .ui-progress { min-width: 0; max-width: 100%; }
+.ui-chat-upload-queue-media-state .ui-progress-track { box-sizing: border-box; height: 6px; }
+.ui-chat-upload-queue-media-progress-label[hidden] { display: none; }
+.ui-chat-upload-queue-media-progress-label { box-sizing: border-box; max-width: 100%; overflow-wrap: anywhere; }
 
 .ui-chat-upload-queue-media-progress-track {
   height: 6px;
@@ -82,9 +89,15 @@
 
 .ui-chat-upload-queue-file {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
+}
+
+.ui-chat-upload-queue-audio {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 .ui-chat-upload-queue-file-main,
@@ -113,6 +126,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.ui-chat-upload-queue-file-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ui-chat-upload-queue-file-details .ui-chat-upload-queue-file-name { flex: 1; }
+.ui-chat-upload-queue-file-details .ui-chat-upload-queue-file-meta { flex: none; margin-left: auto; text-align: right; white-space: nowrap; }
 
 .ui-chat-upload-queue-file-meta {
   color: var(--ui-muted, #9fb2d8);
@@ -193,3 +215,6 @@
 .ui-chat-upload-queue-progress-fill.is-failed {
   background: #ff8d7a;
 }
+
+.ui-chat-upload-queue-progress[hidden],
+.ui-chat-upload-queue-media-state[hidden] { display: none; }

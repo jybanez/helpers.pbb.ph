@@ -1,4 +1,4 @@
-import { createAudioTimeline } from "./ui.audio.timeline.js?v=0.21.270";
+import { createAudioTimeline } from "./ui.audio.timeline.js?v=0.21.271";
 
 const DEFAULT_OPTIONS = {
   className: "",

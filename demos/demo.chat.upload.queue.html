@@ -1,166 +1,77 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Upload Queue Demo</title>
-  <link rel="stylesheet" href="../css/demo/demo.shell.css">
-  <style>
-    body { margin: 0; padding: 24px; background: #0c1017; color: #d7e0f4; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-    .page { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
-    .panel { border: 1px solid #263146; border-radius: 10px; background: #111826; padding: 14px; display: grid; gap: 12px; }
-    .preview { border: 1px solid #2b3750; border-radius: 10px; padding: 14px; background: #0b1220; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .log, pre:not(.log) { margin: 0; white-space: pre-wrap; font-size: 12px; font-family: Consolas, "Courier New", monospace; border: 1px solid #2b3750; border-radius: 8px; background: #0b1220; padding: 10px; overflow: auto; }
-    .log { min-height: 180px; color: #b2c2e5; }
-    .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
-  </style>
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.upload.queue"]);
-  </script>
-  <script>
-    window.demoMeta = {
-      title: "Chat Upload Queue",
-      overview: "Shared pending-attachment queue for unsent chat drafts, with grouped media previews, listed audio/file rows, and visual upload state.",
-      useWhen: [
-        "Use <code>createChatUploadQueue(...)</code> when a chat draft should show selected attachments before send.",
-        "Compose it with <code>createChatComposer(...)</code> so the composer owns file picking while the queue owns pending-attachment presentation."
-      ],
-      avoidWhen: [
-        "Do not use it as an upload transport engine; app code still owns actual upload/send lifecycle.",
-        "Do not replace delivered message attachments with the queue helper; sent content belongs in <code>ui.chat.thread</code>."
-      ],
-      description: "The upload queue helper is the visual draft-stage attachment surface. It groups image/video through the shared media strip, keeps audio/file items as removable listed rows, and can show upload progress or failure state without owning transport.",
-      defaultSampleCode: "const queue = createChatUploadQueue(host, {\n  items: [\n    { id: 'img1', kind: 'image', name: 'dispatch-photo-01.jpg', previewUrl: '...', status: 'uploading', progress: 64, progressLabel: '64%' },\n    { id: 'pdf1', kind: 'file', name: 'handoff-notes.pdf', sizeLabel: '1.2 MB', status: 'failed', errorText: 'Upload failed.' }\n  ]\n}, {\n  onRemove(item) {\n    console.log('remove', item.id);\n  }\n});",
-      constructor: [
-        { factory: "<code>createChatUploadQueue(container, data, options)</code>", arguments: "target container, initial items, queue options", returns: "Chat upload queue instance" }
-      ],
-      options: [
-        { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific composition." },
-        { option: "<code>emptyHidden</code>", default: '<code>true</code>', description: "Keeps the queue hidden when there are no pending items." },
-        { option: "<code>maxMediaThumbs</code>", default: '<code>8</code>', description: "Caps how many image/video items render in the grouped media strip." },
-        { option: "<code>mediaStripOptions</code>", default: '<code>{}</code>', description: "Pass-through options for the internal <code>ui.media.strip</code> instance." }
-      ],
-      propertiesText: "No stable public instance properties are documented. Use <code>getItems()</code> and <code>getState()</code> instead of reading DOM state.",
-      events: [
-        { event: "<code>onRemove(item)</code>", arguments: "normalized queue item", returns: "<code>void</code>", description: "Fires when the user removes a pending attachment." },
-        { event: "<code>onOpen(item)</code>", arguments: "normalized queue item", returns: "<code>void</code>", description: "Fires when an image/video item opens through the shared media viewer path." }
-      ],
-      methods: [
-        { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
-        { method: "<code>setItems(items)</code>", arguments: "queue items array", returns: "<code>void</code>" },
-        { method: "<code>getItems()</code>", arguments: "none", returns: "current queue items" },
-        { method: "<code>getState()</code>", arguments: "none", returns: "current item and option snapshot" },
-        { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
-      ]
-    };
-  </script>
-  <script type="module" src="../js/demo/demo.shell.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attachment Queue Demo</title>
+<link rel="stylesheet" href="../css/demo/demo.shell.css">
+<style>
+body{margin:0;padding:24px;background:var(--ui-bg,#0c1017);color:var(--ui-text,#d7e0f4);font-family:Segoe UI,sans-serif}.page{max-width:900px;margin:auto;display:grid;gap:16px;min-width:0}.panel{padding:18px;border:1px solid var(--ui-border,#2b3750);border-radius:12px;min-width:0}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}input[type=file]{max-width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{color:inherit}
+</style>
+<script>
+window.demoMeta={
+ title:'Attachment Queue',overview:'Standalone ui.chat.upload.queue reference—no composer required.',
+ description:'Render app-owned attachments with image/video thumbnails, compact audio playback, file details and animated upload progress. Select local files or use sample items below. No upload requests are made.',
+ useWhen:['Use in forms, messages or any workflow with an app-owned attachment list.'],
+ avoidWhen:['Use ui.file.uploader when Helper should manage upload transport rather than only render your queue.'],
+ constructor:[{factory:'createChatUploadQueue(container, {items}, options)',arguments:'Container, attachment items and callbacks',returns:'Queue API'}],
+ options:[
+ {option:'emptyHidden',default:'true',description:'Hide the queue when there are no items.'},
+ {option:'maxMediaThumbs',default:'8',description:'Maximum image/video thumbnails rendered; other media items remain in queue state.'},
+ {option:'mediaStripOptions',default:'{}',description:'Options forwarded to the canonical media strip and viewer.'},
+ {option:'className',default:'""',description:'Extra root class.'}
+ ],
+ propertiesText:'Each item accepts id, kind (image/video/audio/file), name, sizeLabel, previewUrl, optional image thumbUrl/posterUrl for videos, status (queued/uploading/uploaded/failed), progress (0–100 or null for unknown), progressLabel and errorText. Preserve stable unique ids and other item fields when updating progress. File objects may be retained on items by your app.',
+ events:[{event:'onRemove(item)',arguments:'Selected item',returns:'void',description:'Request to remove; the app must update its list and call setItems.'},{event:'onOpen(item)',arguments:'Selected media item',returns:'void',description:'Notification when the built-in media viewer opens.'}],
+ methods:['setItems(items)','update({items}, options?)','getItems()','getState()','destroy()'].map(method=>({method,arguments:'See integration example',returns:method.startsWith('get')?'Snapshot':'void'})),
+ defaultSampleCode:`const createQueue = await uiLoader.get('ui.chat.upload.queue');
+let items = [{id:'report',kind:'file',name:'report.pdf',sizeLabel:'120 KB'}];
+const queue = createQueue(host, {items}, {
+  onRemove(item) {
+    items = items.filter(entry => entry.id !== item.id);
+    queue.setItems(items);
+    // Revoke item.previewUrl only if your app created/owns that object URL.
+  }
+});
+function reportProgress(id, loaded, total) {
+  items = items.map(item => item.id === id ? {...item,
+    status:'uploading', progress:total > 0 ? loaded / total * 100 : null
+  } : item);
+  queue.setItems(items);
+}
+// Set status:'uploaded' only after confirmed server success.
+// On failure use status:'failed', errorText:'Upload failed. Try again.'
+// On view disposal: queue.destroy(); revoke all app-owned object URLs.`
+};
+</script>
+<script type="module" src="../js/demo/demo.shell.js"></script>
 </head>
-<body class="demo-shell-sidebar">
-  <main class="page">
-    <section class="panel">
-      <h1 class="ui-title">Chat Upload Queue Demo</h1>
-      <p class="muted">Dedicated helper page for the shared pending-attachment draft queue.</p>
-    </section>
-    <section class="panel">
-      <div class="row">
-        <button id="showSampleBtn" class="ui-button" type="button">Show Sample Queue</button>
-        <button id="showProgressBtn" class="ui-button ui-button-ghost" type="button">Show Uploading</button>
-        <button id="showFailedBtn" class="ui-button ui-button-ghost" type="button">Show Failed</button>
-        <button id="showFilesBtn" class="ui-button ui-button-ghost" type="button">Files Only</button>
-        <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Queue</button>
-      </div>
-      <div class="preview" id="queueHost"></div>
-      <pre class="log" id="log">No events yet.</pre>
-    </section>
-  </main>
-  <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
-    await window.__demoLoaderReady;
-    const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
-
-    const host = document.getElementById("queueHost");
-    const log = document.getElementById("log");
-    const preview = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\"><rect width=\"120\" height=\"120\" rx=\"12\" fill=\"#15233d\"/><circle cx=\"38\" cy=\"40\" r=\"14\" fill=\"#8fd5ff\"/><path d=\"M16 92l28-28 18 18 18-24 24 34H16Z\" fill=\"#4f74b9\"/></svg>');
-
-    let items = buildSampleItems();
-
-    function writeLog(label, payload) {
-      const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
-      log.textContent = log.textContent === "No events yet." ? line : `${line}\n${log.textContent}`;
-    }
-
-    function buildSampleItems() {
-      return [
-        { id: "img1", kind: "image", name: "dispatch-photo-01.jpg", previewUrl: preview, status: "uploading", progress: 42, progressLabel: "42%" },
-        { id: "img2", kind: "image", name: "dispatch-photo-02.jpg", previewUrl: preview, status: "uploaded", progressLabel: "Uploaded" },
-        { id: "vid1", kind: "video", name: "approach-scan.mp4", previewUrl: preview, status: "uploading", progress: 81, progressLabel: "81%" },
-        { id: "file1", kind: "file", name: "field-briefing-notes.pdf", sizeLabel: "1.2 MB", status: "uploading", progress: 64, progressLabel: "64%" },
-        { id: "audio1", kind: "audio", name: "radio-handoff.mp3", sizeLabel: "420 KB", status: "failed", errorText: "Upload failed. Retry from the app workflow." },
-      ];
-    }
-
-    function buildUploadingItems() {
-      return [
-        { id: "img3", kind: "image", name: "staging-photo.jpg", previewUrl: preview, status: "uploading", progress: 23, progressLabel: "23%" },
-        { id: "vid2", kind: "video", name: "site-scan.mp4", previewUrl: preview, status: "uploading", progress: 76, progressLabel: "76%" },
-        { id: "file4", kind: "file", name: "dispatch-packet.pdf", sizeLabel: "1.8 MB", status: "uploading", progress: 58, progressLabel: "58%" },
-      ];
-    }
-
-    function buildFailedItems() {
-      return [
-        { id: "file5", kind: "file", name: "mutual-aid-contacts.pdf", sizeLabel: "560 KB", status: "failed", errorText: "Upload failed. Check connectivity and retry from the app flow." },
-        { id: "audio3", kind: "audio", name: "voice-note-from-scene.m4a", sizeLabel: "220 KB", status: "failed", errorText: "Audio upload was rejected by the server." },
-      ];
-    }
-
-    const queue = createChatUploadQueue(host, { items }, {
-      onOpen(item) {
-        writeLog("queue.open", { itemId: item.id, kind: item.kind });
-      },
-      onRemove(item) {
-        items = items.filter((candidate) => candidate.id !== item.id);
-        queue.setItems(items);
-        writeLog("queue.remove", { itemId: item.id });
-      },
-    });
-
-    document.getElementById("showSampleBtn").addEventListener("click", () => {
-      items = buildSampleItems();
-      queue.setItems(items);
-      writeLog("queue.setItems", { mode: "sample", count: items.length });
-    });
-
-    document.getElementById("showProgressBtn").addEventListener("click", () => {
-      items = buildUploadingItems();
-      queue.setItems(items);
-      writeLog("queue.setItems", { mode: "uploading", count: items.length });
-    });
-
-    document.getElementById("showFailedBtn").addEventListener("click", () => {
-      items = buildFailedItems();
-      queue.setItems(items);
-      writeLog("queue.setItems", { mode: "failed", count: items.length });
-    });
-
-    document.getElementById("showFilesBtn").addEventListener("click", () => {
-      items = [
-        { id: "file2", kind: "file", name: "dispatch-handoff-packet.pdf", sizeLabel: "880 KB" },
-        { id: "file3", kind: "file", name: "mutual-aid-contact-sheet.pdf", sizeLabel: "560 KB" },
-        { id: "audio2", kind: "audio", name: "voice-note-from-scene.m4a", sizeLabel: "220 KB" },
-      ];
-      queue.setItems(items);
-      writeLog("queue.setItems", { mode: "files-only", count: items.length });
-    });
-
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      items = [];
-      queue.setItems(items);
-      writeLog("queue.clear", {});
-    });
-  </script>
-</body>
-</html>
+<body class="demo-shell-sidebar"><main class="page" data-demo-structured="true">
+<section class="panel">
+<h2>Try the attachment queue</h2>
+<div class="controls"><label>Add local files <input id="files" type="file" multiple></label><button id="samples" class="ui-button">Reset samples</button><button id="clear" class="ui-button">Clear queue</button></div>
+<div id="queueHost"></div>
+<div class="controls"><button id="simulate" class="ui-button">Simulate upload</button><button id="unknown" class="ui-button">Unknown total</button><button id="fail" class="ui-button">Show failure</button><button id="reset" class="ui-button">Reset status</button></div>
+<p id="feedback" role="status">Demo only. Nothing is uploaded.</p>
+</section>
+<section class="panel"><h2>Integration responsibilities</h2><p>Your app owns selection, limits, authorization, transport, retries and preview URLs. This component only renders the list and emits callbacks. Progress-only updates preserve the bar and audio player; changing attachment content rebuilds previews.</p><p>Image preview URLs must be images. Video preview URLs must be playable video; optional thumbUrl/posterUrl must be images. Audio preview URLs use the Helper audio player. Unsupported preview formats depend on browser support.</p><p>Completion text is omitted inside small media thumbnails. Upload errors remain visible outside thumbnails. Use null progress while the upload total is unknown.</p><p><a href="demo.chat.composer.html">Composer integration</a> · <a href="demo.audio.player.html">Audio Player</a></p><h3>Current items</h3><pre id="state"></pre></section>
+</main>
+<script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js?v=0.21.271';
+const createQueue=await uiLoader.get('ui.chat.upload.queue');
+let items=[],timer=null;const urls=new Set();const feedback=document.getElementById('feedback');
+const queue=createQueue(document.getElementById('queueHost'),{items},{onRemove(item){items=items.filter(i=>i.id!==item.id);render();release(item.previewUrl);},onOpen(item){feedback.textContent=`Opened ${item.name}. Nothing uploaded.`;}});
+function release(url){if(urls.delete(url))URL.revokeObjectURL(url);}
+function render(){queue.setItems(items);document.getElementById('state').textContent=JSON.stringify(items.map(({file,previewUrl,...item})=>({...item,hasPreview:Boolean(previewUrl)})),null,2);for(const id of ['simulate','unknown','fail','reset','clear'])document.getElementById(id).disabled=!items.length;document.getElementById('simulate').disabled=!items.length||timer!==null;}
+function stop(){clearInterval(timer);timer=null;}
+function status(status,progress,errorText=''){items=items.map(item=>({...item,status,progress,errorText,progressLabel:''}));render();}
+function resetSamples(){stop();items.forEach(i=>release(i.previewUrl));const svg='<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140"><rect width="200" height="140" fill="#1c4263"/><circle cx="145" cy="40" r="20" fill="#ffd36a"/><path d="M0 140L70 40L150 140M90 140L150 70L200 140" fill="#65b4a2"/></svg>';items=[{id:'sample-image',kind:'image',name:'Landscape.svg',previewUrl:'data:image/svg+xml,'+encodeURIComponent(svg)},{id:'sample-report',kind:'file',name:'Incident report.pdf',sizeLabel:'120 KB'},{id:'sample-notes',kind:'file',name:'Notes.txt',sizeLabel:'2 KB'}];render();feedback.textContent='Sample items loaded. Add local audio/video to try media playback.';}
+document.getElementById('samples').onclick=resetSamples;
+document.getElementById('files').onchange=event=>{for(const file of event.target.files){const kind=['image','video','audio'].find(type=>file.type.startsWith(type+'/'))||'file';const previewUrl=kind==='file'?'':URL.createObjectURL(file);if(previewUrl)urls.add(previewUrl);items.push({id:crypto.randomUUID(),kind,name:file.name,sizeLabel:`${Math.max(1,Math.round(file.size/1024))} KB`,previewUrl,file});}event.target.value='';render();};
+document.getElementById('clear').onclick=()=>{stop();const previous=items;items=[];render();previous.forEach(i=>release(i.previewUrl));feedback.textContent='Queue cleared.';};
+document.getElementById('simulate').onclick=()=>{if(timer!==null)return;const ids=new Set(items.map(i=>i.id));let progress=0;const paint=()=>{items=items.map(i=>ids.has(i.id)?{...i,status:progress===100?'uploaded':'uploading',progress,progressLabel:'',errorText:''}:i);render();};timer=setInterval(()=>{progress+=10;if(progress===100||!items.some(i=>ids.has(i.id))){stop();feedback.textContent='Simulation finished. Nothing uploaded.';}paint();},400);paint();feedback.textContent='Simulating upload progress. No network request.';};
+document.getElementById('unknown').onclick=()=>{stop();status('uploading',null);};
+document.getElementById('fail').onclick=()=>{stop();status('failed',35,'Example upload failure. Reset status and try the simulation again.');};
+document.getElementById('reset').onclick=()=>{stop();status('queued',null);};
+addEventListener('pagehide',()=>{stop();queue.destroy();[...urls].forEach(release);},{once:true});
+resetSamples();
+</script></body></html>

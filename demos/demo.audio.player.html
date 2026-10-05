@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Player Demo</title>
+  <link rel="stylesheet" href="../css/demo/demo.shell.css">
+  <style>
+    body { margin:0; padding:24px; background:var(--ui-bg,#0c1017); color:var(--ui-text,#d7e0f4); font-family:Segoe UI,sans-serif; }
+    .page { max-width:900px; margin:auto; display:grid; gap:16px; min-width:0; }
+    .panel { padding:18px; border:1px solid var(--ui-border,#2b3750); border-radius:12px; min-width:0; }
+    .controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:18px; }
+    input[type=file] { max-width:100%; } pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+    #feedback { color:var(--ui-muted,#9fb2d8); } a { color:inherit; }
+  </style>
+  <script>
+    window.demoMeta = {
+      title: 'Audio Player',
+      overview: 'Standalone reference for the existing callback-driven ui.audio.player controls.',
+      description: 'This helper renders Play/Pause, a seek slider and elapsed/total time. It does not own an audio source. The demo connects its callbacks to an app-owned HTMLAudioElement and synchronizes media events back into the helper. It plays a locally generated four-second tone or an audio file you choose; nothing is uploaded.',
+      useWhen: ['Use this component when your application already owns audio playback and needs shared controls.'],
+      avoidWhen: ['Use Audio Timeline for synchronized tracks or Audio Session for incident call recordings.'],
+      constructor: [{factory:'createAudioPlayer(container, data, options)',arguments:'Container, playback state, callback options',returns:'Player controls API'}],
+      options: [
+        {option:'compact',default:'false',description:'Single-row layout with icon-only playback, progress and time. Set through update({}, {compact:true}). Used for attachment previews.'},
+        {option:'actions',default:'[]',description:'Additional buttons after Play: {id, label, icon?, disabled?, hidden?, onClick(state, action)}. icon is a catalog name. Replace the list with update({}, {actions}). Callbacks are app-owned; no automatic busy state.'},
+        {option:'className',default:'""',description:'Extra root class, applied when constructed.'},
+        {option:'ariaLabel',default:'Audio player',description:'Accessible region label, applied when constructed.'},
+        {option:'playLabel / pauseLabel',default:'Play / Pause',description:'Button labels.'},
+        {option:'seekLabel',default:'Seek audio',description:'Accessible seek slider label.'}
+      ],
+      propertiesText:'Data: isPlaying (false), currentMs (0), durationMs (0). Times are milliseconds. getState() returns these values. The current component has no source, volume, menu or time-alignment option.',
+      events:[
+        {event:'onTogglePlay(nextPlaying, state)',arguments:'Requested playing flag and current state',returns:'void',description:'Connect to your playback engine, then synchronize actual playback events.'},
+        {event:'onSeek(nextMs, meta)',arguments:'Milliseconds and {eventName, state}',returns:'void',description:'Fires on slider input and change. Apply the position to your audio source.'}
+      ],
+      methods: ['update(data, options?)','setPlaying(boolean)','setCurrent(ms)','setDuration(ms)','getState()','destroy()'].map(method=>({method,arguments:'See API example below',returns:method==='getState()'?'Playback state':'void'}))
+    };
+    window.demoMeta.defaultSampleCode = `const createAudioPlayer = await uiLoader.get('ui.audio.player');
+const audio = new Audio('your-audio.wav');
+const player = createAudioPlayer(host, {}, {
+  onTogglePlay(playing) {
+    if (playing) audio.play().catch(showPlaybackError);
+    else audio.pause();
+  },
+  onSeek(ms) { audio.currentTime = ms / 1000; }
+});
+function sync() {
+  player.update({
+    isPlaying: !audio.paused && !audio.ended,
+    currentMs: audio.currentTime * 1000,
+    durationMs: Number.isFinite(audio.duration) ? audio.duration * 1000 : 0
+  });
+}
+const events = ['loadedmetadata', 'durationchange', 'timeupdate', 'play', 'pause', 'ended'];
+events.forEach(name => audio.addEventListener(name, sync));
+// On disposal:
+// events.forEach(name => audio.removeEventListener(name, sync));
+// audio.pause(); audio.removeAttribute('src'); audio.load(); player.destroy();
+// Revoke any object URL owned by your application.`;
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js"></script>
+</head>
+<body class="demo-shell-sidebar">
+  <main class="page" data-demo-structured="true">
+    <section class="panel">
+      <h2>Try the existing player</h2>
+      <p>Play the quiet four-second sample tone, or choose a local audio file.</p>
+      <div id="playerHost"></div>
+      <div class="controls">
+        <label><input id="compact" type="checkbox"> Compact player</label>
+        <button id="sample" class="ui-button" type="button">Reset sample tone</button>
+        <label>Local audio <input id="file" type="file" accept="audio/*"></label>
+      </div>
+      <p id="feedback" role="status">Ready — sample tone.</p>
+      <pre id="state" aria-label="Current player state"></pre>
+    </section>
+    <section class="panel">
+      <h2>Component scope</h2>
+      <p>This is the existing Helper player, separate from the browser-native player currently used in attachment previews. Your requested volume, context menu, Play/Stop layout and time alignment are not part of this version yet.</p>
+      <p><a href="demo.audio.timeline.html">Audio Timeline</a> · <a href="demo.audio.html">Audio Session</a> · <a href="demo.chat.composer.html">Chat Composer</a></p>
+    </section>
+  </main>
+  <script type="module">
+    import { uiLoader } from '../js/ui/ui.loader.js?v=0.21.271';
+    const createAudioPlayer = await uiLoader.get('ui.audio.player');
+    const audio = new Audio(); audio.preload = 'metadata';
+    const feedback = document.getElementById('feedback');
+    let ownedUrl = '', disposed = false, generation = 0;
+    const player = createAudioPlayer(document.getElementById('playerHost'), {}, {
+      actions: [{id:'restart',label:'Restart',icon:'media.rewind',onClick(){audio.currentTime=0;sync();}}],
+      onTogglePlay(playing) {
+        if (!playing) { audio.pause(); return; }
+        const attempt = generation;
+        audio.play().catch(() => { if (!disposed && attempt === generation) feedback.textContent = 'Unable to play this source. Choose a supported audio file.'; });
+      },
+      onSeek(ms) { if (Number.isFinite(audio.duration)) audio.currentTime = ms / 1000; }
+    });
+    function sync() {
+      player.update({isPlaying:!audio.paused && !audio.ended,currentMs:audio.currentTime*1000,durationMs:Number.isFinite(audio.duration)?audio.duration*1000:0});
+      document.getElementById('state').textContent = JSON.stringify(player.getState(), null, 2);
+    }
+    const events = ['loadedmetadata','durationchange','timeupdate','play','pause','ended'];
+    events.forEach(name=>audio.addEventListener(name,sync));
+    const onError=()=>{feedback.textContent='Unable to load this audio. Choose a supported audio file.';};
+    audio.addEventListener('error',onError);
+    function load(blob,label) {
+      generation++; audio.pause(); audio.removeAttribute('src'); audio.load();
+      if (ownedUrl) URL.revokeObjectURL(ownedUrl);
+      ownedUrl=URL.createObjectURL(blob); audio.src=ownedUrl;
+      player.update({isPlaying:false,currentMs:0,durationMs:0}); sync(); feedback.textContent=label;
+    }
+    function sample() {
+      const rate=16000, count=rate*4, buffer=new ArrayBuffer(44+count*2), view=new DataView(buffer);
+      const word=(offset,text)=>{[...text].forEach((c,i)=>view.setUint8(offset+i,c.charCodeAt(0)));};
+      word(0,'RIFF');view.setUint32(4,36+count*2,true);word(8,'WAVE');word(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);word(36,'data');view.setUint32(40,count*2,true);
+      for(let i=0;i<count;i++)view.setInt16(44+i*2,Math.sin(i/rate*Math.PI*2*440)*2000*Math.min(1,i/800,(count-i)/800),true);
+      load(new Blob([buffer],{type:'audio/wav'}),'Ready — sample tone.');
+    }
+    document.getElementById('sample').addEventListener('click',sample);
+    document.getElementById('compact').addEventListener('change',event=>player.update({}, {compact:event.target.checked}));
+    document.getElementById('file').addEventListener('change',event=>{const file=event.target.files[0];if(file)load(file,`Ready — ${file.name}`);event.target.value='';});
+    addEventListener('pagehide',()=>{disposed=true;generation++;events.forEach(name=>audio.removeEventListener(name,sync));audio.removeEventListener('error',onError);audio.pause();audio.removeAttribute('src');audio.load();player.destroy();if(ownedUrl)URL.revokeObjectURL(ownedUrl);},{once:true});
+    sample();
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createIcon } from "./ui.icons.js";
+import { captureMedia } from "./ui.media.capture.js?v=0.21.271";
 
 const DEFAULT_OPTIONS = {
   className: "",
@@ -23,19 +24,57 @@ const DEFAULT_OPTIONS = {
   attachmentAdapter: 'native',
   onAttachmentsSelected: null,
   onAttachmentError: null,
+  attachments: null,
+  attachmentOptions: {},
+  getAttachmentPolicy: null,
+  allowAttachmentOnly: false,
 };
 
 export function createChatComposer(container, data = {}, options = {}) {
   let currentValue = String(data?.value || "");
+  let attachmentCount = normalizeAttachmentCount(data?.attachmentCount);
   let currentOptions = { ...DEFAULT_OPTIONS, ...(options || {}) };
   let refs = {};
   let attachmentController = null, attachmentRevision = 0, attachmentBusy = false, destroyed = false;
   let attachmentError = '';
+  function fileOptions() { return { ...currentOptions, ...(currentOptions.attachmentOptions?.files || {}) }; }
+  function recordingPolicy(kind) {
+    const policy = currentOptions.getAttachmentPolicy?.() || {};
+    const config = currentOptions.attachmentOptions?.[kind === 'video' ? 'videos' : 'audios'] || {};
+    if (Number(policy.attachmentCount || 0) >= Number(policy.maxAttachments ?? Infinity)) throw new Error('Remove an attachment before recording another clip.');
+    const maxBytes = Math.min(Number(config.maxBytes ?? 25 * 1024 * 1024), Number(policy.maxFileBytes ?? Infinity), Number(policy.maxTotalBytes ?? Infinity) - Number(policy.usedBytes || 0));
+    if (!(maxBytes > 0)) throw new Error('No attachment space remains. Remove an attachment before recording.');
+    return { ...config, maxBytes };
+  }
+  async function openRecording(kind) {
+    if (destroyed || isInteractionBlocked() || attachmentBusy) return;
+    attachmentError = ''; attachmentBusy = true; attachmentController = new AbortController();
+    const signal = attachmentController.signal, token = ++attachmentRevision;
+    syncButtons();
+    try {
+      const file = await captureMedia({ ...recordingPolicy(kind), kind, signal });
+      if (!file || destroyed || signal.aborted || token !== attachmentRevision) return;
+      if (file.size > recordingPolicy(kind).maxBytes) throw new Error('The recording no longer fits the attachment limit. Free some space and record a shorter clip.');
+      if (!matchesAccept(file, recordingPolicy(kind).accept ?? currentOptions.accept)) throw new Error('This recording format is not accepted. Check the allowed attachment formats.');
+      emitFilesSelected([file], `record-${kind}`);
+    } catch (error) {
+      if (!destroyed && !signal.aborted && token === attachmentRevision) {
+        attachmentError = error?.message || 'Unable to attach recording. Try again.';
+        currentOptions.onAttachmentError?.(error);
+      }
+    } finally {
+      if (!destroyed && token === attachmentRevision) { attachmentBusy = false; attachmentController = null; render(); refs[kind]?.focus(); }
+    }
+  }
   function adapter() {
-    const value = currentOptions.attachmentAdapter;
+    const value = fileOptions().attachmentAdapter;
     return typeof value === 'string' ? {mode:value} : (value || {mode:'native'});
   }
-  function hasAttachments() { return currentOptions.showAttachmentButton && adapter().mode !== 'none'; }
+  function attachmentActions() {
+    if (Array.isArray(currentOptions.attachments)) return [...new Set(currentOptions.attachments)].filter(kind => ['files', 'video', 'audio'].includes(kind));
+    return currentOptions.showAttachmentButton ? ['files'] : [];
+  }
+  function hasAttachments() { return attachmentActions().includes('files') && adapter().mode !== 'none'; }
   function cancelAttachment() { attachmentRevision++; attachmentController?.abort(); attachmentController = null; attachmentBusy = false; }
   async function openAttachment() {
     if (destroyed || isInteractionBlocked() || attachmentBusy || !hasAttachments()) return;
@@ -44,14 +83,14 @@ export function createChatComposer(container, data = {}, options = {}) {
       attachmentError = 'Configure a custom attachment picker.'; render(); return;
     }
     attachmentError = ''; attachmentBusy = true; attachmentController = new AbortController();
-    const signal = attachmentController.signal, token = ++attachmentRevision, snapshot = currentOptions;
+    const signal = attachmentController.signal, token = ++attachmentRevision, snapshot = currentOptions, selectedFileOptions = fileOptions();
     syncButtons();
     try {
       const records = await adapter().open({signal});
       if (destroyed || signal.aborted || token !== attachmentRevision) return;
       if (records == null || (Array.isArray(records) && !records.length)) return;
       if (!Array.isArray(records) || records.some(record => !record || record.id == null || typeof record.name !== 'string')) throw new TypeError('The picker must return canonical file records.');
-      snapshot.onAttachmentsSelected?.(snapshot.multiple === false ? records.slice(0,1) : records, {kind:'repository',source:'picker'});
+      snapshot.onAttachmentsSelected?.(selectedFileOptions.multiple === false ? records.slice(0,1) : records, {kind:'repository',source:'picker'});
     } catch (error) {
       if (!destroyed && !signal.aborted && token === attachmentRevision) {
         attachmentError = `Unable to attach files. ${error?.message || 'Open the picker again.'}`;
@@ -80,9 +119,20 @@ export function createChatComposer(container, data = {}, options = {}) {
     });
     root.addEventListener("paste", handlePaste);
 
-    const helperPlacement = currentOptions.attachmentPlacement === "helper";
+    const helperPlacement = Array.isArray(currentOptions.attachments) || currentOptions.attachmentPlacement === "helper";
     const metadata = createElement("div", {className:"ui-chat-composer-metadata"});
     refs.root = root; refs.metadata = metadata;
+    {
+      for (const kind of attachmentActions().filter(kind => kind !== 'files')) {
+        const label = kind === 'video' ? 'Attach Video' : 'Attach Audio';
+        const button = createElement('button', { className: 'ui-button ui-action-borderless ui-chat-composer-media-attach', attrs: {type:'button', 'aria-label':label, title:label} });
+        button.append(createIcon(kind === 'video' ? 'media.video' : 'media.microphone', { size: 18 }),
+          createElement('span', { className: 'ui-chat-composer-attach-label', text: label }));
+        button.disabled = isInteractionBlocked() || attachmentBusy;
+        button.addEventListener('click', () => void openRecording(kind));
+        metadata.appendChild(button); refs[kind] = button;
+      }
+    }
     const controls = createElement("div", {
       className: [
         "ui-chat-composer-controls",
@@ -129,7 +179,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       }
 
       const attach = createElement("button", {
-        className: "ui-chat-composer-attach" + (helperPlacement ? " is-helper-action" : ""),
+        className: "ui-button ui-chat-composer-attach" + (helperPlacement ? " ui-action-borderless is-helper-action" : ""),
         attrs: {
           type: "button",
           title: currentOptions.attachmentLabel,
@@ -147,8 +197,15 @@ export function createChatComposer(container, data = {}, options = {}) {
         attach.replaceChildren(...(attachIcon ? [attachIcon] : []), createElement("span", {className:"ui-chat-composer-attach-label", text:currentOptions.attachmentLabel}));
       }
       attach.addEventListener("click", () => void openAttachment());
-      (helperPlacement ? metadata : controls).appendChild(attach);
+      if (helperPlacement) metadata.prepend(attach); else controls.appendChild(attach);
       refs.attach = attach;
+    }
+
+    if (helperPlacement) {
+      for (const kind of attachmentActions()) {
+        const button = kind === 'files' ? refs.attach : refs[kind];
+        if (button) metadata.appendChild(button);
+      }
     }
 
     controls.appendChild(inputWrap);
@@ -175,7 +232,7 @@ export function createChatComposer(container, data = {}, options = {}) {
       refs.helper = helper;
       (helperPlacement ? metadata : root).appendChild(helper);
     }
-    if (helperPlacement && metadata.childNodes.length) root.appendChild(metadata);
+    if (metadata.childNodes.length) root.appendChild(metadata);
 
     container.appendChild(root);
     if (attachmentError) {
@@ -193,13 +250,14 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function buildFileInputAttrs() {
+    const config = fileOptions();
     return {
       type: "file",
       tabindex: "-1",
       hidden: "hidden",
-      ...(currentOptions.accept ? { accept: String(currentOptions.accept) } : {}),
-      ...(currentOptions.multiple !== false ? { multiple: "multiple" } : {}),
-      ...(currentOptions.capture ? { capture: String(currentOptions.capture) } : {}),
+      ...(config.accept ? { accept: String(config.accept) } : {}),
+      ...(config.multiple !== false ? { multiple: "multiple" } : {}),
+      ...(config.capture ? { capture: String(config.capture) } : {}),
       ...(isInteractionBlocked() ? { disabled: "disabled" } : {}),
     };
   }
@@ -227,7 +285,7 @@ export function createChatComposer(container, data = {}, options = {}) {
     if (!files.length) {
       return;
     }
-    const acceptedFiles = normalizeSelectedFiles(files, currentOptions);
+    const acceptedFiles = normalizeSelectedFiles(files, fileOptions());
     if (!acceptedFiles.length) {
       return;
     }
@@ -236,7 +294,10 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function emitFilesSelected(files, source) {
-    const selectedFiles = normalizeSelectedFiles(files, currentOptions);
+    const config = source.startsWith('record-')
+      ? { accept: recordingPolicy(source.slice(7)).accept ?? currentOptions.accept, multiple: false }
+      : fileOptions();
+    const selectedFiles = normalizeSelectedFiles(files, config);
     if (!selectedFiles.length) {
       return;
     }
@@ -249,10 +310,6 @@ export function createChatComposer(container, data = {}, options = {}) {
       return;
     }
     const text = String(currentValue || "");
-    if (!text.trim()) {
-      syncButtons();
-      return;
-    }
     await currentOptions.onSend?.({ text });
   }
 
@@ -261,6 +318,9 @@ export function createChatComposer(container, data = {}, options = {}) {
     cancelAttachment(); attachmentError = '';
     if (Object.prototype.hasOwnProperty.call(nextData || {}, "value")) {
       currentValue = String(nextData.value || "");
+    }
+    if (Object.prototype.hasOwnProperty.call(nextData || {}, "attachmentCount")) {
+      attachmentCount = normalizeAttachmentCount(nextData.attachmentCount);
     }
     currentOptions = { ...currentOptions, ...(nextOptions || {}) };
     render();
@@ -302,6 +362,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   function getState() {
     return {
       value: getValue(),
+      attachmentCount,
       options: { ...currentOptions },
     };
   }
@@ -316,6 +377,7 @@ export function createChatComposer(container, data = {}, options = {}) {
     if (refs.fileInput) {
       refs.fileInput.disabled = isInteractionBlocked();
     }
+    for (const kind of ['audio','video']) if (refs[kind]) refs[kind].disabled = isInteractionBlocked() || attachmentBusy;
   }
 
   function isInteractionBlocked() {
@@ -323,11 +385,24 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function isSendDisabled() {
-    return isInteractionBlocked() || !String(currentValue || "").trim();
+    return destroyed || isInteractionBlocked() || attachmentBusy ||
+      (!String(currentValue || "").trim() && !(currentOptions.allowAttachmentOnly && attachmentCount > 0));
+  }
+
+  // The app owns and validates its queue. Updating its count must not cancel capture or lose focus.
+  function setAttachmentCount(count) {
+    if (destroyed) return;
+    attachmentCount = normalizeAttachmentCount(count);
+    syncButtons();
   }
 
   render();
-  return { update, destroy, setValue, getValue, clear, focus, setBusy, getState, get refs() { return {...refs}; } };
+  return { update, destroy, setValue, getValue, clear, focus, setBusy, setAttachmentCount, getState, get refs() { return {...refs}; } };
+}
+
+function normalizeAttachmentCount(count) {
+  const value = Number(count);
+  return Number.isSafeInteger(value) && value > 0 ? value : 0;
 }
 
 function getClipboardFiles(clipboardData) {

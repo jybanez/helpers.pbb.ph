@@ -4,6 +4,10 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added opt-in composer video/audio recording with preview-before-attach, configurable attachment policies, independent device cleanup, ordered `attachments` and per-type `attachmentOptions`. Added attachment-only submission through `allowAttachmentOnly` and app-owned `attachmentCount`; legacy file-picker defaults remain unchanged.
+- Reused the shared audio player for recordings and queue previews, with icons, smooth progress, extra actions and compact mode. Queue previews support video thumbnails and retained shared upload progress. Added standalone player/queue reference demos and source/bundle capture regressions. Main UI/audio revision `0.21.271`.
+- Added shared media control icons: stop, record, fast-forward, rewind, next-track and previous-track; icon/game revision `0.21.240`.
+
 - Add optional `uiAlert` AbortSignal cancellation, post-unmount close observation, and handler lifetime guards; suppress late async results after disposal and rebuild UI bundle revision `.236`.
 
 - Modal close now restores focus before setting `aria-hidden`, makes the closing subtree inert, and preserves foreground modal ownership. Confirmation settlement still waits for full unmount. UI bundle revision 0.21.235.

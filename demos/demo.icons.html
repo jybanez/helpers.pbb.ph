@@ -32,7 +32,7 @@
     .panel input, .panel select { max-width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-bg); color: var(--ui-text); }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.209";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.240";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.icons"]);
   </script>
   <script>
@@ -103,7 +103,7 @@
         <div id="integrationPreview" class="row"></div>
         <pre>createIcon("actions.integration-add", { size: 16 });</pre>
       </details>
-      <pre>import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.209";
+      <pre>import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.240";
 import { FILE_ICONS, getFileIconName } from "../js/ui/ui.icons.files.js";
 import { SOCIAL_ICONS } from "../js/ui/ui.icons.social.js";
 import { AI_ICONS } from "../js/ui/ui.icons.ai.js";
@@ -122,7 +122,7 @@ document.getElementById("your-icon-host").append(attachment, github, claude, unk
     </section>
   </main>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.209";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.240";
     await window.__demoLoaderReady;
     const { createIcon, listIcons, listIconCategories, registerIconPack, getIconDefinition } = await uiLoader.get("ui.icons");
     const { FILE_ICONS } = await import("../js/ui/ui.icons.files.js");
