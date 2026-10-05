@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Border-only action styling</title><style>body{padding:20px;font:14px system-ui;background:#0c1017;color:#d7e0f4}#grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}.sample{padding:12px;border:1px solid #456}button{margin:2px} body #custom{border:2px solid red} body #custom:focus{outline:none}</style>
+<body><h1>Border-only action styling</h1><div id="nav"></div><div id="grid"><section class="sample" id="variants"><button class="ui-button ui-button-primary">Primary</button><button class="ui-button ui-button-danger">Danger</button><button class="ui-button ui-button-quiet">Quiet</button><button class="ui-button ui-button-icon" aria-label="Icon">+</button><button class="ui-button" disabled>Disabled</button><button id="custom" class="ui-action-borderless">Custom action</button><input class="ui-input" value="Input outline"><select class="ui-input"><option>Select outline</option></select><textarea class="ui-input">Textarea outline</textarea></section><section id="types"></section><section id="teams"></section><section class="sample"><div id="player"></div><div id="graph"></div></section></div>
+<script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+try{
+ const navbar=await loader.get('ui.navbar');navbar(document.getElementById('nav'),{}, {brandText:'Operator',items:[{id:'overview',label:'Overview'},{id:'dispatch',label:'Dispatch'}]});
+ const types=await loader.get('incident.types');types(document.getElementById('types'),[{incident_type_id:1,name:'Road incident',fields:[{field_key:'description',field_label:'Description',input_type:'text'},{field_key:'units',field_label:'Units',input_type:'group',repeatable:true,fields:[{key:'name',label:'Name',type:'text'}]}]}],{editable:true,removeIncidentType(){},categories:[],incidentTypes:[]});
+ const teams=await loader.get('incident.teams.assignments');teams(document.getElementById('teams'),[{id:1,team_id:91,status:'requested',contact_person:'Dispatcher',team:{id:91,name:'Responder One'},notes_log:[{id:1,note:'Synthetic dispatch note'}]}],{editable:true,noteActions:true,incident_id:30,noticeAlreadyExist(){},operator_id:7,categories:[],teams:[{id:91,name:'Responder One'}],confirmStatus(){return false},confirmCancel(){return false},onNoteEdit(){},onNoteDelete(){}});
+ const player=await loader.get('ui.audio.player');player(document.getElementById('player'),{},{});
+ const graph=await loader.get('ui.audio.audiograph');graph(document.getElementById('graph'),{},{});
+ window.confirmDialog=await loader.get('ui.dialog.confirm');window.alertDialog=await loader.get('ui.dialog.alert');window.formModal=await loader.get('ui.form.modal');
+ window.ready=true;
+}catch(e){window.failure=e.stack}
+</script></body></html>
