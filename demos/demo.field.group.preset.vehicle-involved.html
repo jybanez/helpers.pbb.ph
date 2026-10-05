@@ -43,6 +43,7 @@
 });`,
       constructor: [{ factory: "<code>fieldGroupPresets.vehicleInvolved(options?)</code>", arguments: "optional preset overrides", returns: "Plain repeatable field-group config for <code>createFieldGroup(...)</code>" }],
       options: [
+        { option: "<code>fieldLayoutDensity</code>", default: '<code>"standard"</code>', description: 'With horizontal layout, <code>"compact"</code> uses a 35/65 split and 12px gap at usable widths of 220px or more; narrower rows stack.' },
         { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 240px stack automatically. Values and validation are retained.' },
 
         { option: "<code>label</code>", default: "<code>\"Vehicle Involved\"</code>", description: "Visible group label. Use plural labels for road-accident intake." },
@@ -85,6 +86,7 @@
         <select id="fieldLayoutSelect" class="ui-input">
           <option value="stacked">Stacked labels</option>
           <option value="horizontal">Labels beside controls</option>
+          <option value="compact">Labels beside controls (compact)</option>
         </select>
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>

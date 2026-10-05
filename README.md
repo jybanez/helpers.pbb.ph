@@ -7169,3 +7169,13 @@ place several fields in a row. Group headings stay above their contents. Checkbo
 labels keep their native click behavior. Values and validation remain unchanged;
 the host still validates before submission/busy state. Refresh the loader, modular
 sources/styles and generated UI bundle together (cache revision 0.21.231).
+
+For a narrow workbench containing the complete `incident.types` wrapper, opt into
+`fieldLayoutDensity: "compact"` alongside `fieldLayout: "horizontal"`. Compact pairs
+use 35/65 columns and a 12px gap when the **usable row** is at least 220px wide,
+otherwise stack. This fits the Vehicle Involved preset at 225px after wrapper
+padding. Standard density stays 40/60 with a 16px gap and a 240px breakpoint.
+Density passes through the complete editor into repeat groups and can be changed
+with `update`. Unknown density values use standard. Field Group also accepts
+`config.fieldLayoutDensity`. Refresh source, loader and UI bundles together at
+revision 0.21.232. Demo selectors include a compact choice.

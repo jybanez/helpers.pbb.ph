@@ -1,4 +1,4 @@
-import { createFieldGroup } from "../ui/ui.field.group.js?v=0.21.231";
+import { createFieldGroup } from "../ui/ui.field.group.js?v=0.21.232";
 import { fieldGroupPresets } from "../ui/ui.field.group.presets.js";
 
 window.__demoLoaderReady?.catch?.(() => {});
@@ -34,7 +34,7 @@ const group = createFieldGroup(host, {
 });
 
 document.getElementById("fieldLayoutSelect")?.addEventListener("change", (event) => {
-  group.update({ fieldLayout: event.target.value });
+  group.update({ fieldLayout: event.target.value === "compact" ? "horizontal" : event.target.value, fieldLayoutDensity: event.target.value === "compact" ? "compact" : "standard" });
   writeLog("layout changed", group.getValue());
 });
 

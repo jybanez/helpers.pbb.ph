@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added opt-in compact horizontal field density for complete incident wrappers with 225px usable rows, preserving standard density. Bundle revision 0.21.232.
+
 - Added opt-in responsive `fieldLayout: "horizontal"` for incident editors and canonical Field Group, with narrow-container stacking, repeat-item label identity, and canonical scalar error associations. UI bundle revision 0.21.231.
 
 ## Versioning

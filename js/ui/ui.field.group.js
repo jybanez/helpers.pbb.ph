@@ -17,6 +17,7 @@ const DEFAULT_OPTIONS = {
   required: false,
   chrome: true,
   fieldLayout: "stacked",
+  fieldLayoutDensity: "standard",
   autoValidate: true,
   fields: [],
   validations: [],
@@ -126,6 +127,7 @@ export function createFieldGroup(container, options = {}) {
       "ui-field-group",
       currentOptions.chrome ? "" : "is-chrome-less",
       currentOptions.fieldLayout === "horizontal" ? "is-horizontal" : "",
+      currentOptions.fieldLayoutDensity === "compact" ? "is-compact" : "",
     ].filter(Boolean).join(" ");
     refs.root.dataset.repeatable = currentOptions.repeatable ? "true" : "false";
     refs.root.dataset.chrome = currentOptions.chrome ? "true" : "false";
@@ -1098,6 +1100,7 @@ function normalizeOptions(options = {}) {
     repeatable: Boolean(options?.repeatable ?? options?.multiple ?? config?.repeatable ?? preset?.repeatable),
     required: isRequiredField(options),
     chrome: options?.chrome !== false,
+    fieldLayoutDensity: (options?.fieldLayoutDensity ?? config?.fieldLayoutDensity ?? preset?.fieldLayoutDensity) === "compact" ? "compact" : "standard",
     fieldLayout: (options?.fieldLayout ?? config?.fieldLayout ?? preset?.fieldLayout) === "horizontal" ? "horizontal" : "stacked",
     autoValidate: parseBoolean(options?.autoValidate ?? options?.validateOnChange ?? config?.autoValidate ?? config?.validateOnChange ?? preset?.autoValidate ?? true),
     entryKey: String(options?.entryKey ?? options?.entry_key ?? config?.entryKey ?? config?.entry_key ?? preset?.entryKey ?? "").trim(),

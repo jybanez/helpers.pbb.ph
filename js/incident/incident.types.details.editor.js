@@ -6,7 +6,7 @@ import {
   parseFieldGroupValue,
   serializeFieldGroupValue,
   validateFieldGroup,
-} from "../ui/ui.field.group.js?v=0.21.231";
+} from "../ui/ui.field.group.js?v=0.21.232";
 
 const instancePrefix = Math.random().toString(36).slice(2);
 let editorSequence = 0;
@@ -220,6 +220,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       name: getFieldKey(field),
       chrome: false,
       fieldLayout: currentOptions.fieldLayout,
+      fieldLayoutDensity: currentOptions.fieldLayoutDensity,
       value: parseFieldGroupValue(field, getFieldValue(field)),
       onChange(nextValue) {
         const serialized = serializeFieldGroupValue(field, nextValue);
@@ -458,6 +459,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       return;
     }
     root.classList.toggle("is-horizontal", currentOptions.fieldLayout === "horizontal");
+    root.classList.toggle("is-compact", currentOptions.fieldLayoutDensity === "compact");
     rootEl = root;
 
     cleanupListeners();
@@ -590,7 +592,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       render();
     },
     setData(nextData, nextOptions = {}) {
-      const layoutChanged = Object.prototype.hasOwnProperty.call(nextOptions, "fieldLayout") && nextOptions.fieldLayout !== currentOptions.fieldLayout;
+      const layoutChanged = ["fieldLayout", "fieldLayoutDensity"].some((key) => Object.prototype.hasOwnProperty.call(nextOptions, key) && nextOptions[key] !== currentOptions[key]);
       currentData = normalizeIncidentTypeData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
       if (layoutChanged) render();
@@ -706,6 +708,7 @@ function getStructureSignature(data, options = {}) {
   return JSON.stringify({
     theme: options.theme,
     fieldLayout: options.fieldLayout === "horizontal" ? "horizontal" : "stacked",
+    fieldLayoutDensity: options.fieldLayoutDensity === "compact" ? "compact" : "standard",
     className: options.className || "",
     id: data?.id ?? null,
     incidentTypeId: data?.incident_type_id ?? null,
