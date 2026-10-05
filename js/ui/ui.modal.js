@@ -536,14 +536,36 @@ export function createModal(options = {}) {
   }
 
   function restoreFocus() {
-    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
-      try {
-        lastFocusedElement.focus();
-      } catch (error) {
-        // Ignore focus restore failures.
-      }
-    }
+    const doc = getDocumentContext();
+    const previous = lastFocusedElement;
     lastFocusedElement = null;
+    // Closing a background modal must not steal focus from its successor.
+    if (!isInsideFocusBoundaries(doc.activeElement, getFocusBoundaries()) &&
+        doc.activeElement !== doc.body && doc.activeElement !== doc.documentElement) return;
+    const available = (node) => Boolean(node?.isConnected && typeof node.focus === "function" &&
+      !root.contains(node) && !node.matches(":disabled") &&
+      !node.closest('[hidden], [inert], [aria-hidden="true"]') && node.getClientRects().length);
+    const foreground = [...doc.querySelectorAll('[data-ui-modal-id][aria-hidden="false"]')]
+      .filter(node => node !== root && !root.contains(node) && available(node)).at(-1);
+    const belongsToForeground = (node) => !foreground || foreground.contains(node) ||
+      node?.closest('[data-ui-modal-portal-owner]')?.getAttribute('data-ui-modal-portal-owner') === foreground.dataset.uiModalId;
+    const candidates = [
+      available(previous) && belongsToForeground(previous) ? previous : null,
+      foreground?.querySelector('.ui-modal'),
+    ];
+    for (const candidate of candidates) {
+      if (!available(candidate)) continue;
+      try { candidate.focus({ preventScroll: true }); } catch (_error) { /* Try the fallback. */ }
+      if (!isInsideFocusBoundaries(doc.activeElement, getFocusBoundaries())) return;
+    }
+    // A removed/disabled opener has no restoration target. Park focus outside
+    // the closing subtree without leaving a permanent tab stop on the body.
+    const body = doc.body;
+    const tabIndex = body.getAttribute('tabindex');
+    body.setAttribute('tabindex', '-1');
+    body.focus({ preventScroll: true });
+    if (tabIndex === null) body.removeAttribute('tabindex');
+    else body.setAttribute('tabindex', tabIndex);
   }
 
   function update(nextOptions = {}) {
@@ -693,6 +715,7 @@ export function createModal(options = {}) {
     const HTMLElementCtor = doc.defaultView?.HTMLElement || HTMLElement;
     lastFocusedElement = doc.activeElement instanceof HTMLElementCtor ? doc.activeElement : null;
 
+    root.inert = false;
     root.setAttribute("aria-hidden", "false");
     root.classList.remove("is-closing");
     root.classList.add("is-mounted");
@@ -719,7 +742,7 @@ export function createModal(options = {}) {
     const beforeClose = currentOptions.onBeforeClose;
     if (typeof beforeClose === "function") {
       const allowed = await beforeClose(meta);
-      if (allowed === false) {
+      if (allowed === false || !open || destroyed) {
         return false;
       }
     }
@@ -728,18 +751,21 @@ export function createModal(options = {}) {
     lastResult = meta?.result ?? null;
     root.classList.remove("is-open");
     root.classList.add("is-closing");
-    root.setAttribute("aria-hidden", "true");
     detachDocumentListeners();
+    restoreFocus();
+    root.inert = true;
+    root.setAttribute("aria-hidden", "true");
     unlockBodyScroll();
 
+    let finalized = false;
     const finalize = () => {
-      if (open || destroyed) {
+      if (open || destroyed || finalized) {
         return;
       }
+      finalized = true;
       root.classList.remove("is-closing");
       root.classList.remove("is-mounted");
       unmount();
-      restoreFocus();
       currentOptions.onClose?.(meta);
     };
 
