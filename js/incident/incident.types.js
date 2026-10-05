@@ -3,7 +3,7 @@ import {
   renderEmpty,
   safeArray,
 } from "./incident.base.js";
-import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js?v=0.21.231";
+import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js?v=0.21.232";
 import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js?v=0.21.221";
 import { createEventBag } from "../ui/ui.events.js";
 import { createDrawer } from "../ui/ui.drawer.js";

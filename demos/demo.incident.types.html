@@ -90,6 +90,7 @@
         { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
       options: [
+        { option: "<code>fieldLayoutDensity</code>", default: '<code>"standard"</code>', description: 'With horizontal layout, <code>"compact"</code> uses a 35/65 split and 12px gap at usable widths of 220px or more; narrower rows stack.' },
         { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 240px stack automatically. Values and validation are retained.' },
 
         { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between item editor rows and read-only viewer rows." },
@@ -145,6 +146,7 @@
         <select id="fieldLayoutSelect" class="ui-input">
           <option value="stacked">Stacked labels</option>
           <option value="horizontal">Labels beside controls</option>
+          <option value="compact">Labels beside controls (compact)</option>
         </select>
       <label for="themeSelect">Theme</label>
       <select id="themeSelect">
@@ -341,7 +343,8 @@
           incidentTypes: incidentTypesLookup,
           resources: resourceTypes,
           editable: true,
-          fieldLayout: fieldLayoutSelect.value
+          fieldLayout: fieldLayoutSelect.value === "compact" ? "horizontal" : fieldLayoutSelect.value,
+          fieldLayoutDensity: fieldLayoutSelect.value === "compact" ? "compact" : "standard"
         });
         viewerListApi.update(editableListItems, {
           theme,
@@ -435,7 +438,8 @@
           incidentTypes: incidentTypesLookup,
           resources: resourceTypes,
           editable: true,
-          fieldLayout: fieldLayoutSelect.value
+          fieldLayout: fieldLayoutSelect.value === "compact" ? "horizontal" : fieldLayoutSelect.value,
+          fieldLayoutDensity: fieldLayoutSelect.value === "compact" ? "compact" : "standard"
         });
         viewerListApi.update(editableListItems, {
           theme,

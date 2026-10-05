@@ -74,6 +74,28 @@
   }
 }
 
+/* Compact pairs are opt-in for narrow multi-panel workbenches. */
+@container incident-fields (min-width: 220px) {
+  .hh-incident-types-details-editor.is-horizontal.is-compact .hh-field-row:not(.is-group) {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 13fr);
+    column-gap: 12px;
+    align-items: start;
+  }
+  .hh-incident-types-details-editor.is-horizontal.is-compact .hh-field-row:not(.is-group) > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hh-incident-types-details-editor.is-horizontal.is-compact .hh-field-error {
+    grid-column: 2;
+  }
+  .hh-incident-types-details-editor.is-horizontal.is-compact .hh-field-row:not(.is-group) .hh-field-label-wrap {
+    flex-wrap: wrap;
+  }
+  .hh-incident-types-details-editor.is-horizontal.is-compact .hh-field-row:not(.is-group) .hh-field-label {
+    flex: 1 0 100%;
+  }
+}
+
 .hh-incident-types-details-editor .hh-resource-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

@@ -87,6 +87,32 @@ try {
      document.body.insertBefore(panel,document.getElementById("results").nextSibling);
    } else { editor.destroy();panel.remove(); }
  }
+ // Compact mode: complete list wrapper with exactly 225px usable rows, not just the details editor.
+ const compact=host('329px');
+ const compactData=[{incident_type_id:8,name:'Vehicle collision',fields:[{field_key:'location',field_label:'Location',input_type:'text',required:true},{field_key:'vehicles',field_label:'Vehicles Involved',input_type:'group',...presets.vehicleInvolved()}]}];
+ const compactApi=createList(compact,compactData,{...options,fieldLayoutDensity:'compact'});
+ const getRows=()=>[...compact.querySelectorAll('.ui-field-group-child')];
+ // Calibrate the host to reproduce the application's measured usable content width.
+ compact.style.width=(compact.clientWidth+225-getRows()[0].parentElement.clientWidth)+'px';
+ for(const usable of [225,219,220,260]) {
+   compact.style.width=(compact.clientWidth+usable-getRows()[0].parentElement.clientWidth)+'px';
+   for(const row of getRows()) {
+     assert(row.parentElement.clientWidth===usable,'exact usable wrapper width');
+     assert(columns(row)===(usable>=220?2:1),'compact pair breakpoint');
+     const label=row.querySelector('label');assert(label?.control,'compact accessible control');
+     assert(label.scrollWidth<=label.clientWidth+1,'compact label wraps');
+     assert(label.control.getBoundingClientRect().right<=row.getBoundingClientRect().right+1,'compact control fits');
+   }
+   const number=compact.querySelector('.ui-number-stepper-input');
+   assert(number.getBoundingClientRect().width>=30,'compact numeric value remains usable');
+   const scalarLabel=compact.querySelector('.hh-field-row[data-field-key="location"] label');
+   assert(scalarLabel.clientWidth>=60,'required scalar label retains readable width beside badges');
+   assert(scalarLabel.control.getAttribute('aria-invalid')==='true','compact required error retained');
+ }
+ const prior=JSON.stringify(compactApi.getData());
+ compactApi.update(compactApi.getData(),{fieldLayoutDensity:'standard'});
+ assert(JSON.stringify(compactApi.getData())===prior,'density update retains values');
+ compactApi.destroy();compact.remove();
  const demo=host();create(demo,structuredClone(sample),options);checkPairs(demo);
  document.body.dataset.status='pass';document.getElementById('results').textContent='PASS: responsive layout, source/bundle API, labels, errors, checkboxes, repeating items, values and updates';
 } catch(error){document.body.dataset.status='fail';document.getElementById('results').textContent='FAIL: '+error.stack;}
