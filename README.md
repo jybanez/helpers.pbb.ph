@@ -7203,3 +7203,16 @@ if (confirmed) refreshResolvedIncident();
 ```
 
 Keep confirmed rejection distinct from uncertain outcomes; this API does not retry requests. Cancellation returns `false` without invoking `onConfirm`. Awaiting the confirmation is sufficient to sequence the canonical draggable alert without timers or DOM inspection. Messages render as text. Local handlers remain local instead of being serialized through the workspace bridge; handler-free delegated confirmations settle when the host's complete confirmation has closed.
+
+### Border-only action styling
+
+Use `ui-actions-borderless` on a component ancestor, or on the application document body to include portalled dialogs. It covers canonical `.ui-button`, navbar items, incident buttons/remove/drawer-close actions and Field Group add/remove/move/breakdown actions. Complete confirm/alert/FormModal actions, dispatch/note actions and audio Play/Mute controls use those canonical classes. Use `ui-action-borderless` directly on an application-owned action, or through supported `action.className` / navbar `item.className` APIs. Class scope follows the DOM: delegated workspace dialogs require the opt-in on the host document too.
+
+```html
+<body class="ui-actions-borderless">
+  <!-- Complete components keep their existing action variants. -->
+  <button class="custom-action ui-action-borderless">Resume call</button>
+</body>
+```
+
+The opt-in sets only action border color to transparent, retaining border width, hit targets, semantic backgrounds/text, opacity and disabled behavior. An explicit 2px focus-visible outline remains; customize its color with `--ui-action-focus-color`. Border color and focus outline intentionally use `!important` to win ordinary component/application normal, hover, active and disabled styles; do not counter them with application `!important` overrides. No generic button/input reset or broad border theme token is involved. Unmarked application actions and structural card/navigation containers remain unchanged; classify them before opting in. Input/select/textarea controls and card outlines are untouched. The existing `ui-button-borderless` transparent variant remains available with its original background and icon-size behavior.

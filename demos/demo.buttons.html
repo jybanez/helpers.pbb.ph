@@ -57,6 +57,19 @@
 <button class="ui-button ui-button-danger">Danger</button>
 <button class="ui-button ui-button-icon ui-button-ghost" aria-label="Settings">...</button></pre>
     </section>
+    <section class="panel ui-actions-borderless">
+      <h2 class="ui-title">Border-only action scope</h2>
+      <p class="muted">Keeps semantic backgrounds, colors and button sizes. Tab through these actions to see the focus ring. Inputs and panel outlines stay visible.</p>
+      <div class="row">
+        <button class="ui-button ui-button-primary" type="button">Primary</button>
+        <button class="ui-button ui-button-danger" type="button">Danger</button>
+        <button class="ui-button ui-button-icon" type="button" aria-label="Add">+</button>
+        <button class="ui-button" type="button" disabled>Disabled</button>
+        <input class="ui-input" aria-label="Example input" placeholder="Input keeps its border">
+      </div>
+      <pre>&lt;section class="ui-actions-borderless"&gt;...canonical actions...&lt;/section&gt;
+&lt;button class="ui-button ui-button-danger ui-action-borderless"&gt;Delete&lt;/button&gt;</pre>
+    </section>
   </main>
 </body>
 </html>

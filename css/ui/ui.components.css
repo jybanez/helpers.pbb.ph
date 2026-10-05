@@ -225,6 +225,25 @@
   background: rgba(82, 113, 171, 0.1);
 }
 
+/* Border-only opt-in: retain variants, box sizes and non-action outlines.
+   Explicit importance keeps component/state border colors from reappearing. */
+.ui-action-borderless,
+.ui-actions-borderless :is(.ui-button, .ui-navbar-item, .hh-button,
+  .hh-drawer-close, .hh-remove, .hh-field-group-add, .hh-field-group-remove,
+  .ui-field-group-add, .ui-field-group-remove, .ui-field-group-move,
+  .ui-field-group-breakdown-toggle) {
+  border-color: transparent !important;
+}
+
+.ui-action-borderless:focus-visible,
+.ui-actions-borderless :is(.ui-button, .ui-navbar-item, .hh-button,
+  .hh-drawer-close, .hh-remove, .hh-field-group-add, .hh-field-group-remove,
+  .ui-field-group-add, .ui-field-group-remove, .ui-field-group-move,
+  .ui-field-group-breakdown-toggle):focus-visible {
+  outline: 2px solid var(--ui-action-focus-color, var(--ui-accent, #69a4ff)) !important;
+  outline-offset: 2px !important;
+}
+
 .ui-button-link {
   padding: 0;
   border-color: transparent;

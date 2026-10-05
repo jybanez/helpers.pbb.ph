@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added opt-in `ui-actions-borderless` scope and per-action `ui-action-borderless` styling, preserving semantic backgrounds, dimensions, input/card outlines and keyboard focus. Shared components CSS and UI/game bundles revised to 0.21.234.
+
 - Confirm dialogs now settle after full close/unmount and support `onConfirm` returning `{ close: true, value: false }` for a negative result that closes. Literal `false` still keeps the dialog open; thrown errors remain inline. UI bundle revision 0.21.233.
 
 - Added opt-in compact horizontal field density for complete incident wrappers with 225px usable rows, preserving standard density. Bundle revision 0.21.232.
