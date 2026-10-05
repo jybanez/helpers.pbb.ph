@@ -2,6 +2,10 @@
 
 All notable changes to `helpers.pbb.ph` are documented here.
 
+## Unreleased
+
+- Added opt-in responsive `fieldLayout: "horizontal"` for incident editors and canonical Field Group, with narrow-container stacking, repeat-item label identity, and canonical scalar error associations. UI bundle revision 0.21.230.
+
 ## Versioning
 
 - Current stable line: `v0.21.x`

@@ -7145,3 +7145,27 @@ For full release history, see `CHANGELOG.md`.
 
 
 
+
+### Incident editor label layout
+
+`incident.types`, `incident.types.details.editor`, and `ui.field.group` accept
+`fieldLayout: "horizontal"` (default: `"stacked"`; unknown values fall back to stacked).
+The incident editor forwards the option to repeating groups. Direct Field Group
+schemas may also use `config.fieldLayout`. Opt in through component options:
+
+```js
+const create = await uiLoader.get("incident.types");
+const editor = create(host, incidents, {
+  editable: true, categories, incidentTypes, removeIncidentType,
+  fieldLayout: "horizontal",
+});
+editor.update(editor.getData(), { fieldLayout: "stacked" });
+```
+
+Horizontal mode places each field on its own row, with a 40/60 label/control split
+when the local row container is at least 420px wide; narrower containers stack.
+This applies inside repeat items and breakdowns, including schemas that normally
+place several fields in a row. Group headings stay above their contents. Checkbox
+labels keep their native click behavior. Values and validation remain unchanged;
+the host still validates before submission/busy state. Refresh the loader, modular
+sources/styles and generated UI bundle together (cache revision 0.21.230).

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizontal incident fields</title>
+<style>body{margin:0;padding:12px;font:14px system-ui} .host{max-width:760px;margin:0 auto 24px} #results{white-space:pre-wrap}</style>
+<body data-status="pending"><pre id="results">Running</pre>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert = (ok, message) => { if (!ok) throw Error(message); };
+const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {preferBundles:new URLSearchParams(location.search).has('bundle')});
+const host = width => { const el=document.createElement('div');el.className='host';if(width)el.style.width=width;document.body.append(el);return el; };
+const fields = [
+ {key:'vehicle',label:'Vehicle type',type:'select',options:['Car','Truck'],required:true},
+ [{key:'plate',label:'Plate number',type:'text',required:true},{key:'color',label:'Color',type:'text'}],
+ {key:'count',label:'Passenger count',type:'number',min:0},
+ {key:'hazard',label:'Flammable / hazardous cargo',type:'checkbox'},
+ {key:'adults',label:'Adults',type:'number-stepper',breakdown:{label:'Passenger breakdown',expanded:true,fields:[{key:'male',label:'Male passengers',type:'number'}]}}
+];
+const sample = {incident_type_id:7,name:'Traffic collision',fields:[
+ {field_key:'location',field_label:'Location',input_type:'text',required:true},
+ {field_key:'vehicles',field_label:'Vehicles Involved',input_type:'group',repeatable:true,fields}
+],detail_entries:[{field_key:'location',field_value:''},{field_key:'vehicles',field_value:JSON.stringify([{vehicle:'Car',plate:'ABC',count:2},{vehicle:'Truck',plate:'XYZ',count:3}])}]};
+const columns = row => getComputedStyle(row).gridTemplateColumns.split(' ').length;
+const checkPairs = root => {
+ for(const row of root.querySelectorAll('.ui-field-group-child:not([data-control-type="checkbox"]):not([data-control-type="checkbox-group"]), .hh-field-row:not(.is-group)')) {
+   const wide=row.parentElement.clientWidth>=420;
+   assert(columns(row)===(wide?2:1),'pair follows its container width: '+row.dataset.fieldKey);
+   const label=row.querySelector('label');const control=label?.control;
+   assert(control,'label associated: '+row.dataset.fieldKey);
+   if(wide)assert(control.getBoundingClientRect().left>label.getBoundingClientRect().left,'control right of label');
+ }
+ assert(root.scrollWidth<=root.clientWidth+1,'no horizontal overflow');
+};
+try {
+ const create=await loader.get('incident.types.details.editor');
+ const createList=await loader.get('incident.types');
+ const group=await loader.get('ui.field.group');
+ const options={editable:true,categories:[],incidentTypes:[],removeIncidentType(){},fieldLayout:'horizontal'};
+ for(const useList of [false,true]) {
+   const el=host();const api=(useList?createList:create)(el,useList?[structuredClone(sample)]:structuredClone(sample),options);
+   checkPairs(el);
+   const location=el.querySelector('.hh-field-row[data-field-key="location"] input');
+   assert(location.getAttribute('aria-invalid')==='true','required field invalid');
+   assert(document.getElementById(location.getAttribute('aria-describedby'))?.textContent,'visible associated error');
+   location.value='Main Street';location.dispatchEvent(new Event('input',{bubbles:true}));
+   assert(!location.hasAttribute('aria-invalid'),'error clears on correction');
+   const checks=[...el.querySelectorAll('.ui-checkbox-input')];
+   assert(checks.length===2 && checks[0].id!==checks[1].id,'repeated checkbox IDs unique: '+checks.map(n=>n.id).join(',')+' count '+checks.length+' list '+useList);
+   el.querySelectorAll('.ui-checkbox')[1].click();
+   assert(checks[1].checked&&!checks[0].checked,'second checkbox activates only second item');
+   const before=JSON.stringify(api.getData());
+   api.update(api.getData(),{fieldLayout:'stacked'});
+   assert(!el.querySelector('.is-horizontal'),'stack update removes opt-in');
+   assert(JSON.stringify(api.getData())===before,'layout update preserves values');
+   api.update(api.getData(),{fieldLayout:'horizontal'});checkPairs(el);
+   api.destroy();assert(!el.querySelector('.hh-field-row'),'destroy removes fields');el.remove();
+ }
+ // Narrow container on a wide page, schema configuration, validation, nested breakdown and repeat controls.
+ const el=host('min(100%, 330px)');
+ const api=group(el,{name:'vehicles',repeatable:true,config:{fieldLayout:'horizontal'},fields,value:[{vehicle:'Car',plate:''}]});
+ checkPairs(el);assert(!api.validate().status,'nested required validation retained');
+ const plate=el.querySelector('[data-field-key="plate"] input');
+ assert(document.getElementById(plate.getAttribute('aria-describedby'))?.textContent,'nested error associated');
+ plate.value='ABC';plate.dispatchEvent(new Event('input',{bubbles:true}));assert(api.validate().status,'nested correction');
+ api.addItem({vehicle:'Truck',plate:'XYZ'});assert(api.getValue().length===2,'add item');api.removeItem(1);assert(api.getValue().length===1,'remove item');
+ const toggle=el.querySelector('.ui-field-group-breakdown-toggle');if(toggle.getAttribute('aria-expanded')==='false')toggle.click();checkPairs(el);
+ // Default and unknown values retain stacked layout.
+ const fallback=host();const base=group(fallback,{name:'default',fields,value:{plate:'A',vehicle:'Car'}});
+ assert(!base.root.classList.contains('is-horizontal'),'stacked default');base.update({fieldLayout:'invalid'});assert(!base.root.classList.contains('is-horizontal'),'invalid fallback');
+ const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);assert(ids.length===new Set(ids).size,'unique IDs across components');
+ const demo=host();create(demo,structuredClone(sample),options);checkPairs(demo);
+ document.body.dataset.status='pass';document.getElementById('results').textContent='PASS: responsive layout, source/bundle API, labels, errors, checkboxes, repeating items, values and updates';
+} catch(error){document.body.dataset.status='fail';document.getElementById('results').textContent='FAIL: '+error.stack;}
+</script></body></html>

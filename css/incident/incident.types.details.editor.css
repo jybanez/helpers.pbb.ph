@@ -55,6 +55,25 @@
   min-width: 0;
 }
 
+.hh-incident-types-details-editor.is-horizontal .hh-field-grid {
+  container: incident-fields / inline-size;
+}
+
+@container incident-fields (min-width: 420px) {
+  .hh-incident-types-details-editor.is-horizontal .hh-field-row:not(.is-group) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    column-gap: 16px;
+    align-items: start;
+  }
+  .hh-incident-types-details-editor.is-horizontal .hh-field-row:not(.is-group) > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hh-incident-types-details-editor.is-horizontal .hh-field-error {
+    grid-column: 2;
+  }
+}
+
 .hh-incident-types-details-editor .hh-resource-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

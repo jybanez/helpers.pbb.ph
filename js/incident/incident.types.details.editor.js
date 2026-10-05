@@ -1,3 +1,4 @@
+import { setFieldError } from "../ui/ui.field.error.js?v=0.21.195";
 import { createRoot, normalizeIncidentOptions, safeArray } from "./incident.base.js";
 import { createNumberStepper } from "../ui/ui.number.stepper.js";
 import {
@@ -5,9 +6,13 @@ import {
   parseFieldGroupValue,
   serializeFieldGroupValue,
   validateFieldGroup,
-} from "../ui/ui.field.group.js";
+} from "../ui/ui.field.group.js?v=0.21.230";
+
+const instancePrefix = Math.random().toString(36).slice(2);
+let editorSequence = 0;
 
 export function incidentTypesDetailsEditor(container, data, options = {}) {
+  const instanceId = `${instancePrefix}-${++editorSequence}`;
   let currentData = normalizeIncidentTypeData(data);
   let currentOptions = normalizeIncidentOptions(options);
   const listeners = [];
@@ -214,6 +219,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       ...field,
       name: getFieldKey(field),
       chrome: false,
+      fieldLayout: currentOptions.fieldLayout,
       value: parseFieldGroupValue(field, getFieldValue(field)),
       onChange(nextValue) {
         const serialized = serializeFieldGroupValue(field, nextValue);
@@ -328,6 +334,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       row.dataset.fieldKey = getFieldKey(field);
 
       if (getFieldType(field) === "group") {
+        row.classList.add("is-group");
         row.appendChild(createFieldLabelWrap(field));
         renderGroupField(row, field);
         grid.appendChild(row);
@@ -337,6 +344,16 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       const labelWrap = createFieldLabelWrap(field);
 
       const input = createFieldInput(field, getFieldValue(field));
+      const label = labelWrap.querySelector("label");
+      const fieldId = `incident-field-${instanceId}-${fieldControls.size}`;
+      if (getFieldType(field) === "multiselect") {
+        label.id = `${fieldId}-label`;
+        input.setAttribute("role", "group");
+        input.setAttribute("aria-labelledby", label.id);
+      } else {
+        input.id = fieldId;
+        label.htmlFor = fieldId;
+      }
       fieldControls.set(getFieldKey(field), { row, input, field });
       if (isRequiredField(field) && getFieldType(field) !== "multiselect") {
         input.required = true;
@@ -440,6 +457,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     if (!root) {
       return;
     }
+    root.classList.toggle("is-horizontal", currentOptions.fieldLayout === "horizontal");
     rootEl = root;
 
     cleanupListeners();
@@ -572,8 +590,10 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       render();
     },
     setData(nextData, nextOptions = {}) {
+      const layoutChanged = Object.prototype.hasOwnProperty.call(nextOptions, "fieldLayout") && nextOptions.fieldLayout !== currentOptions.fieldLayout;
       currentData = normalizeIncidentTypeData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
+      if (layoutChanged) render();
     },
     getData() {
       return cloneData(currentData);
@@ -665,6 +685,15 @@ function applyFieldValidationState(row, input, field, value) {
     input.removeAttribute("aria-invalid");
   }
 
+  let error = row.querySelector(":scope > .hh-field-error");
+  if (!error) {
+    error = document.createElement("p");
+    error.className = "hh-field-error";
+    row.appendChild(error);
+  }
+  const targets = input.matches("input, select, textarea") ? [input] : [...input.querySelectorAll("input, select, textarea")];
+  targets.forEach((target) => setFieldError(target, error, message ? `${getFieldLabel(field, getFieldKey(field))} : ${message}` : ""));
+
   const badge = row.querySelector(".hh-field-warning-badge");
   if (badge) {
     badge.hidden = !message;
@@ -676,6 +705,7 @@ function applyFieldValidationState(row, input, field, value) {
 function getStructureSignature(data, options = {}) {
   return JSON.stringify({
     theme: options.theme,
+    fieldLayout: options.fieldLayout === "horizontal" ? "horizontal" : "stacked",
     className: options.className || "",
     id: data?.id ?? null,
     incidentTypeId: data?.incident_type_id ?? null,
