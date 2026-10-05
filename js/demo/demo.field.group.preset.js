@@ -1,4 +1,4 @@
-import { createFieldGroup } from "../ui/ui.field.group.js";
+import { createFieldGroup } from "../ui/ui.field.group.js?v=0.21.230";
 import { fieldGroupPresets } from "../ui/ui.field.group.presets.js";
 
 window.__demoLoaderReady?.catch?.(() => {});
@@ -31,6 +31,11 @@ const group = createFieldGroup(host, {
   onChange(value, meta) {
     writeLog("changed", { value, validation: meta.validation });
   },
+});
+
+document.getElementById("fieldLayoutSelect")?.addEventListener("change", (event) => {
+  group.update({ fieldLayout: event.target.value });
+  writeLog("layout changed", group.getValue());
 });
 
 if (schema) {

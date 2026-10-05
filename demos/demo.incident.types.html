@@ -29,6 +29,7 @@
     .controls {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
       align-items: center;
     }
     .controls select {
@@ -89,6 +90,8 @@
         { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
       options: [
+        { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 420px stack automatically. Values and validation are retained.' },
+
         { option: "<code>editable</code>", default: "<code>true</code>", description: "Switches between item editor rows and read-only viewer rows." },
         { option: "<code>headerText</code>", default: "<code>\"Incident Details\"</code>", description: "Header title shown above the incident-type list." },
         { option: "<code>drawerHeaderText</code>", default: "<code>\"Select Reported Incidents\"</code>", description: "Drawer title used by the add-incident-type picker. The picker search field receives focus when the drawer opens." },
@@ -138,6 +141,11 @@
       <a class="back" href="./index.html">← Back to Home</a>
       <label for="sampleSelect">Sample</label>
       <select id="sampleSelect"></select>
+      <label for="fieldLayoutSelect">Field layout</label>
+        <select id="fieldLayoutSelect" class="ui-input">
+          <option value="stacked">Stacked labels</option>
+          <option value="horizontal">Labels beside controls</option>
+        </select>
       <label for="themeSelect">Theme</label>
       <select id="themeSelect">
         <option value="dark" selected>dark</option>
@@ -183,6 +191,7 @@
     const incidentTypes = await uiLoader.get("incident.types");
 
     const sampleSelect = document.getElementById("sampleSelect");
+    const fieldLayoutSelect = document.getElementById("fieldLayoutSelect");
     const themeSelect = document.getElementById("themeSelect");
     const debugToggle = document.getElementById("debugToggle");
     const eventLog = document.getElementById("eventLog");
@@ -331,7 +340,8 @@
           categories: incidentCategories,
           incidentTypes: incidentTypesLookup,
           resources: resourceTypes,
-          editable: true
+          editable: true,
+          fieldLayout: fieldLayoutSelect.value
         });
         viewerListApi.update(editableListItems, {
           theme,
@@ -424,7 +434,8 @@
           categories: incidentCategories,
           incidentTypes: incidentTypesLookup,
           resources: resourceTypes,
-          editable: true
+          editable: true,
+          fieldLayout: fieldLayoutSelect.value
         });
         viewerListApi.update(editableListItems, {
           theme,
@@ -435,6 +446,8 @@
           editable: false
         });
       }
+
+      fieldLayoutSelect.addEventListener("change", rerenderAll);
 
       themeSelect.addEventListener("change", () => {
         theme = themeSelect.value;

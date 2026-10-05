@@ -43,6 +43,8 @@
 });`,
       constructor: [{ factory: "<code>fieldGroupPresets.vehicleInvolved(options?)</code>", arguments: "optional preset overrides", returns: "Plain repeatable field-group config for <code>createFieldGroup(...)</code>" }],
       options: [
+        { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 420px stack automatically. Values and validation are retained.' },
+
         { option: "<code>label</code>", default: "<code>\"Vehicle Involved\"</code>", description: "Visible group label. Use plural labels for road-accident intake." },
         { option: "<code>repeatable</code>", default: "<code>true</code>", description: "Returns an array value by default." },
         { option: "<code>config_json.preset</code>", default: "<code>undefined</code>", description: "JSON <code>{ \"preset\": \"vehicleInvolved\", \"repeatable\": true }</code> resolves the preset without duplicated <code>fields[]</code>." }
@@ -79,6 +81,11 @@
     <section class="panel">
       <div class="row">
         <a class="back" href="./index.html">Back to Home</a>
+        <label for="fieldLayoutSelect">Field layout</label>
+        <select id="fieldLayoutSelect" class="ui-input">
+          <option value="stacked">Stacked labels</option>
+          <option value="horizontal">Labels beside controls</option>
+        </select>
         <button id="themeToggle" class="ui-button" type="button">Toggle Theme</button>
       </div>
       <h1 class="ui-title">Vehicle Involved Preset</h1>
