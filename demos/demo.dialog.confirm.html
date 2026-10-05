@@ -41,7 +41,7 @@
         { option: "<code>description</code>", default: "<code>\"\"</code>", description: "Secondary explanatory copy." },
         { option: "<code>confirmText</code>", default: "component default", description: "Primary action label override." },
         { option: "<code>cancelText</code>", default: "component default", description: "Cancel action label override." },
-        { option: "<code>onConfirm</code>", default: "<code>null</code>", description: "Optional local confirm handler. If it returns a promise, the dialog stays open, locks actions, and shows busy state until the promise resolves." },
+        { option: "<code>onConfirm</code>", default: "<code>null</code>", description: "Optional local handler; promises lock actions while pending. Return false to keep open, throw to show inline error, or return {close:true,value:false} to close with a negative result. uiConfirm settles only after complete close/unmount." },
         { option: "<code>busyMessage</code>", default: "<code>\"\"</code>", description: "Modal busy copy shown while an async confirm handler is pending." },
         { option: "<code>confirmBusyMessage</code>", default: "<code>busyMessage</code>", description: "Primary-action-specific busy message override." },
         { option: "<code>errorText</code>", default: "component default", description: "Fallback inline error message when an async confirm handler rejects without a usable message." },
@@ -75,6 +75,7 @@
         <button id="confirmBtn" class="ui-button" type="button">Confirm (Warning)</button>
         <button id="errorConfirmBtn" class="ui-button ui-button-danger" type="button">Confirm (Error)</button>
         <button id="asyncConfirmBtn" class="ui-button ui-button-primary" type="button">Confirm (Async)</button>
+        <button id="blockerConfirmBtn" class="ui-button" type="button">Confirm then blocker alert</button>
       </div>
       <div class="row">
         <label><input id="dialogSpeakToggle" type="checkbox"> Speak Dialogs</label>
@@ -96,6 +97,7 @@
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const uiConfirm = await uiLoader.get("ui.dialog.confirm");
+    const uiAlert = await uiLoader.get("ui.dialog.alert");
     const page = document.querySelector("main.page");
     const log = document.getElementById("log");
     const dialogSpeakToggle = document.getElementById("dialogSpeakToggle");
@@ -133,6 +135,19 @@
       writeLog("dialog.error", { retry: confirmed });
     });
     let asyncAttempts = 0;
+    document.getElementById("blockerConfirmBtn").addEventListener("click", async () => {
+      let blocker = "";
+      const confirmed = await uiConfirm("Resolve this example incident?", {
+        title: "Resolve incident",
+        confirmText: "Resolve",
+        onConfirm: () => {
+          blocker = "Assign a responder in Dispatch before resolving this incident.";
+          return { close: true, value: false };
+        },
+      });
+      if (blocker) await uiAlert(blocker, { title: "Cannot resolve incident", variant: "warning" });
+      writeLog("dialog.blocker", { confirmed });
+    });
     document.getElementById("asyncConfirmBtn").addEventListener("click", async () => {
       asyncAttempts = 0;
       const confirmed = await uiConfirm("Delete the cached relay session?", {

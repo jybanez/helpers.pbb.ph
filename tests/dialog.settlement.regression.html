@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<title>Confirmation settlement regression</title>
+<body data-status="pending"><pre id="results">Running</pre><button id="origin">Origin</button>
+<script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+const assert=(ok,message)=>{if(!ok)throw Error(message)};
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+async function waitFor(fn){for(let n=0;n<150;n++){const value=fn();if(value)return value;await delay(10)}throw Error('Timed out waiting for dialog state')}
+const root=()=>document.querySelector('.ui-modal-root.is-mounted');
+const button=label=>[...document.querySelectorAll('.ui-modal-root button')].find(n=>n.textContent.trim()===label);
+try{
+ const confirm=await loader.get('ui.dialog.confirm');
+ const alert=await loader.get('ui.dialog.alert');
+ let calls=0,release,done=false;
+ document.getElementById('origin').focus();
+ const rejected=confirm('Resolve?',{confirmText:'Resolve',showCloseButton:true,allowBackdropClose:true,onConfirm:()=>{calls++;return new Promise(r=>release=r)}}).then(value=>{done=true;assert(!root(),'confirmation unmounted before settlement');return value});
+ await waitFor(()=>button('Resolve'));const oldRoot=root();button('Resolve').click();button('Resolve').click();
+ await waitFor(()=>release);
+ document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+ assert(calls===1&&!done&&root()===oldRoot,'pending action locks duplicate submission and dismissal');
+ release({close:true,value:false});
+ await waitFor(()=>oldRoot.classList.contains('is-closing'));
+ assert(!done&&oldRoot.isConnected,'promise remains pending during closing animation');
+ assert(await rejected===false,'confirmed rejection resolves false');
+ assert(!oldRoot.isConnected,'old confirmation is fully removed');
+ assert(document.activeElement.id==='origin','focus restored before settlement');
+ const notice=alert('<img src=x onerror=alert(1)> Assign a responder in Dispatch.',{title:'Cannot resolve incident',okText:'Understood'});
+ await waitFor(()=>button('Understood'));
+ assert(document.querySelectorAll('.ui-modal-root').length===1,'no overlapping alert and confirmation');
+ assert(root().querySelector('.ui-modal.is-draggable'),'canonical alert is draggable');
+ assert(root().textContent.includes('<img src=x')&&!root().querySelector('.ui-dialog-message img'),'blocker rendered safely as text');
+ assert(!button('Resolve'),'alert offers no misleading Resolve action');
+ button('Understood').click();await notice;await waitFor(()=>!root());assert(calls===1,'alert dismissal sends no request');
+ // Literal false keeps the same modal open; errors remain inline and clear busy.
+ let mode='keep';
+ const retry=confirm('Try?',{confirmText:'Try',onConfirm:()=>{if(mode==='keep')return false;if(mode==='error')throw Error('Check current status before retrying');return true}});
+ await waitFor(()=>button('Try'));button('Try').click();await delay(30);
+ assert(root()&&!button('Try').disabled,'literal false keeps open and clears busy');
+ mode='error';button('Try').click();await waitFor(()=>root()?.querySelector('.ui-dialog-error')?.textContent.includes('Check current status'));
+ assert(!button('Try').disabled,'thrown error clears busy');mode='success';button('Try').click();
+ assert(await retry===true&&!root(),'success resolves true after unmount');
+ for(const result of [{close:true},{value:false},{close:true,value:'false'},{close:false,value:false},{close:true,value:null}]){
+   const promise=confirm('Malformed?',{confirmText:'Malformed',onConfirm:()=>result});await waitFor(()=>button('Malformed'));button('Malformed').click();
+   await waitFor(()=>root()?.querySelector('.ui-dialog-error')?.textContent.includes('invalid confirmation result'));
+   assert(!button('Malformed').disabled,'malformed settlement stays open and clears busy');
+   button('Cancel').click();assert(await promise===false&&!root(),'malformed settlement never reports success');
+ }
+ for(const result of [undefined,{legacy:'value'},{close:true,value:true}]){
+   const promise=confirm('Continue?',{confirmText:'Continue',onConfirm:()=>result});await waitFor(()=>button('Continue'));button('Continue').click();
+   assert(await promise===true&&!root(),'legacy and explicit positive results preserved');
+ }
+ for(const dismiss of ['cancel','escape','close']){
+   const promise=confirm('Cancel?',{showCloseButton:true,onConfirm:()=>{calls++;return true}});await waitFor(()=>button('Cancel'));
+   if(dismiss==='cancel')button('Cancel').click();
+   if(dismiss==='escape')document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+   if(dismiss==='close')root().querySelector('.ui-modal-close').click();
+   assert(await promise===false&&!root(),'dismissal settles false after unmount: '+dismiss);
+ }
+ assert(calls===1,'initial cancellations do not call handler');
+ const plain=confirm('Plain confirm?');await waitFor(()=>button('Confirm'));button('Confirm').click();
+ assert(await plain===true&&!root(),'handler-free confirm settles after unmount');
+ document.body.dataset.status='pass';document.getElementById('results').textContent='PASS: negative settlement, full unmount, sequential draggable alert, safe text, busy, errors, success and cancel';
+}catch(error){document.body.dataset.status='fail';document.getElementById('results').textContent=error.stack}
+</script></body></html>

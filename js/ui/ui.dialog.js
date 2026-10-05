@@ -1,7 +1,7 @@
 import { createElement } from "./ui.dom.js";
 import { createActionModal } from "./ui.modal.js?v=0.21.201";
 import { getSemanticStatusIcon } from "./ui.semantic.icons.js";
-import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.199";
+import { maybeDelegateWorkspaceDialog } from "./ui.workspace.bridge.js?v=0.21.233";
 
 export function uiAlert(message, options = {}) {
   return new Promise((resolve) => {
@@ -122,6 +122,7 @@ function openLocalAlert(resolve, message, options = {}) {
 
 function openLocalConfirm(resolve, message, options = {}) {
   let settled = false;
+  let confirmed = false;
   const dialogVariant = normalizeDialogVariant(options.variant);
   const { content, setError, clearError } = createDialogContent(message, options, dialogVariant);
 
@@ -144,7 +145,6 @@ function openLocalConfirm(resolve, message, options = {}) {
           }
           clearError();
           settled = true;
-          resolve(false);
         },
       },
       {
@@ -167,9 +167,9 @@ function openLocalConfirm(resolve, message, options = {}) {
             kind: "confirm",
             value: true,
             setError,
-            onSuccess() {
+            onSuccess(result) {
               settled = true;
-              resolve(true);
+              confirmed = !(result?.close === true && result?.value === false);
             },
           });
         },
@@ -183,13 +183,11 @@ function openLocalConfirm(resolve, message, options = {}) {
     className: buildDialogClassName(options.className, dialogVariant),
     showCloseButton: Boolean(options.showCloseButton),
     onClose() {
-      if (settled) {
-        modal.destroy();
-        return;
-      }
       settled = true;
-      resolve(false);
       modal.destroy();
+      // onClose runs after animation, unmount and focus restoration. Chained
+      // dialogs must not start while this confirmation is still mounted.
+      resolve(confirmed);
     },
   });
   modal.open();
@@ -332,7 +330,13 @@ function runDialogPrimaryAction({ options, kind, value, setError, onSuccess }) {
       if (result === false) {
         return false;
       }
-      onSuccess?.();
+      if (kind === "confirm" && result && typeof result === "object" && ("close" in result || "value" in result)) {
+        if (!Object.prototype.hasOwnProperty.call(result, "close") || result.close !== true ||
+            !Object.prototype.hasOwnProperty.call(result, "value") || typeof result.value !== "boolean") {
+          throw new Error("The action returned an invalid confirmation result. Check the current status before trying again.");
+        }
+      }
+      onSuccess?.(result);
       return true;
     })
     .catch((error) => {
