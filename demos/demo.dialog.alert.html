@@ -105,6 +105,7 @@
         <button id="successAlertBtn" class="ui-button ui-button-primary" type="button">Alert (Success)</button>
         <button id="iconlessAlertBtn" class="ui-button ui-button-ghost" type="button">Alert (No Icon)</button>
         <button id="asyncAlertBtn" class="ui-button ui-button-danger" type="button">Alert (Async Ack)</button>
+        <button id="cancelAlertBtn" class="ui-button" type="button">Alert (Context Cancellation)</button>
       </div>
       <div class="row">
         <label><input id="dialogSpeakToggle" type="checkbox"> Speak Dialogs</label>
@@ -187,6 +188,25 @@
       writeLog("dialog.warningNoIcon", { acknowledged: true });
     });
     let asyncAcknowledgeAttempts = 0;
+    document.getElementById("cancelAlertBtn").addEventListener("click", async () => {
+      const controller = new AbortController();
+      const result = await uiAlert("Start a simulated check, then watch its context expire.", {
+        title: "Context Cancellation", signal: controller.signal, okText: "Start check",
+        okBusyMessage: "Checking...", showCloseButton: true,
+        description: "The context cancels after 0.5 seconds. The check finishes later, with no stale success effect.",
+        onClose: ({ reason }) => writeLog("dialog.closed", { reason }),
+        onAcknowledge: async (_value, lifetime) => {
+          setTimeout(() => controller.abort(), 500);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (!lifetime.isActive()) {
+            writeLog("dialog.lateResultIgnored", { cancelled: lifetime.signal.aborted });
+            return false;
+          }
+          writeLog("dialog.checkSucceeded", {});
+        },
+      });
+      writeLog("dialog.contextResult", { result });
+    });
     document.getElementById("asyncAlertBtn").addEventListener("click", async () => {
       asyncAcknowledgeAttempts = 0;
       await uiAlert("The logout handshake is still terminating downstream sessions.", {
