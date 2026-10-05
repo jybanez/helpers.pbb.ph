@@ -223,6 +223,28 @@ export const ICON_DEFINITIONS = {
     rect(7, 6, 3, 12, 1),
     rect(14, 6, 3, 12, 1),
   ]),
+  "media.stop": icon("media", [
+    rect(6, 6, 12, 12, 1),
+  ]),
+  "media.record": icon("media", [
+    circle(12, 12, 7),
+  ]),
+  "media.fast-forward": icon("media", [
+    path("M3 6l9 6-9 6V6z"),
+    path("M12 6l9 6-9 6V6z"),
+  ]),
+  "media.rewind": icon("media", [
+    path("M21 6l-9 6 9 6V6z"),
+    path("M12 6l-9 6 9 6V6z"),
+  ]),
+  "media.next-track": icon("media", [
+    path("M5 6l10 6-10 6V6z"),
+    line(19, 6, 19, 18),
+  ]),
+  "media.previous-track": icon("media", [
+    path("M19 6L9 12l10 6V6z"),
+    line(5, 6, 5, 18),
+  ]),
   "media.image": icon("media", [
     rect(4, 5, 16, 14, 2),
     circle(9, 10, 1.2),

@@ -1,5 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
+import { createIcon } from "./ui.icons.js?v=0.21.240";
 
 const DEFAULT_DATA = {
   isPlaying: false,
@@ -15,10 +16,14 @@ const DEFAULT_OPTIONS = {
   pauseLabel: "Pause",
   onTogglePlay: null,
   onSeek: null,
+  actions: [],
+  compact: false,
 };
 
 export function createAudioPlayer(container, data = {}, options = {}) {
   const events = createEventBag();
+  const actionEvents = createEventBag();
+  let actionsHost = null;
   let currentData = normalizeData(data);
   let currentOptions = normalizeOptions(options);
 
@@ -26,6 +31,38 @@ export function createAudioPlayer(container, data = {}, options = {}) {
   let playButton = null;
   let timeLabel = null;
   let seekInput = null;
+  let animationFrame = null;
+  let displayedMs = currentData.currentMs;
+  let seeking = false;
+  let renderedIcon = null;
+  let buttonLabel = null;
+
+  function stopAnimation() {
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+
+  function updateProgress() {
+    stopAnimation();
+    if (seeking) return;
+    const target = currentData.currentMs;
+    const from = displayedMs;
+    const smooth = currentData.isPlaying && target > from && target - from < 1000
+      && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!smooth) {
+      displayedMs = target;
+      seekInput.value = String(target);
+      return;
+    }
+    const start = performance.now();
+    const tick = (now) => {
+      const fraction = Math.min(1, (now - start) / 150);
+      displayedMs = from + (target - from) * fraction;
+      seekInput.value = String(displayedMs);
+      animationFrame = fraction < 1 ? requestAnimationFrame(tick) : null;
+    };
+    animationFrame = requestAnimationFrame(tick);
+  }
 
   function render() {
     if (!container || container.nodeType !== 1) {
@@ -46,9 +83,11 @@ export function createAudioPlayer(container, data = {}, options = {}) {
     const bottomRow = createElement("div", { className: "ui-audio-player-row" });
 
     playButton = createElement("button", {
-      className: "ui-button ui-audio-player-toggle",
+      className: "ui-button ui-action-borderless ui-audio-player-toggle",
       attrs: { type: "button" },
     });
+    buttonLabel = createElement("span", { className: "ui-audio-player-button-label" });
+    playButton.appendChild(buttonLabel);
     timeLabel = createElement("span", { className: "ui-audio-player-time" });
     seekInput = createElement("input", {
       className: "ui-audio-player-seek",
@@ -61,7 +100,11 @@ export function createAudioPlayer(container, data = {}, options = {}) {
       },
     });
 
-    topRow.append(playButton, timeLabel);
+    const buttons = createElement("div", { className: "ui-audio-player-buttons" });
+    actionsHost = createElement("div", { className: "ui-audio-player-actions" });
+    buttons.append(playButton, actionsHost);
+    topRow.append(buttons, timeLabel);
+    renderActions();
     bottomRow.appendChild(seekInput);
     root.append(topRow, bottomRow);
     container.appendChild(root);
@@ -71,9 +114,14 @@ export function createAudioPlayer(container, data = {}, options = {}) {
     });
 
     const handleSeek = (eventName) => {
+      stopAnimation();
       const nextMs = clampMs(Number(seekInput.value), currentData.durationMs);
+      displayedMs = nextMs;
       currentOptions.onSeek?.(nextMs, { eventName, state: getState() });
     };
+    events.on(seekInput, "pointerdown", () => { seeking = true; stopAnimation(); });
+    events.on(window, "pointerup", () => { seeking = false; });
+    events.on(seekInput, "pointercancel", () => { seeking = false; applyState(); });
     events.on(seekInput, "input", () => handleSeek("input"));
     events.on(seekInput, "change", () => handleSeek("change"));
 
@@ -84,12 +132,20 @@ export function createAudioPlayer(container, data = {}, options = {}) {
     if (!playButton || !timeLabel || !seekInput) {
       return;
     }
-    playButton.textContent = currentData.isPlaying ? currentOptions.pauseLabel : currentOptions.playLabel;
+    root.classList.toggle("is-compact", Boolean(currentOptions.compact));
+    const iconName = currentData.isPlaying ? "media.pause" : "media.play";
+    if (renderedIcon !== iconName) {
+      playButton.querySelector(".ui-audio-player-icon")?.remove();
+      playButton.prepend(createIcon(iconName, { className: "ui-audio-player-icon" }));
+      renderedIcon = iconName;
+    }
+    buttonLabel.textContent = currentData.isPlaying ? currentOptions.pauseLabel : currentOptions.playLabel;
     playButton.setAttribute("aria-label", currentData.isPlaying ? currentOptions.pauseLabel : currentOptions.playLabel);
+    playButton.title = currentData.isPlaying ? currentOptions.pauseLabel : currentOptions.playLabel;
     playButton.setAttribute("aria-pressed", currentData.isPlaying ? "true" : "false");
     timeLabel.textContent = `${formatClock(currentData.currentMs)} / ${formatClock(currentData.durationMs)}`;
     seekInput.max = String(currentData.durationMs || 0);
-    seekInput.value = String(clampMs(currentData.currentMs, currentData.durationMs));
+    updateProgress();
     seekInput.setAttribute("aria-label", currentOptions.seekLabel);
     seekInput.setAttribute("aria-valuetext", `${formatClock(currentData.currentMs)} of ${formatClock(currentData.durationMs)}`);
   }
@@ -97,7 +153,28 @@ export function createAudioPlayer(container, data = {}, options = {}) {
   function update(nextData = {}, nextOptions = {}) {
     currentData = normalizeData({ ...currentData, ...nextData });
     currentOptions = normalizeOptions({ ...currentOptions, ...nextOptions });
+    if (Object.prototype.hasOwnProperty.call(nextOptions, "actions")) renderActions();
     applyState();
+  }
+
+  function renderActions() {
+    actionEvents.clear();
+    clearNode(actionsHost);
+    const actions = Array.isArray(currentOptions.actions) ? currentOptions.actions : [];
+    actions.filter(action => action && !action.hidden).forEach(action => {
+      const button = createElement("button", {
+        className: "ui-button ui-action-borderless ui-audio-player-action",
+        attrs: { type: "button", "aria-label": action.label || "Audio action", title: action.label || "Audio action" },
+      });
+      button.disabled = Boolean(action.disabled);
+      if (action.icon) {
+        const icon = createIcon(action.icon, { className: "ui-audio-player-icon" });
+        if (icon) button.append(icon);
+      }
+      button.append(createElement("span", { className: "ui-audio-player-button-label", text: action.label || "Audio action" }));
+      actionEvents.on(button, "click", () => action.onClick?.(getState(), action));
+      actionsHost.append(button);
+    });
   }
 
   function setPlaying(isPlaying) {
@@ -113,6 +190,8 @@ export function createAudioPlayer(container, data = {}, options = {}) {
   }
 
   function destroy() {
+    actionEvents.clear();
+    stopAnimation();
     events.clear();
     clearNode(container);
     root = null;

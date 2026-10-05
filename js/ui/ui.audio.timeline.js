@@ -1,5 +1,5 @@
 import { createElement, clearNode } from "./ui.dom.js";
-import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.60";
+import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.271";
 import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.60";
 
 const DEFAULT_OPTIONS = {

@@ -81,6 +81,7 @@ const DEMO_GROUPS = [
   {
     label: "Media",
     items: [
+      { href: "./demo.audio.player.html", label: "Audio Player" },
       { href: "./demo.audio.html", label: "Audio" },
       { href: "./demo.audio.timeline.html", label: "Audio Timeline" },
       { href: "./demo.audio.audiograph.stream.html", label: "Audio Graph Stream" },
@@ -135,6 +136,7 @@ const DEMO_GROUPS = [
     label: "Communication",
     items: [
       { href: "./demo.chat.thread.html", label: "Chat Thread" },
+      { href: "./demo.chat.upload.queue.html", label: "Attachment Queue" },
       { href: "./demo.chat.composer.html", label: "Chat Composer" },
       { href: "./demo.chat.upload.queue.html", label: "Chat Upload Queue" },
     ],

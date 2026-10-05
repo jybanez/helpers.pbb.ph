@@ -18,13 +18,13 @@
     .muted { margin: 0; color: #9fb2d8; font-size: 13px; line-height: 1.45; }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.228";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.271";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.chat.composer", "ui.chat.upload.queue"]);
   </script>
   <script>
     window.demoMeta = {
       title: "Chat Composer",
-      overview: "Shared message composer with send handling, busy state, multiline text entry, and helper-owned native file picking or paste attachments.",
+      overview: "Text composition, ordered file/video/audio actions, camera recording and live microphone visualization. Try the controls, then copy the configuration below.",
       useWhen: [
         "Use <code>createChatComposer(...)</code> for chat send surfaces, support/admin messaging inputs, and Workspace-hosted communication panes.",
         "Compose it with <code>ui.chat.thread</code> and app-owned transport logic."
@@ -33,12 +33,15 @@
         "Do not put upload transport or realtime send logic inside the helper.",
         "Do not use it as a general-purpose form textarea when the real need is message composition."
       ],
-      description: "The composer helper owns the interaction shell, hidden native file picker, and clipboard file paste path. Apps still own send lifecycle, upload orchestration, and draft persistence.",
-      defaultSampleCode: "const composer = createChatComposer(host, { value: '' }, {\n  helperText: 'Enter sends. Shift+Enter adds a new line.',\n  accept: 'image/*,video/*,.pdf,.mp3',\n  multiple: true,\n  onSend({ text }) {\n    console.log('send', text);\n  },\n  onFilesSelected(files, meta) {\n    console.log(meta.source, files);\n  },\n});",
+      description: "The composer owns text input, native file selection/paste and cancellable recording modals. Your app owns the draft attachment list, upload transport, authorization and send lifecycle. Attach Video/Audio opens capture; Check adds one File to the draft without sending. Record again discards the preview and starts a fresh take. Close cancels and releases devices.",
       constructor: [
         { factory: "<code>createChatComposer(container, data, options)</code>", arguments: "target container, initial data, composer options", returns: "Chat composer instance" }
       ],
       options: [
+        {option:"allowAttachmentOnly",default:"false",description:"Allow Send with empty text when data.attachmentCount > 0. Keep count current with setAttachmentCount; application validates and owns the queue."},
+        { option: "<code>attachments</code>", default: "null", description: "Ordered button list: ['files', 'video', 'audio']. An empty list disables attachments, including file paste. Explicit lists use the helper row and override showAttachmentButton; omitted lists preserve the existing file-picker configuration. Emoji is not implemented; unknown entries are ignored." },
+        { option: "<code>attachmentOptions</code>", default: "{}", description: "Per-type settings: files:{accept,multiple,capture,attachmentAdapter}, videos/audios:{maxBytes,maxDurationMs,mimeTypes,accept}; audios also supports audioGraphOptions. emojis is reserved. These settings do not enable buttons." },
+        { option: "<code>getAttachmentPolicy</code>", default: "null", description: "Synchronous current recording allowance: {maxAttachments, attachmentCount, maxFileBytes, maxTotalBytes, usedBytes}. Consumers must also validate picker/paste and server uploads." },
         {option:"<code>attachmentPlacement</code>", default:"leading", description:"Set helper for a labeled paperclip action beside helper text below the input."},
         { option: "<code>className</code>", default: '<code>""</code>', description: "Extra root class for host-specific composition." },
         { option: "<code>placeholder</code>", default: '<code>"Type a message..."</code>', description: "Input placeholder copy." },
@@ -55,13 +58,16 @@
         { option: "<code>multiline</code>", default: '<code>true</code>', description: "Uses a textarea by default; when false, uses a single-line input." },
         { option: "<code>submitOnEnter</code>", default: '<code>true</code>', description: "When true, Enter submits and Shift+Enter adds a newline." }
       ],
-      propertiesText: "<code>refs</code> returns current root, input, send, attach, fileInput, metadata and helper nodes. Read again after update; absent controls are undefined.",
+      propertiesText: "<code>refs</code> returns current root, input, send, attach, fileInput, video, audio, metadata and helper nodes. Read again after update; absent controls are undefined. <code>getState()</code> returns the text value and options, not the app-owned attachment queue.",
       events: [
         { event: "<code>onChange(value)</code>", arguments: "current input string", returns: "<code>void</code>", description: "Fires on every text input change." },
         { event: "<code>onSend({ text })</code>", arguments: "plain text payload", returns: "<code>void | Promise&lt;void&gt;</code>", description: "Fires when the helper accepts a send action." },
-        { event: "<code>onFilesSelected(files, meta)</code>", arguments: "<code>File[]</code> and <code>{ source: \"picker\" | \"paste\" }</code>", returns: "<code>void</code>", description: "Fires after the helper-owned native file picker or clipboard paste returns accepted files." }
+        { event: "<code>onFilesSelected(files, meta)</code>", arguments: "<code>File[]</code>; source: picker, paste, record-video or record-audio", returns: "<code>void</code>", description: "Validate synchronously, then add files to your draft queue. Recorded files retain actual browser MIME type and byte size." },
+        { event: "<code>onAttachmentsSelected(records, meta)</code>", arguments: "Native Files with kind:native, or custom picker records with kind:repository; source as above", returns: "<code>void</code>", description: "Unified adapter callback. Native selections also invoke onFilesSelected; use one queue handler to avoid duplicate additions." },
+        { event: "<code>onAttachmentError(error)</code>", arguments: "recording/picker operation error", returns: "<code>void</code>", description: "Handle composer-level adapter/policy errors. Device permission and capture errors are displayed inside the recording modal." }
       ],
       methods: [
+        {method:"setAttachmentCount(count)",arguments:"Number of valid app-owned attachments",returns:"void; updates Send without cancelling capture"},
         { method: "<code>update(data?, options?)</code>", arguments: "partial data and/or partial options", returns: "<code>void</code>" },
         { method: "<code>setValue(value)</code>", arguments: "string", returns: "<code>void</code>" },
         { method: "<code>getValue()</code>", arguments: "none", returns: "current text" },
@@ -72,6 +78,22 @@
         { method: "<code>destroy()</code>", arguments: "none", returns: "<code>void</code>" }
       ]
     };
+    window.demoMeta.defaultSampleCode = `import { uiLoader } from '../js/ui/ui.loader.js?v=0.21.271';
+const createChatComposer = await uiLoader.get('ui.chat.composer');
+const composer = createChatComposer(document.querySelector('#composer'), { value: '' }, {
+  attachments: ['files', 'video', 'audio'],
+  attachmentLabel: 'Attach file',
+  attachmentOptions: {
+    files: { accept: 'image/*,.pdf', multiple: true },
+    videos: { maxBytes: 10 * 1024 * 1024, maxDurationMs: 60000 },
+    audios: {
+      maxBytes: 10 * 1024 * 1024, maxDurationMs: 60000,
+      audioGraphOptions: { style: 'classic-waveform', sensitivity: 3.4 }
+    }
+  },
+  onFilesSelected(files, { source }) { console.log(source, files); },
+  onSend({ text }) { console.log(text); }
+}); // Logging example: add app-owned queue/policy/transport for production.`;
   </script>
   <script type="module" src="../js/demo/demo.shell.js"></script>
 </head>
@@ -88,10 +110,20 @@
         <button id="clearBtn" class="ui-button ui-button-ghost" type="button">Clear Draft</button>
         <button id="focusBtn" class="ui-button ui-button-ghost" type="button">Focus</button>
       </div>
+      <div class="row">
+        <label>Attachment preset <select id="attachmentPreset" class="ui-input">
+          <option value="all">Files → Video → Audio</option><option value="audio">Audio only</option>
+          <option value="media">Audio → Video (no file picker/paste)</option><option value="files">Files only</option><option value="none">Text only</option>
+        </select></label>
+        <label>Audio graph <select id="graphStyle" class="ui-input">
+          <option value="classic-waveform">Classic waveform</option><option value="mirrored">Mirrored</option><option value="vu">VU</option><option value="burst">Burst</option>
+        </select></label>
+      </div>
+      <p class="muted">These controls update the main composer. Changing options cancels an open recording; text and queued files remain. Camera/microphone capture requires HTTPS or localhost and browser permission. Send only logs an event here.</p>
       <div class="preview-stack">
         <div class="preview"><p class="preview-label">Helper-row attachment</p><div id="composerHelperHost"></div><p class="muted">attachmentPlacement: helper, attachmentLabel: Attach files. The action and helper text wrap on small screens.</p></div>
         <div class="preview">
-          <p class="preview-label">Attachment Button Enabled</p>
+          <p class="preview-label">Record and attach — try this composer</p>
           <div id="composerHost"></div>
         </div>
         <div class="preview">
@@ -100,11 +132,73 @@
         </div>
       </div>
       <div class="preview" id="queueHost"></div>
+      <div class="controls">
+        <button id="simulateUpload" type="button" class="ui-button" disabled>Simulate upload progress</button>
+        <button id="resetUpload" type="button" class="ui-button" disabled>Reset upload status</button>
+        <span id="uploadStatus" role="status">Add attachments to preview upload progress. Nothing is uploaded.</span>
+      </div>
+      <details><summary>Connect real upload progress</summary>
+        <p>The upload queue accepts <code>status</code> (queued, uploading, uploaded, failed), <code>progress</code> (0–100), optional <code>progressLabel</code> and <code>errorText</code> per item. Images/videos show an overlay bar; audio and other files show a bar below their content. Upload transport belongs to your application.</p>
+        <pre>function onUploadProgress(id, loaded, total) {
+  queueItems = queueItems.map(item =&gt; item.id === id ? {
+    ...item, status: 'uploading',
+    progress: total &gt; 0 ? Math.min(100, loaded / total * 100) : undefined,
+    progressLabel: total &gt; 0 ? `${Math.round(loaded / total * 100)}%` : 'Uploading…'
+  } : item);
+  queue.setItems(queueItems);
+}
+// Call from your transport's progress events (e.g. XMLHttpRequest.upload).
+// Mark uploaded only after confirmed server success; 100% sent is not confirmation.
+// On failure set status:'failed' and errorText with an actionable message.</pre>
+        <p>Progress/status updates retain the shared progress component and audio playback. Changing attachment contents recreates previews. The simulation is visual only and does not send requests.</p>
+      </details>
+      <p id="queueFeedback" role="alert" hidden></p>
+      <details open><summary>Current attachment configuration</summary><pre id="configurationCode"></pre></details>
       <pre class="log" id="log">No events yet.</pre>
+    </section>
+    <section class="panel">
+      <h2>Configuration reference</h2>
+      <p><code>attachments</code> chooses buttons and their order. Use singular <code>video</code>/<code>audio</code> here, but plural <code>videos</code>/<code>audios</code> in <code>attachmentOptions</code>. Settings alone never enable a button. <code>emoji</code>/<code>emojis</code> is reserved and does nothing yet.</p>
+      <ul>
+        <li><code>attachments: []</code>: no attachment buttons or file paste. An explicit list uses the helper row and takes precedence over <code>showAttachmentButton</code>. Duplicate names collapse; unknown names are ignored.</li>
+        <li>Omitted <code>attachments</code>: existing file-picker behavior using <code>showAttachmentButton</code> and <code>attachmentPlacement</code>.</li>
+        <li><code>files</code>: <code>accept</code> (MIME types/extensions), <code>multiple</code> (default true), <code>capture</code> (native input hint), <code>attachmentAdapter</code> (native/custom/none). Falls back to existing top-level file options. A file filter does not restrict audio/video recordings.</li>
+        <li><code>videos</code> and <code>audios</code>: <code>maxBytes</code> (default 25 MiB), <code>maxDurationMs</code> (default 60,000), <code>mimeTypes</code> (ordered supported recording formats), <code>accept</code> (final File filter, falling back to top-level accept). Exceeding a recording limit discards the clip; no truncated clip is attached.</li>
+        <li><code>audios.audioGraphOptions</code>: style, sensitivity, gateThreshold, attackMs, releaseMs, intensityCurve, freezeOnPause, transparentBackground, className and ariaLabel. Recorder retains source, cleanup and no-header/no-mute layout ownership.</li>
+      </ul>
+      <p>Graph defaults: classic-waveform, sensitivity 3.4, gateThreshold 0.06, attackMs 45, releaseMs 260, intensityCurve 1.7, freezeOnPause true, transparentBackground true. The graph responds to live input; stopped playback uses the native audio controls.</p>
+      <p><code>update({}, options)</code> merges top-level options only. Pass the complete <code>attachmentOptions</code> object when changing one nested setting. On screens ≤600px, attachment labels hide while accessible names and touch targets remain.</p>
+    </section>
+    <section class="panel">
+      <h2>Draft ownership, limits and cleanup</h2>
+      <p><code>getAttachmentPolicy()</code> synchronously returns current <code>maxAttachments</code>, <code>attachmentCount</code>, <code>maxFileBytes</code>, <code>maxTotalBytes</code> and <code>usedBytes</code>. Counts and byte totals must describe your current queue. Recording allowance is checked before opening and again before adding the File. The demo's 6 files / 20 MiB total and 10 MiB per recording are example limits, not production policy.</p>
+      <p>Validate every picker/paste/recording result before changing the queue. Server authorization, MIME/content checks and size limits remain mandatory. The Helper does not upload or retry mutations. Use effective server admission policy, not a storage ceiling.</p>
+      <pre>onFilesSelected(files, { source }) {
+  // Validate all files first; show actionable feedback on rejection.
+  // Add each File once to your app-owned draft queue.
+  // Create preview URLs as needed; revoke them on removal/disposal.
+}
+
+async onSend({ text }) {
+  if (!validateDraft(text, draftFiles)) return;
+  composer.setBusy(true);
+  try {
+    await sendDraft(text, draftFiles); // App transport, confirmed success only.
+    composer.clear();
+    clearDraftFiles();
+  } catch (error) {
+    showSendError(error); // Preserve draft; do not automatically replay.
+  } finally {
+    composer.setBusy(false);
+  }
+}</pre>
+      <p>The send snippet is integration pseudocode: supply your own validation, transport and error handlers. Set allowAttachmentOnly:true and call setAttachmentCount(count) with the number of validated attachments whenever your app-owned queue changes. Send then accepts text OR a positive count; whitespace with zero attachments is rejected. The default remains text-required. The count does not replace attachment/type/size/server validation, and onSend({text}) retains its existing shape; read your ordered queue in that callback. Busy state is app-controlled, not automatically inferred from the returned promise.</p>
+      <p><code>update()</code>, <code>setBusy(true)</code> and <code>destroy()</code> cancel pending capture/picker work and ignore late results. Stopping or closing recording releases owned device tracks and analysis resources. <code>clear()</code> clears text only. Destroy the composer and revoke your queue's preview URLs when the view is disposed.</p>
+      <p>Audio queue items with a <code>previewUrl</code> show the Helper audio player with play/pause icons and smooth seeking progress. Without a preview URL they retain the filename fallback. Your app owns and revokes the URL; removing or updating the queue stops playback.</p><p>Video queue items use <code>previewUrl</code> for the playable video URL. The media strip shows its first frame automatically; optional <code>thumbUrl</code>/<code>posterUrl</code> must point to an image, never the video file. The play icon remains available if the browser cannot decode a preview.</p><p>For repository-backed selection, use <code>attachmentOptions.files.attachmentAdapter: { mode: 'custom', open: async ({ signal }) =&gt; records }</code> and <code>onAttachmentsSelected</code>. Return null/[] on cancel; records require id and name. See <a href="demo.repository.picker.html">Repository Picker demo</a>.</p>
     </section>
   </main>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.228";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.271";
     await window.__demoLoaderReady;
     const createChatComposer = await uiLoader.get("ui.chat.composer");
     const createChatUploadQueue = await uiLoader.get("ui.chat.upload.queue");
@@ -115,6 +209,16 @@
     const log = document.getElementById("log");
     let busy = false;
     let queueItems = [];
+    let uploadTimer = null;
+    const simulateUpload = document.getElementById('simulateUpload');
+    const resetUpload = document.getElementById('resetUpload');
+    const uploadStatus = document.getElementById('uploadStatus');
+    function renderQueue() {
+      queue.setItems(queueItems);
+      composer.setAttachmentCount(queueItems.filter(item => item.file && item.file.size > 0 && item.status !== "failed").length);
+      simulateUpload.disabled = !queueItems.length || uploadTimer !== null;
+      resetUpload.disabled = !queueItems.length;
+    }
 
     function writeLog(label, payload) {
       const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(payload ?? {}, null, 2)}\n`;
@@ -150,34 +254,77 @@
 
     const queue = createChatUploadQueue(queueHost, { items: queueItems }, {
       onRemove(item) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
         queueItems = queueItems.filter((candidate) => candidate.id !== item.id);
-        queue.setItems(queueItems);
+        renderQueue();
         writeLog("queue.remove", { itemId: item.id });
       },
     });
 
+    simulateUpload.addEventListener('click', () => {
+      if (uploadTimer !== null || !queueItems.length) return;
+      const ids = new Set(queueItems.map(item => item.id));
+      let progress = 0;
+      const paint = () => {
+        queueItems = queueItems.map(item => ids.has(item.id) ? {...item, status:progress === 100 ? 'uploaded' : 'uploading', progress, progressLabel:progress === 100 ? 'Demo complete' : `${progress}%`, errorText:''} : item);
+        renderQueue();
+      };
+      uploadStatus.textContent = 'Simulating upload progress — no network request.';
+      uploadTimer = setInterval(() => {
+        progress = Math.min(100, progress + 10);
+        if (progress === 100 || !queueItems.some(item => ids.has(item.id))) {
+          clearInterval(uploadTimer); uploadTimer = null;
+          uploadStatus.textContent = 'Simulation finished. Nothing was uploaded.';
+        }
+        paint();
+      }, 500);
+      paint();
+    });
+    resetUpload.addEventListener('click', () => {
+      clearInterval(uploadTimer); uploadTimer = null;
+      queueItems = queueItems.map(item => ({...item,status:'queued',progress:undefined,progressLabel:'',errorText:''}));
+      renderQueue(); uploadStatus.textContent = 'Upload status reset. Nothing was uploaded.';
+    });
+
     const composer = createChatComposer(host, { value: "" }, {
-      helperText: "Enter sends. Shift+Enter adds a new line.",
+      allowAttachmentOnly: true,
+      attachmentPlacement: 'helper', attachmentLabel: 'Attach file',
+      attachments: ['files', 'video', 'audio'],
+      attachmentOptions: {
+        files: { accept: 'image/*,video/*,audio/*,.pdf', multiple: true },
+        videos: { maxBytes: 10 * 1024 * 1024, maxDurationMs: 60000 },
+        audios: { maxBytes: 10 * 1024 * 1024, maxDurationMs: 60000, audioGraphOptions: { style: 'classic-waveform', sensitivity: 3.4 } },
+        emojis: {}, // Reserved for the future emoji picker.
+      },
+      getAttachmentPolicy: () => ({maxAttachments:6, attachmentCount:queueItems.length, maxTotalBytes:20*1024*1024, usedBytes:queueItems.reduce((n,item)=>n+item.file.size,0)}),
+      helperText: "Attach Video or watch the live microphone waveform, preview, then check to attach. Demo only: 60 seconds / 10 MiB per recording, 6 attachments / 20 MiB total. Nothing is uploaded.",
       accept: "image/*,video/*,audio/*,.pdf",
       multiple: true,
       onChange(value) {
         writeLog("composer.change", { value });
       },
       onSend({ text }) {
-        writeLog("composer.send", { text });
+        writeLog("composer.send", { text, attachments: queueItems.map(item => ({id:item.id,name:item.name,kind:item.kind})) });
       },
       onFilesSelected(files, meta) {
+        const feedback = document.getElementById('queueFeedback');
+        if (queueItems.length + files.length > 6 || queueItems.reduce((n, item) => n + item.file.size, 0) + files.reduce((n, file) => n + file.size, 0) > 20 * 1024 * 1024) {
+          feedback.textContent = 'Demo attachment limit reached. Keep at most 6 files and 20 MiB total; remove an attachment and try again.';
+          feedback.hidden = false;
+          return;
+        }
+        feedback.hidden = true;
         const nextItems = files.map((file, index) => ({
           id: `${Date.now()}-${index}-${file.name}`,
           kind: inferKind(file),
           name: file.name,
           sizeLabel: formatSize(file.size),
-          previewUrl: file.type && (file.type.startsWith("image/") || file.type.startsWith("video/")) ? URL.createObjectURL(file) : "",
+          previewUrl: file.type && /^(image|video|audio)\//.test(file.type) ? URL.createObjectURL(file) : "",
           file,
         }));
         queueItems = queueItems.concat(nextItems);
-        queue.setItems(queueItems);
-        writeLog("composer.filesSelected", { source: meta?.source, count: files.length, names: files.map((file) => file.name) });
+        renderQueue();
+        writeLog("composer.filesSelected", { source: meta?.source, files: files.map(({name,type,size}) => ({name,type,size})) });
       },
     });
 
@@ -188,8 +335,8 @@
       onFilesSelected:(files,meta)=>writeLog('helper.files',{names:files.map(file=>file.name),source:meta.source}),
     });
     const noAttachComposer = createChatComposer(noAttachHost, { value: "Attachment-free composer sample." }, {
-      helperText: "This variant uses showAttachmentButton: false.",
-      showAttachmentButton: false,
+      helperText: "This variant uses attachments: [].",
+      attachments: [],
       onChange(value) {
         writeLog("composer.noAttach.change", { value });
       },
@@ -198,6 +345,28 @@
       },
     });
 
+    const presets = {all:['files','video','audio'],audio:['audio'],media:['audio','video'],files:['files'],none:[]};
+    function showConfiguration() {
+      const {attachments, attachmentOptions} = composer.getState().options;
+      document.getElementById('configurationCode').textContent = JSON.stringify({attachments, attachmentOptions}, null, 2);
+    }
+    function applyConfiguration() {
+      const attachmentOptions = composer.getState().options.attachmentOptions;
+      composer.update({}, {
+        attachments: presets[document.getElementById('attachmentPreset').value],
+        attachmentOptions: {...attachmentOptions, audios:{...attachmentOptions.audios, audioGraphOptions:{...attachmentOptions.audios.audioGraphOptions, style:document.getElementById('graphStyle').value}}},
+      });
+      showConfiguration();
+      writeLog('composer.configuration', composer.getState().options.attachments);
+    }
+    document.getElementById('attachmentPreset').addEventListener('change', applyConfiguration);
+    document.getElementById('graphStyle').addEventListener('change', applyConfiguration);
+    showConfiguration();
+    window.addEventListener('pagehide', () => {
+      clearInterval(uploadTimer); queue.destroy();
+      composer.destroy(); helperComposer.destroy(); noAttachComposer.destroy();
+      queueItems.forEach(item => {if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);});
+    }, {once:true});
     document.getElementById("toggleBusyBtn").addEventListener("click", () => {
       busy = !busy;
       composer.setBusy(busy); helperComposer.setBusy(busy);

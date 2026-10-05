@@ -2,8 +2,8 @@ const UI_TOKENS_CSS = "../../css/ui/ui.tokens.css";
 const UI_COMPONENTS_CSS = "../../css/ui/ui.components.css?v=0.21.234";
 const INCIDENT_BASE_CSS = "../../css/incident/incident.css";
 const UI_OVERLAY_ROUTING_REV = "0.21.236";
-const UI_AUDIO_REV = "0.21.270";
-const UI_ICONS_REV = "0.21.225";
+const UI_AUDIO_REV = "0.21.271";
+const UI_ICONS_REV = "0.21.240";
 const UI_FILE_INPUT_REV = "0.21.108";
 const UI_CHAT_REV = "0.21.120";
 const UI_PASSWORD_REV = "0.21.66";
@@ -20,8 +20,8 @@ const UI_DEVICE_PRIMER_REV = "0.21.235";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.222";
-const UI_BUNDLE_REV = "0.21.270";
-const UI_GAME_BUNDLE_REV = "0.21.234";
+const UI_BUNDLE_REV = "0.21.271";
+const UI_GAME_BUNDLE_REV = "0.21.240";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
 const UI_BUNDLE_CSS = `../../dist/helpers.ui.bundle.min.css?v=${UI_BUNDLE_REV}`;
@@ -614,15 +614,15 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createChatThread",
   },
   "ui.chat.composer": {
-    js: "./ui.chat.composer.js?v=0.21.228",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.composer.css?v=0.21.228"],
-    deps: [],
+    js: "./ui.chat.composer.js?v=0.21.271",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.composer.css?v=0.21.271"],
+    deps: ["ui.action.modal", "ui.toggle.button", "ui.audio.audiograph", "ui.audio.player"],
     export: "createChatComposer",
   },
   "ui.chat.upload.queue": {
-    js: "./ui.chat.upload.queue.js",
-    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.upload.queue.css", `../../css/ui/ui.media.strip.css?v=${UI_MEDIA_REV}`, `../../css/ui/ui.media.viewer.css?v=${UI_MEDIA_REV}`],
-    deps: ["ui.media.strip"],
+    js: "./ui.chat.upload.queue.js?v=0.21.271",
+    css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.chat.upload.queue.css?v=0.21.271", `../../css/ui/ui.media.strip.css?v=${UI_MEDIA_REV}`, `../../css/ui/ui.media.viewer.css?v=${UI_MEDIA_REV}`],
+    deps: ["ui.media.strip", "ui.audio.player", "ui.progress"],
     export: "createChatUploadQueue",
   },
   "ui.tabs": {
