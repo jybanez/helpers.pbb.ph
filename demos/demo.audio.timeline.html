@@ -69,7 +69,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.270";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.audio.timeline"]);
   </script>
   <script>
@@ -90,6 +90,7 @@
         { factory: "<code>createAudioTimeline(container, data, options)</code>", arguments: "<code>container</code>, timeline <code>data</code>, <code>options</code>", returns: "Audio-timeline instance" }
       ],
       options: [
+        {option:"chrome",default:"true",description:"False removes session/player/track-shell frames and padding. Controls and feedback remain. Canvas transparency is independent; data-only updates retain this option."},
         { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root audio timeline." },
         { option: "<code>ariaLabel</code>", default: '<code>"Audio timeline"</code>', description: "Accessible label for the timeline region." },
         { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL for relative audio segment paths." },
@@ -140,6 +141,7 @@
           <option value="burst">Burst Columns</option>
           <option value="heartbeat">Heartbeat Oscilloscope</option>
         </select>
+        <label><input id="chromeToggle" type="checkbox" checked> Chrome</label>
         <label for="themeSelect">Theme</label>
         <select id="themeSelect">
           <option value="dark" selected>dark</option>
@@ -207,7 +209,7 @@ timeline.update({
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.270";
     await window.__demoLoaderReady;
     const createAudioTimeline = await uiLoader.get("ui.audio.timeline");
 
@@ -218,6 +220,7 @@ timeline.update({
     const themeSelect = document.getElementById("themeSelect");
     const sensitivityRange = document.getElementById("sensitivityRange");
     const sensitivityValue = document.getElementById("sensitivityValue");
+    const chromeToggle = document.getElementById("chromeToggle");
     const transparentBackgroundToggle = document.getElementById("transparentBackgroundToggle");
     const host = document.getElementById("audioHost");
     const eventLog = document.getElementById("eventLog");
@@ -273,6 +276,7 @@ timeline.update({
         trackStyles: { "radio-net": "dots" },
         sensitivity: getSensitivity(),
         showMute: true,
+        chrome: chromeToggle.checked,
         transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
@@ -329,6 +333,7 @@ timeline.update({
       mountTimeline(audioApi?.getState()?.hasPending !== false);
     });
 
+    chromeToggle.addEventListener("change", () => { audioApi?.update(createTimelineData(audioApi?.getState()?.hasPending !== false), {chrome:chromeToggle.checked}); });
     transparentBackgroundToggle.addEventListener("change", () => {
       mountTimeline(audioApi?.getState()?.hasPending !== false);
       addEvent("timeline.transparentBackground", { enabled: transparentBackgroundToggle.checked });

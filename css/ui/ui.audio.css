@@ -228,3 +228,15 @@
   color: var(--ui-text, #d7e0f4);
   padding: 6px 8px;
 }
+
+/* Embedded sessions inherit their frame from the parent. Canvas fill remains
+   governed independently by transparentBackground. Controls retain focus styles. */
+.ui-audio-session.is-chromeless,
+.ui-audio-session.is-chromeless > .ui-audio-session-player,
+.ui-audio-session.is-chromeless .ui-audio-session-track > .ui-audiograph {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}

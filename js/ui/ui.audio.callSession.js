@@ -1,7 +1,8 @@
-import { createAudioTimeline } from "./ui.audio.timeline.js?v=0.21.60";
+import { createAudioTimeline } from "./ui.audio.timeline.js?v=0.21.270";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  chrome: true,
   ariaLabel: "Audio call session",
   debug: false,
   autoplay: false,
@@ -54,6 +55,7 @@ export function createAudioCallSession(container, incident = {}, options = {}) {
 function toTimelineOptions(options) {
   return {
     className: options.className,
+    chrome: options.chrome,
     ariaLabel: options.ariaLabel,
     autoplay: options.autoplay,
     baseUrl: "",

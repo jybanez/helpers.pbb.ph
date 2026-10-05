@@ -63,7 +63,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.270";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.audio.callSession"]);
   </script>
   <script>
@@ -84,6 +84,7 @@
         { factory: "<code>createAudioCallSession(container, incident, options)</code>", arguments: "<code>container</code>, incident payload, <code>options</code>", returns: "Audio-session adapter instance" }
       ],
       options: [
+        {option:"chrome",default:"true",description:"False removes session/player/track-shell frames and padding. Controls and feedback remain. Canvas transparency is independent; data-only updates retain this option."},
         { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name applied to the root audio session." },
         { option: "<code>ariaLabel</code>", default: '<code>"Audio call session"</code>', description: "Accessible label for the session region." },
         { option: "<code>debug</code>", default: '<code>false</code>', description: "Reserved diagnostic flag retained in the normalized options contract." },
@@ -137,6 +138,7 @@
           <option value="burst">Burst Columns</option>
           <option value="heartbeat">Heartbeat Oscilloscope</option>
         </select>
+        <label><input id="chromeToggle" type="checkbox" checked> Chrome</label>
         <label for="themeSelect">Theme</label>
         <select id="themeSelect">
           <option value="dark" selected>dark</option>
@@ -202,7 +204,7 @@ session.update({
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.270";
     await window.__demoLoaderReady;
     const createAudioCallSession = await uiLoader.get("ui.audio.callSession");
 
@@ -213,6 +215,7 @@ session.update({
     const themeSelect = document.getElementById("themeSelect");
     const sensitivityRange = document.getElementById("sensitivityRange");
     const sensitivityValue = document.getElementById("sensitivityValue");
+    const chromeToggle = document.getElementById("chromeToggle");
     const transparentBackgroundToggle = document.getElementById("transparentBackgroundToggle");
     const host = document.getElementById("audioHost");
     const eventLog = document.getElementById("eventLog");
@@ -312,6 +315,7 @@ session.update({
         audiographStyle: styleSelect.value,
         sensitivity: getSensitivity(),
         showMute: true,
+        chrome: chromeToggle.checked,
         transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
@@ -377,6 +381,7 @@ session.update({
         audiographStyle: styleSelect.value,
         sensitivity: getSensitivity(),
         showMute: true,
+        chrome: chromeToggle.checked,
         transparentBackground: transparentBackgroundToggle.checked,
         autoplay: false,
         onError(error) {
@@ -435,6 +440,7 @@ session.update({
       });
     });
 
+    chromeToggle.addEventListener("change", () => { mountSelectedSample().catch(error => addEvent("audio.chrome.error", {message:error.message})); });
     transparentBackgroundToggle.addEventListener("change", () => {
       mountSelectedSample().catch((error) => {
         console.error(error);

@@ -2117,3 +2117,5 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 
 
+
+- Added backward-compatible `chrome` to Audio Timeline and Audio Call Session for parent-framed cards; retained across data updates and independent of `transparentBackground`.

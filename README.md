@@ -7257,3 +7257,7 @@ The opt-in sets only action border color to transparent, retaining border width,
 ### Modal focus during close
 
 After a close is allowed, the canonical modal moves focus outside its closing subtree before setting `aria-hidden`. It restores a connected, available opener within the remaining foreground modal when applicable; otherwise it focuses that foreground panel or falls back to the document body. Closing a background modal does not steal focus from another active control/dialog. The closing subtree is inert until reopened, preventing focus from returning during the animation. There is no second focus restoration after unmount, so a newly opened dialog retains ownership. A vetoed close and existing busy dismissal guards remain unchanged; `uiConfirm` still settles only after unmount.
+
+### Embedded audio session chrome
+
+`createAudioTimeline` and `createAudioCallSession` accept `chrome: true` (default). Set `chrome: false` when a parent card supplies the frame. It removes borders, radii, backgrounds, shadows and padding from the outer session, player wrapper and track graph shell. Layout gaps, role labels, playback/seek/mute controls, focus indicators and processing/error feedback remain. Canvas styling is unchanged: `transparentBackground` independently controls graph/canvas transparency. Pass the current data to `update(data, {chrome:false})` to toggle; subsequent data-only updates retain the option. Playback and authorization policy are unchanged.

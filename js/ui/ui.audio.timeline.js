@@ -4,6 +4,7 @@ import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.60";
 
 const DEFAULT_OPTIONS = {
   className: "",
+  chrome: true,
   ariaLabel: "Audio timeline",
   autoplay: false,
   baseUrl: "",
@@ -346,6 +347,7 @@ export function createAudioTimeline(container, data = {}, options = {}) {
     if (!root || !currentData) {
       return;
     }
+    root.classList.toggle("is-chromeless", currentOptions.chrome === false);
     root.classList.toggle("has-processing", currentData.hasPending);
     root.classList.toggle("has-playable", currentData.hasPlayable);
     root.classList.toggle("is-processing-only", currentData.hasPending && !currentData.hasPlayable);

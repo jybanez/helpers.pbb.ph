@@ -1,0 +1,5 @@
+<!doctype html><html><body><div id="host"></div><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')});
+window.factories={timeline:await loader.get('ui.audio.timeline'),session:await loader.get('ui.audio.callSession')};window.ready=true;
+</script></body></html>
