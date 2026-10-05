@@ -6,6 +6,9 @@ import { FieldGroupSchemaError, validateFieldGroupSchema } from "./ui.field.grou
 import { createIcon } from "./ui.icons.js";
 import { createNumberStepper } from "./ui.number.stepper.js";
 
+const instancePrefix = Math.random().toString(36).slice(2);
+let fieldGroupSequence = 0;
+
 const DEFAULT_OPTIONS = {
   name: "",
   label: "",
@@ -13,6 +16,7 @@ const DEFAULT_OPTIONS = {
   repeatable: false,
   required: false,
   chrome: true,
+  fieldLayout: "stacked",
   autoValidate: true,
   fields: [],
   validations: [],
@@ -35,6 +39,7 @@ export function createFieldGroup(container, options = {}) {
     throw new Error("createFieldGroup(container, options) requires a host container.");
   }
 
+  const instanceId = `${instancePrefix}-${++fieldGroupSequence}`;
   let currentOptions = normalizeOptions(options);
   let value = normalizeValue(currentOptions.value, currentOptions);
   let renderedValidation = { status: true, errors: [], warnings: [] };
@@ -120,6 +125,7 @@ export function createFieldGroup(container, options = {}) {
     refs.root.className = [
       "ui-field-group",
       currentOptions.chrome ? "" : "is-chrome-less",
+      currentOptions.fieldLayout === "horizontal" ? "is-horizontal" : "",
     ].filter(Boolean).join(" ");
     refs.root.dataset.repeatable = currentOptions.repeatable ? "true" : "false";
     refs.root.dataset.chrome = currentOptions.chrome ? "true" : "false";
@@ -351,6 +357,7 @@ export function createFieldGroup(container, options = {}) {
       hasErrors ? "has-error" : "",
     ].filter(Boolean).join(" ");
     row.dataset.fieldKey = childKey;
+    row.dataset.controlType = type;
 
     const label = document.createElement("label");
     label.className = type === "checkbox" ? "ui-field-group-checkbox" : "ui-label";
@@ -390,7 +397,7 @@ export function createFieldGroup(container, options = {}) {
       label.appendChild(warningBadge);
     }
 
-    const control = createControl(field, item?.[childKey] ?? field?.default_value ?? "");
+    const control = createControl(field, item?.[childKey] ?? field?.default_value ?? "", index);
     if (!control) {
       return row;
     }
@@ -443,7 +450,7 @@ export function createFieldGroup(container, options = {}) {
     if (["checkbox", "checkbox-group", "notice", "message"].includes(type)) {
       return;
     }
-    const idBase = `ui-field-group-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}`;
+    const idBase = `ui-field-group-${instanceId}-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}`;
     if (type === "multiselect") {
       label.id = `${idBase}-label`;
       control.setAttribute("role", "group");
@@ -518,7 +525,7 @@ export function createFieldGroup(container, options = {}) {
     return wrap;
   }
 
-  function createControl(field, rawValue) {
+  function createControl(field, rawValue, index) {
     const type = getFieldType(field);
     if (requiresConfiguredOptions(field) && !normalizeOptionsList(field?.options).length) {
       const unconfigured = document.createElement("div");
@@ -593,7 +600,7 @@ export function createFieldGroup(container, options = {}) {
       const host = document.createElement("div");
       host.className = "ui-field-group-checkbox-group-host";
       const checkboxGroup = createCheckboxGroup(host, {
-        name: getFieldKey(field),
+        name: `ui-field-group-${instanceId}-${index}-${toDomId(getFieldKey(field))}`,
         label: getFieldLabel(field, getFieldKey(field)),
         values: rawValue,
         options: field?.options,
@@ -676,6 +683,7 @@ export function createFieldGroup(container, options = {}) {
       const host = document.createElement("div");
       host.className = "ui-field-group-checkbox-host";
       const checkbox = createCheckbox(host, {
+        id: `ui-field-group-${instanceId}-${index}-${toDomId(getFieldKey(field))}-checkbox`,
         name: getFieldKey(field),
         label: getFieldLabel(field, getFieldKey(field)),
         checked: Boolean(rawValue),
@@ -818,7 +826,7 @@ export function createFieldGroup(container, options = {}) {
 
   function applyControlIssueAria(row, issues, index, childKey) {
     row.querySelector(":scope > .ui-field-group-field-issues")?.remove();
-    const descriptionId = `ui-field-group-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}-issues`;
+    const descriptionId = `ui-field-group-${instanceId}-${toDomId(currentOptions.name || "group")}-${index}-${toDomId(childKey)}-issues`;
     const controls = row.matches("input, select, textarea")
       ? [row]
       : Array.from(row.querySelectorAll("input, select, textarea, [role='spinbutton']"));
@@ -1090,6 +1098,7 @@ function normalizeOptions(options = {}) {
     repeatable: Boolean(options?.repeatable ?? options?.multiple ?? config?.repeatable ?? preset?.repeatable),
     required: isRequiredField(options),
     chrome: options?.chrome !== false,
+    fieldLayout: (options?.fieldLayout ?? config?.fieldLayout ?? preset?.fieldLayout) === "horizontal" ? "horizontal" : "stacked",
     autoValidate: parseBoolean(options?.autoValidate ?? options?.validateOnChange ?? config?.autoValidate ?? config?.validateOnChange ?? preset?.autoValidate ?? true),
     entryKey: String(options?.entryKey ?? options?.entry_key ?? config?.entryKey ?? config?.entry_key ?? preset?.entryKey ?? "").trim(),
     preserveEntryKeys: parseBoolean(options?.preserveEntryKeys ?? options?.preserve_entry_keys ?? config?.preserveEntryKeys ?? config?.preserve_entry_keys ?? preset?.preserveEntryKeys ?? false),

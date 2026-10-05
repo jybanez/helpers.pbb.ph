@@ -98,6 +98,8 @@
         { factory: "<code>createFieldGroup(container, options)</code>", arguments: "host container and group options", returns: "Field group instance" }
       ],
       options: [
+        { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 240px stack automatically. Values and validation are retained.' },
+
         { option: "<code>name</code>", default: "<code>\"\"</code>", description: "Value key used by host forms and validation paths." },
         { option: "<code>label</code>", default: "<code>name</code>", description: "Visible group label." },
         { option: "<code>repeatable</code>", default: "<code>false</code>", description: "When true, the value is an array of child-field objects." },
@@ -133,6 +135,12 @@
 
     <section class="panel">
       <h2 class="ui-title">Missing Persons</h2>
+      <div class="row"><label for="fieldLayoutSelect">Field layout</label>
+        <select id="fieldLayoutSelect" class="ui-input">
+          <option value="stacked">Stacked labels</option>
+          <option value="horizontal">Labels beside controls</option>
+        </select></div>
+      <p class="muted">Try labels beside controls; narrow containers stack automatically.</p>
       <div class="layout">
         <div class="stack">
           <div id="missingPersonsHost"></div>
@@ -144,6 +152,7 @@
           <pre>const missingPersons = createFieldGroup(host, {
   name: "missing_persons",
   required: true,
+  fieldLayout: "horizontal", // optional; default is "stacked"
   ...fieldGroupPresets.missingPerson({ label: "Missing Persons" })
 });</pre>
         </div>
@@ -223,7 +232,7 @@
   </main>
 
   <script type="module">
-    import { createFieldGroup } from "../js/ui/ui.field.group.js";
+    import { createFieldGroup } from "../js/ui/ui.field.group.js?v=0.21.231";
     import { fieldGroupPresets } from "../js/ui/ui.field.group.presets.js";
     import { createFieldset } from "../js/ui/ui.fieldset.js";
 
@@ -259,6 +268,11 @@
           validation: meta.validation
         });
       }
+    });
+
+    document.getElementById("fieldLayoutSelect").addEventListener("change", (event) => {
+      missingPersons.update({ fieldLayout: event.target.value });
+      writeLog(missingLog, "layout changed", missingPersons.getValue());
     });
 
     const chromeLessMissing = createFieldGroup(document.getElementById("chromeLessHost"), {

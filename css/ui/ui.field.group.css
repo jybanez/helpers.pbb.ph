@@ -132,6 +132,67 @@
   min-width: 0;
 }
 
+/* Each schema cell decides whether its label/control pair has room. */
+.ui-field-group.is-horizontal .ui-field-group-row,
+.ui-field-group.is-horizontal .ui-field-group-breakdown-row {
+  grid-template-columns: 1fr;
+  container: field-pair / inline-size;
+}
+
+.ui-field-group.is-horizontal .ui-field-group-placeholder {
+  display: none;
+}
+
+.ui-field-group.is-horizontal .ui-field-group-breakdown {
+  grid-column: 1 / -1;
+}
+
+@container field-pair (min-width: 240px) {
+  .ui-field-group.is-horizontal .ui-field-group-child {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start;
+    column-gap: 16px;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-field-issues {
+    grid-column: 2;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox"],
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox-group"],
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="notice"],
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="message"] {
+    grid-template-columns: 1fr;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox"] .ui-checkbox {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    column-gap: 16px;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox"] .ui-checkbox-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox"] .ui-checkbox-box {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .ui-field-group.is-horizontal .ui-checkbox-group {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    column-gap: 16px;
+  }
+  .ui-field-group.is-horizontal .ui-checkbox-group-help {
+    grid-column: 2;
+  }
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox"] .ui-field-group-field-issues,
+  .ui-field-group.is-horizontal .ui-field-group-child[data-control-type="checkbox-group"] .ui-field-group-field-issues {
+    grid-column: 1;
+  }
+}
+
 .ui-field-group-child-label-row {
   display: flex;
   align-items: center;
