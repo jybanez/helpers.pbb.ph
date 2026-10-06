@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added backward-compatible `compact: false` to Audio Call Session and Audio Timeline, forwarding shared player layout through creation and updates while preserving track/mute controls and independent chrome behavior. UI/audio revision `0.21.272`.
+
 - Added opt-in composer video/audio recording with preview-before-attach, configurable attachment policies, independent device cleanup, ordered `attachments` and per-type `attachmentOptions`. Added attachment-only submission through `allowAttachmentOnly` and app-owned `attachmentCount`; legacy file-picker defaults remain unchanged.
 - Reused the shared audio player for recordings and queue previews, with icons, smooth progress, extra actions and compact mode. Queue previews support video thumbnails and retained shared upload progress. Added standalone player/queue reference demos and source/bundle capture regressions. Main UI/audio revision `0.21.271`.
 - Added shared media control icons: stop, record, fast-forward, rewind, next-track and previous-track; icon/game revision `0.21.240`.
