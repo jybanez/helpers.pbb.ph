@@ -5,6 +5,7 @@ import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.60";
 const DEFAULT_OPTIONS = {
   className: "",
   chrome: true,
+  compact: false,
   ariaLabel: "Audio timeline",
   autoplay: false,
   baseUrl: "",
@@ -71,6 +72,7 @@ export function createAudioTimeline(container, data = {}, options = {}) {
       { isPlaying: false, currentMs: 0, durationMs },
       {
         ariaLabel: `${currentOptions.ariaLabel} playback controls`,
+        compact: currentOptions.compact,
         onTogglePlay(nextPlaying) {
           if (nextPlaying) {
             play();
