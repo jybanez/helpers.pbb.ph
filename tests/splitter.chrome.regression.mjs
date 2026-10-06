@@ -11,6 +11,16 @@ try {
   await page.goto(server.origin+`/tests/${test}.regression.html`+(bundle?'?bundle':''));
   await page.waitForFunction(()=>['pass','fail'].includes(document.body.dataset.status));
   assert.equal(await page.locator('body').getAttribute('data-status'),'pass',await page.locator('#results').innerText());
+  if(test==='splitter.interaction') for(const orientation of ['horizontal','vertical']) {
+   await page.evaluate(orientation=>window.splitterFixture.update({orientation}),orientation);
+   await page.keyboard.press('Tab');
+   const divider=page.locator('#fixture > .ui-splitter > .ui-splitter-divider');
+   assert.equal(await divider.evaluate(el=>document.activeElement===el&&el.matches(':focus-visible')),true,'keyboard focus is visible');
+   assert.deepEqual(await divider.evaluate(el=>{const s=getComputedStyle(el);return [s.outlineStyle,s.outlineWidth];}),['solid','2px'],'retained focus outline');
+   const before=await page.evaluate(()=>window.splitterFixture.getState().ratio);
+   await page.keyboard.press(orientation==='horizontal'?'ArrowRight':'ArrowDown');
+   assert.ok(await page.evaluate(()=>window.splitterFixture.getState().ratio)>before,'focused keyboard resize');
+  }
   assert.deepEqual(errors,[]);await page.close();console.log(`${test} ${bundle?'bundle':'source'} passed`);
  }
 } finally {await browser.close();await server.close();}
