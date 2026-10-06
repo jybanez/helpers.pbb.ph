@@ -11,6 +11,7 @@ const DEFAULT_OPTIONS = {
   minZoom: 1,
   maxZoom: 6,
   wheelZoom: true,
+  pinchZoom: true,
   panWhenZoomed: true,
   loop: false,
   showHeader: true,
@@ -61,6 +62,8 @@ export function createMediaViewer(container, options = {}) {
   let panY = 0;
   let focusReturnEl = null;
   let dragState = null;
+  const pointers = new Map();
+  let pinchState = null;
   let mediaGraphApi = null;
   let mediaEvents = createEventBag();
 
@@ -92,6 +95,8 @@ export function createMediaViewer(container, options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    clearGesture();
+    pauseVideo();
     events.clear();
     mediaEvents.clear();
     destroyGraph();
@@ -201,7 +206,16 @@ export function createMediaViewer(container, options = {}) {
     });
     events.on(document, "keydown", onDocumentKeyDown);
     events.on(viewport, "wheel", onViewportWheel, { passive: false });
-    events.on(panSurface, "pointerdown", onViewportPointerDown);
+    events.on(viewport, "pointerdown", onViewportPointerDown);
+    events.on(window, "pointermove", onViewportPointerMove, { passive: false });
+    events.on(window, "pointerup", onViewportPointerUp);
+    events.on(window, "pointercancel", onViewportPointerCancel);
+    events.on(viewport, "lostpointercapture", (event) => {
+      // Moving implicit capture from a media child to this surface is not cancellation.
+      if (event.target === viewport) onViewportPointerCancel(event);
+    });
+    events.on(window, "blur", clearGesture);
+    events.on(document, "fullscreenchange", clearGesture);
 
     syncUi();
   }
@@ -210,6 +224,8 @@ export function createMediaViewer(container, options = {}) {
     if (!mediaHost || !footer || !audiographHost) {
       return;
     }
+    clearGesture();
+    pauseVideo();
     mediaEvents.clear();
     destroyGraph();
     clearNode(mediaHost);
@@ -248,6 +264,7 @@ export function createMediaViewer(container, options = {}) {
       mediaHost.appendChild(mediaEl);
       renderVideoTracks(mediaEl, item.tracks);
       bindVideoState(item);
+      mediaEvents.on(mediaEl, "webkitbeginfullscreen", clearGesture);
       mediaEvents.on(mediaEl, "loadedmetadata", () => syncUi());
       if (currentOptions.showAudiograph) {
         mediaGraphApi = createAudioGraph(audiographHost, {
@@ -362,6 +379,7 @@ export function createMediaViewer(container, options = {}) {
       close();
       return;
     }
+    if (event.target?.closest?.("video[controls]")) return;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       prev();
@@ -433,55 +451,89 @@ export function createMediaViewer(container, options = {}) {
     setZoom(zoom + (direction * currentOptions.zoomStep));
   }
 
+  function capturePointer(id) {
+    try { viewport?.setPointerCapture?.(id); } catch (_) { /* Pointer may already be released. */ }
+  }
+
+  function clearGesture() {
+    const ids = [...pointers.keys()];
+    pointers.clear();
+    dragState = null;
+    pinchState = null;
+    panLayer?.classList.remove("is-panning");
+    for (const id of ids) {
+      try { if (viewport?.hasPointerCapture?.(id)) viewport.releasePointerCapture(id); } catch (_) { /* Detached surface. */ }
+    }
+  }
+
+  function pinchGeometry() {
+    const [a, b] = [...pointers.values()];
+    if (!a || !b) return null;
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.hypot(b.x - a.x, b.y - a.y) };
+  }
+
+  function rebaseGesture() {
+    pinchState = pointers.size === 2 ? pinchGeometry() : null;
+    const first = pointers.entries().next().value;
+    dragState = first && pointers.size === 1 ? {
+      pointerId: first[0], startX: first[1].x, startY: first[1].y,
+      panStartX: panX, panStartY: panY, allowPan: first[1].allowPan,
+    } : null;
+  }
+
   function onViewportPointerDown(event) {
-    if (!isOpen || !currentOptions.panWhenZoomed || !canPan(zoom)) {
-      return;
+    if (!isOpen || !mediaEl || event.button !== 0 || pointers.size >= 2) return;
+    if (document.fullscreenElement === mediaEl || mediaEl.webkitDisplayingFullscreen) return;
+    if (event.target?.closest?.("button, input, select, textarea, a, [role=slider]")) return;
+    const touch = event.pointerType === "touch";
+    const nativeVideo = Boolean(event.target?.closest?.("video[controls]"));
+    // Observe touch on inline video without consuming its single-pointer native controls.
+    const allowPan = !nativeVideo && currentOptions.panWhenZoomed && canPan(zoom);
+    if (!(touch && currentOptions.pinchZoom) && !allowPan) return;
+    if (pointers.size && (!touch || !currentOptions.pinchZoom || [...pointers.values()].some(p => p.type !== "touch"))) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, type: event.pointerType, allowPan });
+    if (pointers.size === 2) {
+      for (const [id, point] of pointers) { point.allowPan = true; capturePointer(id); }
+      event.preventDefault();
+    } else if (allowPan) {
+      event.preventDefault();
+      capturePointer(event.pointerId);
     }
-    if (event.button !== 0) {
-      return;
-    }
-    const interactive = event.target?.closest?.(".ui-media-viewer-toolbar, .ui-media-viewer-nav, video[controls]");
-    if (interactive) {
-      return;
-    }
-    event.preventDefault();
-    viewport?.setPointerCapture?.(event.pointerId);
-    dragState = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      panStartX: panX,
-      panStartY: panY,
-    };
+    rebaseGesture();
+  }
 
-    const onMove = (moveEvent) => {
-      if (!dragState || moveEvent.pointerId !== dragState.pointerId) {
-        return;
+  function onViewportPointerMove(event) {
+    const point = pointers.get(event.pointerId);
+    if (!isOpen || !point) return;
+    point.x = event.clientX;
+    point.y = event.clientY;
+    if (pinchState) {
+      event.preventDefault();
+      const next = pinchGeometry();
+      if (next.distance > 0 && pinchState.distance > 0) {
+        setZoom(zoom * next.distance / pinchState.distance, { gesture: true, anchor: pinchState, midpoint: next });
       }
-      moveEvent.preventDefault();
+      // Callback may close/update/destroy the viewer; never resurrect its gesture.
+      if (pointers.size === 2) pinchState = next;
+    } else if (dragState?.allowPan && currentOptions.panWhenZoomed && canPan(zoom)) {
+      event.preventDefault();
+      capturePointer(event.pointerId);
       panLayer?.classList.add("is-panning");
-      setPan(
-        dragState.panStartX + (moveEvent.clientX - dragState.startX),
-        dragState.panStartY + (moveEvent.clientY - dragState.startY),
-        { emit: false }
-      );
-    };
+      setPan(dragState.panStartX + point.x - dragState.startX,
+        dragState.panStartY + point.y - dragState.startY);
+    }
+  }
 
-    const onUp = (upEvent) => {
-      if (!dragState || upEvent.pointerId !== dragState.pointerId) {
-        return;
-      }
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-      dragState = null;
-      panLayer?.classList.remove("is-panning");
-      viewport?.releasePointerCapture?.(upEvent.pointerId);
-    };
+  function onViewportPointerUp(event) {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
+    try { if (viewport?.hasPointerCapture?.(event.pointerId)) viewport.releasePointerCapture(event.pointerId); } catch (_) { /* Already released. */ }
+    panLayer?.classList.remove("is-panning");
+    rebaseGesture();
+  }
 
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+  function onViewportPointerCancel(event) {
+    if (pointers.has(event.pointerId)) clearGesture();
   }
 
   function syncUi() {
@@ -527,7 +579,10 @@ export function createMediaViewer(container, options = {}) {
       mediaHost.style.transform = "none";
     }
     mediaHost?.classList.toggle("is-zoomed", zoom > currentOptions.minZoom);
-    panSurface.hidden = !(currentOptions.panWhenZoomed && canPan(zoom));
+    viewport.classList.toggle("has-pinch-zoom", currentOptions.pinchZoom);
+    // Never put an overlay over native video controls.
+    panSurface.hidden = mediaEl instanceof HTMLVideoElement && currentOptions.showVideoControls
+      || !(currentOptions.panWhenZoomed && canPan(zoom));
     panSurface.classList.toggle("is-active", !panSurface.hidden);
   }
 
@@ -560,6 +615,7 @@ export function createMediaViewer(container, options = {}) {
     if (!isOpen) {
       return;
     }
+    clearGesture();
     isOpen = false;
     pauseVideo();
     destroyGraph();
@@ -620,7 +676,9 @@ export function createMediaViewer(container, options = {}) {
     return activeIndex < currentItems.length - 1;
   }
 
-  function setZoom(nextZoom, { emit = true } = {}) {
+  function setZoom(nextZoom, { emit = true, gesture = false, anchor = null, midpoint = anchor } = {}) {
+    if (!gesture) clearGesture();
+    const previousZoom = zoom;
     const clamped = clampNumber(nextZoom, currentOptions.minZoom, currentOptions.maxZoom);
     const previousSize = getHostSizeForZoom(zoom);
     const nextSize = getHostSizeForZoom(clamped);
@@ -629,7 +687,14 @@ export function createMediaViewer(container, options = {}) {
       panX = 0;
       panY = 0;
     } else {
-      if (previousSize && nextSize) {
+      if (anchor && midpoint && viewport) {
+        const rect = viewport.getBoundingClientRect();
+        const cx = rect.left + viewport.clientLeft + viewport.clientWidth / 2;
+        const cy = rect.top + viewport.clientTop + viewport.clientHeight / 2;
+        const ratio = zoom / previousZoom;
+        panX = midpoint.x - cx - (anchor.x - cx - panX) * ratio;
+        panY = midpoint.y - cy - (anchor.y - cy - panY) * ratio;
+      } else if (previousSize && nextSize) {
         panX = scalePanForViewportCenter(panX, previousSize.width, nextSize.width);
         panY = scalePanForViewportCenter(panY, previousSize.height, nextSize.height);
       }
@@ -756,6 +821,7 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function resetView({ emit = true } = {}) {
+    clearGesture();
     zoom = currentOptions.minZoom;
     panX = 0;
     panY = 0;
@@ -801,6 +867,9 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function destroy() {
+    isOpen = false;
+    clearGesture();
+    pauseVideo();
     events.clear();
     mediaEvents.clear();
     destroyGraph();
@@ -958,6 +1027,7 @@ function normalizeOptions(options = {}) {
   next.index = Math.max(0, Number(next.index) || 0);
   next.open = Boolean(next.open);
   next.trapFocus = next.trapFocus !== false;
+  next.pinchZoom = next.pinchZoom !== false;
   return next;
 }
 

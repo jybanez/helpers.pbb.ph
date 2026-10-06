@@ -6931,6 +6931,7 @@ Options:
 | `minZoom` | `number` | component default | no | Minimum zoom. |
 | `maxZoom` | `number` | component default | no | Maximum zoom. |
 | `wheelZoom` | `boolean` | `true` | no | Enables mouse-wheel zoom. |
+| `pinchZoom` | `boolean` | `true` | no | Enables two-touch-pointer, midpoint-anchored zoom on the media viewport using `minZoom`/`maxZoom`; configurable through `update`. |
 | `panWhenZoomed` | `boolean` | `true` | no | Enables panning while zoomed. |
 | `loop` | `boolean` | `false` | no | Loops prev/next navigation. |
 | `showHeader` | `boolean` | `true` | no | Shows header chrome. |
@@ -6954,6 +6955,8 @@ Options:
 | `onChange` | `(item, index) => void` | `null` | no | Fires when active item changes. |
 | `onClose` | `() => void` | `null` | no | Fires when viewer closes. |
 | `onZoomChange` | `(state) => void` | `null` | no | Fires on zoom state changes. |
+
+Touch gestures: `pinchZoom: true` suppresses browser pan/pinch only inside the media viewport. Header, toolbar, navigation and the surrounding page keep browser zoom behavior. Pinch works independently of `panWhenZoomed`; that option controls single-pointer panning, including after a pinch. With native video controls enabled, single-pointer gestures on the video remain native (no pan overlay); pinch then lift one finger to pan, or drag exposed viewport space. With controls disabled, direct media dragging is available. Native fullscreen video is browser/OS-owned and outside the inline viewer gesture contract. Physical Android/iOS validation is recommended; automated coverage uses Pointer Events and Chromium mobile touch emulation.
 
 Media item track fields:
 

@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added default `pinchZoom` for media viewer photos/inline videos, midpoint anchoring with existing zoom limits, scoped touch handling and gesture cleanup. Native video controls stay uncovered. UI/media revision `0.21.275`.
+
 - Fixed splitter `chrome: false` retaining decorative pane borders in either orientation. Direct-child scope preserves nested chrome settings and the draggable divider. UI/splitter revision `0.21.274`.
 
 - Added backward-compatible `chrome` to Incident Types, Dispatch and their standalone editors/viewers, with parent propagation and update retention/restoration. Decorative shells flatten independently of spacing and semantic controls/feedback. Main UI/incident chrome revision `0.21.273`.

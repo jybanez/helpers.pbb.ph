@@ -309,3 +309,8 @@
     right: 26px;
   }
 }
+
+/* Restrict browser gesture suppression to the media surface, not the dialog/page. */
+.ui-media-viewer-viewport.has-pinch-zoom {
+  touch-action: none;
+}

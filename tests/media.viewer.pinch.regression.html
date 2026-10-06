@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media viewer pinch regression</title>
+<div id="host"></div>
+<script type="module">
+const {createUiLoader,DEFAULT_COMPONENT_REGISTRY}=await import('../js/ui/ui.loader.js');
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:new URLSearchParams(location.search).has('bundle')});
+const create=await loader.get('ui.media.viewer');
+const src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><rect width="800" height="800" fill="teal"/></svg>');
+window.makeViewer=()=>create(document.querySelector('#host'),{items:[{type:'image',src},{type:'image',src}],open:true,showFooter:false,autoplayVideo:false,maxZoom:3});
+window.viewer=makeViewer();
+</script>
