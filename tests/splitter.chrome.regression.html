@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Splitter chrome regression</title>
+<style>.host { width:800px; height:500px; } .host > section { height:100%; } .nested {height:100%;} </style>
+<body data-status="pending"><pre id="results">Running</pre>
+<script type="module">
+const bundle = new URLSearchParams(location.search).has('bundle');
+const {createUiLoader, DEFAULT_COMPONENT_REGISTRY} = await import('../js/ui/ui.loader.js');
+const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, {preferBundles:bundle});
+const createSplitter = await loader.get('ui.splitter');
+const failures=[];
+const assert=(ok,message)=>{if(!ok) failures.push(message);};
+function check(host,orientation,chrome,padding) {
+ const root=host.firstElementChild;
+ for(const [index,pane] of [root.children[0],root.children[2]].entries()) {
+  const s=getComputedStyle(pane);
+  for(const edge of ['Top','Right','Bottom','Left']) {
+   const expected=chrome && index===0 && edge===(orientation==='horizontal'?'Right':'Bottom')?'1px':'0px';
+   assert(s[`border${edge}Width`]===expected,`${orientation} chrome=${chrome} pane${index} ${edge} expected ${expected}`);
+  }
+  assert(s.paddingTop===`${padding}px`,'pane padding retained');
+ }
+ const divider=root.children[1],s=getComputedStyle(divider),v=getComputedStyle(divider,'::before');
+ const vertical=orientation==='vertical';
+ assert(parseFloat(vertical?s.height:s.width)===24,'24px divider target');
+ assert(parseFloat(vertical?v.height:v.width)===8,'8px divider visual');
+ assert(s.cursor===(vertical?'row-resize':'col-resize'),'own orientation cursor');
+ assert(divider.getAttribute('aria-label')==='Resize panes'&&!divider.disabled,'accessible enabled divider');
+}
+for(const theme of ['dark','light']) for(const orientation of ['horizontal','vertical']) for(const innerOrientation of ['horizontal','vertical']) for(const chrome of [false,true]) for(const innerChrome of [false,true]) {
+ document.body.dataset.theme=theme;
+ const host=document.createElement('div');host.className='host';document.body.append(host);
+ const nested=document.createElement('div');nested.className='nested';
+ const outer=createSplitter(host,{orientation,chrome,panePadding:3,paneB:nested});
+ const inner=createSplitter(nested,{orientation:innerOrientation,chrome:innerChrome,panePadding:5});
+ check(host,orientation,chrome,3);check(nested,innerOrientation,innerChrome,5);
+ inner.update({chrome:!innerChrome});check(nested,innerOrientation,!innerChrome,5);check(host,orientation,chrome,3);
+ inner.update({chrome:innerChrome});check(nested,innerOrientation,innerChrome,5);
+ outer.update({chrome:!chrome});check(host,orientation,!chrome,3);check(nested,innerOrientation,innerChrome,5);
+ outer.update({chrome});check(host,orientation,chrome,3);
+ inner.destroy();outer.destroy();host.remove();
+}
+document.body.dataset.status=failures.length?'fail':'pass';
+document.querySelector('#results').textContent=failures.length?failures.join('\n'):'PASS';
+</script>
