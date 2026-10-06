@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added backward-compatible `chrome` to Incident Types, Dispatch and their standalone editors/viewers, with parent propagation and update retention/restoration. Decorative shells flatten independently of spacing and semantic controls/feedback. Main UI/incident chrome revision `0.21.273`.
+
 - Added backward-compatible `compact: false` to Audio Call Session and Audio Timeline, forwarding shared player layout through creation and updates while preserving track/mute controls and independent chrome behavior. UI/audio revision `0.21.272`.
 
 - Added opt-in composer video/audio recording with preview-before-attach, configurable attachment policies, independent device cleanup, ordered `attachments` and per-type `attachmentOptions`. Added attachment-only submission through `allowAttachmentOnly` and app-owned `attachmentCount`; legacy file-picker defaults remain unchanged.

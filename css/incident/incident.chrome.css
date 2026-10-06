@@ -1,0 +1,21 @@
+/* Complete-component chrome is opt-in. Keep padding/gaps and semantic surfaces. */
+:is(.hh-incident-types, .hh-incident-types-details-editor, .hh-incident-types-details-viewer,
+    .hh-incident-teams-assignments, .hh-incident-teams-assignments-editor, .hh-incident-teams-assignments-viewer).is-chrome-less,
+:is(.hh-incident-types, .hh-incident-types-details-editor, .hh-incident-types-details-viewer,
+    .hh-incident-teams-assignments, .hh-incident-teams-assignments-editor, .hh-incident-teams-assignments-viewer).is-chrome-less
+  :is(.hh-item, .hh-type-section, .hh-content, .hh-form, .hh-field-group, .hh-field-group-item,
+      .ui-field-group-body, .ui-field-group-item) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:is(.hh-incident-types, .hh-incident-types-details-editor, .hh-incident-types-details-viewer,
+    .hh-incident-teams-assignments, .hh-incident-teams-assignments-editor, .hh-incident-teams-assignments-viewer).is-chrome-less
+  :is(.hh-incident-types-header, .hh-team-list-header, .hh-type-header, .hh-card-header, .ui-field-group-item-header) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}

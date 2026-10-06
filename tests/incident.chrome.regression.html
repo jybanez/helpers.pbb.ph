@@ -1,0 +1,78 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Incident chrome regression</title><body data-status="pending"><pre id="results">Running</pre>
+<script type="module">
+import {createUiLoader, DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')});
+const assert=(ok,message)=>{if(!ok)throw Error(message);};
+const style=el=>getComputedStyle(el);
+const flat=el=>style(el).borderTopWidth==='0px' && style(el).backgroundColor==='rgba(0, 0, 0, 0)';
+const type={incident_type_id:7,name:'Collision',fields:[
+ {field_key:'location',field_label:'Location',input_type:'text',required:true},
+ {field_key:'people',field_label:'People',input_type:'group',repeatable:true,fields:[{key:'name',label:'Name',type:'text',required:true}]}
+],detail_entries:[{field_key:'location',field_value:''},{field_key:'people',field_value:JSON.stringify([{name:''}])}]};
+const team={id:10,incident_id:30,team_id:91,assigned_by_operator_id:7,status:'requested',contact_person:'Test contact',team:{id:91,name:'Medic team'},notes_log:[]};
+const baseOptions={categories:[],incidentTypes:[],teams:[],incident_id:30,operator_id:7,team_id:91,assigned_by_operator_id:7,noticeAlreadyExist(){},removeIncidentType(){}};
+try {
+ for(const theme of ['dark','care-light']) {
+  for(const family of ['types','teams.assignments']) {
+   for(const mode of ['editor','viewer']) {
+    for(const list of [false,true]) {
+     const name=list?`incident.${family}`:family==='types'?`incident.types.details.${mode}`:`incident.teams.assignments.${mode}`;
+     const create=await loader.get(name);
+     const host=document.createElement('div');host.style.cssText='width:360px;margin-bottom:20px';document.body.append(host);
+     const item=structuredClone(family==='types'?type:team);
+     const data=list?[item]:item;
+     const api=create(host,data,{...baseOptions,theme,editable:mode==='editor'});
+     const root=()=>host.firstElementChild;
+     const roots=()=>[...host.querySelectorAll('[class^="hh-incident-"]')].filter(el=>/^hh-incident-(types(?:-details-(?:editor|viewer))?|teams-assignments(?:-(?:editor|viewer))?)$/.test(el.classList[0]));
+     const defaultPadding=style(root()).padding, defaultGap=style(root()).gap;
+     assert(style(root()).borderTopWidth!=='0px',`${name} default framed`);
+     const input=host.querySelector('input:not([type="hidden"]),textarea');
+     const inputBorder=input?style(input).borderTopWidth:null;
+     const status=host.querySelector('.hh-step-icon');
+     const statusStyle=status?[style(status).borderTopWidth,style(status).backgroundColor]:null;
+     // Focus exercises the parent setData path, not just normal child updates.
+     input?.focus();
+     api.update(api.getData(),{chrome:false});
+     assert(roots().every(el=>el.classList.contains('is-chrome-less')&&flat(el)),`${name} parent/child flat`);
+     assert(style(root()).padding===defaultPadding&&style(root()).gap===defaultGap,`${name} spacing retained`);
+     for(const shell of host.querySelectorAll('.hh-type-section,.ui-field-group-item,.ui-field-group-body')) assert(flat(shell),`${name} nested shell flat`);
+     const header=host.querySelector('.hh-incident-types-header,.hh-team-list-header');
+     if(header)assert(flat(header),`${name} header flat`);
+     const currentInput=host.querySelector('input:not([type="hidden"]),textarea');
+     if(input)assert(style(currentInput).borderTopWidth===inputBorder&&inputBorder!=='0px',`${name} input border retained`);
+     if(family==='types'&&mode==='editor') {
+      const field=host.querySelector('[data-field-key="location"] input');
+      assert(field.getAttribute('aria-invalid')==='true',`${name} validation retained`);
+      assert(document.getElementById(field.getAttribute('aria-describedby'))?.textContent,`${name} error associated`);
+      field.value='Main Street';field.dispatchEvent(new Event('input',{bubbles:true}));
+      assert(!field.hasAttribute('aria-invalid'),`${name} validation correction retained`);
+      assert(host.querySelector('.ui-field-group-item-warning'),`${name} nested warning retained`);
+     }
+     if(statusStyle) {
+      const next=host.querySelector('.hh-step-icon');
+      assert(style(next).borderTopWidth===statusStyle[0]&&style(next).backgroundColor===statusStyle[1],`${name} dispatch status retained`);
+     }
+     api.update(api.getData());assert(roots().every(flat),`${name} data update retains chrome`);
+     if(api.setList){api.setList(api.getData());assert(roots().every(flat),`${name} list replacement retains chrome`);}
+     if(family==='teams.assignments'&&mode==='editor') {
+      const busy=list?{busyAssignments:{10:{busy:true,message:'Saving dispatch'}}}:{busy:true,busyMessage:'Saving dispatch'};
+      api.update(api.getData(),busy);
+      const feedback=host.querySelector('.hh-assignment-busy');
+      assert(feedback?.textContent.includes('Saving dispatch')&&style(feedback).borderTopWidth!=='0px',`${name} busy feedback retained`);
+      assert(host.querySelector('.hh-incident-teams-assignments-editor').getAttribute('aria-busy')==='true',`${name} busy accessibility retained`);
+      assert([...host.querySelectorAll('input,textarea,button')].filter(el=>el.closest('.hh-incident-teams-assignments-editor')).every(el=>el.disabled),`${name} busy controls disabled`);
+     }
+     api.update(api.getData(),{chrome:true});
+     assert(roots().every(el=>!el.classList.contains('is-chrome-less')&&style(el).borderTopWidth!=='0px'),`${name} restored`);
+     api.destroy();host.remove();
+     // Explicit construction, as distinct from update.
+     document.body.append(host);const direct=create(host,data,{...baseOptions,theme,editable:mode==='editor',chrome:false});
+     assert(roots().every(flat),`${name} false at creation`);direct.destroy();host.remove();
+    }
+   }
+  }
+ }
+ document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS';
+} catch(error) {document.body.dataset.status='fail';document.querySelector('#results').textContent=error.stack;}
+</script></body></html>

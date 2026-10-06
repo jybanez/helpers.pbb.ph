@@ -3,8 +3,8 @@ import {
   renderEmpty,
   safeArray,
 } from "./incident.base.js";
-import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js?v=0.21.232";
-import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js?v=0.21.221";
+import { incidentTypesDetailsEditor } from "./incident.types.details.editor.js?v=0.21.273";
+import { incidentTypesDetailsViewer } from "./incident.types.details.viewer.js?v=0.21.273";
 import { createEventBag } from "../ui/ui.events.js";
 import { createDrawer } from "../ui/ui.drawer.js";
 import { createElement } from "../ui/ui.dom.js";
@@ -14,6 +14,7 @@ const REQUIRED_OPTION_KEYS = ["categories", "incidentTypes"];
 
 const DEFAULT_OPTIONS = {
   editable: true,
+  chrome: true,
   headerText: "Incident Details",
   drawerHeaderText: "Select Reported Incidents",
 };
@@ -91,6 +92,7 @@ export function incidentTypes(container, data, options = {}) {
     }
     rootEl = document.createElement("div");
     rootEl.className = "hh-incident-types";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     headerEl = document.createElement("div");
     headerEl.className = "hh-incident-types-header";
     bodyEl = document.createElement("div");
@@ -113,6 +115,7 @@ export function incidentTypes(container, data, options = {}) {
     }
     rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-types";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
     }

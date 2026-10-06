@@ -7284,3 +7284,11 @@ The control-only `createAudioPlayer` accepts `compact: true` for a single-row pl
 `createAudioCallSession(container, incident, {compact: true, chrome: false})` forwards `compact` through Audio Timeline to the shared Audio Player. `createAudioTimeline(container, data, {compact: true})` supports the same option. The default is `false`. Compact changes only the playback controls to the existing single-row layout; participant tracks, graphs, mute controls and processing feedback remain. `chrome` independently controls wrapper framing.
 
 Use `await api.update(currentData, {compact: true})` to switch, or `compact: false` to restore full controls. Data-only updates retain the chosen option. Supply the current incident/timeline data: updates retain the existing rebuild behavior (pause/reset playback), not a live playback-preserving layout toggle. Both audio reference demos include a Compact playback toggle.
+
+### Incident Types and Dispatch chrome
+
+`incidentTypes(host, data, {chrome: false})` and `incidentTeamsAssignments(host, data, {chrome: false})` flatten decorative container frames, backgrounds and header separators. The default is `chrome: true`; only explicit `false` disables it. Parent options propagate to all owned editor/viewer rows, including rows added later. The four standalone details/assignment editor/viewer factories accept the same option.
+
+Call `api.update(api.getData(), {chrome: false})` to change it; data-only updates and list replacement retain the setting, and explicit `true` restores default decoration. Focused editor synchronization also applies chrome without discarding draft values. Padding, gaps, input borders, buttons, focus/validation messages, required/error badges, busy feedback and dispatch status indicators remain. Existing field-group/property-viewer label conventions are unchanged; only decorative nested group shells are flattened. Drawers and separate dialogs retain their own chrome. This is not a compact-spacing or borderless-input option.
+
+The UI loader includes `css/incident/incident.chrome.css`; manual modular consumers must load it alongside their existing incident/component styles. No application-scoped CSS workaround is required. See the Incident Types and Team Assignments reference demos for the option contract.
