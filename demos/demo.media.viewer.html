@@ -156,7 +156,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.275";
     window.__demoLoaderReady = uiLoader.loadMany(["ui.media.viewer"]);
   </script>
   <script>
@@ -183,6 +183,7 @@
         { option: "<code>items</code>", default: "<code>[]</code>", description: "Image/video gallery items." },
         { option: "<code>baseUrl</code>", default: "<code>\"\"</code>", description: "Base URL applied when media paths are relative." },
         { option: "<code>fit</code>", default: "documented default", description: "Viewer fit behavior.", values: ["contain", "cover", "original"] },
+        { option: "<code>pinchZoom</code>", default: "<code>true</code>", description: "Two-finger zoom on photos and inline videos, anchored at the midpoint and bounded by minZoom/maxZoom. Disable through update({ pinchZoom: false })." },
         { option: "<code>zoomStep</code>", default: "<code>0.2</code>", description: "Zoom increment used by toolbar controls and keyboard zoom actions." },
         { option: "<code>showAudiograph</code>", default: "<code>false</code>", description: "Shows the built-in video audiograph when the active item is a video.", values: ["true", "false"] },
         { option: "<code>showFooter</code>", default: "<code>true</code>", description: "Shows the metadata footer for the active media item.", values: ["true", "false"] },
@@ -250,6 +251,7 @@
           <label><input id="autoplayInput" type="checkbox" checked> Autoplay when opened</label>
         </div>
       </div>
+      <p class="muted">Touch: pinch the media with two fingers, then lift one to pan. Native video controls remain accessible; native fullscreen video uses browser/OS gestures. Page zoom remains available outside the media viewport.</p>
       <p class="muted">Keyboard: <code>Esc</code> close, <code>←/→</code> navigate, <code>+/-</code> zoom, <code>0</code> reset, <code>Home/End</code> jump.</p>
     </section>
 
@@ -285,7 +287,7 @@ viewer.open(0);</pre>
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.275";
 
     await window.__demoLoaderReady;
     const createMediaViewer = await uiLoader.get("ui.media.viewer");

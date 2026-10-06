@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
-import { createMediaViewer } from "./ui.media.viewer.js";
+import { createMediaViewer } from "./ui.media.viewer.js?v=0.21.275";
 
 const DEFAULT_OPTIONS = {
   layout: "scroll", // scroll | wrap
