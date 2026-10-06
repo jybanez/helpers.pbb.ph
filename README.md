@@ -6562,6 +6562,7 @@ Returned API:
 
 Behavior notes:
 
+- `chrome: false` removes the frame and decorative pane borders only for this splitter. Nested splitters retain their own chrome setting; divider interactions and pane spacing are unchanged.
 - For nested splitters, use `panePadding: 0` on the outer splitter and `panePadding: 0, chrome: false` on the inner one. Give the nested host `height: 100%; min-width: 0; min-height: 0`, and give the outer layout a definite height. Put spacing on column content. Use `update({ panePadding: null, chrome: true })` to restore defaults.
 - Use `minRatio` / `maxRatio` to prevent unusable pane sizes.
 - Pane content can be passed as elements, strings, or factories; keep heavy child components mounted outside if state retention matters.

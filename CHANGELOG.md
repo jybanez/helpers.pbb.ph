@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Fixed splitter `chrome: false` retaining decorative pane borders in either orientation. Direct-child scope preserves nested chrome settings and the draggable divider. UI/splitter revision `0.21.274`.
+
 - Added backward-compatible `chrome` to Incident Types, Dispatch and their standalone editors/viewers, with parent propagation and update retention/restoration. Decorative shells flatten independently of spacing and semantic controls/feedback. Main UI/incident chrome revision `0.21.273`.
 
 - Added backward-compatible `compact: false` to Audio Call Session and Audio Timeline, forwarding shared player layout through creation and updates while preserving track/mute controls and independent chrome behavior. UI/audio revision `0.21.272`.

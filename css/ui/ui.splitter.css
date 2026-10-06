@@ -46,6 +46,10 @@
   border-bottom: 1px solid var(--ui-border, #2b3750);
 }
 
+.ui-splitter.ui-splitter--chromeless > .ui-splitter-pane {
+  border: 0;
+}
+
 .ui-splitter-divider {
   position: relative;
   box-sizing: border-box;
