@@ -23,7 +23,7 @@ const CANCELLATION_REASONS = {
 
 export function incidentTeamsAssignmentsViewer(container, data, options = {}) {
   let currentData = data || {};
-  let currentOptions = normalizeIncidentOptions(options);
+  let currentOptions = normalizeIncidentOptions({ chrome: true, ...options });
 
   function getTeamResources() {
     const direct = safeArray(currentData?.team?.resources);
@@ -245,6 +245,7 @@ export function incidentTeamsAssignmentsViewer(container, data, options = {}) {
     if (!root) {
       return;
     }
+    root.classList.toggle("is-chrome-less", currentOptions.chrome === false);
 
     const missingRequired = REQUIRED_OPTION_KEYS.filter((key) => {
       const value = currentOptions?.[key];

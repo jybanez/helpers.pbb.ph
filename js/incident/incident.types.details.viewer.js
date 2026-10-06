@@ -9,7 +9,7 @@ import { createPropertyViewer } from "../ui/ui.property.viewer.js?v=0.21.221";
 
 export function incidentTypesDetailsViewer(container, data, options = {}) {
   let currentData = normalizeIncidentTypeData(data);
-  let currentOptions = normalizeIncidentOptions(options);
+  let currentOptions = normalizeIncidentOptions({ chrome: true, ...options });
   let missingRequired = false;
   let propertyViewer = null;
 
@@ -147,6 +147,7 @@ export function incidentTypesDetailsViewer(container, data, options = {}) {
     if (!root) {
       return;
     }
+    root.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     missingRequired = !validateRequired();
     if (missingRequired) {
       return;

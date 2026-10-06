@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.235";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.222";
-const UI_BUNDLE_REV = "0.21.272";
+const UI_BUNDLE_REV = "0.21.273";
 const UI_GAME_BUNDLE_REV = "0.21.240";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -764,7 +764,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "incidentBase",
   },
   "incident.teams.assignments.editor": {
-    js: "../incident/incident.teams.assignments.editor.js",
+    js: "../incident/incident.teams.assignments.editor.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -773,12 +773,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/ui/ui.icons.css",
       "../../css/incident/incident.teams.assignments.css",
       "../../css/incident/incident.teams.assignments.editor.css",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base", "ui.icons"],
     export: "incidentTeamsAssignmentsEditor",
   },
   "incident.teams.assignments.viewer": {
-    js: "../incident/incident.teams.assignments.viewer.js",
+    js: "../incident/incident.teams.assignments.viewer.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -786,12 +787,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/incident/incident.base.css",
       "../../css/incident/incident.teams.assignments.css",
       "../../css/incident/incident.teams.assignments.viewer.css",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base"],
     export: "incidentTeamsAssignmentsViewer",
   },
   "incident.teams.assignments": {
-    js: "../incident/incident.teams.assignments.js",
+    js: "../incident/incident.teams.assignments.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -801,12 +803,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/incident/incident.teams.assignments.css",
       "../../css/incident/incident.teams.assignments.editor.css",
       "../../css/incident/incident.teams.assignments.viewer.css",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base", "ui.icons", "incident.teams.assignments.editor", "incident.teams.assignments.viewer"],
     export: "incidentTeamsAssignments",
   },
   "incident.types.details.editor": {
-    js: "../incident/incident.types.details.editor.js?v=0.21.232",
+    js: "../incident/incident.types.details.editor.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -816,12 +819,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/incident/incident.types.css",
       "../../css/ui/ui.field.group.css?v=0.21.232",
       "../../css/incident/incident.types.details.editor.css?v=0.21.232",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base", "ui.field.group", "ui.field.error"],
     export: "incidentTypesDetailsEditor",
   },
   "incident.types.details.viewer": {
-    js: "../incident/incident.types.details.viewer.js?v=0.21.221",
+    js: "../incident/incident.types.details.viewer.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -829,12 +833,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/incident/incident.base.css",
       "../../css/incident/incident.types.css",
       "../../css/incident/incident.types.details.viewer.css?v=0.21.220",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base", "ui.field.group", "ui.property.viewer"],
     export: "incidentTypesDetailsViewer",
   },
   "incident.types": {
-    js: "../incident/incident.types.js?v=0.21.232",
+    js: "../incident/incident.types.js?v=0.21.273",
     css: [
       UI_TOKENS_CSS,
       UI_COMPONENTS_CSS,
@@ -845,6 +850,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
       "../../css/ui/ui.field.group.css?v=0.21.232",
       "../../css/incident/incident.types.details.editor.css?v=0.21.232",
       "../../css/incident/incident.types.details.viewer.css?v=0.21.220",
+      "../../css/incident/incident.chrome.css?v=0.21.273",
     ],
     deps: ["incident.base", "incident.types.details.editor", "incident.types.details.viewer"],
     export: "incidentTypes",

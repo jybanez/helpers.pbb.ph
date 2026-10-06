@@ -1,6 +1,6 @@
 import { normalizeIncidentOptions, renderEmpty, safeArray } from "./incident.base.js";
-import { incidentTeamsAssignmentsEditor } from "./incident.teams.assignments.editor.js";
-import { incidentTeamsAssignmentsViewer } from "./incident.teams.assignments.viewer.js";
+import { incidentTeamsAssignmentsEditor } from "./incident.teams.assignments.editor.js?v=0.21.273";
+import { incidentTeamsAssignmentsViewer } from "./incident.teams.assignments.viewer.js?v=0.21.273";
 import { createEventBag } from "../ui/ui.events.js";
 import { createDrawer } from "../ui/ui.drawer.js";
 import { createElement } from "../ui/ui.dom.js";
@@ -18,6 +18,7 @@ const DEFAULT_LIST_OPTIONS = {
   headerText: "Dispatch Details",
   drawerHeaderText: "Select Teams to Dispatch",
   editable: true,
+  chrome: true,
 };
 
 let assignmentClientKeySeed = 0;
@@ -97,6 +98,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     }
     rootEl = document.createElement("div");
     rootEl.className = "hh-incident-teams-assignments";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     headerEl = document.createElement("div");
     headerEl.className = "hh-team-list-header";
     bodyEl = document.createElement("div");
@@ -117,6 +119,7 @@ export function incidentTeamsAssignments(container, data, options = {}) {
     }
     rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-teams-assignments";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
     }

@@ -14,7 +14,7 @@ let editorSequence = 0;
 export function incidentTypesDetailsEditor(container, data, options = {}) {
   const instanceId = `${instancePrefix}-${++editorSequence}`;
   let currentData = normalizeIncidentTypeData(data);
-  let currentOptions = normalizeIncidentOptions(options);
+  let currentOptions = normalizeIncidentOptions({ chrome: true, ...options });
   const listeners = [];
   const hostedInstances = [];
   const fieldControls = new Map();
@@ -458,6 +458,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     if (!root) {
       return;
     }
+    root.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     root.classList.toggle("is-horizontal", currentOptions.fieldLayout === "horizontal");
     root.classList.toggle("is-compact", currentOptions.fieldLayoutDensity === "compact");
     rootEl = root;
@@ -480,6 +481,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
     }
     rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-types-details-editor";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
     }
@@ -595,6 +597,7 @@ export function incidentTypesDetailsEditor(container, data, options = {}) {
       const layoutChanged = ["fieldLayout", "fieldLayoutDensity"].some((key) => Object.prototype.hasOwnProperty.call(nextOptions, key) && nextOptions[key] !== currentOptions[key]);
       currentData = normalizeIncidentTypeData(nextData);
       currentOptions = normalizeIncidentOptions({ ...currentOptions, ...nextOptions });
+      rootEl?.classList.toggle("is-chrome-less", currentOptions.chrome === false);
       if (layoutChanged) render();
     },
     getData() {

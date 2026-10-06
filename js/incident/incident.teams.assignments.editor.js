@@ -31,7 +31,7 @@ const CANCELLATION_REASONS = [
 
 export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
   let currentData = normalizeAssignmentData(data);
-  let currentOptions = normalizeIncidentOptions(options);
+  let currentOptions = normalizeIncidentOptions({ chrome: true, ...options });
   let allocationMap = buildAllocationMap(currentData);
   let isContactOverrideEditing = false;
   let contactDraft = String(currentData?.contact_person || "");
@@ -774,6 +774,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     if (!root) {
       return;
     }
+    root.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     rootEl = root;
 
     destroyListeners();
@@ -816,6 +817,7 @@ export function incidentTeamsAssignmentsEditor(container, data, options = {}) {
     }
     rootEl.dataset.theme = currentOptions.theme;
     rootEl.className = "hh-incident-teams-assignments-editor";
+    rootEl.classList.toggle("is-chrome-less", currentOptions.chrome === false);
     if (currentOptions.className) {
       rootEl.classList.add(currentOptions.className);
     }

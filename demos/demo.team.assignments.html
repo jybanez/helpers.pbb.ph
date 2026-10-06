@@ -64,7 +64,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.273";
     window.__demoLoaderReady = uiLoader.loadMany(["incident.base", "incident.teams.assignments"]);
   </script>
   <script>
@@ -90,6 +90,7 @@
         { factory: "<code>incidentTeamsAssignments(container, data, options)</code>", arguments: "assignment host, incident/assignment data, and domain options", returns: "Team-assignment list instance with drawer, list, and lifecycle methods" }
       ],
       options: [
+        {option:"chrome",default:"true",description:"False removes decorative root/nested container framing and header separators. Propagates to editors/viewers; padding, gaps, input borders, validation, busy and dispatch status remain. Data-only updates retain it; update(currentData, {chrome:true}) restores frames."},
         { option: "<code>incident_id</code>", default: "<code>required</code>", description: "Incident identifier required to create and normalize assignment payloads." },
         { option: "<code>operator_id</code>", default: "<code>required</code>", description: "Current operator identifier recorded on new assignments." },
         { option: "<code>categories</code>", default: "<code>[]</code>", description: "Incident-category list used to group/filter teams in the dispatch drawer." },
@@ -201,7 +202,7 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.273";
     await window.__demoLoaderReady;
     const incidentBase = await uiLoader.get("incident.base");
     const incidentTeamsAssignments = await uiLoader.get("incident.teams.assignments");

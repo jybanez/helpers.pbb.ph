@@ -65,7 +65,7 @@
     }
   </style>
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.273";
     window.__demoLoaderReady = uiLoader.loadMany(["incident.base", "incident.types"]);
   </script>
   <script>
@@ -90,6 +90,7 @@
         { factory: "<code>incidentTypes(container, data, options)</code>", arguments: "list host, incident-type array or incident payload, and domain options", returns: "Incident-type list instance with drawer, list, and lifecycle methods" }
       ],
       options: [
+        {option:"chrome",default:"true",description:"False removes decorative root/nested container framing and header separators. Propagates to editors/viewers; padding, gaps, input borders, validation, busy and dispatch status remain. Data-only updates retain it; update(currentData, {chrome:true}) restores frames."},
         { option: "<code>fieldLayoutDensity</code>", default: '<code>"standard"</code>', description: 'With horizontal layout, <code>"compact"</code> uses a 35/65 split and 12px gap at usable widths of 220px or more; narrower rows stack.' },
         { option: "<code>fieldLayout</code>", default: '<code>"stacked"</code>', description: 'Choose <code>"horizontal"</code> for labels beside controls. Each field gets its own row; containers narrower than 240px stack automatically. Values and validation are retained.' },
 
@@ -187,7 +188,7 @@
   </main>
 
   <script type="module">
-    import { uiLoader } from "../js/ui/ui.loader.js";
+    import { uiLoader } from "../js/ui/ui.loader.js?v=0.21.273";
     await window.__demoLoaderReady;
     const incidentBase = await uiLoader.get("incident.base");
     const incidentTypes = await uiLoader.get("incident.types");
