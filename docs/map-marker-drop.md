@@ -7,6 +7,14 @@ animation never writes the outer map positioning transform or changes the root
 dimensions, exact anchor, pin rotation, icon orientation or accessible name.
 The existing pulse halo stays anchored on the root.
 
+MapLibre host placement is part of canonical marker CSS: roots carrying both
+`.maplibregl-marker` and `.ui-map-marker` use `position:absolute; top:0; left:0`.
+This preserves the engine's projected transform regardless of stylesheet order
+or preceding current-location/destination markers. Standalone previews retain
+relative positioning. Pass the returned element directly to MapLibre `Marker`;
+do not add pixel/coordinate corrections or overwrite its outer transform.
+The placement correction ships in marker CSS/main bundle cache `0.21.279`.
+
 ```js
 const markerElement = createMapMarker({ shape: "pin", label: "Search destination" });
 const mapMarker = new maplibregl.Marker({ element: markerElement, anchor: "bottom" })

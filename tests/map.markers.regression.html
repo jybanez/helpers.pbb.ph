@@ -33,6 +33,39 @@
       assert(typeof createMapClusterMarker === "function", "createMapClusterMarker should export");
       assert(typeof getMapMarkerClass === "function", "getMapMarkerClass should export");
 
+      // Exercise real engine CSS in both orders; two identical projected roots
+      // must share an anchor rather than shift by the preceding marker width.
+      const helperCss = location.search.includes("bundle")
+        ? "../dist/helpers.ui.bundle.min.css" : "../css/ui/ui.map.markers.css";
+      const engineCss = "../vendor/maplibre/maplibre-gl.css";
+      for (const order of [[engineCss, helperCss], [helperCss, engineCss]]) {
+        const frame = document.createElement("iframe");
+        const css = await Promise.all(order.map(async url => (await fetch(url)).text()));
+        document.body.appendChild(frame);
+        frame.contentDocument.open();
+        frame.contentDocument.write(`<!doctype html><head>${css.map(text => `<style>${text}</style>`).join("")}</head><body><div id="map" style="position:relative;width:300px;height:200px"></div><div id="preview"></div></body>`);
+        frame.contentDocument.close();
+
+        const parent = frame.contentDocument.getElementById("map");
+        const first = createMapMarker({shape:"dot",label:"Current location"});
+        const second = createMapMarker({shape:"pin",label:"Destination"});
+        for (const node of [first, second]) {
+          node.classList.add("maplibregl-marker");
+          node.style.transform = "translate(-50%, -100%) translate(150px, 100px)";
+          parent.appendChild(node);
+        }
+        const a = first.getBoundingClientRect(), b = second.getBoundingClientRect();
+        assert(Math.abs(a.left-b.left)<.01 && Math.abs(a.top-b.top)<.01, "multiple engine markers retain the same projected anchor in either CSS order");
+        assert(frame.contentWindow.getComputedStyle(second).position === "absolute", "engine marker root is absolute");
+        const transform = second.style.transform;
+        const dropping = second.animateDrop({essential:true}); second.cancelDrop(); await dropping;
+        assert(second.style.transform === transform, "drop preserves engine placement transform");
+        const preview = createMapMarker({label:"Preview"});
+        frame.contentDocument.getElementById("preview").appendChild(preview);
+        assert(frame.contentWindow.getComputedStyle(preview).position === "relative", "standalone marker preview stays in normal flow");
+        first.destroy();second.destroy();preview.destroy();frame.remove();
+      }
+
       const marker = createMapMarker({
         id: "incident-123",
         type: "incident",
