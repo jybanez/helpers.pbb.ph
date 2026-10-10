@@ -40,6 +40,24 @@ try{
   }
  }
  map.removeLayer('heading-matrix-observer');
+ person.setScaleMode('perspective');map.setTerrain(null);map.jumpTo({pitch:60,bearing:0,zoom:17});await draw();
+ function paintedSize(){const data=new Uint8Array(gl.drawingBufferWidth*gl.drawingBufferHeight*4);gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,data);let minX=Infinity,minY=Infinity,maxX=-1,maxY=-1;for(let i=0;i<data.length;i+=4)if((data[i+2]>data[i]+30&&data[i+2]>data[i+1]+15)||(data[i]>170&&data[i+1]>70&&data[i+1]<210&&data[i+2]<90)){const index=i/4,x=index%gl.drawingBufferWidth,y=Math.floor(index/gl.drawingBufferWidth);minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}return maxX<0?0:Math.max((maxX-minX+1)*map.getCanvas().clientWidth/gl.drawingBufferWidth,(maxY-minY+1)*map.getCanvas().clientHeight/gl.drawingBufferHeight);}
+ const canvas=map.getCanvas(), width=canvas.clientWidth,height=canvas.clientHeight;
+ const nearCoordinate=map.unproject([width/2,height*.8]),farCoordinate=map.unproject([width/2,height*.35]);
+ person.updateLngLat(nearCoordinate);await draw();const nearSize=person.getState().projectedSizePx,nearPainted=paintedSize();
+ person.updateLngLat(farCoordinate);await draw();const farSize=person.getState().projectedSizePx,farPainted=paintedSize();
+ assert(nearSize>farSize+.5,'real tilted camera near/far size ordering');
+ assert(nearPainted>farPainted&&farPainted>0,'actual painted model pixels shrink farther from camera');
+ map.setTerrain({source:'dem',exaggeration:2});await draw();
+ assert(person.getState().projectedSizePx>=8-.01&&person.getState().projectedSizePx<=64+.01&&Number.isFinite(person.getState().terrainOffsetMeters),'perspective terrain/heading remains bounded');
+ map.setTerrain(null);await draw();
+ for(const zoom of [8,15,20])for(const pitch of [0,60,85]){
+  map.jumpTo({zoom,pitch,bearing:65});person.updateLngLat(center);person.updateHeading(90);await draw();
+  assert(Math.abs(map.getPitch()-pitch)<.01,'requested high pitch is actually applied');
+  const state=person.getState();assert(state.status==='rendered'&&state.projectedSizePx>=8-.01&&state.projectedSizePx<=64+.01,'real high-pitch/zoom projected bounds');
+  assert(paintedSize()>0&&paintedSize()<=66,'real high-pitch/zoom painted pixel ceiling');
+ }
+ person.setScaleMode('screen');person.updateHeading(null);person.updateLngLat(center);
  map.jumpTo({bearing:20,pitch:55,zoom:15});await draw();
  const initialScale=person.getState().modelScale;
  map.jumpTo({bearing:105,pitch:35,zoom:17});await draw();

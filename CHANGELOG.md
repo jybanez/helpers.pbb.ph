@@ -1,5 +1,7 @@
 # Changelog
 
+- Added opt-in camera-projected perspective scaling to the complete 3D person, with physical visual height, projected envelope bounds and reversible mode API; legacy default retained. Near/far/high-pitch/zoom checks and demo controls; person/main UI cache `0.21.282`.
+
 - Added optional geographic device heading and original gold base arrow to `ui.map.location.person`, with `updateHeading`, explicit null/neutral state, accessibility and world alignment. Cardinal/wrap/terrain rendered tests and demo controls; person/main UI cache `0.21.281`.
 
 - Added complete menu `focusOnOpen:false` policy and deliberate `focusFirst()` entry, preserving live textbox keys/focus while retaining ordinary menu defaults. Closed-item updates refresh on reopen; source/bundle tests and interactive demo. Menu/main UI cache `0.21.280`.

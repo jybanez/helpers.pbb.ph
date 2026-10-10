@@ -59,6 +59,12 @@ try {
  assert(document.querySelector('.ui-map-location-person-label').getAttribute('aria-label').includes('device direction 0 degrees'),'accessible direction describes device heading');
  person.updateHeading(null);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);map.draw(matrix);
  assert(!person.getState().directionAvailable&&arrowCenter().count===0,'null hides arrow and restores neutral appearance');
+ person.setScaleMode('perspective');map.draw(matrix);
+ assert(person.getState().scaleMode==='perspective'&&person.getState().projectedSizePx>=8-.01&&person.getState().projectedSizePx<=64+.01,'opt-in projected envelope is bounded');
+ const behind=[...matrix];behind[15]=-1;map.draw(behind);assert(person.getState().status==='not-visible'&&document.querySelector('.ui-map-location-person-label').hidden&&person.getState().hasResources,'behind-camera perspective skips safely without resource loss');
+ map.draw(matrix);assert(person.getState().status==='rendered','perspective recovers when visible');
+ let invalidMode=false;try{person.setScaleMode('unknown');}catch{invalidMode=true;}assert(invalidMode&&person.getState().scaleMode==='perspective','invalid scale mode preserves prior state');
+ person.setScaleMode('screen');
  map.terrain=120;map.draw(matrix);assert(person.getState().terrainOffsetMeters===120,'4.6 exaggerated offset applied once');
  map.terrain=-25;map.draw(matrix);assert(person.getState().terrainOffsetMeters===-25,'negative center-relative terrain offsets preserved');
  map.terrain=null;map.draw(matrix);assert(person.getState().terrainOffsetMeters===0,'terrain off uses zero');
@@ -78,7 +84,7 @@ try {
  map.emit('webglcontextlost');assert(person.getState().status==='context-lost','context-loss fallback state');
  map.emit('webglcontextrestored');map.draw(matrix);assert(person.getState().status==='rendered','context restore recreates resources');
  person.destroy();person.destroy();assert(map.count()===0&&!person.getState().hasResources&&!document.querySelector('.ui-map-location-person-label'),'terminal dispose removes resources/listeners/semantics');
- assert(!person.updateLngLat([1,1])&&!person.setMap(oldMap)&&!person.updateHeading(90),'destroy terminal');
+ assert(!person.updateLngLat([1,1])&&!person.setMap(oldMap)&&!person.updateHeading(90)&&!person.setScaleMode('screen'),'destroy terminal');
  const collision=mockMap();collision.addLayer({id:'occupied',onAdd(){},onRemove(){},render(){}});
  const failed=createMapLocationPerson({map:collision,maplibre:maplibregl,lngLat:[0,0],id:'occupied'});
  assert(failed.getState().status==='error','ID collision exposes fallback');failed.destroy();assert(collision.getLayer('occupied'),'foreign layer preserved');

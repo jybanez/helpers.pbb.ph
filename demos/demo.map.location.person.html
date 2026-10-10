@@ -20,6 +20,8 @@ main{max-width:1000px;margin:auto;} #map{height:480px;width:100%;background:#dfe
  <label><input type="checkbox" id="direction"> Device heading available</label>
  <label>Heading <input id="heading" type="range" min="0" max="359" step="1" value="0"></label>
  <button class="ui-button" id="cardinal">Next cardinal direction</button>
+ <label><input type="checkbox" id="perspectiveScale"> Camera-distance scaling</label>
+ <button class="ui-button" id="horizon">85° horizon</button>
 </div><pre id="state" role="status">Loading local MapLibre…</pre>
 <p>Controller hides its accessible label until rendering succeeds. The application retains accuracy area, permission flow and canonical dot fallback. This demo uses a labelled dot while the renderer is unavailable.</p>
 </main><script src="../vendor/maplibre/maplibre-gl.js"></script><script type="module">
@@ -37,7 +39,7 @@ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
 }ctx.putImageData(image,0,0);
 const tile=dem.toDataURL();
 const style=()=>({version:8,sources:{dem:{type:'raster-dem',tiles:[tile],tileSize:256,maxzoom:14}},layers:[{id:'background',type:'background',paint:{'background-color':'#dfe9ea'}},{id:'hillshade',type:'hillshade',source:'dem',paint:{'hillshade-shadow-color':'#607886','hillshade-highlight-color':'#f5f8ed'}}]});
-const map=new maplibregl.Map({container:'map',style:style(),center,zoom:15,pitch:55,bearing:20,antialias:true,preserveDrawingBuffer:true});
+const map=new maplibregl.Map({container:'map',style:style(),center,zoom:15,pitch:55,bearing:20,maxPitch:85,antialias:true,preserveDrawingBuffer:true});
 const fallbackElement=createMapMarker({shape:'dot',tone:'info',label:'Current location (dot fallback)'});
 const fallback=new maplibregl.Marker({element:fallbackElement}).setLngLat(center).addTo(map);
 let person, moved=false;
@@ -58,6 +60,8 @@ function heading(){person.updateHeading(document.getElementById('direction').che
 document.getElementById('direction').addEventListener('change',heading);
 document.getElementById('heading').addEventListener('input',heading);
 document.getElementById('cardinal').addEventListener('click',()=>{const control=document.getElementById('heading');control.value=(Number(control.value)+90)%360;document.getElementById('direction').checked=true;heading();});
+document.getElementById('perspectiveScale').addEventListener('change',event=>person.setScaleMode(event.target.checked?'perspective':'screen'));
+document.getElementById('horizon').addEventListener('click',()=>map.jumpTo({pitch:85}));
 window.addEventListener('pagehide',()=>{person.destroy();fallbackElement.destroy();fallback.remove();map.remove();});
 // Read-only demo fixture hooks used by the rendered regression harness.
 window.locationPersonDemo={map,person,center,terrain};
