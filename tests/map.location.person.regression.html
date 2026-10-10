@@ -42,6 +42,23 @@ try {
  assert(blue>50,'real blue person pixels rendered');
  assert(document.querySelector('.ui-map-location-person-label').getAttribute('aria-label')==='Current location','accessible current-location name');
  assert(map.repaints===repaintCount,'render has no idle repaint loop');
+ function arrowCenter(){const data=pixels();let x=0,y=0,count=0;for(let i=0;i<data.length;i+=4)if(data[i]>170&&data[i+1]>70&&data[i+1]<210&&data[i+2]<90){const index=i/4;x+=index%600;y+=Math.floor(index/600);count++;}return {x:x/count,y:y/count,count};}
+ assert(arrowCenter().count===0,'unavailable heading retains original neutral model without arrow');
+ for(const bearing of [0,65,150])for(const heading of [0,90,180,270,359,0]){
+   const angle=bearing*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+   const rotated=[200*c,200*s,0,0, 200*s,-200*c,0,0, 0,160,.1,0, -100*(c+s),100*(c-s),0,1];
+   person.updateHeading(heading);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);map.draw(rotated);
+   const arrow=arrowCenter();assert(arrow.count>3,'visible directional pixels for cardinal/wrap headings');
+   const h=heading*Math.PI/180,dx=Math.sin(h)*c-Math.cos(h)*s,dy=Math.sin(h)*s+Math.cos(h)*c;
+   assert((arrow.x-300)*dx+(arrow.y-200)*dy>2,'arrow aligns geographically through bearing rotation');
+ }
+ person.updateHeading(-1);assert(person.getState().headingDegrees===359,'negative heading normalizes at wrap');
+ person.updateHeading(720);assert(person.getState().headingDegrees===0,'multiple turn normalizes');
+ const headingRepaints=map.repaints;person.updateHeading(360);assert(map.repaints===headingRepaints,'equivalent headings do not request repaint');
+ let invalidHeading=false;try{person.updateHeading(NaN);}catch{invalidHeading=true;}assert(invalidHeading&&person.getState().headingDegrees===0,'invalid heading rejected without clearing valid state');
+ assert(document.querySelector('.ui-map-location-person-label').getAttribute('aria-label').includes('device direction 0 degrees'),'accessible direction describes device heading');
+ person.updateHeading(null);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);map.draw(matrix);
+ assert(!person.getState().directionAvailable&&arrowCenter().count===0,'null hides arrow and restores neutral appearance');
  map.terrain=120;map.draw(matrix);assert(person.getState().terrainOffsetMeters===120,'4.6 exaggerated offset applied once');
  map.terrain=-25;map.draw(matrix);assert(person.getState().terrainOffsetMeters===-25,'negative center-relative terrain offsets preserved');
  map.terrain=null;map.draw(matrix);assert(person.getState().terrainOffsetMeters===0,'terrain off uses zero');
@@ -51,15 +68,17 @@ try {
  let rejected=false;try{person.updateLngLat([NaN,90]);}catch{rejected=true;}assert(rejected,'invalid coordinates rejected');
  person.updateLngLat(null);assert(document.querySelector('.ui-map-location-person-label').hidden,'no stale location semantics');
  person.updateLngLat([0,0]);map.reload();map.draw(matrix);assert(person.getState().status==='rendered','style reattachment');
+ person.updateHeading(90);map.reload();map.draw(matrix);assert(person.getState().headingDegrees===90&&arrowCenter().count>3,'heading persists across style resources');
  const oldMap=map, oldLayer=oldMap.getLayer(person.getState().id);map=mockMap();person.setMap(map);
  assert(oldMap.count()===0&&!oldMap.getLayer(person.getState().id),'map replacement cleans listeners/layer');
  oldLayer.render(gl,[]);assert(person.getState().status==='ready','stale old-map render ignored');
  map.draw([]);assert(person.getState().status==='error'&&failures===1&&!person.getState().hasResources,'render failure exposes fallback and frees resources');
+ person.updateHeading(270);assert(failures===1&&person.getState().status==='error'&&!person.getState().hasResources,'heading change retains failure fallback without repeated error callback');
  person.retry();map.draw(matrix);assert(person.getState().status==='rendered','explicit failure recovery');
  map.emit('webglcontextlost');assert(person.getState().status==='context-lost','context-loss fallback state');
  map.emit('webglcontextrestored');map.draw(matrix);assert(person.getState().status==='rendered','context restore recreates resources');
  person.destroy();person.destroy();assert(map.count()===0&&!person.getState().hasResources&&!document.querySelector('.ui-map-location-person-label'),'terminal dispose removes resources/listeners/semantics');
- assert(!person.updateLngLat([1,1])&&!person.setMap(oldMap),'destroy terminal');
+ assert(!person.updateLngLat([1,1])&&!person.setMap(oldMap)&&!person.updateHeading(90),'destroy terminal');
  const collision=mockMap();collision.addLayer({id:'occupied',onAdd(){},onRemove(){},render(){}});
  const failed=createMapLocationPerson({map:collision,maplibre:maplibregl,lngLat:[0,0],id:'occupied'});
  assert(failed.getState().status==='error','ID collision exposes fallback');failed.destroy();assert(collision.getLayer('occupied'),'foreign layer preserved');

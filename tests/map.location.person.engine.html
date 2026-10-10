@@ -16,6 +16,31 @@ try{
  gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
  let blue=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i+2]>pixels[i]+30&&pixels[i+2]>pixels[i+1]+15)blue++;
  assert(blue>20,'Real MapLibre person pixels must render');
+ let renderMatrix=null;
+ map.addLayer({id:'heading-matrix-observer',type:'custom',renderingMode:'3d',render(gl,matrix){renderMatrix=Array.from(matrix);}});
+ function goldCenter(){gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let x=0,y=0,count=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]>170&&pixels[i+1]>70&&pixels[i+1]<210&&pixels[i+2]<90){const index=i/4;x+=index%gl.drawingBufferWidth;y+=Math.floor(index/gl.drawingBufferWidth);count++;}return {x:x/count,y:y/count,count};}
+ for(const enabled of [false,true]){
+  map.setTerrain(enabled?{source:'dem',exaggeration:2}:null);
+  for(const camera of [{bearing:0,pitch:0},{bearing:75,pitch:45},{bearing:155,pitch:60}]){
+   map.jumpTo(camera);
+   let wrap=null;
+   for(const heading of [0,90,180,270,359,0]){
+    person.updateHeading(heading);await draw();
+    const arrow=goldCenter();assert(arrow.count>3,'real engine visible gold heading arrow');
+    const state=person.getState(),anchor=frame.contentWindow.maplibregl.MercatorCoordinate.fromLngLat(state.lngLat,state.terrainOffsetMeters);
+    const clip=(x,y,z)=>[0,1,2,3].map(row=>renderMatrix[row]*x+renderMatrix[row+4]*y+renderMatrix[row+8]*z+renderMatrix[row+12]);
+    const pixel=p=>[(p[0]/p[3]+1)*gl.drawingBufferWidth/2,(p[1]/p[3]+1)*gl.drawingBufferHeight/2];
+    const origin=pixel(clip(anchor.x,anchor.y,anchor.z+.105*state.modelScale)),angle=heading*Math.PI/180;
+    const tip=pixel(clip(anchor.x+Math.sin(angle)*.6*state.modelScale,anchor.y-Math.cos(angle)*.6*state.modelScale,anchor.z+.105*state.modelScale));
+    assert((arrow.x-origin[0])*(tip[0]-origin[0])+(arrow.y-origin[1])*(tip[1]-origin[1])>1,'real heading matches geographic world ray through terrain/bearing/pitch');
+    if(heading===359)wrap=arrow;
+    if(heading===0&&wrap)assert(Math.hypot(arrow.x-wrap.x,arrow.y-wrap.y)<3,'359/0 rendered wrap is continuous');
+   }
+   person.updateHeading(null);await draw();assert(goldCenter().count===0,'real neutral state hides direction');
+  }
+ }
+ map.removeLayer('heading-matrix-observer');
+ map.jumpTo({bearing:20,pitch:55,zoom:15});await draw();
  const initialScale=person.getState().modelScale;
  map.jumpTo({bearing:105,pitch:35,zoom:17});await draw();
  assert(person.getState().status==='rendered'&&person.getState().modelScale<initialScale,'perspective/zoom remains rendered and bounded');
@@ -36,6 +61,6 @@ try{
  let count=0;const observed=()=>count++;map.on('render',observed);
  await new Promise(r=>setTimeout(r,500));map.off('render',observed);assert(count<10,'no idle repaint loop');
  person.destroy();assert(!person.getState().hasResources&&!map.getLayer(person.getState().id),'real-engine disposal');
- document.body.dataset.status='pass';document.getElementById('results').textContent=`PASS\nReal MapLibre 4.6 pixels:${blue}; perspective/zoom, local terrain on/off/exaggeration, coordinate update, style reload, mobile-width, idle and dispose passed.`;
+ document.body.dataset.status='pass';document.getElementById('results').textContent=`PASS\nReal MapLibre 4.6 pixels:${blue}; cardinal/wrap heading rays at varied bearing/pitch/terrain, neutral, perspective/zoom, terrain on/off/exaggeration, coordinate update, style reload, mobile-width, idle and dispose passed.`;
 }catch(error){document.body.dataset.status='failed';document.getElementById('results').textContent=error.stack+'\n'+frame.contentDocument?.getElementById('state')?.textContent+'\n'+JSON.stringify(frame.contentWindow.locationPersonDemo?.person.getState());}
 </script></body></html>

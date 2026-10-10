@@ -32,7 +32,20 @@ export function createPersonMesh() {
   return new Float32Array(data);
 }
 
-export function createPersonRenderer(gl, mesh) {
+// Device-forward arrow: geographic north is local +Y. No borrowed assets.
+export function createDirectionMesh() {
+  const data = [], color = [1, .68, .08];
+  // Raised slightly above the base to avoid coplanar depth fighting.
+  const triangles = [
+    [[-.07,.20,.105],[.07,.20,.105],[.07,.51,.105]],
+    [[-.07,.20,.105],[.07,.51,.105],[-.07,.51,.105]],
+    [[-.21,.48,.105],[.21,.48,.105],[0,.86,.105]],
+  ];
+  for (const triangle of triangles) for (const point of triangle) data.push(...point,0,0,1,...color);
+  return new Float32Array(data);
+}
+
+export function createPersonRenderer(gl, mesh, directionMesh = null) {
   if (!gl || gl.isContextLost()) throw new Error("WebGL context unavailable.");
   const webgl2 = typeof gl.createVertexArray === "function";
   const ext = webgl2 ? null : gl.getExtension("OES_vertex_array_object");
@@ -75,7 +88,9 @@ export function createPersonRenderer(gl, mesh) {
       void main() { ${webgl2 ? "outputColor" : "gl_FragColor"} = vec4(v_color, 1.0); }`));
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`Location shader link failed: ${gl.getProgramInfoLog(program)}`);
-    vaoApi.bind(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
+    const vertices = directionMesh ? new Float32Array(mesh.length + directionMesh.length) : mesh;
+    if (directionMesh) { vertices.set(mesh); vertices.set(directionMesh, mesh.length); }
+    vaoApi.bind(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     ["a_position", "a_normal", "a_color"].forEach((name, index) => {
       const location = gl.getAttribLocation(program, name);
       if (location < 0) throw new Error("Location shader attribute missing.");
@@ -87,7 +102,7 @@ export function createPersonRenderer(gl, mesh) {
   shaders.splice(0).forEach((value) => { gl.detachShader(program, value); gl.deleteShader(value); });
   return {
     dispose,
-    draw(matrix) {
+    draw(matrix, showDirection = false) {
       if (disposed || gl.isContextLost()) throw new Error("Location WebGL resources are unavailable.");
       const old = { program: gl.getParameter(gl.CURRENT_PROGRAM), vao: gl.getParameter(vaoApi.binding),
         buffer: gl.getParameter(gl.ARRAY_BUFFER_BINDING), depth: gl.isEnabled(gl.DEPTH_TEST),
@@ -95,7 +110,8 @@ export function createPersonRenderer(gl, mesh) {
       try {
         gl.useProgram(program); vaoApi.bind(vao); gl.enable(gl.DEPTH_TEST); gl.depthMask(true);
         gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
-        gl.uniformMatrix4fv(uniform, false, matrix); gl.drawArrays(gl.TRIANGLES, 0, mesh.length / 9);
+        gl.uniformMatrix4fv(uniform, false, matrix);
+        gl.drawArrays(gl.TRIANGLES, 0, (mesh.length + (showDirection ? directionMesh?.length || 0 : 0)) / 9);
         if (gl.getError() !== gl.NO_ERROR) throw new Error("Location WebGL draw failed.");
       } finally {
         gl.useProgram(old.program); vaoApi.bind(old.vao); gl.bindBuffer(gl.ARRAY_BUFFER, old.buffer);

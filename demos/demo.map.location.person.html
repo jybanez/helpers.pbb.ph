@@ -8,7 +8,7 @@ main{max-width:1000px;margin:auto;} #map{height:480px;width:100%;background:#dfe
 .ui-map-marker[hidden]{display:none;}
 </style></head><body><main>
 <a href="index.html">Helper demos</a><h1>Terrain-anchored 3D location person</h1>
-<p>Original blue person on a circular base. No heading claim. Drag the map to change perspective. Terrain is generated locally; no network map assets or geolocation request.</p>
+<p>Original blue person on a circular base. Optional gold arrow shows device compass direction, not bodily facing or GPS course. Drag the map to change perspective. Terrain is generated locally; no network map assets or geolocation request.</p>
 <div id="map" aria-label="3D location demonstration map"></div>
 <div class="controls">
  <label><input type="checkbox" id="terrain" checked> Terrain</label>
@@ -17,6 +17,9 @@ main{max-width:1000px;margin:auto;} #map{height:480px;width:100%;background:#dfe
  <button class="ui-button" id="move">Update location</button>
  <button class="ui-button" id="reload">Reload style</button>
  <button class="ui-button" id="retry">Retry renderer</button>
+ <label><input type="checkbox" id="direction"> Device heading available</label>
+ <label>Heading <input id="heading" type="range" min="0" max="359" step="1" value="0"></label>
+ <button class="ui-button" id="cardinal">Next cardinal direction</button>
 </div><pre id="state" role="status">Loading local MapLibre…</pre>
 <p>Controller hides its accessible label until rendering succeeds. The application retains accuracy area, permission flow and canonical dot fallback. This demo uses a labelled dot while the renderer is unavailable.</p>
 </main><script src="../vendor/maplibre/maplibre-gl.js"></script><script type="module">
@@ -51,6 +54,10 @@ document.getElementById('perspective').addEventListener('click',()=>map.jumpTo({
 document.getElementById('move').addEventListener('click',()=>{moved=!moved;const next=moved?[center[0]+.0015,center[1]+.001]:center;person.updateLngLat(next);fallback.setLngLat(next);});
 document.getElementById('reload').addEventListener('click',()=>map.setStyle(style()));
 document.getElementById('retry').addEventListener('click',()=>person.retry());
+function heading(){person.updateHeading(document.getElementById('direction').checked?Number(document.getElementById('heading').value):null);}
+document.getElementById('direction').addEventListener('change',heading);
+document.getElementById('heading').addEventListener('input',heading);
+document.getElementById('cardinal').addEventListener('click',()=>{const control=document.getElementById('heading');control.value=(Number(control.value)+90)%360;document.getElementById('direction').checked=true;heading();});
 window.addEventListener('pagehide',()=>{person.destroy();fallbackElement.destroy();fallback.remove();map.remove();});
 // Read-only demo fixture hooks used by the rendered regression harness.
 window.locationPersonDemo={map,person,center,terrain};

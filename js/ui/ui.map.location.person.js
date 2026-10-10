@@ -1,4 +1,4 @@
-import { createPersonMesh, createPersonRenderer } from "./ui.map.location.person.renderer.js";
+import { createPersonMesh, createDirectionMesh, createPersonRenderer } from "./ui.map.location.person.renderer.js";
 
 // MapLibre GL JS 4.6 only: terrain query and render matrices are center-relative.
 export function createMapLocationPerson(options = {}) {
@@ -9,22 +9,28 @@ export function createMapLocationPerson(options = {}) {
   const id = String(settings.id).trim();
   if (!id) throw new TypeError("A nonempty layer id is required.");
   let coordinate = validateCoordinate(settings.lngLat);
+  let headingDegrees = validateHeading(settings.headingDegrees);
   let map = null, layer = null, renderer = null, destroyed = false, ownsLayer = false;
   let status = "waiting", error = null, attached = false, terrainOffsetMeters = 0, modelScale = 0;
   let offs = [], label = null;
   const mesh = createPersonMesh();
+  const directionMesh = createDirectionMesh();
   const sizePx = Math.max(18, Math.min(64, Number(settings.sizePx) || 34));
 
   function getState() {
     return { id, status, error, attached, destroyed, lngLat: coordinate ? [...coordinate] : null,
-      terrainOffsetMeters, modelScale, sizePx, hasResources: Boolean(renderer) };
+      terrainOffsetMeters, modelScale, sizePx, headingDegrees, directionAvailable: headingDegrees != null, hasResources: Boolean(renderer) };
   }
-  function notify(next, failure = null) {
-    if (status === next && error === failure) return;
+  function notify(next, failure = null, force = false) {
+    if (status === next && error === failure && !force) return;
+    const reportFailure = Boolean(failure && (status !== next || error !== failure));
     status = next; error = failure;
-    if (label) label.hidden = next !== "rendered" || !coordinate;
+    if (label) {
+      label.hidden = next !== "rendered" || !coordinate;
+      label.setAttribute("aria-label", headingDegrees == null ? String(settings.label) : `${settings.label}; device direction ${Math.round(headingDegrees * 10) / 10} degrees clockwise from geographic north`);
+    }
     try { settings.onStateChange?.(getState()); } catch (callbackError) { console.error(callbackError); }
-    if (failure) try { settings.onError?.({ error: failure, state: getState() }); } catch (callbackError) { console.error(callbackError); }
+    if (reportFailure) try { settings.onError?.({ error: failure, state: getState() }); } catch (callbackError) { console.error(callbackError); }
   }
   function fail(reason) {
     renderer?.dispose(); renderer = null;
@@ -44,7 +50,7 @@ export function createMapLocationPerson(options = {}) {
       id, type: "custom", renderingMode: "3d",
       onAdd(owner, gl) {
         if (destroyed || owner !== map || layer !== this) return;
-        try { disposeResources(); renderer = createPersonRenderer(gl, mesh); attached = true; notify("ready"); }
+        try { disposeResources(); renderer = createPersonRenderer(gl, mesh, directionMesh); attached = true; notify("ready"); }
         catch (reason) { fail(reason); }
       },
       render(gl, matrix) {
@@ -59,10 +65,10 @@ export function createMapLocationPerson(options = {}) {
           anchor.x += Math.round(center.x - anchor.x);
           const canvas = map.getCanvas();
           const width = canvas.clientWidth, height = canvas.clientHeight;
-          const placement = getPersonPlacement(matrix, anchor, width, height, sizePx);
+          const placement = getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees);
           if (!placement) return; // behind camera or zero-sized map
           modelScale = placement.scale;
-          renderer.draw(placement.matrix);
+          renderer.draw(placement.matrix, headingDegrees != null);
           notify("rendered");
         } catch (reason) { fail(reason); }
       },
@@ -101,7 +107,7 @@ export function createMapLocationPerson(options = {}) {
       if (owner !== map) return;
       disposeResources();
       // MapLibre may have recreated the custom-layer resources before this event.
-      try { renderer = createPersonRenderer(owner.getCanvas().getContext("webgl2") || owner.getCanvas().getContext("webgl"), mesh); notify("ready"); repaint(); }
+      try { renderer = createPersonRenderer(owner.getCanvas().getContext("webgl2") || owner.getCanvas().getContext("webgl"), mesh, directionMesh); notify("ready"); repaint(); }
       catch (reason) { fail(reason); }
     });
     on("remove", () => { if (owner === map) { detach(false); map = null; notify("waiting"); } });
@@ -123,11 +129,17 @@ export function createMapLocationPerson(options = {}) {
     if (ownsLayer && map.getLayer(id)) map.removeLayer(id);
     attached = false; disposeResources(); notify("waiting"); attach(); repaint(); return true;
   }
+  function updateHeading(next) {
+    if (destroyed) return false;
+    const value = validateHeading(next);
+    if (value === headingDegrees) return true;
+    headingDegrees = value; notify(status, error, true); repaint(); return true;
+  }
   function destroy() {
     if (destroyed) return;
     destroyed = true; detach(); map = null; notify("destroyed");
   }
-  const api = { setMap, updateLngLat, retry, destroy, getState };
+  const api = { setMap, updateLngLat, updateHeading, retry, destroy, getState };
   setMap(settings.map || null);
   return api;
 }
@@ -141,7 +153,13 @@ function validateCoordinate(value) {
   return [lng, lat];
 }
 
-export function getPersonPlacement(matrix, anchor, width, height, sizePx) {
+function validateHeading(value) {
+  if (value == null) return null;
+  if (typeof value !== "number" || !Number.isFinite(value)) throw new TypeError("Device heading must be finite degrees clockwise from geographic north, or null when unavailable.");
+  return ((value % 360) + 360) % 360;
+}
+
+export function getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees = null) {
   if (!matrix || matrix.length !== 16 || !Array.from(matrix).every(Number.isFinite)) throw new Error("Invalid MapLibre render matrix.");
   if (!(width > 0 && height > 0)) return null;
   const clip = (x, y, z) => [0, 1, 2, 3].map((row) => matrix[row] * x + matrix[row + 4] * y + matrix[row + 8] * z + matrix[row + 12]);
@@ -154,9 +172,12 @@ export function getPersonPlacement(matrix, anchor, width, height, sizePx) {
   if (!(density > 0 && Number.isFinite(density))) throw new Error("Invalid projected scale.");
   const scale = sizePx / density; // scale adaptation only; perspective remains map-owned
   const combined = new Float32Array(16);
+  const angle = (headingDegrees ?? 0) * Math.PI / 180;
+  const cosine = Math.cos(angle), sine = Math.sin(angle);
   for (let row = 0; row < 4; row++) {
-    combined[row] = matrix[row] * scale;
-    combined[row + 4] = -matrix[row + 4] * scale;
+    // Rotate in geographic east/north space first, then invert Mercator Y.
+    combined[row] = (cosine * matrix[row] + sine * matrix[row + 4]) * scale;
+    combined[row + 4] = (sine * matrix[row] - cosine * matrix[row + 4]) * scale;
     combined[row + 8] = matrix[row + 8] * scale;
     combined[row + 12] = origin[row];
   }
