@@ -114,6 +114,7 @@
         { factory: "<code>createMapControls(container, options)</code>", arguments: "<code>container</code>, map-control <code>options</code>", returns: "Map controls instance with update, syncFromMap, getState, and destroy methods" }
       ],
       options: [
+        { option: "<code>actions</code>", default: "<code>[]</code>", description: "Named custom actions with id, label, canonical icon, onActivate, visible, disabled, expanded and ariaControls. Include IDs in controls to order them." },
         { option: "<code>map</code>", default: "<code>null</code>", description: "Optional MapLibre map instance. When supplied, zoom, bearing, pitch, and layer visibility can call MapLibre directly." },
         { option: "<code>controls</code>", default: "<code>[\"zoom\", \"compass\", \"pitch\", \"locate\", \"fit\", \"layers\"]</code>", description: "Controls to render. Allowed values: zoom, compass, pitch, locate, fit, layers." },
         { option: "<code>layers</code>", default: "<code>[]</code>", description: "Layer toggle definitions: <code>{ id, label, checked }</code>. The id should match a MapLibre layer id when direct visibility updates are desired." },
@@ -130,6 +131,7 @@
         { event: "<code>onPitchChange</code>", arguments: "<code>({ pitch, map })</code>", returns: "Optional override for pitch changes." }
       ],
       methods: [
+        { method: "<code>setActionState(id, state)</code>", arguments: "visible, disabled, expanded", returns: "boolean; updates mounted button in place" },
         { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
         { method: "<code>syncFromMap()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>getState()</code>", arguments: "none", returns: "Control state snapshot" },
@@ -224,6 +226,14 @@ layers: ${JSON.stringify(map.layerVisibility, null, 2)}`;
     const controls = createMapControls(document.getElementById("mapControlsHost"), {
       map,
       orientation: "vertical",
+      controls: ["search", "zoom", "compass", "pitch", "locate", "fit", "layers"],
+      actions: [{ id: "search", label: "Search map", icon: "actions.search", expanded: false,
+        onActivate() {
+          const expanded = !controls.getState().actions[0].expanded;
+          controls.setActionState("search", { expanded });
+          writeReadout(`Search action: expanded=${expanded} (application owns search UI)`);
+        },
+      }],
       layers: [
         { id: "incidents", label: "Incidents", checked: true },
         { id: "teams", label: "Teams", checked: true },

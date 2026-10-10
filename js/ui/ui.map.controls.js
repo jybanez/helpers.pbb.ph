@@ -1,10 +1,12 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
+import { createIcon, getIconDefinition } from "./ui.icons.js";
 
 const DEFAULT_OPTIONS = {
   map: null,
   controls: ["zoom", "compass", "pitch", "locate", "fit", "layers"],
   layers: [],
+  actions: [],
   pitchPresets: [
     { value: 0, label: "2D" },
     { value: 45, label: "45" },
@@ -39,9 +41,11 @@ export function createMapControls(container, options = {}) {
   let layerButtons = new Map();
   let layerOpen = false;
   let mapOffs = [];
+  let destroyed = false;
+  const actionButtons = new Map();
 
   function render() {
-    if (!container || container.nodeType !== 1) {
+    if (destroyed || !container || container.nodeType !== 1) {
       return;
     }
     events.clear();
@@ -49,6 +53,8 @@ export function createMapControls(container, options = {}) {
     clearNode(container);
     pitchButtons = new Map();
     layerButtons = new Map();
+    actionButtons.clear();
+    bearingNeedle = null;
 
     root = createElement("section", {
       className: buildRootClassName(currentOptions),
@@ -71,6 +77,9 @@ export function createMapControls(container, options = {}) {
         root.appendChild(renderAction("fit", "□", currentOptions.fitTitle, handleFit));
       } else if (control === "layers") {
         root.appendChild(renderLayers());
+      } else {
+        const action = currentOptions.actions.find((item) => item.id === control);
+        if (action) root.appendChild(renderCustomAction(action));
       }
     });
 
@@ -84,6 +93,47 @@ export function createMapControls(container, options = {}) {
     group.appendChild(renderAction("zoom-in", "+", currentOptions.zoomInTitle, handleZoomIn));
     group.appendChild(renderAction("zoom-out", "-", currentOptions.zoomOutTitle, handleZoomOut));
     return group;
+  }
+
+  function renderCustomAction(action) {
+    const group = createElement("div", { className: "ui-map-controls__group" });
+    const button = renderAction(action.id, "", action.label, (event) => {
+      const latest = currentOptions.actions.find((item) => item.id === action.id);
+      if (destroyed || !latest || !latest.visible || latest.disabled) return;
+      latest.onActivate?.({ id: latest.id, map: currentOptions.map, event, button });
+    });
+    if (action.icon) button.appendChild(createIcon(action.icon, { decorative: true, size: 18 }));
+    else button.textContent = action.label;
+    actionButtons.set(action.id, { button, group });
+    group.appendChild(button);
+    syncAction(action);
+    return group;
+  }
+
+  function syncAction(action) {
+    const refs = actionButtons.get(action.id);
+    if (!refs) return;
+    refs.group.hidden = !action.visible;
+    refs.button.disabled = action.disabled;
+    refs.button.title = action.title || action.label;
+    refs.button.setAttribute("aria-label", action.label);
+    if (action.expanded == null) refs.button.removeAttribute("aria-expanded");
+    else refs.button.setAttribute("aria-expanded", String(action.expanded));
+    if (action.ariaControls) refs.button.setAttribute("aria-controls", action.ariaControls);
+    else refs.button.removeAttribute("aria-controls");
+  }
+
+  function setActionState(id, patch = {}) {
+    if (destroyed) return false;
+    const action = currentOptions.actions.find((item) => item.id === String(id));
+    if (!action) return false;
+    for (const key of ["visible", "disabled", "expanded"]) {
+      if (Object.prototype.hasOwnProperty.call(patch, key)) {
+        action[key] = key === "expanded" && patch[key] == null ? null : Boolean(patch[key]);
+      }
+    }
+    syncAction(action);
+    return true;
   }
 
   function renderCompass() {
@@ -259,6 +309,7 @@ export function createMapControls(container, options = {}) {
   }
 
   function update(nextOptions = {}) {
+    if (destroyed) return;
     currentOptions = normalizeOptions({ ...currentOptions, ...(nextOptions || {}) });
     render();
   }
@@ -266,6 +317,7 @@ export function createMapControls(container, options = {}) {
   function getState() {
     return {
       controls: [...currentOptions.controls],
+      actions: currentOptions.actions.map((action) => ({ ...action })),
       layers: currentOptions.layers.map((layer) => ({ ...layer })),
       bearing: Number(currentOptions.map?.getBearing?.() || 0),
       pitch: Number(currentOptions.map?.getPitch?.() || 0),
@@ -274,6 +326,8 @@ export function createMapControls(container, options = {}) {
   }
 
   function destroy() {
+    if (destroyed) return;
+    destroyed = true;
     events.clear();
     clearMapEvents();
     clearNode(container);
@@ -281,6 +335,7 @@ export function createMapControls(container, options = {}) {
     bearingNeedle = null;
     pitchButtons = new Map();
     layerButtons = new Map();
+    actionButtons.clear();
   }
 
   const api = {
@@ -288,6 +343,7 @@ export function createMapControls(container, options = {}) {
     getState,
     syncFromMap,
     update,
+    setActionState,
   };
 
   render();
@@ -296,9 +352,11 @@ export function createMapControls(container, options = {}) {
 
 function normalizeOptions(input) {
   const next = { ...DEFAULT_OPTIONS, ...(input || {}) };
+  const actions = normalizeActions(next.actions);
   return {
     ...next,
-    controls: normalizeControls(next.controls),
+    actions,
+    controls: normalizeControls(next.controls, actions),
     layers: normalizeLayers(next.layers),
     pitchPresets: normalizePitchPresets(next.pitchPresets),
     placement: normalizePlacement(next.placement),
@@ -309,10 +367,32 @@ function normalizeOptions(input) {
   };
 }
 
-function normalizeControls(controls) {
+function normalizeControls(controls, actions = []) {
   const allowed = ["zoom", "compass", "pitch", "locate", "fit", "layers"];
   const source = Array.isArray(controls) ? controls : DEFAULT_OPTIONS.controls;
+  allowed.push(...actions.map((action) => action.id));
   return source.map((item) => String(item)).filter((item, index, all) => allowed.includes(item) && all.indexOf(item) === index);
+}
+
+function normalizeActions(actions) {
+  const reserved = new Set(["zoom", "zoom-in", "zoom-out", "compass", "pitch", "locate", "fit", "layers"]);
+  const seen = new Set();
+  return (Array.isArray(actions) ? actions : []).map((action) => {
+    const id = String(action?.id || "").trim();
+    const label = String(action?.label || "").trim();
+    if (!id || !label || reserved.has(id) || id.startsWith("pitch-") || seen.has(id)) {
+      throw new TypeError("Map custom actions require unique non-reserved ids and accessible labels.");
+    }
+    seen.add(id);
+    if (action.icon && !getIconDefinition(String(action.icon))) {
+      throw new TypeError(`Unknown map action icon: ${action.icon}`);
+    }
+    return { id, label, title: String(action.title || label), icon: String(action.icon || ""),
+      visible: action.visible !== false, disabled: Boolean(action.disabled),
+      expanded: action.expanded == null ? null : Boolean(action.expanded),
+      ariaControls: String(action.ariaControls || ""),
+      onActivate: typeof action.onActivate === "function" ? action.onActivate : null };
+  });
 }
 
 function normalizeLayers(layers) {

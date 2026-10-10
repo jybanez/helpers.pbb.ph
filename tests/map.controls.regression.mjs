@@ -32,24 +32,26 @@ let server;
 
 try {
   server = await startStaticServer({ rootDir: repoRoot, port: 0 });
-  const htmlUrl = `${server.origin}/tests/map.controls.regression.html`;
-  const { stdout } = await execFileAsync(
-    browserPath,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--virtual-time-budget=12000",
-      "--dump-dom",
-      htmlUrl,
-    ],
-    { timeout: 240000, maxBuffer: 1024 * 1024 * 4 },
-  );
+  for (const suffix of ["", "?bundle"]) {
+    const htmlUrl = `${server.origin}/tests/map.controls.regression.html${suffix}`;
+    const { stdout } = await execFileAsync(
+      browserPath,
+      [
+        "--headless=new",
+        "--disable-gpu",
+        "--virtual-time-budget=12000",
+        "--dump-dom",
+        htmlUrl,
+      ],
+      { timeout: 240000, maxBuffer: 1024 * 1024 * 4 },
+    );
 
-  if (!stdout.includes('data-status="pass"') || !stdout.includes("PASS")) {
-    console.error(stdout);
-    throw new Error("Map controls regression assertions did not pass.");
+    if (!stdout.includes('data-status="pass"') || !stdout.includes("PASS")) {
+      console.error(stdout);
+      throw new Error("Map controls regression assertions did not pass.");
+    }
+    console.log(`Map controls regression test passed (${suffix ? "bundle" : "source"}).`);
   }
-  console.log("Map controls regression test passed.");
 } catch (error) {
   console.error("Map controls regression test failed:", error.message);
   process.exit(1);
