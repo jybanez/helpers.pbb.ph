@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terrain-anchored 3D location person</title>
+<link rel="stylesheet" href="../vendor/maplibre/maplibre-gl.css"><link rel="stylesheet" href="../css/demo/demo.shell.css">
+<style>
+body {margin:0;padding:20px;background:var(--ui-bg,#111827);color:var(--ui-text,#d7e0f4);font-family:Segoe UI,sans-serif;}
+main{max-width:1000px;margin:auto;} #map{height:480px;width:100%;background:#dfe9ea;}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0;} pre{white-space:pre-wrap;}
+.ui-map-marker[hidden]{display:none;}
+</style></head><body><main>
+<a href="index.html">Helper demos</a><h1>Terrain-anchored 3D location person</h1>
+<p>Original blue person on a circular base. No heading claim. Drag the map to change perspective. Terrain is generated locally; no network map assets or geolocation request.</p>
+<div id="map" aria-label="3D location demonstration map"></div>
+<div class="controls">
+ <label><input type="checkbox" id="terrain" checked> Terrain</label>
+ <label>Exaggeration <input id="exaggeration" type="range" min="0" max="3" step="0.5" value="1.5"></label>
+ <button class="ui-button" id="perspective">Rotate / tilt</button>
+ <button class="ui-button" id="move">Update location</button>
+ <button class="ui-button" id="reload">Reload style</button>
+ <button class="ui-button" id="retry">Retry renderer</button>
+</div><pre id="state" role="status">Loading local MapLibre…</pre>
+<p>Controller hides its accessible label until rendering succeeds. The application retains accuracy area, permission flow and canonical dot fallback. This demo uses a labelled dot while the renderer is unavailable.</p>
+</main><script src="../vendor/maplibre/maplibre-gl.js"></script><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+if(location.search.includes('bundle'))uiLoader.setPreferBundles(true);
+const createPerson=await uiLoader.get('ui.map.location.person');
+const {createMapMarker}=await uiLoader.get('ui.map.markers');
+const center=[123.9,10.3];
+const dem=document.createElement('canvas');dem.width=dem.height=256;
+const ctx=dem.getContext('2d'), image=ctx.createImageData(256,256);
+for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+ const height=120+80*Math.sin(x/255*Math.PI*2)*Math.sin(y/255*Math.PI*2);
+ const encoded=Math.round((height+10000)*10), offset=(y*256+x)*4;
+ image.data[offset]=(encoded>>16)&255;image.data[offset+1]=(encoded>>8)&255;image.data[offset+2]=encoded&255;image.data[offset+3]=255;
+}ctx.putImageData(image,0,0);
+const tile=dem.toDataURL();
+const style=()=>({version:8,sources:{dem:{type:'raster-dem',tiles:[tile],tileSize:256,maxzoom:14}},layers:[{id:'background',type:'background',paint:{'background-color':'#dfe9ea'}},{id:'hillshade',type:'hillshade',source:'dem',paint:{'hillshade-shadow-color':'#607886','hillshade-highlight-color':'#f5f8ed'}}]});
+const map=new maplibregl.Map({container:'map',style:style(),center,zoom:15,pitch:55,bearing:20,antialias:true,preserveDrawingBuffer:true});
+const fallbackElement=createMapMarker({shape:'dot',tone:'info',label:'Current location (dot fallback)'});
+const fallback=new maplibregl.Marker({element:fallbackElement}).setLngLat(center).addTo(map);
+let person, moved=false;
+function report(state){
+ fallbackElement.hidden=state.status==='rendered';
+ document.getElementById('state').textContent=JSON.stringify(state,null,2);
+}
+person=createPerson({map,maplibre:maplibregl,lngLat:center,onStateChange:report});report(person.getState());
+function terrain(){map.setTerrain(document.getElementById('terrain').checked?{source:'dem',exaggeration:Number(document.getElementById('exaggeration').value)}:null);}
+map.on('style.load',terrain);
+document.getElementById('terrain').addEventListener('change',terrain);
+document.getElementById('exaggeration').addEventListener('input',terrain);
+document.getElementById('perspective').addEventListener('click',()=>map.jumpTo({bearing:map.getBearing()+70,pitch:map.getPitch()>30?0:55}));
+document.getElementById('move').addEventListener('click',()=>{moved=!moved;const next=moved?[center[0]+.0015,center[1]+.001]:center;person.updateLngLat(next);fallback.setLngLat(next);});
+document.getElementById('reload').addEventListener('click',()=>map.setStyle(style()));
+document.getElementById('retry').addEventListener('click',()=>person.retry());
+window.addEventListener('pagehide',()=>{person.destroy();fallbackElement.destroy();fallback.remove();map.remove();});
+// Read-only demo fixture hooks used by the rendered regression harness.
+window.locationPersonDemo={map,person,center,terrain};
+</script></body></html>

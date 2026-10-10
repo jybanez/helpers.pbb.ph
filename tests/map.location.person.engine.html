@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>MapLibre 4.6 engine rendering</title>
+<body data-status="pending"><iframe title="Real engine fixture" src="../demos/demo.map.location.person.html" style="border:0;width:850px;height:900px"></iframe><pre id="results">pending</pre>
+<script type="module">
+const frame=document.querySelector('iframe');
+if(location.search.includes('bundle'))frame.src='../demos/demo.map.location.person.html?bundle';
+const wait=async(check)=>{for(let i=0;i<200;i++){if(check())return;await new Promise(r=>setTimeout(r,50));}throw Error('Engine fixture timeout');};
+const assert=(ok,message)=>{if(!ok)throw Error(message);};
+try{
+ await wait(()=>frame.contentWindow.locationPersonDemo?.person.getState().status==='rendered');
+ const {map,person,center}=frame.contentWindow.locationPersonDemo;
+ await wait(()=>map.loaded());
+ const draw=()=>new Promise(resolve=>{map.once('render',resolve);map.triggerRepaint();});
+ const gl=map.getCanvas().getContext('webgl2')||map.getCanvas().getContext('webgl');
+ await draw();
+ const pixels=new Uint8Array(gl.drawingBufferWidth*gl.drawingBufferHeight*4);
+ gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+ let blue=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i+2]>pixels[i]+30&&pixels[i+2]>pixels[i+1]+15)blue++;
+ assert(blue>20,'Real MapLibre person pixels must render');
+ const initialScale=person.getState().modelScale;
+ map.jumpTo({bearing:105,pitch:35,zoom:17});await draw();
+ assert(person.getState().status==='rendered'&&person.getState().modelScale<initialScale,'perspective/zoom remains rendered and bounded');
+ map.setTerrain(null);await draw();assert(person.getState().terrainOffsetMeters===0,'engine terrain off');
+ map.setTerrain({source:'dem',exaggeration:2});await draw();
+ person.updateLngLat([center[0]+.0015,center[1]+.001]);await draw();
+ await wait(()=>Math.abs(person.getState().terrainOffsetMeters)>1);await draw();
+ assert(Math.abs(person.getState().terrainOffsetMeters)>1,'real terrain yields a nonzero off-center elevation');
+ assert(Math.abs(person.getState().terrainOffsetMeters-map.queryTerrainElevation(person.getState().lngLat))<1e-8,'4.6 terrain offset/exaggeration agree');
+ const reloaded=new Promise(resolve=>map.once('style.load',resolve));
+ frame.contentDocument.getElementById('reload').click();await reloaded;
+ await draw();await wait(()=>person.getState().status==='rendered');
+ assert(person.getState().hasResources,'real style reload');
+ frame.style.width='375px';map.resize();await draw();assert(person.getState().status==='rendered','narrow width rendering');
+ // Settle the terrain-free engine before measuring idle repaint behavior.
+ map.setTerrain(null);await draw();
+ await new Promise(resolve=>map.once('idle',resolve));
+ let count=0;const observed=()=>count++;map.on('render',observed);
+ await new Promise(r=>setTimeout(r,500));map.off('render',observed);assert(count<10,'no idle repaint loop');
+ person.destroy();assert(!person.getState().hasResources&&!map.getLayer(person.getState().id),'real-engine disposal');
+ document.body.dataset.status='pass';document.getElementById('results').textContent=`PASS\nReal MapLibre 4.6 pixels:${blue}; perspective/zoom, local terrain on/off/exaggeration, coordinate update, style reload, mobile-width, idle and dispose passed.`;
+}catch(error){document.body.dataset.status='failed';document.getElementById('results').textContent=error.stack+'\n'+frame.contentDocument?.getElementById('state')?.textContent+'\n'+JSON.stringify(frame.contentWindow.locationPersonDemo?.person.getState());}
+</script></body></html>
