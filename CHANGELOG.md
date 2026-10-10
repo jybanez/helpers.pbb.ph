@@ -1,5 +1,7 @@
 # Changelog
 
+- Added optional geographic device heading and original gold base arrow to `ui.map.location.person`, with `updateHeading`, explicit null/neutral state, accessibility and world alignment. Cardinal/wrap/terrain rendered tests and demo controls; person/main UI cache `0.21.281`.
+
 - Added complete menu `focusOnOpen:false` policy and deliberate `focusFirst()` entry, preserving live textbox keys/focus while retaining ordinary menu defaults. Closed-item updates refresh on reopen; source/bundle tests and interactive demo. Menu/main UI cache `0.21.280`.
 
 - Fixed MapLibre-hosted canonical DOM marker root placement in both stylesheet orders, preventing preceding markers from shifting destination anchors. Standalone preview flow and drop transforms preserved; CSS/main UI cache `0.21.279`.

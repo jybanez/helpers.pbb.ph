@@ -2,7 +2,7 @@
 
 `ui.map.location.person` provides a complete custom 3D layer/controller. Its
 original procedural mesh has a neutral rounded head, blue body and circular
-ground base. It conveys location without claiming device heading. Geometry,
+ground base. It conveys location and optionally supplied device compass direction. Geometry,
 shaders and renderer are bundled locally under this repository's ISC license;
 there are no downloaded models, textures or renderer dependencies. The demo's
 existing MapLibre distribution is BSD-3-Clause (see `licenses/`).
@@ -12,10 +12,12 @@ const createPerson = await uiLoader.get('ui.map.location.person');
 const person = createPerson({
   map, maplibre: maplibregl, lngLat: [123.9, 10.3],
   id: 'current-location-person', label: 'Your current location', sizePx: 34,
+  headingDegrees: null, // unavailable: neutral appearance, no directional cue
   onStateChange(state) { dotElement.hidden = state.status === 'rendered'; },
   onError({ error, state }) { console.warn(error); }
 });
 person.updateLngLat(nextLocation); // null hides the person
+person.updateHeading(compassHeadingOrNull); // clockwise from geographic north
 person.setMap(replacementMap);    // null detaches
 person.retry();                   // explicit retry after renderer failure
 person.destroy();                 // terminal, idempotent
@@ -56,6 +58,41 @@ updates and attachment request one repaint, and MapLibre owns subsequent frames.
 The application owns GPS permission, location validity/freshness, accuracy area,
 canonical dot fallback and user-facing recovery. Do not hide the dot before
 `rendered`; show it on other states. This controller does not request location.
+
+## Optional device direction (cache 0.21.281)
+
+`headingDegrees` and `updateHeading(number|null)` use finite numeric degrees
+clockwise from **geographic north**: 0 north, 90 east, 180 south, 270 west.
+Numbers normalize to [0,360); -1 and 359 are equivalent, and 360 equals 0.
+Invalid values throw without replacing a previous valid value. `null` or omitted
+heading is explicitly unavailable: the gold arrow is hidden and the original
+unrotated neutral model is used. The renderer never invents a heading from map
+bearing, movement, or GPS course. The app must clear stale, denied or unavailable
+sensor data with `updateHeading(null)` and perform sensor permission, calibration,
+screen-orientation compensation and true-north conversion as appropriate.
+
+The small original gold arrow sits just above the circular base and points along
+local +Y. Both model and arrow rotate together in east/north world coordinates
+before Mercator Y inversion, so map bearing/pitch and terrain change perspective
+without changing geographic heading. The person's cosmetic forward axis follows
+device direction; this **does not describe the user's bodily facing direction**.
+The cue means device compass orientation only. No forward cone is drawn.
+
+`getState()` includes normalized `headingDegrees` and `directionAvailable`.
+Heading updates notify state without resetting rendering success or allocating
+new GL resources, then request one repaint. Equivalent normalized updates do not
+request another repaint; rendering itself never requests repaint. No animated
+interpolation crosses the 359/0 boundary. On rendered success the accessible
+location label also names device direction in degrees clockwise from geographic
+north; null restores the original location-only label. Failure/context loss still
+hides that label and preserves canonical dot fallback policy. Heading survives
+style reattachment, map replacement and explicit retry, and updates are inert
+after terminal destruction.
+
+The local DEM demo has availability, 0–359 heading and cardinal controls. GL and
+real-engine regressions check cardinal/world-ray alignment, 359/0 wraparound,
+varied bearing/pitch/terrain, neutral state, accessible descriptions and existing
+failure/resource lifecycle. Physical compass/device accuracy remains app-owned.
 
 Demo: `demos/demo.map.location.person.html` (add `?bundle` for bundled factory).
 It uses a generated local DEM and exercises terrain, exaggeration, camera,
