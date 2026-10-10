@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.235";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.222";
-const UI_BUNDLE_REV = "0.21.279";
+const UI_BUNDLE_REV = "0.21.280";
 const UI_GAME_BUNDLE_REV = "0.21.240";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -698,7 +698,7 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createScheduler",
   },
   "ui.menu": {
-    js: "./ui.menu.js?v=0.21.205",
+    js: "./ui.menu.js?v=0.21.280",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, `../../css/ui/ui.nav.css?v=${UI_NAV_REV}`],
     deps: [],
     export: "createMenu",
