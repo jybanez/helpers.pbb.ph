@@ -120,7 +120,7 @@
         "Do not use it to place markers, create map layers, or own map engine state.",
         "Do not use it for non-map badges or chips; use app-local layout or stat cards instead."
       ],
-      description: "Map Markers provides DOM elements and marker class names only. Host apps pass the returned elements to MapLibre, Leaflet, or another map implementation and keep ownership of coordinates, clustering, popups, and layer lifecycle.",
+      description: "Map Markers provides DOM elements and marker class names only. Host apps pass the returned elements to MapLibre, Leaflet, or another map implementation and keep ownership of coordinates, clustering, popups, and layer lifecycle. Canonical CSS keeps MapLibre marker roots absolutely positioned so preceding markers cannot shift their anchors; standalone previews remain in normal flow.",
       defaultSampleCode: `const el = createMapMarker({\n  type: "incident",\n  tone: "warning",\n  icon: "hazard.flood",\n  label: "Flood incident",\n  count: 3,\n});\n\nnew maplibregl.Marker({ element: el })\n  .setLngLat([lng, lat])\n  .addTo(map);`,
       constructor: [
         { factory: "<code>createMapMarker(options)</code>", arguments: "marker options", returns: "<code>HTMLElement</code>" },

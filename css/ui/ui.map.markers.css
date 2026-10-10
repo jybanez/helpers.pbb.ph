@@ -14,6 +14,13 @@
   transform: translateZ(0);
 }
 
+/* MapLibre owns root placement; standalone previews remain in normal flow. */
+.maplibregl-marker.ui-map-marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .ui-map-marker--sm {
   --ui-map-marker-size: 26px;
   --ui-map-marker-count-size: 15px;
