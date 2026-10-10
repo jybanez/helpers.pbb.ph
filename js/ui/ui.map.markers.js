@@ -36,9 +36,10 @@ const DEFAULT_CLUSTER = {
 export function createMapMarker(options = {}) {
   const marker = normalizeMarker(options);
   const root = createMarkerRoot(marker, false);
-  root.appendChild(createShape(marker));
+  const visual = createMarkerVisual(root);
+  visual.appendChild(createShape(marker));
   if (marker.count !== "") {
-    root.appendChild(createCount(marker.count));
+    visual.appendChild(createCount(marker.count));
   }
   return root;
 }
@@ -59,9 +60,74 @@ export function createMapClusterMarker(options = {}) {
     color: cluster.color,
   };
   const root = createMarkerRoot(marker, true);
-  root.appendChild(createShape(marker));
-  root.appendChild(createCount(cluster.count));
+  const visual = createMarkerVisual(root);
+  visual.appendChild(createShape(marker));
+  visual.appendChild(createCount(cluster.count));
   return root;
+}
+
+function createMarkerVisual(root) {
+  const visual = createElement("span", { className: "ui-map-marker-visual", attrs: { "aria-hidden": "true" } });
+  root.appendChild(visual);
+  let active = null;
+  let destroyed = false;
+
+  function settle(run, status) {
+    if (run.settled) return;
+    run.settled = true;
+    if (active === run) active = null;
+    // Remove the effect rather than committing transforms to inline style.
+    run.animation.cancel();
+    run.resolve({ status });
+  }
+
+  function cancelDrop() {
+    if (!active) return false;
+    settle(active, "cancelled");
+    return true;
+  }
+
+  root.animateDrop = (options = {}) => {
+    if (destroyed) return Promise.resolve({ status: "destroyed" });
+    const duration = boundedNumber(options.duration, 650, 100, 3000);
+    const distance = boundedNumber(options.distance, 80, 0, 500);
+    const bounce = boundedNumber(options.bounce, 8, 0, 40);
+    cancelDrop();
+    const reduced = root.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if ((reduced && options.essential !== true) || typeof visual.animate !== "function") {
+      return Promise.resolve({ status: "skipped" });
+    }
+    let resolve;
+    const finished = new Promise((done) => { resolve = done; });
+    const animation = visual.animate([
+      { transform: `translateY(${-distance}px)`, offset: 0, easing: "cubic-bezier(.45,0,.8,.6)" },
+      { transform: "translateY(0px)", offset: .6, easing: "ease-out" },
+      { transform: `translateY(${-bounce}px)`, offset: .76, easing: "ease-in" },
+      { transform: "translateY(0px)", offset: .9, easing: "ease-out" },
+      { transform: `translateY(${-bounce * .25}px)`, offset: .95, easing: "ease-in" },
+      { transform: "translateY(0px)", offset: 1 },
+    ], { duration, fill: "both" });
+    const run = { animation, resolve, settled: false };
+    active = run;
+    animation.finished.then(() => {
+      if (active === run) settle(run, "completed");
+    }, () => {
+      if (active === run) settle(run, "cancelled");
+    });
+    return finished;
+  };
+  root.cancelDrop = cancelDrop;
+  root.destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    if (active) settle(active, "destroyed");
+  };
+  return visual;
+}
+
+function boundedNumber(value, fallback, min, max) {
+  const number = value == null ? fallback : Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
 }
 
 export function getMapMarkerClass(options = {}) {

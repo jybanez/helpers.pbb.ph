@@ -140,6 +140,9 @@
       propertiesText: "Markers expose data attributes for <code>id</code>, <code>type</code>, <code>tone</code>, <code>shape</code>, <code>size</code>, and state flags.",
       eventsText: "No events are emitted. Host maps own marker click, hover, popup, and lifecycle wiring.",
       methods: [
+        { method: "<code>element.animateDrop(options)</code>", arguments: "duration, distance, bounce, essential", returns: "Promise of {status}; on-demand inner visual animation" },
+        { method: "<code>element.cancelDrop()</code>", arguments: "none", returns: "boolean; restores resting visual" },
+        { method: "<code>element.destroy()</code>", arguments: "none", returns: "void; terminal animation disposal, element removal remains app-owned" },
         { method: "<code>createMapMarker(options)</code>", arguments: "marker options", returns: "<code>HTMLElement</code>" },
         { method: "<code>createMapClusterMarker(options)</code>", arguments: "cluster options", returns: "<code>HTMLElement</code>" },
         { method: "<code>getMapMarkerClass(options)</code>", arguments: "marker options", returns: "class string" }
@@ -169,6 +172,19 @@
     </section>
 
     <section class="panel">
+      <h2 class="ui-title">On-demand drop and restrained bounce</h2>
+      <p class="muted">Start after arrival. Replay cancels the old run; cancel restores the exact resting anchor. This demo does not simulate map flight.</p>
+      <div id="dropHost" style="display:grid;place-items:center;min-height:180px"></div>
+      <div class="toolbar">
+        <button type="button" class="ui-button" id="dropPlay">Drop / replay</button>
+        <button type="button" class="ui-button" id="dropCancel">Cancel</button>
+        <button type="button" class="ui-button" id="dropReset">Destroy and recreate</button>
+        <label><input type="checkbox" id="dropEssential"> Essential motion for this call</label>
+      </div>
+      <p id="dropStatus" role="status" aria-live="polite">Ready. Reduced motion is respected by default.</p>
+    </section>
+
+    <section class="panel">
       <h2 class="ui-title">Usage</h2>
       <pre>const el = createMapMarker({
   type: "incident",
@@ -180,7 +196,12 @@
 
 new maplibregl.Marker({ element: el })
   .setLngLat([lng, lat])
-  .addTo(map);</pre>
+  .addTo(map);
+// After the app verifies arrival/current selection:
+await el.animateDrop({ essential: true });
+// On interruption or teardown:
+el.cancelDrop();
+el.destroy();</pre>
     </section>
   </main>
 
@@ -188,6 +209,28 @@ new maplibregl.Marker({ element: el })
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const { createMapMarker, createMapClusterMarker } = await uiLoader.get("ui.map.markers");
+    const dropHost = document.getElementById("dropHost");
+    const dropStatus = document.getElementById("dropStatus");
+    let dropMarker, dropSequence = 0;
+    function resetDrop() {
+      ++dropSequence;
+      dropMarker?.destroy();
+      dropMarker = createMapMarker({ label: "Demo destination", icon: "actions.search", tone: "info", count: 1 });
+      dropHost.replaceChildren(dropMarker);
+      dropStatus.textContent = "Ready. Reduced motion is respected by default.";
+    }
+    document.getElementById("dropPlay").addEventListener("click", async () => {
+      const sequence = ++dropSequence;
+      dropStatus.textContent = "Dropping…";
+      const result = await dropMarker.animateDrop({ essential: document.getElementById("dropEssential").checked });
+      if (sequence === dropSequence) dropStatus.textContent = `Animation ${result.status}.`;
+    });
+    document.getElementById("dropCancel").addEventListener("click", () => {
+      ++dropSequence; dropMarker.cancelDrop(); dropStatus.textContent = "Cancelled; marker is at its resting anchor.";
+    });
+    document.getElementById("dropReset").addEventListener("click", resetDrop);
+    window.addEventListener("pagehide", () => { ++dropSequence; dropMarker.destroy(); });
+    resetDrop();
 
     const markers = [
       { label: "Flood", x: 27, y: 38, options: { type: "incident", tone: "warning", icon: "hazard.flood", label: "Flood incident", count: 3, pulse: true } },
