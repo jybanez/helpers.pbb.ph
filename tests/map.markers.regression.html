@@ -19,7 +19,9 @@
   <pre id="results">Running...</pre>
 
   <script type="module">
-    import { createMapMarker, createMapClusterMarker, getMapMarkerClass } from "../js/ui/ui.map.markers.js";
+    const { createMapMarker, createMapClusterMarker, getMapMarkerClass } = location.search.includes("bundle")
+      ? await import("../dist/helpers.ui.bundle.min.js").then(({ uiLoader }) => uiLoader.get("ui.map.markers"))
+      : await import("../js/ui/ui.map.markers.js");
 
     const failures = [];
     const host = document.getElementById("host");
@@ -111,6 +113,50 @@
       assert(className.includes("ui-map-marker--sm"), "getMapMarkerClass should include size class");
       assert(className.includes("is-active"), "getMapMarkerClass should include active class");
 
+      const destination = createMapMarker({ icon: "actions.search", label: "Exact destination", count: 2 });
+      host.appendChild(destination);
+      destination.style.transform = "translate(-50%, -100%) translate(123px, 45px)";
+      const visual = destination.querySelector('.ui-map-marker-visual');
+      const shape = destination.querySelector('.ui-map-marker-shape');
+      const icon = destination.querySelector('.ui-map-marker-icon');
+      const position = destination.style.transform;
+      const bounds = destination.getBoundingClientRect();
+      const rotation = getComputedStyle(shape).transform, iconRotation = getComputedStyle(icon).transform;
+      assert(visual.getAnimations().length === 0, "animation is on demand");
+      const first = destination.animateDrop({ essential: true });
+      const firstAnimation = visual.getAnimations()[0]; firstAnimation.pause(); firstAnimation.currentTime = 200;
+      assert(destination.style.transform === position, "outer positioning transform unchanged during animation");
+      assert(getComputedStyle(shape).transform === rotation && getComputedStyle(icon).transform === iconRotation, "pin and icon rotations preserved");
+      assert(destination.getAttribute('aria-label') === "Exact destination", "accessible name preserved");
+      assert(destination.getBoundingClientRect().bottom === bounds.bottom, "outer exact anchor unchanged");
+      assert(destination.cancelDrop(), "cancel active drop");
+      assert((await first).status === "cancelled" && visual.getAnimations().length === 0, "cancellation settles and clears effect");
+      const previous = destination.animateDrop({ essential: true });
+      const next = destination.animateDrop({ essential: true, duration: 400, distance: 60, bounce: 6 });
+      assert((await previous).status === "cancelled", "replay cancels previous promise");
+      const nextAnimation = visual.getAnimations()[0];
+      nextAnimation.finish();
+      assert((await next).status === "completed", "finish settles new run");
+      assert(visual.getAnimations().length === 0 && getComputedStyle(visual).transform === "none", "completion restores resting visual");
+      assert(destination.style.transform === position && destination.getBoundingClientRect().bottom === bounds.bottom, "completed anchor unchanged");
+      const queued = destination.animateDrop({ essential: true });
+      visual.getAnimations()[0].finish();
+      const replacement = destination.animateDrop({ essential: true });
+      await Promise.resolve();
+      assert((await queued).status === "cancelled" && visual.getAnimations().length === 1, "queued old completion cannot clear replay");
+      destination.cancelDrop(); await replacement;
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = () => ({ matches: true });
+      assert((await destination.animateDrop()).status === "skipped", "reduced motion defaults to skip");
+      const essential = destination.animateDrop({ essential: true });
+      assert(visual.getAnimations().length === 1, "essential per-call policy overrides reduced motion");
+      destination.cancelDrop(); await essential; window.matchMedia = originalMatchMedia;
+      const pending = destination.animateDrop({ essential: true }); destination.destroy();
+      assert((await pending).status === "destroyed", "destroy cancels pending run without stale completion");
+      assert((await destination.animateDrop()).status === "destroyed" && visual.getAnimations().length === 0, "destroy terminal");
+      const unsupported = createMapMarker(); unsupported.querySelector('.ui-map-marker-visual').animate = undefined;
+      assert((await unsupported.animateDrop({essential:true})).status === "skipped", "unsupported animation safely settles");
+      unsupported.destroy();
       finish();
     } catch (error) {
       failures.push(error?.message || String(error));

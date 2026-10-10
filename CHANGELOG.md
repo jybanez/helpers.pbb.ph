@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added on-demand cancellable marker drop/bounce using an inner visual wrapper, preserving map positioning/anchor and shape/icon rotation. Marker elements expose `animateDrop`, `cancelDrop` and terminal `destroy`, with per-call essential-motion policy. Marker/main UI cache revision `0.21.277`.
+
 - Added ordered custom actions to `ui.map.controls`, with canonical icons, accessible labels/tooltips, callbacks, visibility/disabled/expanded state and focus-preserving `setActionState`. Existing controls and map gestures remain unchanged. Map controls/main UI bundle cache revision `0.21.276`; see `docs/map-controls-custom-actions.md`.
 
 - Added default `pinchZoom` for media viewer photos/inline videos, midpoint anchoring with existing zoom limits, scoped touch handling and gesture cleanup. Native video controls stay uncovered. UI/media revision `0.21.275`.

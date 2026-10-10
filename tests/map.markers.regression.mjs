@@ -32,7 +32,8 @@ let server;
 
 try {
   server = await startStaticServer({ rootDir: repoRoot, port: 0 });
-  const htmlUrl = `${server.origin}/tests/map.markers.regression.html`;
+  for (const suffix of ["", "?bundle"]) {
+  const htmlUrl = `${server.origin}/tests/map.markers.regression.html${suffix}`;
   const { stdout } = await execFileAsync(
     browserPath,
     [
@@ -50,6 +51,7 @@ try {
     throw new Error("Map markers regression assertions did not pass.");
   }
   console.log("Map markers regression test passed.");
+  }
 } catch (error) {
   console.error("Map markers regression test failed:", error.message);
   process.exit(1);
