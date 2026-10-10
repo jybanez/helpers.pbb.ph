@@ -13,7 +13,14 @@
   <pre id="results">Running...</pre>
 
   <script type="module">
-    import { createCheckbox } from "../js/ui/ui.checkbox.js";
+    const { createCheckbox } = await import(new URLSearchParams(location.search).has("bundle")
+      ? "../dist/helpers.ui.bundle.min.js" : "../js/ui/ui.checkbox.js").then(async module =>
+        location.search ? { createCheckbox: await module.uiLoader.get("ui.checkbox") } : module);
+    if (location.search) {
+      const css = document.createElement("link"); css.rel = "stylesheet";
+      css.href = "../dist/helpers.ui.bundle.min.css";
+      await new Promise((resolve, reject) => { css.onload = resolve; css.onerror = reject; document.head.append(css); });
+    }
 
     const failures = [];
     const events = [];
@@ -54,6 +61,41 @@
     assert(explicitCheckbox.getChecked() === true, "setValue should infer checked when value matches checkedValue");
     explicitCheckbox.setDisabled(true);
     assert(explicitCheckbox.refs.input.disabled === true, "setDisabled should disable native input");
+
+    const mixedHost = document.body.appendChild(document.createElement("div"));
+    const mixed = createCheckbox(mixedHost, { label: "Class visibility", indeterminate: true,
+      checkedValue: "all", uncheckedValue: "none", onChange: payload => events.push({ kind: "mixed", ...payload }) });
+    assert(mixed.getIndeterminate() && mixed.refs.input.indeterminate, "mixed option must set native state");
+    assert(mixed.refs.input.getAttribute("aria-checked") === "mixed", "mixed state must be accessible");
+    assert(mixed.getValue() === "none", "mixed presentation must preserve binary submission values");
+    assert(getComputedStyle(mixed.refs.box.querySelector(".ui-checkbox-mixed")).display !== "none", "mixed dash must be visible");
+    assert(getComputedStyle(mixed.refs.box.querySelector(".ui-checkbox-check")).display === "none", "mixed dash must replace tick");
+    mixed.refs.input.click();
+    assert(mixed.getChecked() && !mixed.getIndeterminate(), "native activation resolves unchecked mixed to checked");
+    assert(events.at(-1).indeterminate === false && events.at(-1).value === "all", "change reports resolved mixed state and binary value");
+    mixed.setIndeterminate(true, { emit: true });
+    assert(events.at(-1).indeterminate === true && mixed.getChecked(), "mixed setter preserves checked and supports emit");
+    mixed.setChecked(false);
+    assert(mixed.getIndeterminate(), "programmatic binary setter preserves independent mixed presentation");
+    mixed.setValue("all");
+    assert(mixed.getIndeterminate() && mixed.getValue() === "all", "setValue preserves mixed presentation");
+    mixed.update({ readonly: true });
+    mixed.refs.input.click();
+    assert(mixed.refs.input.checked && mixed.refs.input.indeterminate && mixed.getIndeterminate(), "readonly activation preserves both native flags");
+    mixed.update({ readonly: false, disabled: true });
+    const count = events.length;
+    mixed.refs.input.click();
+    assert(mixed.getIndeterminate() && events.length === count, "disabled activation preserves mixed without callback");
+    mixed.setDisabled(false);
+    assert(mixed.refs.input.indeterminate, "rerender retains mixed state");
+    mixed.refs.input.click();
+    assert(!mixed.getChecked() && !mixed.getIndeterminate(), "checked mixed activates to unchecked using native semantics");
+    mixed.update({ checked: false, indeterminate: true });
+    assert(mixed.getState().indeterminate && mixed.refs.input.getAttribute("aria-checked") === "mixed", "update supports aggregate mixed state");
+    mixed.setIndeterminate(false);
+    assert(mixed.refs.input.getAttribute("aria-checked") === "false", "clearing mixed exposes binary accessible state");
+    mixed.destroy();
+    assert(!mixedHost.children.length, "destroy removes mixed checkbox");
 
     finish();
 
