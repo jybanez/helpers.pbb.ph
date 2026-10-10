@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkbox scrolling placement regression</title>
+<style>body{margin:0;background:#0c1017;color:#d7e0f4;font-family:Segoe UI,sans-serif}.scroll-grid{max-height:220px;overflow:auto}.spacer{height:180px}.ui-modal-body{max-height:360px;overflow:auto}</style>
+<body><script type="module">
+const {uiLoader}=await import(location.search.includes('bundle')?'../dist/helpers.ui.bundle.min.js':'../js/ui/ui.loader.js');
+const [createCheckbox,createModal,createTreeGrid]=await Promise.all(['ui.checkbox','ui.modal','ui.tree.grid'].map(name=>uiLoader.get(name)));
+window.checkboxes=[];
+const content=document.createElement('div');
+content.innerHTML='<div class="spacer"></div><div class="scroll-grid"></div><div class="spacer"></div>';
+const host=content.querySelector('.scroll-grid');
+window.grid=createTreeGrid(host,{rows:Array.from({length:30},(_,i)=>({id:String(i),label:`Category ${i}`})),columns:[
+ {key:'label',label:'Category',tree:true,width:'120px'},
+ {key:'visibility',label:'Visibility',width:'130px',renderCell({row}){
+  const cell=document.createElement('div');
+  // Consumer event isolation is needed for embedded controls in this grid.
+  cell.addEventListener('click',e=>e.stopPropagation()); cell.addEventListener('keydown',e=>e.stopPropagation());
+  const checkbox=createCheckbox(cell,{label:`Visible ${row.id}`,indeterminate:row.id==='10'});
+  checkboxes[Number(row.id)]=checkbox;
+  return cell;
+ }}]});
+window.modal=createModal({title:'Category visibility',content,size:'lg',animationMs:0,draggable:false});
+modal.open();
+window.fixtureReady=true;
+</script></body></html>
