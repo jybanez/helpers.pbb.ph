@@ -6,6 +6,7 @@ const DEFAULT_OPTIONS = {
   name: "",
   label: "",
   checked: false,
+  indeterminate: false,
   checkedValue: undefined,
   uncheckedValue: undefined,
   disabled: false,
@@ -54,7 +55,7 @@ export function createCheckbox(container, options = {}) {
     input.checked = currentOptions.checked;
 
     const box = createElement("span", { className: "ui-checkbox-box", attrs: { "aria-hidden": "true" } });
-    box.innerHTML = '<svg viewBox="0 0 16 16" focusable="false"><path d="M3.5 8.2l2.7 2.7 6.3-6.8" /></svg>';
+    box.innerHTML = '<svg viewBox="0 0 16 16" focusable="false"><path class="ui-checkbox-check" d="M3.5 8.2l2.7 2.7 6.3-6.8" /><path class="ui-checkbox-mixed" d="M3.5 8h9" /></svg>';
 
     const textWrap = createElement("span", { className: "ui-checkbox-text" });
     if (currentOptions.label) {
@@ -80,10 +81,12 @@ export function createCheckbox(container, options = {}) {
     events.on(input, "change", (event) => {
       if (currentOptions.readonly) {
         input.checked = currentOptions.checked;
+        input.indeterminate = currentOptions.indeterminate;
         event.preventDefault();
         return;
       }
       currentOptions.checked = Boolean(input.checked);
+      currentOptions.indeterminate = false;
       syncState();
       emitChange(event);
     });
@@ -101,15 +104,20 @@ export function createCheckbox(container, options = {}) {
       return;
     }
     refs.input.checked = currentOptions.checked;
+    refs.input.indeterminate = currentOptions.indeterminate;
+    refs.input.setAttribute("aria-checked", currentOptions.indeterminate ? "mixed" : String(currentOptions.checked));
     refs.root.classList.toggle("is-checked", currentOptions.checked);
+    refs.root.classList.toggle("is-indeterminate", currentOptions.indeterminate);
     refs.root.classList.toggle("is-disabled", currentOptions.disabled);
     refs.root.classList.toggle("is-readonly", currentOptions.readonly);
     refs.root.dataset.checked = currentOptions.checked ? "true" : "false";
+    refs.root.dataset.indeterminate = String(currentOptions.indeterminate);
   }
 
   function emitChange(event) {
     currentOptions.onChange?.({
       checked: currentOptions.checked,
+      indeterminate: currentOptions.indeterminate,
       value: resolveValue(currentOptions),
       checkbox: api,
       event: event || null,
@@ -130,6 +138,16 @@ export function createCheckbox(container, options = {}) {
     },
     getValue() {
       return resolveValue(currentOptions);
+    },
+    getIndeterminate() {
+      return Boolean(currentOptions.indeterminate);
+    },
+    setIndeterminate(indeterminate, meta = {}) {
+      currentOptions.indeterminate = Boolean(indeterminate);
+      syncState();
+      if (meta.emit) {
+        emitChange(null);
+      }
     },
     setValue(value, meta = {}) {
       currentOptions.checked = valueToChecked(value, currentOptions);
@@ -188,6 +206,7 @@ function normalizeOptions(options = {}) {
     name: String(options.name || ""),
     label: String(options.label || ""),
     checked,
+    indeterminate: Boolean(options.indeterminate),
     checkedValue,
     uncheckedValue,
     hasExplicitValue,

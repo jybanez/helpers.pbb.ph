@@ -1,47 +1,18 @@
-import { fileURLToPath, pathToFileURL } from "node:url";
-import path from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import fs from "node:fs";
-
-const execFileAsync = promisify(execFile);
-const browserCandidates = [
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-];
-
-const browserPath = browserCandidates.find((candidate) => {
-  try {
-    return candidate && fs.existsSync(candidate);
-  } catch {
-    return false;
+import { startStaticServer } from './_support/static-server.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const run = promisify(execFile);
+const server = await startStaticServer({ rootDir: process.cwd(), port: 0 });
+const cli = command => run(process.env.ComSpec || 'cmd.exe', ['/d','/s','/c',
+  `npx --no-install @playwright/cli -s=checkbox-regression ${command}`], { timeout: 60000, maxBuffer: 2**22 });
+try {
+  await cli(`open ${server.origin}/tests/checkbox.regression.html`);
+  for (const suffix of ['', '?bundle']) {
+    await cli(`goto ${server.origin}/tests/checkbox.regression.html${suffix}`);
+    const { stdout } = await cli('run-code --filename tests/_support/checkbox-check.js');
+    if (!stdout.includes('PASS')) throw Error(stdout);
+    console.log(`Checkbox state/keyboard regression passed (${suffix || 'source'}).`);
   }
-});
-
-if (!browserPath) {
-  console.error("Checkbox regression test failed: no supported browser executable found.");
-  process.exit(1);
-}
-
-const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "checkbox.regression.html");
-const htmlUrl = pathToFileURL(htmlPath).href;
-
-const { stdout, stderr } = await execFileAsync(browserPath, [
-  "--headless=new",
-  "--disable-gpu",
-  "--allow-file-access-from-files",
-  "--virtual-time-budget=3000",
-  "--dump-dom",
-  htmlUrl,
-], { maxBuffer: 1024 * 1024 * 4 });
-
-const output = `${stdout}\n${stderr}`;
-if (/data-status="pass"/.test(output) && /\bPASS\b/.test(output)) {
-  console.log("Checkbox regression test passed.");
-} else {
-  console.error("Checkbox regression test failed.");
-  console.error(output);
-  process.exitCode = 1;
+} finally {
+  try { await cli('close'); } finally { await server.close(); }
 }

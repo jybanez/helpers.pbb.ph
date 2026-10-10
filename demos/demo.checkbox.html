@@ -39,14 +39,17 @@
       ],
       options: [
         { option: "<code>checked</code>", default: "<code>false</code>", description: "Initial checked state.", values: ["true", "false"] },
+        { option: "<code>indeterminate</code>", default: "<code>false</code>", description: "Mixed aggregate presentation with a dash; independent of the binary value.", values: ["true", "false"] },
         { option: "<code>checkedValue</code>", default: "<code>undefined</code>", description: "Value returned by <code>getValue()</code> when checked." },
         { option: "<code>uncheckedValue</code>", default: "<code>undefined</code>", description: "Value returned by <code>getValue()</code> when unchecked." },
         { option: "<code>disabled</code>", default: "<code>false</code>", description: "Disables the native checkbox input.", values: ["true", "false"] },
         { option: "<code>readonly</code>", default: "<code>false</code>", description: "Prevents user toggling while preserving readable state.", values: ["true", "false"] },
-        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Receives <code>{ checked, value, checkbox, event }</code>." }
+        { option: "<code>onChange</code>", default: "<code>null</code>", description: "Receives <code>{ checked, indeterminate, value, checkbox, event }</code>." }
       ],
       methods: [
         { method: "<code>getChecked()</code>", arguments: "none", returns: "<code>boolean</code>" },
+        { method: "<code>getIndeterminate()</code>", arguments: "none", returns: "<code>boolean</code>" },
+        { method: "<code>setIndeterminate(mixed, meta?)</code>", arguments: "boolean and optional <code>{ emit }</code>", returns: "<code>void</code>" },
         { method: "<code>setChecked(checked, meta?)</code>", arguments: "boolean and optional <code>{ emit }</code>", returns: "<code>void</code>" },
         { method: "<code>getValue()</code>", arguments: "none", returns: "boolean or explicit checked/unchecked value" },
         { method: "<code>setValue(value, meta?)</code>", arguments: "next value and optional <code>{ emit }</code>", returns: "<code>void</code>" },
@@ -64,6 +67,12 @@
       <div class="row"><a class="back" href="./index.html">Back to Home</a><button id="themeToggle" class="ui-button" type="button">Toggle Theme</button></div>
       <h1 class="ui-title">Checkbox Demo</h1>
       <p class="muted">Shared checkbox helper for boolean flags and explicit checked/unchecked values.</p>
+    </section>
+    <section class="panel">
+      <h2 class="ui-title">Independent Subclass Visibility</h2>
+      <p class="muted">The parent shows a dash when only some subclasses are visible. Click or press Space on the parent to select or clear all.</p>
+      <div class="host"><div id="classHost"></div><div id="roadHost"></div><div id="trailHost"></div></div>
+      <pre>parent.update({ checked: allVisible, indeterminate: someVisible &amp;&amp; !allVisible });</pre>
     </section>
     <section class="panel">
       <h2 class="ui-title">Boolean And Explicit Value Modes</h2>
@@ -113,6 +122,25 @@
       help: "Explicit mode returns configured checked and unchecked values.",
       onChange(payload) { writeLog("checkbox.explicit.change", payload); },
     });
+
+    const parent = createCheckbox(document.getElementById("classHost"), {
+      label: "Transport", indeterminate: true,
+      onChange({ checked }) {
+        road.setChecked(checked); trail.setChecked(checked); syncParent();
+      },
+    });
+    const road = createCheckbox(document.getElementById("roadHost"), {
+      label: "Roads", checked: true, onChange: syncParent,
+    });
+    const trail = createCheckbox(document.getElementById("trailHost"), {
+      label: "Trails", onChange: syncParent,
+    });
+    function syncParent() {
+      const all = road.getChecked() && trail.getChecked();
+      const some = road.getChecked() || trail.getChecked();
+      parent.setChecked(all);
+      parent.setIndeterminate(some && !all);
+    }
 
     document.getElementById("toggleBooleanBtn").addEventListener("click", () => {
       confirmed.setChecked(!confirmed.getChecked(), { emit: true });
