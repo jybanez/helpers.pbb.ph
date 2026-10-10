@@ -20,7 +20,7 @@ const UI_DEVICE_PRIMER_REV = "0.21.235";
 const UI_GAME_REV = "0.21.112";
 const UI_INSPECTION_REV = "0.21.1";
 const UI_TIMELINE_REV = "0.21.222";
-const UI_BUNDLE_REV = "0.21.277";
+const UI_BUNDLE_REV = "0.21.278";
 const UI_GAME_BUNDLE_REV = "0.21.240";
 const UI_INSPECTION_BUNDLE_REV = "0.21.1";
 const UI_BUNDLE_JS = `../../dist/helpers.ui.bundle.min.js?v=${UI_BUNDLE_REV}`;
@@ -504,6 +504,12 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.icons.css", "../../css/ui/ui.map.markers.css?v=0.21.277"],
     deps: ["ui.icons"],
     export: null,
+  },
+  "ui.map.location.person": {
+    js: "./ui.map.location.person.js?v=0.21.278",
+    css: [UI_TOKENS_CSS, "../../css/ui/ui.map.location.person.css?v=0.21.278"],
+    deps: [],
+    export: "createMapLocationPerson",
   },
   "ui.map.drawing": {
     js: "./ui.map.drawing.js",

@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>3D location regression</title>
+<link rel="stylesheet" href="../css/ui/ui.map.location.person.css">
+<body data-status="pending"><canvas id="view" width="600" height="400" style="width:600px;height:400px"></canvas><pre id="results">pending</pre>
+<script src="../vendor/maplibre/maplibre-gl.js"></script>
+<script type="module">
+const source = location.search.includes('bundle')
+  ? await import('../dist/helpers.ui.bundle.min.js').then(async ({uiLoader}) => ({createMapLocationPerson: await uiLoader.get('ui.map.location.person')}))
+  : await import('../js/ui/ui.map.location.person.js');
+const {createMapLocationPerson} = source;
+const canvas = document.getElementById('view');
+const gl = canvas.getContext('webgl2', {preserveDrawingBuffer:true});
+const errors=[];
+function assert(value,message){if(!value) throw Error(message);}
+function mockMap() {
+  const handlers=new Map(), layers=new Map();
+  const map={terrain:0,repaints:0,loaded:true,
+    on(n,fn){if(!handlers.has(n))handlers.set(n,new Set());handlers.get(n).add(fn);},
+    off(n,fn){handlers.get(n)?.delete(fn);}, emit(n){[...(handlers.get(n)||[])].forEach(fn=>fn());},
+    count(){return [...handlers.values()].reduce((s,v)=>s+v.size,0);},
+    addLayer(layer){layers.set(layer.id,layer);layer.onAdd(map,gl);},
+    removeLayer(id){const layer=layers.get(id);layers.delete(id);layer?.onRemove();},getLayer(id){return layers.get(id);},
+    isStyleLoaded(){return map.loaded;}, getCanvas(){return canvas;},getContainer(){return document.body;},
+    queryTerrainElevation(){return map.terrain;}, getCenter(){return {lng:0,lat:0};},triggerRepaint(){map.repaints++;},
+    draw(matrix){layers.forEach(layer=>layer.render(gl,matrix));},
+    reload(){[...layers.keys()].forEach(id=>map.removeLayer(id));map.emit('style.load');},
+  };return map;
+}
+// Known mercator matrix; maps .5/.5 to center, with z rising above the base.
+const matrix=[200,0,0,0, 0,-200,0,0, 0,160,0.1,0, -100,100,0,1];
+function pixels(){const p=new Uint8Array(600*400*4);gl.readPixels(0,0,600,400,gl.RGBA,gl.UNSIGNED_BYTE,p);return p;}
+try {
+ assert(gl,'WebGL2 must be available: this is a rendered test, never a source-only pass');
+ let map=mockMap(), failures=0;
+ const person=createMapLocationPerson({map,maplibre:maplibregl,lngLat:[0,0],onError(){failures++;}});
+ assert(person.getState().status==='ready'&&person.getState().hasResources,'resource allocation');
+ const repaintCount=map.repaints;gl.clearColor(1,1,1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.enable(gl.BLEND);gl.disable(gl.DEPTH_TEST);const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+ map.draw(matrix);
+ assert(person.getState().status==='rendered','render success');
+ assert(gl.isEnabled(gl.BLEND)&&!gl.isEnabled(gl.DEPTH_TEST)&&gl.getParameter(gl.VERTEX_ARRAY_BINDING)===vao,'shared GL state restored');
+ const image=pixels();let blue=0;for(let i=0;i<image.length;i+=4)if(image[i+2]>image[i]+40&&image[i+2]>image[i+1]+20)blue++;
+ assert(blue>50,'real blue person pixels rendered');
+ assert(document.querySelector('.ui-map-location-person-label').getAttribute('aria-label')==='Current location','accessible current-location name');
+ assert(map.repaints===repaintCount,'render has no idle repaint loop');
+ map.terrain=120;map.draw(matrix);assert(person.getState().terrainOffsetMeters===120,'4.6 exaggerated offset applied once');
+ map.terrain=-25;map.draw(matrix);assert(person.getState().terrainOffsetMeters===-25,'negative center-relative terrain offsets preserved');
+ map.terrain=null;map.draw(matrix);assert(person.getState().terrainOffsetMeters===0,'terrain off uses zero');
+ const oldScale=person.getState().modelScale;const zoomed=matrix.map(v=>v*2);zoomed[15]=1;
+ map.draw(zoomed);assert(person.getState().modelScale<oldScale,'apparent size adapts to zoom');
+ person.updateLngLat([.01,.02]);map.draw(matrix);assert(person.getState().lngLat[0]===.01,'coordinate updates');
+ let rejected=false;try{person.updateLngLat([NaN,90]);}catch{rejected=true;}assert(rejected,'invalid coordinates rejected');
+ person.updateLngLat(null);assert(document.querySelector('.ui-map-location-person-label').hidden,'no stale location semantics');
+ person.updateLngLat([0,0]);map.reload();map.draw(matrix);assert(person.getState().status==='rendered','style reattachment');
+ const oldMap=map, oldLayer=oldMap.getLayer(person.getState().id);map=mockMap();person.setMap(map);
+ assert(oldMap.count()===0&&!oldMap.getLayer(person.getState().id),'map replacement cleans listeners/layer');
+ oldLayer.render(gl,[]);assert(person.getState().status==='ready','stale old-map render ignored');
+ map.draw([]);assert(person.getState().status==='error'&&failures===1&&!person.getState().hasResources,'render failure exposes fallback and frees resources');
+ person.retry();map.draw(matrix);assert(person.getState().status==='rendered','explicit failure recovery');
+ map.emit('webglcontextlost');assert(person.getState().status==='context-lost','context-loss fallback state');
+ map.emit('webglcontextrestored');map.draw(matrix);assert(person.getState().status==='rendered','context restore recreates resources');
+ person.destroy();person.destroy();assert(map.count()===0&&!person.getState().hasResources&&!document.querySelector('.ui-map-location-person-label'),'terminal dispose removes resources/listeners/semantics');
+ assert(!person.updateLngLat([1,1])&&!person.setMap(oldMap),'destroy terminal');
+ const collision=mockMap();collision.addLayer({id:'occupied',onAdd(){},onRemove(){},render(){}});
+ const failed=createMapLocationPerson({map:collision,maplibre:maplibregl,lngLat:[0,0],id:'occupied'});
+ assert(failed.getState().status==='error','ID collision exposes fallback');failed.destroy();assert(collision.getLayer('occupied'),'foreign layer preserved');
+ const pending=mockMap();pending.loaded=false;const waiting=createMapLocationPerson({map:pending,maplibre:maplibregl,lngLat:[0,0]});
+ assert(!waiting.getState().hasResources,'wait for loaded style');pending.loaded=true;pending.emit('style.load');waiting.destroy();
+ gl.bindVertexArray(null);gl.deleteVertexArray(vao);
+ const final=createMapLocationPerson({map:mockMap(),maplibre:maplibregl,lngLat:[0,0]});final.setMap(null);assert(!final.getState().hasResources,'detach map');final.destroy();
+ document.body.dataset.status='pass';document.getElementById('results').textContent=`PASS\nRendered blue pixels: ${blue}\nSource/bundle WebGL, terrain offset, update/failure/lifecycle assertions passed.`;
+} catch(error){document.body.dataset.status='failed';document.getElementById('results').textContent=error.stack;}
+</script></body></html>
