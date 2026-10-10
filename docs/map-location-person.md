@@ -29,7 +29,7 @@ Use a distinct layer ID. Collisions report failure without removing another
 owner's layer. Coordinates accept `[lng, lat]` or `{lng, lat}` and must be finite,
 within longitude ±180 and Mercator latitude ±85.05112878.
 
-`getState()` returns status (`waiting`, `ready`, `rendered`, `error`,
+`getState()` returns status (`waiting`, `ready`, `rendered`, `not-visible`, `error`,
 `context-lost`, `destroyed`), error text, attachment/resource flags, coordinates,
 terrain offset, model scale and target size. Callbacks report state transitions;
 read `getState()` for current frame diagnostics. `sizePx` is clamped to 18–64 and
@@ -93,6 +93,54 @@ The local DEM demo has availability, 0–359 heading and cardinal controls. GL a
 real-engine regressions check cardinal/world-ray alignment, 359/0 wraparound,
 varied bearing/pitch/terrain, neutral state, accessible descriptions and existing
 failure/resource lifecycle. Physical compass/device accuracy remains app-owned.
+
+## Opt-in camera-distance sizing (cache 0.21.282)
+
+The default `scaleMode:'screen'` retains the existing ground-plane size
+normalization and `sizePx` semantics. Opt in when a far/horizon marker should
+shrink naturally:
+
+```js
+const person = createPerson({ map, maplibre: maplibregl, lngLat,
+  scaleMode: 'perspective', modelHeightMeters: 12, minSizePx: 8, maxSizePx: 64 });
+person.setScaleMode('screen'); // reversible policy change; no resource recreation
+person.setScaleMode('perspective');
+```
+
+Perspective mode gives the original 1.8-unit model a configurable world height
+(default 12 meters, valid 0.1–1000), converted through MapLibre's latitude-aware
+Mercator meter scale. This is a visual scale, not the person's physical height.
+The camera's homogeneous projection/depth produces size changes as the marker
+gets nearer/farther and as zoom changes. There is no map-center distance heuristic
+or per-view ground foreshortening normalization. `sizePx` applies only in screen
+mode. Terrain offset, world bearing, device heading and exact base anchor are
+preserved in both modes.
+
+`minSizePx`/`maxSizePx` bound the larger width/height of the projected 3D bounding
+envelope in **CSS pixels**, default 8/64; validate 4 <= min <= max <= 128. The
+envelope conservatively includes the person, base and available heading arrow,
+so visible painted pixels may occupy less space. Bounds continuously rescale
+the model; strict near/far ordering becomes a plateau when either bound is
+reached. Near-plane intersections reduce scale toward the upper bound where
+possible. A behind-camera/near-plane anchor or zero-size viewport skips rendering
+and reports `not-visible` in perspective mode, hiding the accessible label. The
+app's fallback policy can handle that state like other non-rendered states.
+Offscreen placements may still report rendered; this is not a screen visibility
+or terrain-occlusion query. Extreme views can occlude the model naturally.
+
+State includes mode, world height, bounds and `projectedSizePx` (the envelope
+measurement; 0 for legacy screen mode). View diagnostics are read through
+`getState()`; frame rendering does not emit repeated callbacks or repaint itself.
+`setScaleMode` validates before updating, requests one repaint, and is inert after
+destroy. Bounds/world height are construction options. Integration uses
+`ui.map.location.person.js?v=0.21.282` and main UI bundle revision 0.21.282;
+marker CSS remains 0.21.278. Deliver the loader and generated bundle together.
+`docs/map-person-perspective-runtime.json` lists the coherent artifacts and SHA-256
+checksums (UTF-8, line endings normalized to LF for transport verification).
+
+Tests include camera-depth ordering at the same zoom, numerical bound continuity,
+finite matrices, actual MapLibre near/far and zoom 8/15/20 at pitches 0/60/85.
+Desktop/mobile screenshots are browser evidence, not physical-device evidence.
 
 Demo: `demos/demo.map.location.person.html` (add `?bundle` for bundled factory).
 It uses a generated local DEM and exercises terrain, exaggeration, camera,

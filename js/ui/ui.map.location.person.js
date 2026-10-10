@@ -10,8 +10,13 @@ export function createMapLocationPerson(options = {}) {
   if (!id) throw new TypeError("A nonempty layer id is required.");
   let coordinate = validateCoordinate(settings.lngLat);
   let headingDegrees = validateHeading(settings.headingDegrees);
+  let scaleMode = validateScaleMode(settings.scaleMode ?? "screen");
+  const minSizePx = Number(settings.minSizePx ?? 8), maxSizePx = Number(settings.maxSizePx ?? 64);
+  const modelHeightMeters = Number(settings.modelHeightMeters ?? 12);
+  if (!Number.isFinite(modelHeightMeters) || modelHeightMeters < .1 || modelHeightMeters > 1000) throw new TypeError("modelHeightMeters must be between 0.1 and 1000.");
+  if (!Number.isFinite(minSizePx) || !Number.isFinite(maxSizePx) || minSizePx < 4 || maxSizePx > 128 || maxSizePx < minSizePx) throw new TypeError("Projected size bounds must satisfy 4 <= minSizePx <= maxSizePx <= 128.");
   let map = null, layer = null, renderer = null, destroyed = false, ownsLayer = false;
-  let status = "waiting", error = null, attached = false, terrainOffsetMeters = 0, modelScale = 0;
+  let status = "waiting", error = null, attached = false, terrainOffsetMeters = 0, modelScale = 0, projectedSizePx = 0;
   let offs = [], label = null;
   const mesh = createPersonMesh();
   const directionMesh = createDirectionMesh();
@@ -19,7 +24,7 @@ export function createMapLocationPerson(options = {}) {
 
   function getState() {
     return { id, status, error, attached, destroyed, lngLat: coordinate ? [...coordinate] : null,
-      terrainOffsetMeters, modelScale, sizePx, headingDegrees, directionAvailable: headingDegrees != null, hasResources: Boolean(renderer) };
+      terrainOffsetMeters, modelScale, sizePx, scaleMode, modelHeightMeters, minSizePx, maxSizePx, projectedSizePx, headingDegrees, directionAvailable: headingDegrees != null, hasResources: Boolean(renderer) };
   }
   function notify(next, failure = null, force = false) {
     if (status === next && error === failure && !force) return;
@@ -65,9 +70,10 @@ export function createMapLocationPerson(options = {}) {
           anchor.x += Math.round(center.x - anchor.x);
           const canvas = map.getCanvas();
           const width = canvas.clientWidth, height = canvas.clientHeight;
-          const placement = getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees);
-          if (!placement) return; // behind camera or zero-sized map
+          const placement = getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees, {scaleMode, minSizePx, maxSizePx, worldScale: scaleMode === "perspective" ? anchor.meterInMercatorCoordinateUnits() * modelHeightMeters / 1.8 : null});
+          if (!placement) { if (scaleMode === "perspective") { projectedSizePx = 0; notify("not-visible"); } return; }
           modelScale = placement.scale;
+          projectedSizePx = placement.projectedSizePx ?? 0;
           renderer.draw(placement.matrix, headingDegrees != null);
           notify("rendered");
         } catch (reason) { fail(reason); }
@@ -135,11 +141,17 @@ export function createMapLocationPerson(options = {}) {
     if (value === headingDegrees) return true;
     headingDegrees = value; notify(status, error, true); repaint(); return true;
   }
+  function setScaleMode(next) {
+    if (destroyed) return false;
+    const value = validateScaleMode(next);
+    if (value === scaleMode) return true;
+    scaleMode = value; notify(status, error, true); repaint(); return true;
+  }
   function destroy() {
     if (destroyed) return;
     destroyed = true; detach(); map = null; notify("destroyed");
   }
-  const api = { setMap, updateLngLat, updateHeading, retry, destroy, getState };
+  const api = { setMap, updateLngLat, updateHeading, setScaleMode, retry, destroy, getState };
   setMap(settings.map || null);
   return api;
 }
@@ -159,7 +171,12 @@ function validateHeading(value) {
   return ((value % 360) + 360) % 360;
 }
 
-export function getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees = null) {
+function validateScaleMode(value) {
+  if (value !== "screen" && value !== "perspective") throw new TypeError("scaleMode must be screen or perspective.");
+  return value;
+}
+
+export function getPersonPlacement(matrix, anchor, width, height, sizePx, headingDegrees = null, sizing = {}) {
   if (!matrix || matrix.length !== 16 || !Array.from(matrix).every(Number.isFinite)) throw new Error("Invalid MapLibre render matrix.");
   if (!(width > 0 && height > 0)) return null;
   const clip = (x, y, z) => [0, 1, 2, 3].map((row) => matrix[row] * x + matrix[row + 4] * y + matrix[row + 8] * z + matrix[row + 12]);
@@ -170,7 +187,40 @@ export function getPersonPlacement(matrix, anchor, width, height, sizePx, headin
   const x = pixel(clip(anchor.x + delta, anchor.y, anchor.z)), y = pixel(clip(anchor.x, anchor.y + delta, anchor.z));
   const density = Math.hypot(x[0] - p[0], x[1] - p[1], y[0] - p[0], y[1] - p[1]) / delta;
   if (!(density > 0 && Number.isFinite(density))) throw new Error("Invalid projected scale.");
-  const scale = sizePx / density; // scale adaptation only; perspective remains map-owned
+  let scale = sizePx / density; // Legacy screen mode preserves the ground-plane normalization.
+  let projectedSizePx = 0;
+  if (sizing.scaleMode === "perspective") {
+    if (![anchor.x, anchor.y, anchor.z].every(Number.isFinite) || !(sizing.worldScale > 0 && Number.isFinite(sizing.worldScale))) throw new Error("Invalid perspective anchor/scale.");
+    if (origin[2] < -origin[3]) return null;
+    // The full model's projected envelope includes height and optional arrow,
+    // avoiding ground-plane foreshortening inflation at high pitch.
+    const angle = (headingDegrees ?? 0) * Math.PI / 180, c = Math.cos(angle), s = Math.sin(angle);
+    const points = [];
+    for (const x of [-.5,.5]) for (const y of [-.5,headingDegrees == null ? .5 : .86]) for (const z of [0,1.8]) points.push([c*x+s*y,s*x-c*y,z]);
+    const extent = (at, amount) => {
+      const projected = points.map(([x,y,z]) => clip(at.x+x*amount,at.y+y*amount,at.z+z*amount));
+      if (projected.some(p => p[3] <= 0 || p[2] < -p[3])) return null;
+      const pixels = projected.map(pixel);
+      return Math.max(Math.max(...pixels.map(p=>p[0]))-Math.min(...pixels.map(p=>p[0])),Math.max(...pixels.map(p=>p[1]))-Math.min(...pixels.map(p=>p[1])));
+    };
+    // Physical world size is independent of camera center/zoom; projection
+    // supplies perspective and camera depth. Bounds only limit its envelope.
+    scale = sizing.worldScale;
+    const measured = extent(anchor, scale);
+    const actual = measured == null ? Infinity : measured;
+    if (!(actual > 0)) return null;
+    const target = Math.max(sizing.minSizePx ?? 8,Math.min(sizing.maxSizePx ?? 64,actual));
+    if (target !== actual) {
+      let low = 0, high = scale * Math.max(1,target/actual) * 2;
+      for (let i=0;i<36;i++) {
+        const mid=(low+high)/2, value=extent(anchor,mid);
+        if (value == null || value > target) high=mid; else low=mid;
+      }
+      scale=(low+high)/2;
+    }
+    projectedSizePx = extent(anchor,scale);
+    if (!(projectedSizePx > 0 && Number.isFinite(scale))) return null;
+  }
   const combined = new Float32Array(16);
   const angle = (headingDegrees ?? 0) * Math.PI / 180;
   const cosine = Math.cos(angle), sine = Math.sin(angle);
@@ -181,5 +231,6 @@ export function getPersonPlacement(matrix, anchor, width, height, sizePx, headin
     combined[row + 8] = matrix[row + 8] * scale;
     combined[row + 12] = origin[row];
   }
-  return { matrix: combined, scale };
+  if (!Array.from(combined).every(Number.isFinite)) throw new Error("Unsafe model matrix.");
+  return { matrix: combined, scale, projectedSizePx };
 }
