@@ -12,6 +12,7 @@ const DEFAULT_OPTIONS = {
   closeOnOutsideClick: true,
   closeOnEscape: true,
   matchTriggerWidth: false,
+  focusOnOpen: true,
   className: "",
   onOpenChange: null,
   onSelect: null,
@@ -19,6 +20,7 @@ const DEFAULT_OPTIONS = {
 
 export function createMenu(triggerEl, items = [], options = {}) {
   const events = createEventBag();
+  const itemEvents = createEventBag();
   let currentItems = Array.isArray(items) ? items : [];
   let currentOptions = normalizeOptions(options);
   let open = false;
@@ -26,6 +28,9 @@ export function createMenu(triggerEl, items = [], options = {}) {
   let listEl = null;
   let activeIndex = -1;
   let closeTimer = null;
+  let preserveOpeningFocus = false;
+  let destroyed = false;
+  let closeTransition = null;
   const rootId = `ui-menu-${Math.random().toString(36).slice(2, 10)}`;
 
   function build() {
@@ -46,6 +51,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
       return;
     }
     syncMenuClasses();
+    itemEvents.clear();
     clearNode(listEl);
     activeIndex = -1;
     if (isGroupedMode()) {
@@ -123,7 +129,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
     if (item?.shortcut) {
       row.appendChild(createElement("kbd", { className: "ui-menu-item-shortcut", text: String(item.shortcut) }));
     }
-    events.on(row, "click", () => {
+    itemEvents.on(row, "click", () => {
       if (disabled) {
         return;
       }
@@ -132,11 +138,11 @@ export function createMenu(triggerEl, items = [], options = {}) {
         close();
       }
     });
-    events.on(row, "mouseenter", () => setActiveIndex(index));
+    itemEvents.on(row, "mouseenter", () => setActiveIndex(index, !preserveOpeningFocus || root?.contains(document.activeElement)));
     return row;
   }
 
-  function setActiveIndex(index) {
+  function setActiveIndex(index, focus = true) {
     if (!listEl) {
       return;
     }
@@ -145,9 +151,11 @@ export function createMenu(triggerEl, items = [], options = {}) {
     const target = children.find((node) => Number(node.dataset.menuIndex) === index);
     if (target && !target.disabled) {
       target.classList.add("is-active");
-      target.focus();
+      if (focus) target.focus();
       activeIndex = index;
+      return true;
     }
+    return false;
   }
 
   function moveActive(delta) {
@@ -195,15 +203,17 @@ export function createMenu(triggerEl, items = [], options = {}) {
     }
   }
 
-  function openMenu() {
-    if (open) {
+  function openMenu(openOptions = {}) {
+    if (destroyed || open) {
       return;
     }
     if (closeTimer) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }
+    if (closeTransition) { root?.removeEventListener("transitionend", closeTransition); closeTransition = null; }
     build();
+    preserveOpeningFocus = (openOptions.focusOnOpen ?? currentOptions.focusOnOpen) === false;
     if (!root.parentNode) {
       document.body.appendChild(root);
     }
@@ -222,11 +232,18 @@ export function createMenu(triggerEl, items = [], options = {}) {
       root?.classList.add("is-open");
     });
     currentOptions.onOpenChange?.(true);
+    if (!open || destroyed) return;
     bindGlobal();
     const firstEnabled = getEnabledEntries()[0];
-    if (firstEnabled) {
+    if (firstEnabled && !preserveOpeningFocus) {
       setActiveIndex(firstEnabled.index);
     }
+  }
+
+  function focusFirst() {
+    if (destroyed || !open) return false;
+    const firstEnabled = getEnabledEntries()[0];
+    return firstEnabled ? Boolean(setActiveIndex(firstEnabled.index)) : false;
   }
 
   function close() {
@@ -234,6 +251,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
       return;
     }
     open = false;
+    const restoreFocus = !preserveOpeningFocus || root?.contains(document.activeElement);
     if (triggerEl && typeof triggerEl.setAttribute === "function") {
       triggerEl.setAttribute("aria-expanded", "false");
     }
@@ -254,7 +272,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
       if (root.parentNode) {
         root.parentNode.removeChild(root);
       }
-      triggerEl?.focus?.();
+      if (restoreFocus && (!preserveOpeningFocus || document.activeElement === document.body || root?.contains(document.activeElement))) triggerEl?.focus?.();
     };
 
     const onTransitionEnd = (event) => {
@@ -262,12 +280,15 @@ export function createMenu(triggerEl, items = [], options = {}) {
         return;
       }
       root?.removeEventListener("transitionend", onTransitionEnd);
+      closeTransition = null;
       finalizeClose();
     };
 
     root.addEventListener("transitionend", onTransitionEnd);
+    closeTransition = onTransitionEnd;
     closeTimer = setTimeout(() => {
       root?.removeEventListener("transitionend", onTransitionEnd);
+      closeTransition = null;
       finalizeClose();
       closeTimer = null;
     }, 260);
@@ -300,6 +321,8 @@ export function createMenu(triggerEl, items = [], options = {}) {
         if (!open) {
           return;
         }
+        // Passive suggestions leave textbox keys to the caller until deliberate entry.
+        if (preserveOpeningFocus && !root?.contains(event.target)) return;
         if (event.key === "Escape") {
           event.preventDefault();
           close();
@@ -435,20 +458,25 @@ export function createMenu(triggerEl, items = [], options = {}) {
   function update(nextItems = [], nextOptions = {}) {
     currentItems = Array.isArray(nextItems) ? nextItems : [];
     currentOptions = normalizeOptions({ ...currentOptions, ...nextOptions });
+    if (root) renderItems();
     if (open) {
-      renderItems();
+      root?.classList.add("is-open");
       position();
     }
   }
 
   function destroy() {
+    if (destroyed) return;
+    destroyed = true;
     close();
     if (closeTimer) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }
     root?.remove();
+    if (closeTransition) { root?.removeEventListener("transitionend", closeTransition); closeTransition = null; }
     events.clear();
+    itemEvents.clear();
     unbindGlobal();
     if (triggerElEvents) {
       triggerElEvents.clear();
@@ -461,6 +489,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
     return {
       open,
       activeIndex,
+      focusOnOpen: !preserveOpeningFocus,
       placement: resolvePlacement(currentOptions),
       items: [...currentItems],
       mode: currentOptions.mode,
@@ -482,6 +511,7 @@ export function createMenu(triggerEl, items = [], options = {}) {
 
   return {
     open: openMenu,
+    focusFirst,
     close,
     toggle,
     update,

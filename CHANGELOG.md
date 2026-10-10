@@ -1,5 +1,7 @@
 # Changelog
 
+- Added complete menu `focusOnOpen:false` policy and deliberate `focusFirst()` entry, preserving live textbox keys/focus while retaining ordinary menu defaults. Closed-item updates refresh on reopen; source/bundle tests and interactive demo. Menu/main UI cache `0.21.280`.
+
 - Fixed MapLibre-hosted canonical DOM marker root placement in both stylesheet orders, preventing preceding markers from shifting destination anchors. Standalone preview flow and drop transforms preserved; CSS/main UI cache `0.21.279`.
 
 - Added `ui.map.location.person`, a local procedural 3D person controller for MapLibre 4.6 terrain, perspective, bounded scale, accessible location semantics, lifecycle and fallback reporting; interactive real-engine demo and source/bundle tests. Main UI cache revision `0.21.278`.

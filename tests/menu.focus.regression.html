@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Menu opening focus regression</title>
+<body data-status="pending"><input id="search" aria-label="Search"><button id="trigger">Results</button><button id="outside">Outside</button><pre id="results">pending</pre>
+<script type="module">
+const assert=(ok,message)=>{if(!ok)throw Error(message);};
+const wait=()=>new Promise(r=>setTimeout(r,300));
+const key=(target,value)=>{const event=new KeyboardEvent('keydown',{key:value,bubbles:true,cancelable:true});target.dispatchEvent(event);return event.defaultPrevented;};
+const input=document.querySelector('#search'), trigger=document.querySelector('#trigger'),outside=document.querySelector('#outside');
+const items=[{id:'disabled',label:'Unavailable',disabled:true},{id:'one',label:'First result'},{id:'two',label:'Second result'}];
+try {
+ const createMenu=location.search.includes('bundle')?await (await import('../dist/helpers.ui.bundle.min.js')).uiLoader.get('ui.menu'):(await import('../js/ui/ui.menu.js')).createMenu;
+ const selected=[];
+ const menu=createMenu(trigger,items,{onSelect:(item,meta)=>selected.push({item,meta})});
+ const root=()=>document.querySelector('.ui-menu');
+ input.focus();menu.open();
+ assert(document.activeElement.dataset.menuIndex==='1','ordinary opening focuses first enabled item');
+ assert(key(document.activeElement,'ArrowDown')&&document.activeElement.dataset.menuIndex==='2','ordinary arrow navigation skips disabled');
+ key(document.activeElement,'Enter');await wait();assert(selected[0].item.id==='two'&&document.activeElement===trigger,'ordinary selection/close restores trigger');
+ input.focus();menu.open({focusOnOpen:false});
+ assert(document.activeElement===input&&menu.getState().activeIndex===-1,'passive opening preserves textbox without active selection');
+ for(const value of [' ','Enter','ArrowDown','ArrowUp','Home','End','Escape'])assert(!key(input,value),'textbox '+value+' stays unconsumed');
+ assert(selected.length===1&&menu.getState().open,'textbox Space/Enter cannot select or close results');
+ root().querySelector('[data-index="2"]').dispatchEvent(new MouseEvent('mouseenter'));
+ assert(document.activeElement===input,'passive hover does not steal textbox focus');
+ assert(!key(input,' ')&&selected.length===1,'hover does not turn Space into result selection');
+ menu.update(items);assert(document.activeElement===input,'live result update retains textbox focus');
+ assert(menu.focusFirst()&&document.activeElement.dataset.menuIndex==='1','deliberate entry focuses first enabled result');
+ key(document.activeElement,'End');assert(document.activeElement.dataset.menuIndex==='2','entered menu retains boundary navigation');
+ key(document.activeElement,' ');await wait();assert(selected.length===2&&selected[1].meta.source==='keyboard','entered menu Space selects');
+ input.focus();menu.open({focusOnOpen:false});menu.close();await wait();assert(document.activeElement===input,'passive close preserves input');
+ menu.open({focusOnOpen:false});outside.focus();outside.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));await wait();
+ assert(!menu.getState().open&&document.activeElement===outside,'outside dismissal does not steal outside focus');
+ menu.update([{label:'All disabled',disabled:true}],{focusOnOpen:false});input.focus();menu.open();
+ assert(!menu.focusFirst()&&document.activeElement===input,'all-disabled deliberate entry is safe');
+ menu.update([],{});assert(!menu.focusFirst(),'empty deliberate entry is safe');
+ menu.close();await wait();menu.update([{label:'Group',items}],{mode:'grouped',focusOnOpen:false});menu.open();
+ assert(document.activeElement===input&&menu.focusFirst()&&document.activeElement.dataset.menuIndex==='1','grouped policy skips disabled first entry');
+ key(document.activeElement,'Escape');await wait();assert(!menu.getState().open&&document.activeElement===trigger,'entered escape restores trigger');
+ input.focus();menu.open();menu.destroy();await wait();assert(!root()&&!menu.focusFirst(),'destroy removes popup and entry API becomes inert');
+ menu.open();assert(!root(),'destroy is terminal');
+ assert(!key(input,'ArrowDown')&&selected.length===2,'destroy removes global key handlers');
+ document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS\nDefault and passive opening; input keys/hover/update; deliberate grouped entry; selection, outside/escape/close/destroy passed.';
+}catch(error){document.body.dataset.status='fail';document.querySelector('#results').textContent=error.stack;}
+</script></body></html>

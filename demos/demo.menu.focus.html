@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live menu opening focus</title>
+<style>body{font:16px Segoe UI,sans-serif;margin:24px;background:#101827;color:#d7e0f4}main{max-width:700px;margin:auto}input,button{font:inherit;padding:10px;max-width:100%;box-sizing:border-box}.row{display:flex;gap:8px;flex-wrap:wrap}label{display:block;margin-bottom:8px}#status{margin-top:24px}</style></head>
+<body><main><a href="index.html">Helper demos</a><h1>Live results without moving typing focus</h1>
+<p>Type a place, including spaces. Arrow Down or the Results button deliberately enters the complete menu. Enter or Space selects only after entry.</p>
+<label for="search">Local place search</label><div class="row"><input id="search" autocomplete="off" placeholder="Try City Hall"><button id="results">Results</button><button id="ordinary">Ordinary menu</button></div><p id="status" role="status">No selection.</p></main>
+<script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js';
+if(location.search.includes('bundle'))uiLoader.setPreferBundles(true);
+const createMenu=await uiLoader.get('ui.menu');
+const input=document.querySelector('#search'),button=document.querySelector('#results'),status=document.querySelector('#status');
+const places=['City Hall','Central Market','River Park','Community Hospital'];
+const all=places.map((label,index)=>({id:index,label}));
+const menu=createMenu(button,all,{focusOnOpen:false,ariaLabel:'Local place results',onSelect:item=>status.textContent='Selected: '+item.label});
+input.addEventListener('input',()=>{menu.update(all.filter(item=>item.label.toLowerCase().includes(input.value.toLowerCase())));menu.open();});
+input.addEventListener('keydown',event=>{if(event.key==='ArrowDown'){menu.open();if(menu.focusFirst())event.preventDefault();}else if(event.key==='Escape')menu.close();});
+// createMenu owns the trigger click; it opens without moving focus by policy.
+button.addEventListener('click',()=>menu.focusFirst());
+button.addEventListener('click',event=>{if(menu.getState().open){event.preventDefault();event.stopImmediatePropagation();menu.focusFirst();}},true);
+document.querySelector('#ordinary').addEventListener('click',()=>{menu.close();menu.update(all);menu.open({focusOnOpen:true});});
+window.addEventListener('pagehide',()=>menu.destroy());
+</script></body></html>
