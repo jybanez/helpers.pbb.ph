@@ -7,6 +7,7 @@ A lightweight helper-library prototype for rendering incident-related UI compone
 - GitHub Repository: `https://github.com/jybanez/helpers.pbb.ph`
 - Live Demo (GitHub Pages): `https://jybanez.github.io/helpers.pbb.ph`
 - Refactor Playbook (for `*.pbb.ph` project integrations): `docs/pbb-refactor-playbook.md`
+- Map controls custom actions: [API and PBB Map integration](docs/map-controls-custom-actions.md)
 - Agent Working Protocol: `docs/agent-working-protocol.md`
 - Safe Markdown renderer: [API and security guide](docs/markdown.md) · [interactive demo](demos/demo.markdown.html)
 - JSON, Markdown and CSV file viewers: [API and limits](docs/file-viewers.md) · [JSON demo](demos/demo.json.viewer.html) · [Markdown demo](demos/demo.markdown.viewer.html) · [CSV demo](demos/demo.csv.viewer.html)

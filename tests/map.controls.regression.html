@@ -21,7 +21,9 @@
     });
   </script>
   <script type="module">
-    import { createMapControls } from "../js/ui/ui.map.controls.js";
+    const { createMapControls } = new URL(location.href).searchParams.has("bundle")
+      ? await import("../dist/helpers.ui.bundle.min.js").then(async ({ uiLoader }) => ({ createMapControls: await uiLoader.get("ui.map.controls") }))
+      : await import("../js/ui/ui.map.controls.js");
 
     const failures = [];
     const results = document.getElementById("results");
@@ -106,7 +108,50 @@
     assert(document.querySelector('[data-control="pitch-45"]').classList.contains("is-active"), "active pitch button should sync from map");
     assert(map.handlerCount("move") === 1, "map move listener should be bound");
 
-    controls.destroy();
+    let activations = 0;
+    controls.update({ controls: ["search", "zoom", "compass"], actions: [{
+      id: "search", label: "Search map", icon: "actions.search", expanded: false,
+      ariaControls: "mobile-search", onActivate({ id, map: supplied, button }) {
+        assert(id === "search" && supplied === map && button.tagName === "BUTTON", "custom callback context");
+        activations++;
+      },
+    }] });
+    const search = document.querySelector('[data-control="search"]');
+    assert(document.querySelector('.ui-map-controls button') === search, "custom action ordered before zoom");
+    assert(search.getAttribute('aria-label') === "Search map" && search.title === "Search map", "custom label and tooltip");
+    assert(search.querySelector('svg[data-icon="actions.search"]')?.getAttribute('aria-hidden') === "true", "canonical decorative icon");
+    assert(search.getAttribute('aria-controls') === "mobile-search", "target association");
+    search.focus(); search.click();
+    controls.setActionState("search", { expanded: true });
+    assert(document.activeElement === search && search.getAttribute('aria-expanded') === "true", "state update preserves focus");
+    controls.setActionState("search", { disabled: true });
+    search.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    assert(activations === 1 && search.disabled, "disabled action guarded");
+    controls.setActionState("search", { visible: false, disabled: false, expanded: null });
+    assert(getComputedStyle(search.parentElement).display === "none" && !search.hasAttribute('aria-expanded'), "hidden state and expanded clearing");
+    search.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    assert(activations === 1, "hidden action guarded");
+    controls.setActionState("search", { visible: true }); search.click();
+    assert(activations === 2, "action reenabled");
+    controls.update({ actions: [{ id: "search", label: "Find place", onActivate() { activations += 10; } }] });
+    search.click();
+    assert(activations === 2, "old listener cleaned");
+    const replacement = document.querySelector('[data-control="search"]'); replacement.click();
+    assert(activations === 12 && replacement.title === "Find place", "callback and label updated");
+    assert(map.handlerCount("move") === 1, "no duplicate map listeners");
+    document.querySelector('[data-control="zoom-in"]').click();
+    assert(map.zoom === 11, "built-in behavior retained");
+    let rejected = false;
+    try { controls.update({ actions: [{ id: "zoom", label: "Conflict" }] }); } catch { rejected = true; }
+    assert(rejected, "reserved ids rejected");
+    rejected = false;
+    try { controls.update({ actions: [{ id: "search", label: "Search", icon: "invalid.icon" }] }); } catch { rejected = true; }
+    assert(rejected && replacement.isConnected, "unknown icon rejected before replacing UI");
+    rejected = false;
+    try { controls.update({ actions: [{ id: "a", label: "A" }, { id: "a", label: "B" }] }); } catch { rejected = true; }
+    assert(rejected, "duplicate action ids rejected");
+    controls.destroy(); replacement.click(); controls.update({ controls: ["zoom"] });
+    assert(activations === 12 && controls.setActionState("search", { visible: true }) === false, "destroy terminal and listener cleaned");
     assert(map.handlerCount("move") === 0, "map listeners should be removed on destroy");
     assert(!document.querySelector(".ui-map-controls"), "destroy should clear the host");
 

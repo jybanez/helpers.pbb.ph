@@ -4,6 +4,8 @@ All notable changes to `helpers.pbb.ph` are documented here.
 
 ## Unreleased
 
+- Added ordered custom actions to `ui.map.controls`, with canonical icons, accessible labels/tooltips, callbacks, visibility/disabled/expanded state and focus-preserving `setActionState`. Existing controls and map gestures remain unchanged. Map controls/main UI bundle cache revision `0.21.276`; see `docs/map-controls-custom-actions.md`.
+
 - Added default `pinchZoom` for media viewer photos/inline videos, midpoint anchoring with existing zoom limits, scoped touch handling and gesture cleanup. Native video controls stay uncovered. UI/media revision `0.21.275`.
 
 - Fixed splitter `chrome: false` retaining decorative pane borders in either orientation. Direct-child scope preserves nested chrome settings and the draggable divider. UI/splitter revision `0.21.274`.

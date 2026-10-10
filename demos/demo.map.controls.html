@@ -65,6 +65,17 @@
       right: 14px;
       z-index: 2;
     }
+    #demoSearch {
+      position: absolute; top: 14px; left: 14px; z-index: 2;
+      width: min(260px, calc(100% - 80px)); padding: 10px;
+      border: 1px solid var(--ui-border); border-radius: 8px;
+      background: var(--ui-bg-soft); color: var(--ui-text);
+    }
+    #demoSearch[hidden] { display: none; }
+    #demoSearch label { display: block; margin-bottom: 6px; }
+    #demoSearch .ui-search-wrap { display: flex; gap: 4px; }
+    #demoSearch input { min-width: 0; width: 100%; }
+    .demo-state-controls { display: flex; flex-wrap: wrap; gap: 12px; }
     .map-readout {
       position: absolute;
       left: 14px;
@@ -94,7 +105,7 @@
   </style>
   <script type="module">
     import { uiLoader } from "../js/ui/ui.loader.js";
-    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.controls"]);
+    window.__demoLoaderReady = uiLoader.loadMany(["ui.map.controls", "ui.search", "ui.events"]);
   </script>
   <script>
     window.demoMeta = {
@@ -114,6 +125,7 @@
         { factory: "<code>createMapControls(container, options)</code>", arguments: "<code>container</code>, map-control <code>options</code>", returns: "Map controls instance with update, syncFromMap, getState, and destroy methods" }
       ],
       options: [
+        { option: "<code>actions</code>", default: "<code>[]</code>", description: "Named custom actions with id, label, canonical icon, onActivate, visible, disabled, expanded and ariaControls. Include IDs in controls to order them." },
         { option: "<code>map</code>", default: "<code>null</code>", description: "Optional MapLibre map instance. When supplied, zoom, bearing, pitch, and layer visibility can call MapLibre directly." },
         { option: "<code>controls</code>", default: "<code>[\"zoom\", \"compass\", \"pitch\", \"locate\", \"fit\", \"layers\"]</code>", description: "Controls to render. Allowed values: zoom, compass, pitch, locate, fit, layers." },
         { option: "<code>layers</code>", default: "<code>[]</code>", description: "Layer toggle definitions: <code>{ id, label, checked }</code>. The id should match a MapLibre layer id when direct visibility updates are desired." },
@@ -130,6 +142,7 @@
         { event: "<code>onPitchChange</code>", arguments: "<code>({ pitch, map })</code>", returns: "Optional override for pitch changes." }
       ],
       methods: [
+        { method: "<code>setActionState(id, state)</code>", arguments: "visible, disabled, expanded", returns: "boolean; updates mounted button in place" },
         { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
         { method: "<code>syncFromMap()</code>", arguments: "none", returns: "<code>void</code>" },
         { method: "<code>getState()</code>", arguments: "none", returns: "Control state snapshot" },
@@ -151,14 +164,30 @@
       <h2 class="ui-title">MapLibre Control Dock</h2>
       <div class="map-stage">
         <div id="mapControlsHost"></div>
+        <section id="demoSearch" hidden aria-label="Demo map search">
+          <label for="demoSearchInput">Search map</label>
+          <div id="demoSearchField"></div>
+          <button type="button" id="dismissSearch" class="ui-button">Dismiss search</button>
+          <p class="muted">Interaction demo only; no place lookup. Escape dismisses and returns focus.</p>
+        </section>
         <div id="mapReadout" class="map-readout">Waiting for controls...</div>
       </div>
+      <div class="demo-state-controls">
+        <label><input type="checkbox" id="searchVisible" checked> Search action visible</label>
+        <label><input type="checkbox" id="searchDisabled"> Search action disabled</label>
+      </div>
+      <p class="muted">Search is ordered before Zoom In. State controls exercise the supported update API. The demo owns reveal, dismissal and focus return.</p>
     </section>
 
     <section class="panel">
       <h2 class="ui-title">Usage</h2>
       <pre>const controls = createMapControls(host, {
   map,
+  controls: ["search", "zoom", "compass", "pitch", "locate", "fit", "layers"],
+  actions: [{ id: "search", label: "Search map", icon: "actions.search",
+    expanded: false, ariaControls: "demoSearch",
+    onActivate() { revealSearch(); },
+  }],
   layers: [
     { id: "incidents", label: "Incidents", checked: true },
     { id: "teams", label: "Teams", checked: true },
@@ -166,7 +195,9 @@
   ],
   onLocate({ map }) {},
   onFit({ map }) {},
-});</pre>
+});
+controls.setActionState("search", { expanded: true });
+controls.setActionState("search", { visible: true, disabled: false });</pre>
     </section>
   </main>
 
@@ -174,6 +205,39 @@
     import { uiLoader } from "../js/ui/ui.loader.js";
     await window.__demoLoaderReady;
     const createMapControls = await uiLoader.get("ui.map.controls");
+    const createSearchField = await uiLoader.get("ui.search");
+    const { createEventBag } = await uiLoader.get("ui.events");
+    const events = createEventBag();
+    const searchPanel = document.getElementById("demoSearch");
+    const search = createSearchField({ placeholder: "Type a demo query", onChange(value) { writeReadout(`Demo query: ${value}`); } });
+    search.input.id = "demoSearchInput";
+    search.bind(events);
+    document.getElementById("demoSearchField").appendChild(search.wrap);
+
+    function revealSearch() {
+      searchPanel.hidden = false;
+      controls.setActionState("search", { expanded: true });
+      search.input.focus();
+      writeReadout("Search opened");
+    }
+    function dismissSearch(returnFocus = true) {
+      searchPanel.hidden = true;
+      controls.setActionState("search", { expanded: false });
+      if (returnFocus) document.querySelector('#mapControlsHost [data-control="search"]')?.focus();
+      writeReadout("Search dismissed");
+    }
+    events.on(document.getElementById("dismissSearch"), "click", () => dismissSearch());
+    events.on(searchPanel, "keydown", (event) => {
+      if (event.key === "Escape") { event.preventDefault(); dismissSearch(); }
+    });
+    events.on(document.getElementById("searchVisible"), "change", (event) => {
+      if (!event.target.checked) dismissSearch(false);
+      controls.setActionState("search", { visible: event.target.checked });
+    });
+    events.on(document.getElementById("searchDisabled"), "change", (event) => {
+      if (event.target.checked) dismissSearch(false);
+      controls.setActionState("search", { disabled: event.target.checked });
+    });
 
     function createMockMap() {
       const handlers = new Map();
@@ -224,6 +288,10 @@ layers: ${JSON.stringify(map.layerVisibility, null, 2)}`;
     const controls = createMapControls(document.getElementById("mapControlsHost"), {
       map,
       orientation: "vertical",
+      controls: ["search", "zoom", "compass", "pitch", "locate", "fit", "layers"],
+      actions: [{ id: "search", label: "Search map", icon: "actions.search", expanded: false, ariaControls: "demoSearch",
+        onActivate: revealSearch,
+      }],
       layers: [
         { id: "incidents", label: "Incidents", checked: true },
         { id: "teams", label: "Teams", checked: true },
@@ -241,6 +309,7 @@ layers: ${JSON.stringify(map.layerVisibility, null, 2)}`;
     });
     controls.syncFromMap();
     writeReadout("ready");
+    events.on(window, "pagehide", () => { controls.destroy(); events.clear(); });
   </script>
 </body>
 </html>

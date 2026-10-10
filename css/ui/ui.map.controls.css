@@ -16,6 +16,9 @@
   max-width: 100%;
 }
 
+.ui-map-controls__group[hidden] { display: none; }
+.ui-map-controls__button:disabled { opacity: 0.5; cursor: default; }
+
 .ui-map-controls__group,
 .ui-map-controls__layers {
   display: inline-grid;
