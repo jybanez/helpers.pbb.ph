@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Map controls demo regression</title>
+<body data-status="pending"><pre id="results">pending</pre>
+<iframe src="../demos/demo.map.controls.html" style="width:375px;height:800px" title="Map controls demo"></iframe>
+<script>
+const frame = document.querySelector('iframe');
+const failures = [];
+function assert(value, message) { if (!value) failures.push(message); }
+let attempts = 0;
+const timer = setInterval(() => {
+  try {
+    const doc = frame.contentDocument;
+    const button = doc?.querySelector('[data-control="search"]');
+    if (!button) { if (++attempts > 150) throw new Error('Demo did not initialize'); return; }
+    clearInterval(timer);
+    const panel = doc.getElementById('demoSearch'), input = doc.getElementById('demoSearchInput');
+    assert(doc.querySelector('#mapControlsHost button') === button, 'search before zoom');
+    button.click();
+    assert(!panel.hidden && doc.activeElement === input && button.getAttribute('aria-expanded') === 'true', 'reveal/focus/expanded');
+    input.dispatchEvent(new frame.contentWindow.KeyboardEvent('keydown', {key:'Escape', bubbles:true}));
+    assert(panel.hidden && doc.activeElement === button && button.getAttribute('aria-expanded') === 'false', 'Escape dismissal/focus return');
+    button.click(); doc.getElementById('dismissSearch').click();
+    assert(panel.hidden && doc.activeElement === button, 'explicit dismissal');
+    const disabled = doc.getElementById('searchDisabled'); disabled.click();
+    assert(button.disabled, 'disabled state'); disabled.click();
+    const visible = doc.getElementById('searchVisible'); visible.click();
+    assert(frame.contentWindow.getComputedStyle(button.parentElement).display === 'none', 'hidden state'); visible.click();
+    button.click();
+    const bounds = panel.getBoundingClientRect();
+    assert(bounds.left >= 0 && bounds.right <= 375 && bounds.width > 150, 'narrow search remains contained and readable');
+    document.body.dataset.status = failures.length ? 'failed' : 'pass';
+    document.getElementById('results').textContent = failures.length ? failures.join('\n') : 'PASS';
+  } catch (error) {
+    clearInterval(timer); document.body.dataset.status = 'failed'; document.getElementById('results').textContent = error.message;
+  }
+}, 50);
+</script></body></html>

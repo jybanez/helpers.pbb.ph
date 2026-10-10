@@ -32,8 +32,8 @@ let server;
 
 try {
   server = await startStaticServer({ rootDir: repoRoot, port: 0 });
-  for (const suffix of ["", "?bundle"]) {
-    const htmlUrl = `${server.origin}/tests/map.controls.regression.html${suffix}`;
+  for (const target of ["map.controls.regression.html", "map.controls.regression.html?bundle", "map.controls.demo.regression.html"]) {
+    const htmlUrl = `${server.origin}/tests/${target}`;
     const { stdout } = await execFileAsync(
       browserPath,
       [
@@ -50,7 +50,7 @@ try {
       console.error(stdout);
       throw new Error("Map controls regression assertions did not pass.");
     }
-    console.log(`Map controls regression test passed (${suffix ? "bundle" : "source"}).`);
+    console.log(`Map controls regression test passed (${target}).`);
   }
 } catch (error) {
   console.error("Map controls regression test failed:", error.message);
