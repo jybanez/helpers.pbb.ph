@@ -7313,3 +7313,7 @@ Use `await api.update(currentData, {compact: true})` to switch, or `compact: fal
 Call `api.update(api.getData(), {chrome: false})` to change it; data-only updates and list replacement retain the setting, and explicit `true` restores default decoration. Focused editor synchronization also applies chrome without discarding draft values. Padding, gaps, input borders, buttons, focus/validation messages, required/error badges, busy feedback and dispatch status indicators remain. Existing field-group/property-viewer label conventions are unchanged; only decorative nested group shells are flattened. Drawers and separate dialogs retain their own chrome. This is not a compact-spacing or borderless-input option.
 
 The UI loader includes `css/incident/incident.chrome.css`; manual modular consumers must load it alongside their existing incident/component styles. No application-scoped CSS workaround is required. See the Incident Types and Team Assignments reference demos for the option contract.
+
+### Color picker
+
+`ui.color.picker` provides native RGB selection, optional opacity control and independently optional RGBA/HEX displays. Canonical form schema: `type: "ui.color.picker"`. See [API and alpha conventions](docs/color-picker.md) and [source/bundle demo](demos/demo.color.picker.html).
