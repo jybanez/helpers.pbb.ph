@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Color picker demo</title>
+  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/ui/ui.components.css">
+  <style>
+    body { margin:0; padding:20px; font-family:var(--ui-font); background:var(--ui-bg); color:var(--ui-text); }
+    main { max-width:1000px; margin:auto; display:grid; gap:20px; }
+    a { color:var(--ui-accent); } h1,h2,p { margin:0; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:16px; }
+    section { border:1px solid var(--ui-border); border-radius:10px; padding:16px; display:grid; gap:14px; min-width:0; background:var(--ui-bg-soft); }
+    pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:.85rem; }
+    .muted { color:var(--ui-muted); line-height:1.5; } #log { min-height:3em; }
+  </style>
+</head>
+<body><main>
+  <a href="./index.html">← Demo catalog</a>
+  <h1>Color picker</h1>
+  <p class="muted">Choose RGB with the browser’s native picker. Opacity is independently optional, as are the read-only RGBA and HEX displays. Hiding them preserves alpha. HEX uses trailing alpha: #RRGGBBAA.</p>
+  <div class="actions">
+    <button class="ui-button" id="theme">Switch to light theme</button>
+    <button class="ui-button" id="form">Open canonical form</button>
+    <a id="mode" href="?bundle">Use bundle</a>
+  </div>
+  <section><h2>Fill, stroke or text color</h2><div id="primary"></div>
+    <div class="actions">
+      <label><input type="checkbox" id="alpha" checked> Opacity control</label>
+      <label><input type="checkbox" id="rgba" checked> RGBA display</label>
+      <label><input type="checkbox" id="hex" checked> HEX display</label>
+      <label><input type="checkbox" id="disabled"> Disabled</label>
+      <label><input type="checkbox" id="busy"> Busy</label>
+    </div>
+    <div class="actions"><button class="ui-button" id="update">Set translucent blue</button><button class="ui-button" id="invalid">Try invalid value</button></div>
+    <pre id="log" role="status" aria-live="polite">Ready.</pre>
+  </section>
+  <h2>All eight independent option combinations</h2>
+  <div class="grid" id="combinations"></div>
+  <section><h2>Canonical form schema</h2><pre>{ type: "ui.color.picker", name: "fill", label: "Fill color",
+  value: "#3399ff80", showAlpha: true, showRgba: true, showHex: true }</pre>
+    <p class="muted">Form values are RGBA objects. A form constraint in this demo requires opacity above zero; invalid submission stays open, preserves values and shows the canonical field error before any submission work.</p>
+    <p class="muted">The native RGB dialog follows browser and operating-system behavior. These demos do not establish physical touch, Safari or assistive-technology acceptance.</p>
+  </section>
+</main><script type="module" src="../js/demo/demo.color.picker.js?v=0.21.291"></script></body></html>
