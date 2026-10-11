@@ -1,5 +1,7 @@
 # Changelog
 
+- Added optional MapLibre drawing `beforeDelete` gate shared by toolbar/public delete/clear and map Delete/Backspace, with explicit one-shot confirm/cancel and stale-editor/recursion protections. Default deletion stays immediate. Canonical confirmation demo and real source/bundle tests; adapter/main UI cache `0.21.290`, core remains `0.21.288`.
+
 - Added the optional canonical MapLibre4.6.0 drawing adapter: point/line/polygon creation, stable-ID vertex edits, draft and committed history, validated imports, style rehydration and navigation-safe teardown. Recursive JSON-data preflight rejects unsupported values before cloning, including through the toolbar boundary. Local real-engine demo and pointer/keyboard regression; adapter/core cache `0.21.288`, reconciled main UI cache `0.21.289`. Drawing toolbar preserves explicit numeric IDs at the adapter boundary and leaves its state unchanged on rejected imports.
 - Added canonical `map.layer` stacked-layer icon with existing currentColor/24x24 stroke conventions, small-size dark/light preview and source/bundle regression. Icons/main UI/optional game cache `0.21.287`; no application management action or modal added.
 

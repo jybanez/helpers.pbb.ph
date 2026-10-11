@@ -23,4 +23,4 @@ The icon conveys no guarantee that layers are stored or available offline.
 Runtime revisions and LF-normalized SHA256 are in `map-layer-icon-runtime.json`.
 Semantic package version remains0.21.83; unchanged styles are included in runtime
 provenance. Task203 is reviewed independently of adapter task202/PR153.
-After reconciliation with PR153, icons/game retain0.21.287 and the main UI bundle uses0.21.289; both provenance manifests describe the combined runtime.
+After reconciliation with PR153, icons/game retain0.21.287 and the main UI bundle uses0.21.290 after the deletion-gate addition; both provenance manifests describe the combined runtime.
