@@ -14,7 +14,7 @@ async (page) => {
       for (let mask = 0; mask < 8; mask++) {
         const p = combinations[mask];
         assert(p.element.querySelector('.ui-color-picker-alpha').hidden === !(mask & 4), "alpha visibility");
-        const displays = p.element.querySelectorAll('.ui-color-picker-displays label');
+        const displays = p.element.querySelectorAll('.ui-color-picker-display');
         assert(displays[0].hidden === !(mask & 2) && displays[1].hidden === !(mask & 1), "display visibility");
         assert(p.getValue().a === 128 / 255, "initial alpha");
         p.setValue({ r: 1, g: 2, b: 3, a: .123456789 });
@@ -48,6 +48,7 @@ async (page) => {
       for (const option of ['busy', 'disabled', 'readonly']) {
         p.update({ [option]: true });
         assert(p.input.disabled && p.alphaInput.disabled, "unavailable controls");
+        assert(p.element.querySelector('.is-rgba button').disabled === (option === 'busy'), "copy available for readonly/disabled displays, blocked while busy");
         const saved = p.getRgba(); p.input.value = '#ffffff'; p.input.dispatchEvent(new Event('input'));
         assert(p.getRgba() === saved, "unavailable ignores late user events");
         p.update({ [option]: false }); assert(!p.input.disabled && !p.alphaInput.disabled, "reenabled");
@@ -58,6 +59,52 @@ async (page) => {
       return { bundled: __colorDemo.bundled };
     });
     const alpha = page.locator('#primary input[type=range]');
+    const primary = page.locator('#primary');
+    await page.evaluate(() => __colorDemo.picker.setValue({ r: 1, g: 2, b: 3, a: .123456789 }));
+    assert(await primary.locator('.is-rgba input[readonly]').count() === 4, "four separate read-only channel fields");
+    assert(await primary.getByLabel('Alpha color channel', { exact: true }).inputValue() === String(.123456789), "display preserves precise alpha");
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await primary.getByRole('button', { name: 'Copy RGBA color value', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('#primary [role=status]').textContent.startsWith('Copied RGBA:'));
+    assert(await page.evaluate(async () => await navigator.clipboard.readText() === __colorDemo.picker.getRgba()), "actual RGBA clipboard write");
+    await primary.getByRole('button', { name: 'Copy HEX color value', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelector('#primary [role=status]').textContent.startsWith('Copied HEX:'));
+    assert(await page.evaluate(async () => await navigator.clipboard.readText() === __colorDemo.picker.getHex()), "actual keyboard HEX clipboard write");
+    await page.evaluate(() => {
+      window.__clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw Error('denied'); } } });
+    });
+    await primary.getByRole('button', { name: 'Copy RGBA color value', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('#primary [role=status]').textContent.startsWith('Could not copy.'));
+    assert(await page.evaluate(() => document.querySelector('#primary [role=status]').textContent.includes(__colorDemo.picker.getRgba())), "copy failure provides manual value");
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {} }));
+    await primary.getByRole('button', { name: 'Copy HEX color value', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('#primary [role=status]').textContent.endsWith(__colorDemo.picker.getHex()));
+    await page.evaluate(() => {
+      window.__copyWrites = [];
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: text => { __copyWrites.push(text); return new Promise(resolve => window.__resolveCopy = resolve); } } });
+    });
+    await primary.getByRole('button', { name: 'Copy RGBA color value', exact: true }).click();
+    assert(await primary.getByRole('button', { name: 'Copy HEX color value', exact: true }).isDisabled(), "pending copy disables duplicate actions");
+    await page.evaluate(() => {
+      const first = __colorDemo.picker.getRgba();
+      document.querySelector('#primary .is-hex button').dispatchEvent(new Event('click'));
+      if (__copyWrites.length !== 1 || __copyWrites[0] !== first) throw Error('duplicate copy prevented');
+      __colorDemo.picker.setValue('#11223380');
+      __resolveCopy();
+    });
+    await page.waitForFunction(() => document.querySelector('#primary [role=status]').textContent === `Copied RGBA: ${__copyWrites[0]}`);
+    await page.evaluate(async () => {
+      const host = document.createElement('div'); document.body.append(host);
+      const p = __colorDemo.create(host); const status = p.element.querySelector('[role=status]');
+      p.element.querySelector('.is-rgba button').click(); const before = status.textContent;
+      p.destroy(); __resolveCopy(); await Promise.resolve(); await Promise.resolve();
+      if (status.textContent !== before || host.children.length) throw Error('destroy ignores late copy feedback');
+      host.remove();
+      if (__clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', __clipboardDescriptor); else delete navigator.clipboard;
+      __colorDemo.picker.setValue('#3399ff80');
+    });
     await alpha.focus(); const before = await alpha.inputValue(); await page.keyboard.press('ArrowLeft');
     assert(Number(await alpha.inputValue()) < Number(before), "keyboard opacity");
     assert(await page.locator('#primary input[type=color]').getAttribute('aria-label') === 'Color', "RGB accessible label");
@@ -86,6 +133,9 @@ async (page) => {
       __colorDemo.form.update({ onSubmit: () => { __colorSubmits++; return false; }, onInvalid: (report, context) => __colorInvalids.push({ report, busy: context.isBusy() }) });
       __colorDemo.form.setValues({ fill: { r: 11, g: 22, b: 33, a: 0 } });
     });
+    await page.locator('.ui-modal').getByRole('button', { name: 'Copy RGBA color value', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('.ui-modal [role=status]')?.textContent.startsWith('Copied RGBA:'));
+    assert(await page.evaluate(() => __colorSubmits === 0 && __colorInvalids.length === 0), "copy button does not submit or validate form");
     await page.getByRole('button', { name: 'Save color', exact: true }).click();
     await page.waitForFunction(() => __colorInvalids.length === 1);
     assert(await page.evaluate(() => __colorSubmits === 0 && !__colorInvalids[0].busy && __colorDemo.form.getValues().fill.a === 0), "validate before busy and retain values");
@@ -97,8 +147,10 @@ async (page) => {
     await page.screenshot({ path: `output/playwright/color-picker-form-${result.bundled ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
     await page.evaluate(() => __colorDemo.form.setBusy(true));
     assert(await color.isDisabled() && await page.locator('.ui-modal input[type=range]').isDisabled(), "form busy disables both");
+    assert(await page.locator('.ui-modal .is-rgba button').isDisabled(), "busy form blocks copy");
     await page.evaluate(() => { __colorDemo.form.setBusy(false); __colorDemo.form.setValues({ fill: '#ff000080' }); });
     assert(!await color.isDisabled() && !await page.locator('.ui-modal input[type=range]').isDisabled(), "form busy releases controls");
+    assert(!await page.locator('.ui-modal .is-rgba button').isDisabled(), "copy restored after form busy");
     assert(await color.getAttribute('aria-invalid') !== 'true', "stale error cleared");
     await page.getByRole('button', { name: 'Save color', exact: true }).click();
     await page.waitForFunction(() => __colorSubmits === 1);

@@ -4,13 +4,14 @@ import { createActionModal } from "./ui.modal.js?v=0.21.235";
 import { createNumberStepper } from "./ui.number.stepper.js";
 import { createPasswordField } from "./ui.password.js?v=0.21.64";
 import { createSelect } from "./ui.select.js";
-import { createColorPicker } from "./ui.color.picker.js?v=0.21.291";
+import { createColorPicker } from "./ui.color.picker.js?v=0.21.294";
 import { createToggleGroup } from "./ui.toggle.group.js";
 import { createDatepicker } from "./ui.datepicker.js?v=0.21.197";
 import { createTreeSelect } from "./ui.tree.select.js";
 
 const FORM_MODAL_STYLE_PATHS = [
-  "../../css/ui/ui.color.picker.css?v=0.21.291",
+  "../../css/ui/ui.icons.css",
+  "../../css/ui/ui.color.picker.css?v=0.21.294",
   "../../css/ui/ui.tokens.css",
   "../../css/ui/ui.field.error.css?v=0.21.195",
   "../../css/ui/ui.components.css",

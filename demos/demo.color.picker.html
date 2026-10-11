@@ -21,7 +21,7 @@
       overview: "Reusable RGB color selection with independently optional opacity, RGBA and HEX displays.",
       useWhen: ["Choose a fill, stroke, text or other color with the same canonical control.", "Use the canonical form schema when color selection is part of a modal workflow."],
       avoidWhen: ["Do not use this as a gradient editor or palette manager.", "Do not represent an optional empty selection with a color; use a separate explicit choice field."],
-      description: "The native RGB picker, opacity slider and copyable value displays share one RGBA value. Hidden options and RGB edits preserve alpha. HEX uses trailing alpha (#RRGGBBAA); invalid updates reject before changing state.",
+      description: "The native RGB picker, opacity slider and channel/value displays with copy buttons share one RGBA value. Hidden options and RGB edits preserve alpha. HEX uses trailing alpha (#RRGGBBAA); invalid updates reject before changing state.",
       defaultSampleCode: `const create = await uiLoader.get("ui.color.picker");
 const picker = create(host, {
   label: "Fill color", value: "#3399ff80",
@@ -36,8 +36,8 @@ const picker = create(host, {
       options: [
         { option: "<code>value</code>", default: "<code>#000000</code>", description: "HEX, comma rgb()/rgba(), or numeric RGBA object. Integer RGB 0–255; alpha 0–1." },
         { option: "<code>showAlpha</code>", default: "true", description: "Show the opacity slider without discarding alpha when hidden.", values: ["true", "false"] },
-        { option: "<code>showRgba</code>", default: "true", description: "Show the copyable, read-only RGBA value.", values: ["true", "false"] },
-        { option: "<code>showHex</code>", default: "true", description: "Show the copyable, read-only #RRGGBBAA value.", values: ["true", "false"] },
+        { option: "<code>showRgba</code>", default: "true", description: "Show four read-only R/G/B/A fields and an RGBA copy button.", values: ["true", "false"] },
+        { option: "<code>showHex</code>", default: "true", description: "Show the read-only #RRGGBBAA field and a HEX copy button.", values: ["true", "false"] },
         { option: "<code>label / ariaLabel</code>", default: "Color", description: "Visible and accessible purpose of this color." },
         { option: "<code>id / name</code>", default: "Generated ID / empty name", description: "Initial RGB input ID and optional native-form RGBA serialization name." },
         { option: "<code>disabled / busy / readonly</code>", default: "false", description: "Prevent user edits; busy also sets aria-busy. Displays remain copyable." },
@@ -93,4 +93,4 @@ const picker = create(host, {
     <p class="muted">Form values are RGBA objects. A form constraint in this demo requires opacity above zero; invalid submission stays open, preserves values and shows the canonical field error before any submission work.</p>
     <p class="muted">The native RGB dialog follows browser and operating-system behavior. These demos do not establish physical touch, Safari or assistive-technology acceptance.</p>
   </section>
-</main><script type="module" src="../js/demo/demo.color.picker.js?v=0.21.293"></script></body></html>
+</main><script type="module" src="../js/demo/demo.color.picker.js?v=0.21.294"></script></body></html>
