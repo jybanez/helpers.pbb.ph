@@ -2,7 +2,13 @@
 
 Load `ui.color.picker` through `uiLoader.get()` and call `createColorPicker(host, options)`.
 The complete component combines a native RGB color input, an opacity range, a
-checkerboard alpha preview and copyable, read-only value displays. Existing date,
+checkerboard alpha preview, four read-only R/G/B/A fields and a HEX field.
+Each visible RGBA/HEX display has a shared copy-icon button. RGBA copies the
+complete `rgba(r, g, b, a)` string; HEX copies the complete `#RRGGBBAA` string.
+Copy uses the browser Clipboard API, confirms success only after the write
+resolves, and shows the full value for manual copying if access is denied or
+unavailable. Buttons work with keyboard activation, never submit a parent form,
+and disable during a pending copy or busy state. Destroy ignores late feedback. Existing date,
 path and repository pickers do not handle colors; the form modal had no color
 schema field. This adds that field to the canonical form rather than requiring
 custom generic-modal wiring. No application layer/storage behavior is included.
@@ -23,7 +29,8 @@ disabled/busy/readonly off. `showAlpha`, `showRgba`, `showHex` are independent;
 all eight combinations work. `label`, `ariaLabel`, `id`, and `name` configure
 accessible identity and native-form serialization. Labels must describe the
 color's purpose. Busy sets `aria-busy` and disables color/opacity changes;
-disabled and readonly also prevent changes. Displays remain copyable.
+disabled and readonly also prevent changes. Their displays remain copyable;
+busy disables copy actions until cleared.
 
 Accepted values: `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA` (case-insensitive), comma
 `rgb(r, g, b)` or `rgba(r, g, b, a)`, or `{ r, g, b, a }`. RGB channels are numeric

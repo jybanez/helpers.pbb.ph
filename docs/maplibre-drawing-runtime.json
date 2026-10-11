@@ -4,7 +4,7 @@
   "helperPackage": "0.21.83",
   "adapterJsRevision": "0.21.290",
   "coreJsRevision": "0.21.288",
-  "mainUiBundleRevision": "0.21.291",
+  "mainUiBundleRevision": "0.21.294",
   "cssRevision": "unchanged",
   "maplibreVersion": "4.6.0",
   "drawingEngineDependencies": [],
@@ -12,7 +12,7 @@
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "7a0b1e7603c404f4f0effa1993fd35f0d0ef927fdadbd4693420afd9839b1954"
+      "sha256": "60985bbc35d49c51150514c2edab59bfd36a4a534b48452cb6b1f8361f1abbdf"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
@@ -44,11 +44,11 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "11df2f98dd0de64914bc86689186b575b012f53664587f95df00ad2b6cd890aa"
+      "sha256": "fa80f11da251516d3530da705dd94b11647bc1bc6cb590b2eace79f493e41093"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "08801671df55de2fd899e04721d4d234278fc6ebc02d5f01e6ee9c487aa674ad"
+      "sha256": "a58e1ecdb7ff76913cad776995ec728bee40d024b1876d00b2849d1cc573cd17"
     },
     {
       "path": "vendor/maplibre/maplibre-gl.js",

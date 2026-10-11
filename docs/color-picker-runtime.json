@@ -2,44 +2,44 @@
   "component": "ui.color.picker",
   "factory": "createColorPicker",
   "helperPackage": "0.21.83",
-  "componentRevision": "0.21.291",
-  "formModalRevision": "0.21.291",
-  "mainUiBundleRevision": "0.21.291",
-  "demoRevision": "0.21.293",
+  "componentRevision": "0.21.294",
+  "formModalRevision": "0.21.294",
+  "mainUiBundleRevision": "0.21.294",
+  "demoRevision": "0.21.294",
   "scope": "Changed runtime and demo assets; optional game and inspection bundles unchanged. Source dependencies use existing canonical components.",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
     {
       "path": "js/ui/ui.color.picker.js",
-      "sha256": "4bf206cb7ab1ab5da5fb68da74022348eff07a8a49517aa779ac78d5dd6a6671"
+      "sha256": "4e8bfacc8f24a95a566de1e9d58a05b72864b5207ddc2846564165fabfee4704"
     },
     {
       "path": "css/ui/ui.color.picker.css",
-      "sha256": "d963f725825eec2f8d27c5ee0536583c051abb7497dff9874db6ad1ae0f80f8c"
+      "sha256": "3caef8aaea436d007cea8824003c5e5f9184516c3d22e617dde107ea040977cf"
     },
     {
       "path": "js/ui/ui.form.modal.js",
-      "sha256": "87807906a07e4276080ce889335d6438b9829355980a6f2f6c2a88005d90caa7"
+      "sha256": "bf17e17d30b406762e69eb5f5a05e15f2c31c7035b0b33eccfa045adc681629f"
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "7a0b1e7603c404f4f0effa1993fd35f0d0ef927fdadbd4693420afd9839b1954"
+      "sha256": "60985bbc35d49c51150514c2edab59bfd36a4a534b48452cb6b1f8361f1abbdf"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "11df2f98dd0de64914bc86689186b575b012f53664587f95df00ad2b6cd890aa"
+      "sha256": "fa80f11da251516d3530da705dd94b11647bc1bc6cb590b2eace79f493e41093"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "08801671df55de2fd899e04721d4d234278fc6ebc02d5f01e6ee9c487aa674ad"
+      "sha256": "a58e1ecdb7ff76913cad776995ec728bee40d024b1876d00b2849d1cc573cd17"
     },
     {
       "path": "demos/demo.color.picker.html",
-      "sha256": "1a821937e2cf39a0e22182d4d1494338c413af9cf54eea170ab23536a29f2857"
+      "sha256": "6a90251a5193f7ba75463e54c39d0965457a759e891df9373522f1081df866eb"
     },
     {
       "path": "js/demo/demo.color.picker.js",
-      "sha256": "17a1338246377e1a648cb9b21b576c3ef09c10c8909bd4e888e5655621eb0999"
+      "sha256": "fcbcefc02f0a45e6e07f5979ffa760f2ce760663cf654b16e72e06645edc5c86"
     },
     {
       "path": "js/demo/demo.shell.js",
@@ -51,7 +51,7 @@
     },
     {
       "path": "docs/color-picker.md",
-      "sha256": "9e243b6c01ea98d7c2dbb2806beda5a6e5f4cd54a6ed18d820d8a21662d02551"
+      "sha256": "13193c03f847d4cc1541b6fd5a5d975e4c9801236a9a7b340f04de47b88a1fa9"
     }
   ]
 }

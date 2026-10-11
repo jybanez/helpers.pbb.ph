@@ -1,4 +1,5 @@
 import { clearNode } from "./ui.dom.js";
+import { createIcon } from "./ui.icons.js?v=0.21.287";
 
 /** Strict RGB channels and straight (unpremultiplied) alpha. HEX alpha is trailing. */
 export function parseColor(value) {
@@ -45,6 +46,8 @@ export function createColorPicker(container, options = {}) {
   let value = parseColor(settings.value);
   let destroyed = false;
   let notifying = false;
+  let copyPending = false;
+  let lastDisplayedColor = null;
   const doc = container.ownerDocument;
   const id = options.id || `ui-color-picker-${++nextId}`;
   const root = doc.createElement("div");
@@ -74,24 +77,59 @@ export function createColorPicker(container, options = {}) {
   const displayRow = doc.createElement("div");
   displayRow.className = "ui-color-picker-displays";
   function display(kind) {
-    const label = doc.createElement("label");
-    label.textContent = kind;
-    const input = doc.createElement("input");
-    input.type = "text";
-    input.readOnly = true;
-    input.className = "ui-input";
-    input.setAttribute("aria-label", `${kind} color value`);
-    label.append(input);
-    displayRow.append(label);
-    return { label, input };
+    const group = doc.createElement("div");
+    group.className = `ui-color-picker-display is-${kind.toLowerCase()}`;
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", `${kind} color value`);
+    const fields = doc.createElement("div");
+    fields.className = "ui-color-picker-display-fields";
+    const inputs = {};
+    const channels = kind === "RGBA" ? [["r", "R", "Red"], ["g", "G", "Green"], ["b", "B", "Blue"], ["a", "A", "Alpha"]] : [["hex", "HEX", "HEX"]];
+    if (kind === "RGBA") {
+      const heading = doc.createElement("span");
+      heading.textContent = kind;
+      group.append(heading);
+    }
+    for (const [key, text, name] of channels) {
+      const label = doc.createElement("label");
+      label.textContent = text;
+      const input = doc.createElement("input");
+      input.type = "text";
+      input.readOnly = true;
+      input.className = "ui-input";
+      input.setAttribute("aria-label", kind === "RGBA" ? `${name} color channel` : "HEX color value");
+      label.append(input);
+      inputs[key] = input;
+      fields.append(label);
+    }
+    const button = doc.createElement("button");
+    button.type = "button";
+    button.className = "ui-button ui-button-quiet ui-button-icon ui-color-picker-copy";
+    button.setAttribute("aria-label", `Copy ${kind} color value`);
+    button.title = `Copy ${kind} color value`;
+    button.append(createIcon("actions.copy", { size: 16 }));
+    const clicked = () => copy(kind);
+    button.addEventListener("click", clicked);
+    fields.append(button);
+    group.append(fields);
+    displayRow.append(group);
+    return { group, inputs, button, clicked };
   }
   const rgba = display("RGBA"), hex = display("HEX");
+  const copyStatus = doc.createElement("p");
+  copyStatus.className = "ui-color-picker-copy-status";
+  copyStatus.setAttribute("role", "status");
+  copyStatus.setAttribute("aria-live", "polite");
+  displayRow.append(copyStatus);
   const hidden = doc.createElement("input");
   hidden.type = "hidden";
   root.append(rgbLabel, rgb, swatch, alphaRow, displayRow, hidden);
   clearNode(container);
   container.append(root);
   function sync() {
+    const currentColor = colorToRgba(value);
+    if (!copyPending && lastDisplayedColor !== currentColor) copyStatus.textContent = "";
+    lastDisplayedColor = currentColor;
     const label = String(settings.label || "Color");
     rgbLabel.textContent = label;
     root.setAttribute("aria-label", settings.ariaLabel || label);
@@ -102,19 +140,38 @@ export function createColorPicker(container, options = {}) {
     alpha.value = String(value.a);
     alpha.setAttribute("aria-valuetext", `${value.a * 100}% opacity`);
     alphaValue.textContent = `${Math.round(value.a * 10000) / 100}%`;
-    rgba.input.value = colorToRgba(value);
-    hex.input.value = colorToHex(value);
+    for (const key of ["r", "g", "b", "a"]) rgba.inputs[key].value = String(value[key]);
+    hex.inputs.hex.value = colorToHex(value);
     paint.style.backgroundColor = colorToRgba(value);
     alphaRow.hidden = !settings.showAlpha;
-    rgba.label.hidden = !settings.showRgba;
-    hex.label.hidden = !settings.showHex;
+    rgba.group.hidden = !settings.showRgba;
+    hex.group.hidden = !settings.showHex;
     displayRow.hidden = !settings.showRgba && !settings.showHex;
     const unavailable = Boolean(settings.disabled || settings.busy || settings.readonly);
     rgb.disabled = alpha.disabled = unavailable;
+    rgba.button.disabled = hex.button.disabled = Boolean(copyPending || settings.busy);
     root.classList.toggle("is-disabled", unavailable);
     hidden.name = settings.name || "";
     hidden.value = colorToRgba(value);
     hidden.disabled = Boolean(settings.disabled || settings.busy);
+  }
+  async function copy(kind) {
+    if (destroyed || copyPending || settings.busy || (kind === "RGBA" ? !settings.showRgba : !settings.showHex)) return;
+    const text = kind === "RGBA" ? colorToRgba(value) : colorToHex(value);
+    copyPending = true;
+    copyStatus.textContent = `Copying ${kind}…`;
+    sync();
+    try {
+      const clipboard = doc.defaultView.navigator.clipboard;
+      if (typeof clipboard?.writeText !== "function") throw new Error("Clipboard unavailable");
+      await clipboard.writeText(text);
+      if (!destroyed) copyStatus.textContent = `Copied ${kind}: ${text}`;
+    } catch (_error) {
+      if (!destroyed) copyStatus.textContent = `Could not copy. Copy this value manually: ${text}`;
+    } finally {
+      copyPending = false;
+      if (!destroyed) sync();
+    }
   }
   function notify(type, event) {
     // Callbacks may set/update values silently; explicit emitting inside a callback is suppressed.
@@ -157,6 +214,7 @@ export function createColorPicker(container, options = {}) {
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      for (const display of [rgba, hex]) display.button.removeEventListener("click", display.clicked);
       for (const control of [rgb, alpha]) for (const type of ["input", "change"]) control.removeEventListener(type, handle);
       root.remove();
     },

@@ -1,5 +1,5 @@
 const bundled = new URLSearchParams(location.search).has("bundle");
-const { uiLoader } = await import(bundled ? "../../dist/helpers.ui.bundle.min.js?v=0.21.291" : "../ui/ui.loader.js?v=0.21.291");
+const { uiLoader } = await import(bundled ? "../../dist/helpers.ui.bundle.min.js?v=0.21.294" : "../ui/ui.loader.js?v=0.21.294");
 const [create, createForm] = await Promise.all([uiLoader.get("ui.color.picker"), uiLoader.get("ui.form.modal")]);
 const log = document.getElementById("log");
 const picker = create(document.getElementById("primary"), {
