@@ -1,13 +1,14 @@
 {
   "icon": "map.layer",
   "helperPackage": "0.21.83",
-  "iconsMainAndGameRevision": "0.21.287",
+  "iconsAndGameRevision": "0.21.287",
+  "mainUiBundleRevision": "0.21.289",
   "cssContent": "unchanged",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "d7a44b3a6b237f0b40ac5ddd47418efb86e4bf3578c72a35ac2c7e168f6d1965"
+      "sha256": "201c4e6b76d927fa3ccc059f495f0823e8ad38225d0ec7bab09b1c594d41f3b8"
     },
     {
       "path": "js/ui/ui.icons.js",
@@ -23,7 +24,7 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "7f5295b08ca1d70c1e5f2d8819a2c6dc3a3f71b51a25d07f4e4337c2fc394a73"
+      "sha256": "89163730ff040157f2a13fc7ac9552c3df192344b6bbac2234410482394a4f25"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

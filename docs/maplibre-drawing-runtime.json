@@ -1,0 +1,65 @@
+{
+  "component": "ui.map.drawing.maplibre",
+  "factory": "createMapLibreDrawingAdapter",
+  "helperPackage": "0.21.83",
+  "adapterAndCoreJsRevision": "0.21.288",
+  "mainUiBundleRevision": "0.21.289",
+  "cssRevision": "unchanged",
+  "maplibreVersion": "4.6.0",
+  "drawingEngineDependencies": [],
+  "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
+  "artifacts": [
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "201c4e6b76d927fa3ccc059f495f0823e8ad38225d0ec7bab09b1c594d41f3b8"
+    },
+    {
+      "path": "js/ui/ui.map.drawing.js",
+      "sha256": "6e900066a1e85608b71481245f859f738d660bcd0613457af6d5c428935090ef"
+    },
+    {
+      "path": "js/ui/ui.map.drawing.maplibre.js",
+      "sha256": "c9c510bd3bd9e5af100ac1afa756f72bc01aec0a8768435633d327ece5e2ec67"
+    },
+    {
+      "path": "js/ui/ui.dom.js",
+      "sha256": "fb9ea9f463f768e19cb7a54a837b2d8781ac4569c5916515acb3893f258e124e"
+    },
+    {
+      "path": "js/ui/ui.events.js",
+      "sha256": "46e4e3bf09df212ce47e4b45b655eca95a1d7ff2ca115720e8e23ccef1027b3b"
+    },
+    {
+      "path": "css/ui/ui.tokens.css",
+      "sha256": "b8113329260d11f6e2d0db8729bec301a0224b53a23e832f5f175db5e4c43e59"
+    },
+    {
+      "path": "css/ui/ui.components.css",
+      "sha256": "7ee3bfc139060ec71b2e631e1fd97e0e5a1c60ebf37884dca78aa41509e117ed"
+    },
+    {
+      "path": "css/ui/ui.map.drawing.css",
+      "sha256": "30ea471480a05c7934b32d51fa76b3b9217846286c705e582a54579d73afd33f"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "89163730ff040157f2a13fc7ac9552c3df192344b6bbac2234410482394a4f25"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "03f7cbc89e7a4d61c9b5f40f2f63d5b88d5560909a728bda445044d91f47c968"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.js",
+      "sha256": "7912439cb42081c0da576f2857368a80fc3bd16f9f0f154179c5c18d4c1271fd"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.css",
+      "sha256": "576b085fdd9487a65a19215328c1e086c07ce5bf6da09b666b3806d3d008dae9"
+    },
+    {
+      "path": "vendor/maplibre/LICENSE.txt",
+      "sha256": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2"
+    }
+  ]
+}

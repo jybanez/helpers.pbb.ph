@@ -6102,6 +6102,19 @@ Related demos:
 
 - `demos/demo.map.drawing.html`
 
+### `createMapLibreDrawingAdapter(map, options)` (`js/ui/ui.map.drawing.maplibre.js`)
+
+The optional `ui.map.drawing.maplibre` registry entry provides the reusable
+MapLibre4.6.0 engine adapter for the complete drawing toolbar. It supports stable-ID
+points, lines and polygons, selection and existing-vertex dragging, draft/committed
+undo/redo, atomic validated imports, style rehydration and navigation-safe teardown.
+Rectangle, circle, measurement and topology validation are explicitly unsupported.
+The host owns its map, permissions, personal-layer UI and persistence.
+
+See [the adapter contract](docs/maplibre-drawing-adapter.md) and the local
+`demos/demo.map.drawing.html` (also `?bundle`). MapLibre is supplied by the host;
+the canonical module adds no external drawing dependency.
+
 ### `createChart(container, options)` (`js/ui/ui.charts.js`)
 
 Purpose:
