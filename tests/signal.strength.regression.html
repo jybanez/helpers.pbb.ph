@@ -17,7 +17,9 @@
   <pre id="results">Running...</pre>
 
   <script type="module">
-    import { createSignalStrength } from "../js/ui/ui.signal.strength.js";
+    const { createSignalStrength } = location.search.includes('bundle')
+      ? await import('../dist/helpers.ui.bundle.min.js').then(async ({uiLoader}) => ({createSignalStrength:await uiLoader.get('ui.signal.strength')}))
+      : await import('../js/ui/ui.signal.strength.js');
 
     const failures = [];
     const host = document.getElementById("host");
@@ -78,6 +80,56 @@
 
       signal.destroy();
       assert(host.children.length === 0, "destroy should clear host");
+
+      const transitions = [];
+      const observer = createSignalStrength(host, { level: 4, tone: 'OK', onStateChange(payload) {
+        assert(host.firstChild.dataset.level === String(observer.getState().level), 'DOM committed before observer');
+        transitions.push(payload);
+      }});
+      assert(!transitions.length, 'initial render is silent');
+      observer.update({level:99,tone:'ok'}); observer.update({metadata:'ignored'});
+      assert(!transitions.length,'normalized no-op and unknown metadata are silent');
+      observer.update({level:2.4,tone:'WARN',showText:false});
+      assert(transitions.length===1 && transitions[0].previous.level===4 && transitions[0].current.level===2 && transitions[0].current.tone==='warn','normalized previous/current transition');
+      assert(Object.isFrozen(transitions[0].previous) && Object.isFrozen(transitions[0].current),'snapshots immutable');
+      assert(!('onStateChange' in transitions[0].current) && !('metadata' in transitions[0].current),'snapshots contain only supported state');
+      const first=transitions[0];
+      observer.update({ariaLabel:'Map offline',ariaLive:'polite',label:'Map',title:'Status',text:'Offline',size:'regular',className:'custom'});
+      assert(transitions.length===2 && host.firstChild.getAttribute('aria-label')==='Map offline','presentation/accessibility change emits once');
+      assert(first.current.text==='' && first.current.showText===false,'old snapshots remain detached');
+      observer.update({onStateChange:null}); observer.update({level:1});
+      assert(transitions.length===2,'callback removal is silent and disables observations');
+      observer.update({onStateChange:payload=>transitions.push(payload)});
+      assert(transitions.length===2,'callback replacement only is silent');
+      observer.update({tone:'offline'});
+      assert(transitions.length===3 && transitions[2].previous.level===1,'replacement sees actual prior state');
+      observer.destroy();
+      const last=observer.getState(); observer.update({level:4});
+      assert(observer.getState().level===last.level && !host.children.length && transitions.length===3,'updates after destroy inert');
+
+      const order=[]; let depth=0,maxDepth=0;
+      const nested=createSignalStrength(host,{onStateChange({previous,current}){
+        depth++;maxDepth=Math.max(maxDepth,depth);order.push([previous.level,current.level]);
+        if(current.level===1){nested.update({level:2});nested.update({level:3});}
+        nested.update({level:nested.getState().level});
+        depth--;
+      }});
+      nested.update({level:1});
+      assert(JSON.stringify(order)==='[[0,1],[1,2],[2,3]]' && maxDepth===1,'reentrant delivery is FIFO without nested observers');
+      nested.destroy();
+      const marker=Error('observer failure'); const failuresSeen=[];
+      const failing=createSignalStrength(host,{onStateChange({current}){
+        failuresSeen.push(current.level);
+        if(current.level===1){failing.update({level:2});throw marker;}
+      }});
+      let caught; try{failing.update({level:1});}catch(error){caught=error;}
+      assert(caught===marker && failing.getState().level===2 && host.firstChild.dataset.level==='2' && failuresSeen.join(',')==='1,2','observer error propagates after committed queue drains');
+      failing.update({level:3}); assert(failuresSeen.at(-1)===3,'observer delivery recovers after failure');
+      failing.destroy();
+      let destroyEvents=0;
+      const terminal=createSignalStrength(host,{onStateChange(){destroyEvents++;terminal.update({level:2});terminal.destroy();}});
+      terminal.update({level:1});
+      assert(destroyEvents===1 && !host.children.length,'destroy during callback cancels pending observers');
 
       finish();
     } catch (error) {

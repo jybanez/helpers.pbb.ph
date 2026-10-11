@@ -1,58 +1,18 @@
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import fs from "node:fs";
-import { startStaticServer } from "./_support/static-server.mjs";
-
-const execFileAsync = promisify(execFile);
-const browserCandidates = [
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-];
-
-const browserPath = browserCandidates.find((candidate) => {
-  try {
-    return candidate && fs.existsSync(candidate);
-  } catch {
-    return false;
-  }
-});
-
-if (!browserPath) {
-  console.error("Signal strength regression test failed: no supported browser executable found.");
-  process.exit(1);
-}
-
-const testsDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(testsDir, "..");
-let server;
-
+import { startStaticServer } from './_support/static-server.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const run = promisify(execFile);
+const server = await startStaticServer({ rootDir: process.cwd(), port: 0 });
+const cli = command => run(process.env.ComSpec || 'cmd.exe', ['/d','/s','/c',
+  `npx --no-install @playwright/cli -s=signal-strength-regression ${command}`], { timeout: 60000, maxBuffer: 2**22 });
 try {
-  server = await startStaticServer({ rootDir: repoRoot, port: 0 });
-  const htmlUrl = `${server.origin}/tests/signal.strength.regression.html`;
-  const { stdout } = await execFileAsync(
-    browserPath,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--virtual-time-budget=5000",
-      "--dump-dom",
-      htmlUrl,
-    ],
-    { timeout: 120000, maxBuffer: 1024 * 1024 * 4 },
-  );
-
-  if (!stdout.includes('data-status="pass"') || !stdout.includes("PASS")) {
-    console.error(stdout);
-    throw new Error("Signal strength regression assertions did not pass.");
+  await cli(`open ${server.origin}/tests/signal.strength.regression.html`);
+  for (const suffix of ['', '?bundle']) {
+    await cli(`goto ${server.origin}/tests/signal.strength.regression.html${suffix}`);
+    const { stdout } = await cli('run-code --filename tests/_support/signal-strength-check.js');
+    if (!stdout.includes('PASS')) throw Error(stdout);
+    console.log(`Signal strength state-change regression passed (${suffix || 'source'}).`);
   }
-  console.log("Signal strength regression test passed.");
-} catch (error) {
-  console.error("Signal strength regression test failed:", error.message);
-  process.exit(1);
 } finally {
-  await server?.close();
+  try { await cli('close'); } finally { await server.close(); }
 }

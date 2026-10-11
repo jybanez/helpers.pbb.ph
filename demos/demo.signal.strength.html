@@ -114,10 +114,12 @@
         { option: "<code>ariaLive</code>", default: "<code>\"off\"</code>", description: "Live region behavior. Allowed values: <code>off</code>, <code>polite</code>, <code>assertive</code>." },
         { option: "<code>showText</code>", default: "<code>true</code>", description: "Set to false for bars-only rendering in tight spaces." },
         { option: "<code>size</code>", default: "<code>\"compact\"</code>", description: "Allowed values: <code>compact</code>, <code>regular</code>." },
-        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name on the root." }
+        { option: "<code>className</code>", default: "<code>\"\"</code>", description: "Extra class name on the root." },
+        { option: "<code>onStateChange</code>", default: "<code>null</code>", description: "Receives immutable <code>{ previous, current }</code> normalized snapshots after meaningful updates; initial/no-op renders are silent." }
       ],
       propertiesText: "The root exposes <code>data-level</code>, <code>data-tone</code>, and <code>data-show-text</code> for inspection. Use <code>getState()</code> for supported runtime reads.",
-      eventsText: "No events are emitted. Host apps own transport measurement and call update(...).",
+      eventsText: "onStateChange observes meaningful normalized updates. Host apps own transport measurement and call update(...).",
+      events: [{ event: "<code>onStateChange</code>", arguments: "<code>{ previous, current }</code> frozen normalized snapshots", returns: "Synchronous observation after committed updates; initial and normalized no-op updates are silent." }],
       methods: [
         { method: "<code>update(options)</code>", arguments: "partial options", returns: "<code>void</code>" },
         { method: "<code>getState()</code>", arguments: "none", returns: "Normalized options snapshot" },
@@ -187,7 +189,12 @@ signal.update({
     ];
     let index = 4;
     let showText = true;
-    const navbarSignal = createSignalStrength(document.getElementById("navbarSignal"), states[index]);
+    const changeLog = document.createElement('pre');
+    changeLog.id = 'stateChangeLog'; changeLog.textContent = 'Initial render is silent. Cycle signal or toggle bars to observe changes.';
+    document.getElementById('navbarSignal').closest('section').append(changeLog);
+    const navbarSignal = createSignalStrength(document.getElementById("navbarSignal"), {...states[index],onStateChange({previous,current}){
+      changeLog.textContent = JSON.stringify({previous,current},null,2);
+    }});
 
     states.forEach((state) => {
       const card = document.createElement("article");
