@@ -67,13 +67,16 @@ Use one active adapter per map: input handlers intentionally own drawing gesture
 Do not reuse the reserved prefix in host sources/layers during the adapter's life.
 
 Methods: `on(event, callback)` returns an unsubscribe function; `setMode(mode)`,
-`setFeatures(features)`, `getFeatures()`, `getMode()`, `getState()`,
+`setFeatures(features)`, `validateFeatures(features)`, `getFeatures()`, `getMode()`, `getState()`,
 `getCapabilities()`, `finish()`, `cancel()`, `undo()`, `redo()`, `deleteSelected()`,
 `clear()`, `destroy()`. `finish()` returns false when insufficient vertices exist;
 otherwise validates, commits and returns true. Invalid drafts report through
 `onError`, return false and remain editable. Invalid imports throw before changing
 the model. Pointer edits rejected on validation revert to the previous committed
 geometry and report through `onError`.
+`validateFeatures` is a pure preflight returning a defensive validated copy; the
+toolbar uses this optional adapter method before its legacy normalization so
+unsupported values cannot be coerced before the adapter sees them.
 
 Events conform to the existing component: `create`/`update` carry a GeoJSON
 Feature; `delete` carries its original ID (one event per deleted feature);
@@ -95,7 +98,16 @@ IDs must be nonempty strings or finite numbers; numeric0 is retained. IDs must
 be unique even when string and numeric forms are equivalent. New drawn features
 use prefix plus `crypto.randomUUID()` in a secure browser context. Imports retain
 IDs, properties and geometry exactly; get/set/event copies prevent caller-owned
-data mutation. GeoJSON properties must be an object or null and JSON compatible.
+data mutation. Before cloning, the complete input batch (including foreign members)
+must consist of JSON data: null, strings, booleans, finite numbers, dense ordinary
+arrays, and plain objects with Object/null prototypes. Objects require own
+enumerable string-keyed data properties. Undefined, functions, symbols (values
+or keys), BigInt, nonfinite numbers, cycles, sparse/extended arrays, accessors,
+hidden properties, custom prototypes and class/built-in instances (including
+Date, Map, Set and boxed primitives) are rejected. No toJSON hooks are run.
+Repeated noncyclic references are allowed; object/prototype identity is not part
+of the GeoJSON data contract. Defensive structured clones retain negative zero
+and nested JSON values. GeoJSON properties must be an object or null.
 Geometry accepts only Point/LineString/Polygon with finite **2D** longitude/latitude
 in [-180,180]/[-90,90]. Coordinates use browser double precision without rounding.
 Polygon ring validation uses a 1e-12 degree-squared tolerance on signed twice-area.
@@ -135,6 +147,7 @@ and map removal. Screenshots are under `output/playwright/`.
 
 Also run `node tests/map.drawing.regression.mjs`, bundle and registry contracts.
 `maplibre-drawing-runtime.json` records LF-normalized SHA256 runtime provenance;
-the package version remains0.21.83, adapter/core/main JS cache revision0.21.286.
+the package version remains0.21.83, adapter/main JS cache revision0.21.288;
+the toolbar core also uses0.21.288.
 CSS is unchanged. Acceptance covers the library; PBB Map personal-layer UI and
 persistence require their own design, implementation and acceptance.

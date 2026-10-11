@@ -1,5 +1,5 @@
 const MODES = ["select", "pan", "point", "line", "polygon"];
-const clone = value => JSON.parse(JSON.stringify(value));
+const clone = value => structuredClone(value);
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 let nextAdapter = 0;
 
@@ -226,7 +226,7 @@ export function createMapLibreDrawingAdapter(map, options = {}) {
   bindDom(canvas, "pointercancel", abortDrag); bindDom(canvas, "lostpointercapture", () => { if (drag) abortDrag(); }); bindDom(canvas, "keydown", keydown);
   bindDom(globalThis, "blur", () => { if (drag) abortDrag(); });
   try { if (map.isStyleLoaded()) hydrate(); } catch (error) { destroy(); throw error; }
-  return { on, setMode, setFeatures, getFeatures: () => clone(features), getMode: () => mode, getCapabilities: capabilities, finish, cancel, undo, redo, deleteSelected, clear, destroy,
+  return { on, setMode, setFeatures, validateFeatures, getFeatures: () => clone(features), getMode: () => mode, getCapabilities: capabilities, finish, cancel, undo, redo, deleteSelected, clear, destroy,
     getState: () => ({ mode, selectedFeatureId: selected, features: clone(features), draft: clone(draft), destroyed, sourceId, layerIds: [...layers] }) };
 }
 
@@ -234,6 +234,7 @@ function validatePosition(position) {
   if (!Array.isArray(position) || position.length !== 2 || !position.every(Number.isFinite) || Math.abs(position[0]) > 180 || Math.abs(position[1]) > 90) throw new TypeError("Coordinates must be finite 2D longitude/latitude within [-180,180]/[-90,90].");
 }
 function validateFeatures(input) {
+  validateJsonData(input); // Whole batch, before any cloning or adapter mutation.
   const values = input?.type === "FeatureCollection" ? input.features : input;
   if (!Array.isArray(values)) throw new TypeError("Expected a feature array or FeatureCollection.");
   const ids = new Set();
@@ -255,6 +256,28 @@ function validateFeatures(input) {
     } else throw new TypeError("Only Point, LineString and Polygon geometry are supported.");
     return clone(feature);
   });
+}
+function validateJsonData(value, ancestors = new Set(), path = "features") {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number" && Number.isFinite(value)) return;
+  if (typeof value !== "object") throw new TypeError(`${path} must contain only JSON data (null, strings, booleans, finite numbers, arrays and plain objects).`);
+  if (ancestors.has(value)) throw new TypeError(`${path} contains a cycle.`);
+  const array = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) throw new TypeError(`${path} must use plain objects or ordinary arrays, not class or built-in instances.`);
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const keys = Reflect.ownKeys(descriptors);
+  if (keys.some(key => typeof key === "symbol")) throw new TypeError(`${path} cannot have symbol keys.`);
+  if (array && (keys.length !== value.length + 1 || !keys.every(key => key === "length" || /^(0|[1-9]\d*)$/.test(key) && Number(key) < value.length))) throw new TypeError(`${path} must be a dense array without additional properties.`);
+  ancestors.add(value);
+  try {
+    for (const key of keys) {
+      if (array && key === "length") continue;
+      const descriptor = descriptors[key];
+      if (!descriptor.enumerable || !Object.prototype.hasOwnProperty.call(descriptor, "value")) throw new TypeError(`${path}.${key} must be an enumerable data property, not an accessor or hidden property.`);
+      validateJsonData(descriptor.value, ancestors, `${path}.${key}`);
+    }
+  } finally { ancestors.delete(value); }
 }
 function validateLine(coordinates, minimum) {
   if (!Array.isArray(coordinates) || coordinates.length < minimum) throw new TypeError(`Geometry requires at least ${minimum} coordinates.`);

@@ -251,6 +251,7 @@ export function createMapDrawingTools(container, options = {}) {
   }
 
   function setFeatures(features = []) {
+    const preflight = currentOptions.adapter?.validateFeatures?.(features);
     const normalized = normalizeFeatures(features);
     if (currentOptions.adapter?.setFeatures) {
       // Keep legacy normalized defaults, but preserve explicit GeoJSON ID types.
@@ -262,7 +263,7 @@ export function createMapDrawingTools(container, options = {}) {
         return next;
       }).filter(Boolean);
       // An adapter rejection must not commit invalid toolbar state.
-      currentOptions.adapter.setFeatures(engineFeatures);
+      currentOptions.adapter.setFeatures(Array.isArray(preflight) ? preflight : engineFeatures);
     }
     currentFeatures = normalized;
     currentOptions.features = currentFeatures.map(clonePlain);
