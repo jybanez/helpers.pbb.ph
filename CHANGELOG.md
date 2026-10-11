@@ -1,5 +1,7 @@
 # Changelog
 
+- Added canonical `map.layer` stacked-layer icon with existing currentColor/24x24 stroke conventions, small-size dark/light preview and source/bundle regression. Icons/main UI/optional game cache `0.21.287`; no application management action or modal added.
+
 - Added transport-agnostic signal-strength `onStateChange` observations with immutable normalized previous/current snapshots, silent initial/no-op renders, FIFO reentrant delivery and explicit observer error/destroy behavior. Source/bundle regression and demo; signal/main UI cache `0.21.285`.
 
 - Contained the transparent native checkbox input inside its root and bounded it to the visible 18px box, preventing label/focus activation from targeting distant scroll positions. Nested modal/tree desktop/mobile source/bundle regression; checkbox CSS/main UI cache `0.21.284`.
