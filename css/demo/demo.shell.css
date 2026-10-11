@@ -858,7 +858,7 @@ body.demo-shell-sidebar .demo-shell-nav__docs a {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1260px) {
   .demo-shell-nav__toggle {
     display: inline-flex;
   }

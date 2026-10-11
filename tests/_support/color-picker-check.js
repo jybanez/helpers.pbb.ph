@@ -1,6 +1,6 @@
 async (page) => {
   const assert = (condition, message) => { if (!condition) throw Error(message); };
-  for (const width of [1440, 375]) {
+  for (const width of [1440, 1200, 375]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.reload();
     await page.waitForFunction(() => window.__colorReady);
@@ -64,12 +64,21 @@ async (page) => {
     await alpha.click({ position: { x: 20, y: 8 } });
     assert(await page.evaluate(() => __colorDemo.picker.getValue().a < .5), "pointer opacity edit");
     for (const theme of ['dark', 'light']) {
-      if (width <= 900) await page.getByRole('button', { name: 'Show demo navigation', exact: true }).click();
+      if (width <= 1260) await page.getByRole('button', { name: 'Show demo navigation', exact: true }).click();
       await page.getByLabel('Demo theme', { exact: true }).selectOption(theme);
-      if (width <= 900) await page.getByRole('button', { name: 'Hide demo navigation', exact: true }).click();
+      if (width <= 1260) await page.getByRole('button', { name: 'Hide demo navigation', exact: true }).click();
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no horizontal overflow");
       await page.screenshot({ path: `output/playwright/color-picker-${result.bundled ? 'bundle' : 'source'}-${width}-${theme}.png` });
     }
+    if (width <= 1260) {
+      await page.getByRole('button', { name: 'Show demo navigation', exact: true }).click();
+      assert(await page.getByLabel('Demo theme', { exact: true }).isVisible(), "expanded navigation usable");
+      await page.keyboard.press('Escape');
+      assert(await page.getByRole('button', { name: 'Show demo navigation', exact: true }).getAttribute('aria-expanded') === 'false', "Escape collapses navigation");
+      await page.getByRole('button', { name: 'Show demo navigation', exact: true }).click();
+      await page.getByRole('button', { name: 'Hide demo navigation', exact: true }).click();
+    }
+    // Actual pointer access, including the previously blocked intermediate width.
     await page.click('#form');
     await page.waitForFunction(() => __colorDemo.form?.getState().open);
     await page.evaluate(() => {
@@ -107,5 +116,20 @@ async (page) => {
       }
     });
   }
-  return "PASS color picker";
+  // A neighboring canonical demo exercises the shared shell change independently
+  // of the color page, including the viewport that formerly blocked pointers.
+  await page.goto(new URL('demo.checkbox.html', page.url()).href);
+  await page.waitForSelector('#booleanHost input');
+  for (const width of [1440, 1200, 375]) {
+    await page.setViewportSize({ width, height: 1000 });
+    if (width <= 1260) {
+      await page.getByRole('button', { name: 'Show demo navigation', exact: true }).click();
+      await page.getByRole('button', { name: 'Hide demo navigation', exact: true }).click();
+    }
+    const input = page.locator('#booleanHost input');
+    const previous = await input.isChecked();
+    await page.click('#toggleBooleanBtn');
+    assert(await input.isChecked() !== previous, "neighboring demo pointer action accessible across shell breakpoints");
+  }
+  return "PASS color picker and shared demo shell";
 }

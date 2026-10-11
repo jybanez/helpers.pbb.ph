@@ -5,7 +5,7 @@
   "componentRevision": "0.21.291",
   "formModalRevision": "0.21.291",
   "mainUiBundleRevision": "0.21.291",
-  "demoRevision": "0.21.292",
+  "demoRevision": "0.21.293",
   "scope": "Changed runtime and demo assets; optional game and inspection bundles unchanged. Source dependencies use existing canonical components.",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
@@ -35,7 +35,7 @@
     },
     {
       "path": "demos/demo.color.picker.html",
-      "sha256": "34629f41c7e7e4540864f403f2f11cb6572a9aa7a66ebfa9817f62b6b63d7810"
+      "sha256": "1a821937e2cf39a0e22182d4d1494338c413af9cf54eea170ab23536a29f2857"
     },
     {
       "path": "js/demo/demo.color.picker.js",
@@ -43,11 +43,11 @@
     },
     {
       "path": "js/demo/demo.shell.js",
-      "sha256": "396c1e30bd874f9367282e317d95c50bed617e472a1bbcdc0cfdb955eb97afe7"
+      "sha256": "49f8cfeb93a918b1b672b10d7a73cb2427a3ee390f665a17fb5632318be8f422"
     },
     {
       "path": "css/demo/demo.shell.css",
-      "sha256": "4a7832106db457f3f52640b6cc7a05101ad9a95d29572d75204d240e00eeeb41"
+      "sha256": "45d5cf1ac6af7f0870bbf5ce2175fbdcba7729fa82a868402eedd387207b0b17"
     },
     {
       "path": "docs/color-picker.md",

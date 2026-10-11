@@ -5,7 +5,7 @@ const sha256 = path => crypto.createHash("sha256").update(fs.readFileSync(path, 
 fs.writeFileSync("docs/color-picker-runtime.json", JSON.stringify({
   component: "ui.color.picker", factory: "createColorPicker", helperPackage: "0.21.83",
   componentRevision: "0.21.291", formModalRevision: "0.21.291", mainUiBundleRevision: "0.21.291",
-  demoRevision: "0.21.292",
+  demoRevision: "0.21.293",
   scope: "Changed runtime and demo assets; optional game and inspection bundles unchanged. Source dependencies use existing canonical components.",
   algorithm: "SHA256 of UTF-8 text normalized CRLF to LF",
   artifacts: paths.map(path => ({ path, sha256: sha256(path) })),
