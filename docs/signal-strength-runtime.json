@@ -1,0 +1,29 @@
+{
+  "component": "ui.signal.strength",
+  "componentRevision": "0.21.285",
+  "mainBundleRevision": "0.21.285",
+  "componentCssRevision": "unchanged",
+  "checksumEncoding": "UTF-8 with CRLF normalized to LF",
+  "artifacts": [
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "1aad1938bc79fa0199d3920819fda4c7d9a8f089e47d5a060d656d29e7a59284"
+    },
+    {
+      "path": "js/ui/ui.signal.strength.js",
+      "sha256": "ee1cb033de81f0d8c315305ac49c615bcb4f2e826e8338211e33df6da42a35c0"
+    },
+    {
+      "path": "css/ui/ui.signal.strength.css",
+      "sha256": "73cf631b4abc55b234d83bfdec171786e7aa383777d80e54967d8900ddfe88bd"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "f16694f88500512d59751be5c9d1fb322b15e14feabd17f2a793160f610f6376"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "03f7cbc89e7a4d61c9b5f40f2f63d5b88d5560909a728bda445044d91f47c968"
+    }
+  ]
+}
