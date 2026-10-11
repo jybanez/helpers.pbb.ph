@@ -1,31 +1,80 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Color picker demo</title>
-  <link rel="stylesheet" href="../css/ui/ui.tokens.css">
+  <link rel="stylesheet" href="../css/demo/demo.shell.css?v=0.21.293">
   <link rel="stylesheet" href="../css/ui/ui.components.css">
   <style>
     body { margin:0; padding:20px; font-family:var(--ui-font); background:var(--ui-bg); color:var(--ui-text); }
-    main { max-width:1000px; margin:auto; display:grid; gap:20px; }
+    .page { max-width:1000px; margin:auto; display:grid; gap:20px; }
     a { color:var(--ui-accent); } h1,h2,p { margin:0; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:16px; }
-    section { border:1px solid var(--ui-border); border-radius:10px; padding:16px; display:grid; gap:14px; min-width:0; background:var(--ui-bg-soft); }
+    .panel, .picker-card { border:1px solid var(--ui-border); border-radius:10px; padding:16px; display:grid; gap:14px; min-width:0; background:var(--ui-bg-soft); }
     pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:.85rem; }
     .muted { color:var(--ui-muted); line-height:1.5; } #log { min-height:3em; }
   </style>
+  <script>
+    window.demoMeta = {
+      title: "Color Picker",
+      overview: "Reusable RGB color selection with independently optional opacity, RGBA and HEX displays.",
+      useWhen: ["Choose a fill, stroke, text or other color with the same canonical control.", "Use the canonical form schema when color selection is part of a modal workflow."],
+      avoidWhen: ["Do not use this as a gradient editor or palette manager.", "Do not represent an optional empty selection with a color; use a separate explicit choice field."],
+      description: "The native RGB picker, opacity slider and copyable value displays share one RGBA value. Hidden options and RGB edits preserve alpha. HEX uses trailing alpha (#RRGGBBAA); invalid updates reject before changing state.",
+      defaultSampleCode: `const create = await uiLoader.get("ui.color.picker");
+const picker = create(host, {
+  label: "Fill color", value: "#3399ff80",
+  showAlpha: true, showRgba: true, showHex: true,
+  onChange({ value, hex, rgba }) { console.log(value, hex, rgba); }
+});`,
+      sectionSamples: {
+        "all eight independent option combinations": `picker.update({ showAlpha: false, showRgba: true, showHex: false });
+// Hiding controls/displays preserves exact canonical alpha.`
+      },
+      constructor: [{ factory: "<code>createColorPicker(host, options)</code>", arguments: "Host element and options", returns: "Color picker instance" }],
+      options: [
+        { option: "<code>value</code>", default: "<code>#000000</code>", description: "HEX, comma rgb()/rgba(), or numeric RGBA object. Integer RGB 0–255; alpha 0–1." },
+        { option: "<code>showAlpha</code>", default: "true", description: "Show the opacity slider without discarding alpha when hidden.", values: ["true", "false"] },
+        { option: "<code>showRgba</code>", default: "true", description: "Show the copyable, read-only RGBA value.", values: ["true", "false"] },
+        { option: "<code>showHex</code>", default: "true", description: "Show the copyable, read-only #RRGGBBAA value.", values: ["true", "false"] },
+        { option: "<code>label / ariaLabel</code>", default: "Color", description: "Visible and accessible purpose of this color." },
+        { option: "<code>id / name</code>", default: "Generated ID / empty name", description: "Initial RGB input ID and optional native-form RGBA serialization name." },
+        { option: "<code>disabled / busy / readonly</code>", default: "false", description: "Prevent user edits; busy also sets aria-busy. Displays remain copyable." },
+        { option: "<code>onInput / onChange</code>", default: "null", description: "Receive a frozen color snapshot and the instance." }
+      ],
+      properties: [
+        { property: "<code>element</code>", type: "HTMLElement", description: "Complete component root." },
+        { property: "<code>input / alphaInput</code>", type: "HTMLInputElement", description: "Supported native RGB and opacity targets for labels and errors." }
+      ],
+      events: [
+        { event: "<code>onInput / ui:color:input</code>", arguments: "<code>{ value, hex, rgba, event }</code>; callback also receives instance", returns: "Continuous user edits" },
+        { event: "<code>onChange / ui:color:change</code>", arguments: "Same snapshot; programmatic event is null", returns: "Committed edits or explicit emitting setValue; nested emission suppressed" }
+      ],
+      methods: [
+        { method: "<code>getValue()</code>", arguments: "none", returns: "Defensive RGBA object" },
+        { method: "<code>getHex() / getRgba()</code>", arguments: "none", returns: "HEX with alpha rounded to a byte / RGBA with canonical alpha" },
+        { method: "<code>getState()</code>", arguments: "none", returns: "Options, canonical value and destroyed state" },
+        { method: "<code>setValue(value, { emit: false })</code>", arguments: "Accepted color and optional emit flag", returns: "void; invalid values throw TypeError atomically" },
+        { method: "<code>update(options)</code>", arguments: "Partial options", returns: "void; silent, preserves omitted value" },
+        { method: "<code>setDisabled(bool) / setBusy(bool)</code>", arguments: "boolean", returns: "void" },
+        { method: "<code>focus() / destroy()</code>", arguments: "none", returns: "void; destroy is idempotent" }
+      ]
+    };
+  </script>
+  <script type="module" src="../js/demo/demo.shell.js?v=0.21.293"></script>
 </head>
-<body><main>
-  <a href="./index.html">← Demo catalog</a>
+<body class="demo-shell-sidebar"><main class="page">
+  <section class="panel">
+  <a class="back" href="./index.html">Back to Home</a>
   <h1>Color picker</h1>
   <p class="muted">Choose RGB with the browser’s native picker. Opacity is independently optional, as are the read-only RGBA and HEX displays. Hiding them preserves alpha. HEX uses trailing alpha: #RRGGBBAA.</p>
   <div class="actions">
-    <button class="ui-button ui-button-ghost" id="theme">Switch to light theme</button>
     <button class="ui-button ui-button-ghost" id="form">Open canonical form</button>
     <a id="mode" href="?bundle">Use bundle</a>
   </div>
-  <section><h2>Fill, stroke or text color</h2><div id="primary"></div>
+  </section>
+  <section class="panel"><h2>Fill, stroke or text color</h2><div id="primary"></div>
     <div class="actions">
       <label><input type="checkbox" id="alpha" checked> Opacity control</label>
       <label><input type="checkbox" id="rgba" checked> RGBA display</label>
@@ -34,13 +83,14 @@
       <label><input type="checkbox" id="busy"> Busy</label>
     </div>
     <div class="actions"><button class="ui-button ui-button-ghost" id="update">Set translucent blue</button><button class="ui-button ui-button-ghost" id="invalid">Try invalid value</button></div>
-    <pre id="log" role="status" aria-live="polite">Ready.</pre>
+    <pre class="log" id="log" role="status" aria-live="polite">Ready.</pre>
   </section>
-  <h2>All eight independent option combinations</h2>
+  <section class="panel"><h2>All eight independent option combinations</h2>
   <div class="grid" id="combinations"></div>
-  <section><h2>Canonical form schema</h2><pre>{ type: "ui.color.picker", name: "fill", label: "Fill color",
+  </section>
+  <section class="panel"><h2>Canonical form schema</h2><pre>{ type: "ui.color.picker", name: "fill", label: "Fill color",
   value: "#3399ff80", showAlpha: true, showRgba: true, showHex: true }</pre>
     <p class="muted">Form values are RGBA objects. A form constraint in this demo requires opacity above zero; invalid submission stays open, preserves values and shows the canonical field error before any submission work.</p>
     <p class="muted">The native RGB dialog follows browser and operating-system behavior. These demos do not establish physical touch, Safari or assistive-technology acceptance.</p>
   </section>
-</main><script type="module" src="../js/demo/demo.color.picker.js?v=0.21.291"></script></body></html>
+</main><script type="module" src="../js/demo/demo.color.picker.js?v=0.21.293"></script></body></html>
