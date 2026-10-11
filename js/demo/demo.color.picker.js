@@ -15,15 +15,11 @@ document.getElementById("invalid").onclick = () => {
   try { picker.update({ value: "rgba(999, 0, 0, 1)", showAlpha: false }); }
   catch (error) { log.textContent = `${error.message} Current value retained: ${picker.getRgba()}`; }
 };
-document.getElementById("theme").onclick = event => {
-  const light = document.documentElement.dataset.theme !== "light";
-  document.documentElement.dataset.theme = light ? "light" : "dark";
-  event.target.textContent = `Switch to ${light ? "dark" : "light"} theme`;
-};
 const combinations = [];
 for (let mask = 0; mask < 8; mask++) {
   const section = document.createElement("section"), title = document.createElement("h3"), host = document.createElement("div");
   title.textContent = `Opacity ${mask & 4 ? "on" : "off"} · RGBA ${mask & 2 ? "on" : "off"} · HEX ${mask & 1 ? "on" : "off"}`;
+  section.className = "picker-card";
   section.append(title, host); document.getElementById("combinations").append(section);
   combinations.push(create(host, { value: "#ff804080", label: "Sample color", showAlpha: Boolean(mask & 4), showRgba: Boolean(mask & 2), showHex: Boolean(mask & 1) }));
 }
