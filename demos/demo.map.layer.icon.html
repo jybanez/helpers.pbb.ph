@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Map layer icon — Helper</title><link rel="stylesheet" href="../css/ui/ui.icons.css">
+<style>body{margin:0;padding:24px;background:#101b2d;color:#dceaff;font:16px/1.5 system-ui}main{max-width:720px;margin:auto}a{color:#76c7ff}h1{font-size:26px}.themes{display:grid;gap:20px}.theme{padding:20px;border-radius:10px}.dark{background:#1b2e47;color:#f4f8ff}.light{background:#fff;color:#172033}.sizes{display:flex;gap:24px;flex-wrap:wrap}.sample{display:grid;gap:12px;justify-items:center}.swatch{display:grid;place-items:center;width:48px;height:48px;border:1px solid currentColor;border-radius:8px}code{overflow-wrap:anywhere}</style></head>
+<body><main><a href="demo.icons.html">Back to icon catalog</a><h1>map.layer</h1><p>Three stacked map layers. Future action label/title: <strong>Manage personal layers</strong>. This icon preview does not indicate saved data or offline availability.</p><div class="themes" id="themes"></div><p><code>createIcon("map.layer", { size: 20 })</code></p><p id="mode" role="status">Loading…</p></main>
+<script type="module">
+import { uiLoader } from "../js/ui/ui.loader.js";
+const bundled = new URLSearchParams(location.search).has("bundle");
+uiLoader.setPreferBundles(bundled);
+const { createIcon } = await uiLoader.get("ui.icons");
+for (const theme of ["dark", "light"]) {
+  const section = document.createElement("section"); section.className = `theme ${theme}`;
+  const title = document.createElement("h2"); title.textContent = `${theme} theme`; section.append(title);
+  const sizes = document.createElement("div"); sizes.className = "sizes";
+  for (const size of [16, 20, 24, 32]) {
+    const sample = document.createElement("div"); sample.className = "sample";
+    const swatch = document.createElement("span"); swatch.className = "swatch"; swatch.append(createIcon("map.layer", { size }));
+    const label = document.createElement("span"); label.textContent = `${size}px`; sample.append(swatch, label); sizes.append(sample);
+  }
+  section.append(sizes); document.querySelector("#themes").append(section);
+}
+document.querySelector("#mode").textContent = bundled ? "Delivered main bundle" : "Modular source";
+window.__iconReady = true;
+</script></body></html>
