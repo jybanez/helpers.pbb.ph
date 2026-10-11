@@ -105,6 +105,19 @@
       assert(state.features.length === 1 && state.features[0].id === "draw-2", "getState should expose features");
       assert(state.measurement.areaSquareMeters === 34000, "getState should expose measurement");
 
+      tools.setFeatures([{ type: "Feature", id: 0, geometry: { type: "Point", coordinates: [1, 2] }, properties: {} }]);
+      assert(adapter.features[0].id === 0 && tools.getState().features[0].id === "0", "engine should retain numeric-zero ID while toolbar normalizes it");
+      adapter.emit("select", { id: 0 });
+      assert(tools.getState().selectedFeatureId === "0", "zero ID selection should survive");
+      tools.setFeatures([{ geometry: { type: "Point", coordinates: [1, 2] } }]);
+      assert(adapter.features[0].id === "feature-1" && adapter.features[0].type === "Feature", "legacy missing-ID/type defaults should remain");
+      const previousFeatures = JSON.stringify(tools.getState().features);
+      const originalSetFeatures = adapter.setFeatures;
+      adapter.setFeatures = () => { throw new Error("invalid import"); };
+      try { tools.setFeatures([feature("invalid", "Point")]); } catch (_) { /* expected */ }
+      assert(JSON.stringify(tools.getState().features) === previousFeatures, "rejected adapter import must leave toolbar state intact");
+      adapter.setFeatures = originalSetFeatures;
+
       const external = createMapDrawingTools(document.getElementById("external"), {
         modes: ["select"],
         actions: [],
