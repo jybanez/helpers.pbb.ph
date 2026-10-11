@@ -11,5 +11,9 @@ try {
     const { stdout } = await cli("run-code --filename tests/_support/maplibre-drawing-check.js");
     if (!stdout.includes("PASS")) throw Error(stdout);
     console.log(`MapLibre drawing real pointer/keyboard regression passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const gate = await cli("run-code --filename tests/_support/maplibre-deletion-gate-check.js");
+    if (!gate.stdout.includes("PASS")) throw Error(gate.stdout);
+    console.log(`MapLibre deletion gate regression passed (${suffix || "source"}).`);
   }
 } finally { try { await cli("close"); } finally { await server.close(); } }

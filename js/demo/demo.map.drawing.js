@@ -1,10 +1,32 @@
 import { uiLoader } from "../ui/ui.loader.js";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
+const createActionModal = await uiLoader.get("ui.action.modal");
 const style = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#20344a" } }] };
 const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, attributionControl: false });
 const status = document.querySelector("#status"), log = document.querySelector("#log");
 let adapter, tools;
+let pendingDelete = null;
+function cancelPendingDelete() { pendingDelete?.request.cancel(); pendingDelete?.modal.close(); pendingDelete = null; }
+function beforeDelete(request) {
+  if (!document.querySelector("#confirm-delete").checked) return true;
+  if (pendingDelete) { request.cancel(); return false; }
+  const owner = adapter;
+  const pending = { request, modal: null }; pendingDelete = pending;
+  const modal = createActionModal({
+    title: request.action === "clear" ? "Clear drawings" : "Delete drawing", size: "sm", autoBusy: false,
+    content: request.action === "clear" ? "Clear all drawings and the current draft?" : "Delete the selected drawing?",
+    actions: [{ id: "cancel", label: "Cancel", onClick() { request.cancel(); } },
+    { id: "confirm", label: request.action === "clear" ? "Clear" : "Delete", variant: "danger", onClick() {
+      const changed = adapter === owner && request.confirm();
+      if (!changed) status.textContent = "Drawing context changed. Nothing was deleted.";
+    } }],
+    onBeforeClose() { request.cancel(); return true; },
+    onClose() { request.cancel(); if (pendingDelete === pending) pendingDelete = null; modal.destroy(); },
+  });
+  pending.modal = modal; modal.open();
+  return false;
+}
 const events = [];
 const sample = [
   { type: "Feature", id: 0, properties: { name: "Waypoint", nested: { retained: true } }, geometry: { type: "Point", coordinates: [123.875, 10.32] } },
@@ -13,14 +35,15 @@ const sample = [
 ];
 function updateStatus() { const state = adapter.getState(); status.textContent = state.destroyed ? "Adapter destroyed. Map navigation restored." : `${state.mode} · ${state.features.length} features · ${state.draft.length} draft vertices · selected ${state.selectedFeatureId ?? "none"}`; }
 function recreate() {
+  cancelPendingDelete();
   tools?.destroy(); adapter?.destroy();
-  adapter = createAdapter(map, { onError(error) { status.textContent = error.message; } });
+  adapter = createAdapter(map, { beforeDelete, onError(error) { status.textContent = error.message; } });
   tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", modes: ["select", "pan", "point", "line", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
     updateStatus();
   });
-  window.__drawing = { map, adapter, tools, events, sample, style, listenerBaseline };
+  window.__drawing = { map, adapter, tools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
   updateStatus();
 }
 const listenerBaseline = Object.fromEntries(["click", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
@@ -28,6 +51,6 @@ map.once("load", () => { recreate(); window.__drawingReady = true; });
 document.querySelector("#import").onclick = () => tools.setFeatures(sample);
 document.querySelector("#export").onclick = () => { log.textContent = JSON.stringify({ type: "FeatureCollection", features: adapter.getFeatures() }, null, 2); };
 document.querySelector("#reload").onclick = () => map.setStyle(structuredClone(style));
-document.querySelector("#destroy").onclick = () => { tools.destroy(); adapter.destroy(); updateStatus(); };
+document.querySelector("#destroy").onclick = () => { cancelPendingDelete(); tools.destroy(); adapter.destroy(); updateStatus(); };
 document.querySelector("#recreate").onclick = recreate;
-window.addEventListener("pagehide", () => { tools?.destroy(); adapter?.destroy(); map.remove(); }, { once: true });
+window.addEventListener("pagehide", () => { cancelPendingDelete(); tools?.destroy(); adapter?.destroy(); map.remove(); }, { once: true });
