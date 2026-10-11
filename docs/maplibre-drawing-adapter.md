@@ -147,7 +147,7 @@ and map removal. Screenshots are under `output/playwright/`.
 
 Also run `node tests/map.drawing.regression.mjs`, bundle and registry contracts.
 `maplibre-drawing-runtime.json` records LF-normalized SHA256 runtime provenance;
-the package version remains0.21.83, adapter/main JS cache revision0.21.288;
+the package version remains0.21.83, adapter JS cache revision0.21.288 and reconciled main UI cache revision0.21.289;
 the toolbar core also uses0.21.288.
 CSS is unchanged. Acceptance covers the library; PBB Map personal-layer UI and
 persistence require their own design, implementation and acceptance.

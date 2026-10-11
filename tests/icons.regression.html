@@ -126,6 +126,7 @@
         "team.assessment",
         "team.command",
         "map.boundary",
+        "map.layer",
         "map.cluster",
         "map.hotspot",
         "map.source-hub",
@@ -159,6 +160,12 @@
         assert(createIcon(name, { ariaLabel: "Integration" }).getAttribute("aria-label") === "Integration", `${name} supports accessible naming`);
       }
       const integrationIcon = createIcon("actions.integration-add", { size: 16 });
+      const mapLayer = createIcon("map.layer", { size: 20 });
+      assert(mapLayer.getAttribute("viewBox") === "0 0 24 24" && mapLayer.getAttribute("stroke") === "currentColor", "map.layer uses canonical geometry and color inheritance");
+      assert(mapLayer.getAttribute("width") === "20" && mapLayer.getAttribute("aria-hidden") === "true", "map.layer uses decorative control sizing");
+      assert(mapLayer.querySelectorAll("path").length === 3, "map.layer renders three stacked layers");
+      const namedMapLayer = createIcon("map.layer", { title: "Manage personal layers" });
+      assert(namedMapLayer.getAttribute("aria-label") === "Manage personal layers" && namedMapLayer.querySelector("title").textContent === "Manage personal layers", "named icon retains supported accessible labeling");
       assert(integrationIcon.getAttribute("stroke") === "currentColor", "integration icon inherits text color");
       assert(integrationIcon.getAttribute("width") === "16" && integrationIcon.getAttribute("viewBox") === "0 0 24 24", "integration icon uses canonical compact sizing");
       assert(integrationIcon.getAttribute("aria-hidden") === "true", "integration icon is decorative beside menu text");
