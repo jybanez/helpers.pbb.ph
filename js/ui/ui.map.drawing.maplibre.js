@@ -9,7 +9,7 @@ export function createMapLibreDrawingAdapter(map, options = {}) {
   const prefix = options.idPrefix || `helper-drawing-${++nextAdapter}`;
   const sourceId = `${prefix}-data`;
   const layers = ["fill", "line", "point", "vertex"].map(name => `${prefix}-${name}`);
-  if (map.getSource(sourceId) || layers.some(id => map.getLayer(id))) throw new Error("Drawing IDs already exist.");
+  if (map.getStyle() && (map.getSource(sourceId) || layers.some(id => map.getLayer(id)))) throw new Error("Drawing IDs already exist.");
   const canvas = map.getCanvas();
   const listeners = new Map();
   const mapOffs = [];
