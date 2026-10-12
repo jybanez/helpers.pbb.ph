@@ -212,3 +212,110 @@ the package version remains0.21.83, adapter/main UI cache revision0.21.290;
 the toolbar core also uses0.21.288.
 CSS is unchanged. Acceptance covers the library; PBB Map personal-layer UI and
 persistence require their own design, implementation and acceptance.
+
+## Existing-object edit sessions and styles (adapter revision295)
+
+Legacy edits remain immediate unless `beginEdit(id)` is called in Select with
+no drag or pending draft. IDs include numeric zero; the method returns false
+when no eligible object exists or another session is active. Read
+`getState().editSession.id` after beginning and capture it for asynchronous UI.
+
+```js
+if (adapter.beginEdit(0)) {
+  const sessionId = adapter.getState().editSession.id;
+  adapter.updateFeature(0, {
+    style: { fill: fillPicker.getValue(), stroke: strokePicker.getValue() },
+  }, { sessionId });
+  // After explicit Finish: adapter.acceptEdit(sessionId).
+  // After explicit Cancel: adapter.rollbackEdit(sessionId).
+}
+```
+
+`updateFeature(id, patch, { sessionId }?)` accepts only `geometry`, `properties`
+and `style`. Geometry and properties replace those complete values; unspecified
+values stay intact. Style replaces `properties.helperStyle`; `style: null`
+removes that reserved value and restores default rendering. A non-null style is
+an object with optional `fill` and `stroke`, each exactly `{ r, g, b, a }`:
+integer RGB0–255 and finite alpha0–1, directly matching color-picker `getValue()`.
+Pass both colors when both should be retained. Unknown style keys and invalid
+JSON/geometry/colors throw TypeError before model, selection, history or events
+change. IDs cannot be changed through this method. `getFeatureStyle(id?)` returns
+a defensive copy, `{}` for an unstyled object, or null for no matching object.
+Imports also validate the reserved helperStyle property. Export includes styles;
+internal paint fields are source-only and never added to authored features.
+
+During a session, vertex drags and updates are previews. Existing update events
+still fire so the app can refresh its working draft, but must not be treated as
+accepted persistence. Undo/redo use session-local history. Complete drawing
+toolbar Finish/Cancel and map Escape call accept/rollback. Accept groups all
+changes into one global undo unit; rollback restores geometry, properties and
+styles exactly, retaining prior global undo/redo. No-op acceptance retains prior
+redo. Active drags block accept/update/undo/redo; rollback aborts a drag first.
+Destroy discards unaccepted session changes without persistence or teardown
+callbacks. Session IDs increase per instance; pass the captured ID to accept,
+rollback and update to reject stale UI results, and separately guard adapter/layer
+identity when an instance is replaced.
+
+Selection clicks, mode changes, imports, delete and clear are blocked while an
+edit session is active (return false); choose explicit accept/rollback first.
+The deletion gate still applies after acceptance/rollback, and any previous
+confirmation becomes stale when a session starts. Ordinary legacy edits still
+use immediate commit/history semantics. `getCapabilities()` adds `editSessions`
+and `featureStyles`; while editing, available modes are Select only.
+
+Fill colors apply to polygons and point interiors; stroke colors apply to lines,
+polygon outlines and point borders. Explicit style overrides the old selection
+color; selected vertex handles remain visible. Missing styles retain the existing
+blue/amber defaults, polygon fill opacity0.22 and point border. Alpha is applied
+independently to fill and stroke (including exact zero). Draft paint and vertex
+handles remain the canonical defaults. Style rehydration after map style reload
+uses the same per-feature source properties and expressions.
+
+`getState()` adds `editSession` (id, featureId, dirty, dragging, canUndo, canRedo),
+`dragging` and `anchor`. The anchor is the longitude/latitude bounding-box midpoint
+of draft vertices, otherwise selected-object vertices; no selection gives null.
+It is not a pixel position or a geodesic/antimeridian-aware centroid. Project it
+with `map.project(state.anchor)`, and reposition on map movement/resize.
+`statechange` publishes those interaction fields plus revision after draft/model
+changes and during pointer dragging; use it for an object-relative toolbar.
+`editchange` signals session begin/end. These events contain defensive snapshots.
+The app still owns object-toolbar/navigation UI, dirty-close confirmation,
+permission checks, session save, offline recovery and uncertain persistence.
+The demo uses the complete drawing toolbar and color-picker components to
+exercise selected-object begin, Fill/Stroke and Finish/Cancel.
+
+Adapter event listeners are read-only: reentrant mutation calls (including
+begin/accept/rollback, import, undo/redo, update, mode changes, deletion and
+explicit destroy) return false while events are being delivered. Observe snapshots
+there; invoke later UI actions outside the callback with captured adapter/layer
+identity and session ID. No rejected mutation is queued or automatically replayed.
+Map removal still disposes the adapter even if initiated during an event.
+
+A supported post-dispatch path is to record context in a read-only listener and
+act only from a subsequent explicit UI action. For example:
+
+```js
+let toolbarContext;
+const owner = adapter;
+owner.on("statechange", state => {
+  toolbarContext = { owner, layerId: activeLayerId,
+    sessionId: state.editSession?.id, revision: state.revision };
+  repositionToolbar(state.anchor); // Project/clamp only; do not mutate adapter.
+});
+function finishFromUserClick() {
+  const expected = toolbarContext;
+  if (!expected || adapter !== expected.owner || activeLayerId !== expected.layerId) return false;
+  const current = adapter.getState();
+  if (current.revision !== expected.revision || current.editSession?.id !== expected.sessionId) return false;
+  return adapter.acceptEdit(expected.sessionId);
+}
+```
+
+Use the same captured-context check for explicit Close/Discard rollback. A Save
+workflow must settle the active object edit first and persist only after successful
+acceptance; captured layer/storage identity still requires its own authorization
+and uncertain-outcome checks. Do not queue/replay rejected destructive or save
+actions automatically. `destroy()` has no public removal-bypass parameter; actual
+map removal is the sole internal forced-disposal path.
+
+Map removal is an immediate lifetime boundary, including removal inside a read-only notification. Pending drag completion and active-drag rollback stop after removal without restoring stale previews or adding history. Rollback captures its session before notifications; selection, edit acceptance, drawing completion and hydration also check lifetime before continuing. Already completed changes remain completed when removal occurs during their publication.
