@@ -1,0 +1,5 @@
+# Drawing action icons
+
+The complete `createMapDrawingTools` toolbar uses canonical `actions.undo`, `actions.redo` and `actions.clear` SVG icons. Clear uses eraser artwork; `actions.delete` remains the trash icon for deleting one object. Existing action names, accessible labels/titles, label visibility, keyboard activation and adapter capability/disabled rules are retained. The component renders these icons internally; consumers should use the complete toolbar without supplying custom Unicode artwork.
+
+Catalog, icon factory, drawing toolbar, main UI bundle and optional game bundle cache revision297. The game bundle embeds the shared icon catalog, so its generated JavaScript also changes; inspection content does not change. Toolbar surfaces and accent use theme tokens so labels and icons remain readable in dark/light themes; drawing CSS revision297. This adds no asset to PBB Map's loader/main-JS/main-CSS contract and requires no modular fallback. Application adoption follows independent exact-head review and merge; drawing initialization revision296 was accepted and merged separately in PR160.
