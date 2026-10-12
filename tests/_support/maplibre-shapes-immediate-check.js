@@ -20,7 +20,25 @@ async (page) => {
         const c = handle ? f.geometry.coordinates[0][0] : shape.kind === 'circle' ? shape.center : shape.bounds[0].map((n, i) => (n + shape.bounds[1][i]) / 2), p = map.project(c);
         return { x: b.x + p.x, y: b.y + p.y };
       }, handle);
-      const drag = async (handle, release = true) => { const p = await target(handle); await page.mouse.move(p.x,p.y); await page.mouse.down(); check(await page.evaluate(() => __drawing.adapter.getState().dragging), `${kind}: actual ${handle ? 'handle' : 'body'} gesture`); await page.mouse.move(p.x+12,p.y-10,{steps:4}); if (release) await page.mouse.up(); };
+      const waitForTarget = async handle => {
+        // Undo/redo updates the model before MapLibre's worker has rendered it.
+        // A stale translated corner may hit the overlapping Circle instead.
+        await page.waitForFunction(handle => {
+          const {map,adapter:a}=__drawing,s=a.getState(),f=a.getFeatures().at(-1),shape=f.properties.helperShape;
+          const c=handle?f.geometry.coordinates[0][0]:shape.kind==='circle'?shape.center:shape.bounds[0].map((n,i)=>(n+shape.bounds[1][i])/2),p=map.project(c);
+          if(!map.isSourceLoaded(s.sourceId)||s.selectedFeatureId!==String(f.id))return false;
+          const hit=map.queryRenderedFeatures([[p.x-6,p.y-6],[p.x+6,p.y+6]],{layers:s.layerIds.slice(0,3)}).find(h=>h.properties.__helperKind==='feature');
+          if(hit?.properties.__helperId!==String(f.id))return false;
+          return !handle||map.queryRenderedFeatures({layers:[s.layerIds[3]]}).some(h=>{const q=map.project(h.geometry.coordinates);return Math.hypot(q.x-p.x,q.y-p.y)<1;});
+        },handle);
+      };
+      const drag = async (handle, release = true) => {
+        await waitForTarget(handle);
+        const p = await target(handle); await page.mouse.move(p.x,p.y); await page.mouse.down();
+        const state=await page.evaluate(()=>{const{map,adapter:a}=__drawing,s=a.getState();return{dragging:s.dragging,selected:s.selectedFeatureId,mode:s.mode,camera:{center:map.getCenter().toArray(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch()}};});
+        check(state.dragging, `${kind}: actual ${handle ? 'handle' : 'body'} gesture (width ${width}, ${new URL(page.url()).search}, ${JSON.stringify(state)})`);
+        await page.mouse.move(p.x+12,p.y-10,{steps:4}); if (release) await page.mouse.up();
+      };
       await page.waitForFunction(() => { const {map,adapter:a}=__drawing,f=a.getFeatures().at(-1),shape=f.properties.helperShape,c=shape.kind==='circle'?shape.center:shape.bounds[0].map((n,i)=>(n+shape.bounds[1][i])/2),p=map.project(c);return map.queryRenderedFeatures([[p.x-6,p.y-6],[p.x+6,p.y+6]],{layers:a.getState().layerIds.slice(0,2)}).some(hit=>hit.properties.__helperId===String(f.id)); });
       const body = await target(false); await page.mouse.click(body.x, body.y); await drag(false);
       check(await page.evaluate(() => { const a=__drawing.adapter, before=JSON.parse(__shapeBefore).at(-1), after=a.getFeatures().at(-1); return JSON.stringify(before.geometry)!==JSON.stringify(after.geometry) && (after.properties.helperShape.kind!=='circle' || before.properties.helperShape.radiusMeters===after.properties.helperShape.radiusMeters) && !a.getCapabilities().actions.finish; }), `${kind}: whole-shape move retains shape contract`);
