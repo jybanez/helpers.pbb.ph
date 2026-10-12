@@ -11,6 +11,7 @@ const compact = selectToggle && new URLSearchParams(location.search).has("compac
 if (compact) {
   document.body.classList.add("compact-drawing");
   map.getContainer().appendChild(document.querySelector("#tools"));
+  map.resize();
 }
 const immediate = selectToggle || new URLSearchParams(location.search).has("immediate") || new URLSearchParams(location.search).get("bundle") === "immediate";
 if (immediate) {
