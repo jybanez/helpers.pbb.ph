@@ -259,8 +259,14 @@ rollback and update to reject stale UI results, and separately guard adapter/lay
 identity when an instance is replaced.
 
 Selection switches are blocked while the session is dirty or dragging; choose
-explicit accept/rollback first. Mode changes, imports and clear remain
-blocked during any edit session. Clean switching preserves the authored model
+explicit accept/rollback first. Imports and Clear remain blocked during any edit session. Explicit supported
+mode changes from a clean, idle session end it without persistence or a history
+unit and enter the requested mode. Pan/Point/Line/Polygon are then available;
+Select retains the clean session/token without duplicate notifications. Dirty or
+dragging sessions keep Select-only mode capability and reject mode changes until
+explicit Finish/Cancel. Clean transitions retain authored data and global redo,
+reject stale session tokens and publish final mode/session state with read-only
+notification guards. Removal during settlement stops later notifications. Clean switching preserves the authored model
 and global undo/redo; it discards the old session-local history. After local Undo
 returns to the original model, direct switching becomes available again.
 
@@ -291,7 +297,7 @@ observe the ended session; its final `editchange(null)` is omitted after removal
 The deletion gate still applies after acceptance/rollback, and any previous
 confirmation becomes stale when a session starts. Ordinary legacy edits still
 use immediate commit/history semantics. `getCapabilities()` adds `editSessions`
-and `featureStyles`; while editing, available modes are Select only.
+and `featureStyles`; available modes reflect clean/dirty/dragging state.
 
 Fill colors apply to polygons and point interiors; stroke colors apply to lines,
 polygon outlines and point borders. Explicit style overrides the old selection
