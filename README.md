@@ -6110,6 +6110,10 @@ points, lines and polygons, selection and existing-vertex dragging, draft/commit
 undo/redo, atomic validated imports, style rehydration and navigation-safe teardown.
 Circle and Rectangle support two-click geographic construction, shape resizing/movement and preserved Polygon metadata. Opt-in `editBehavior: "immediate"` commits completed gestures/color interactions as undoable draft units without an object checkpoint; existing edit-session defaults remain compatible. Measurement and topology validation remain unsupported. See [adapter contract](docs/maplibre-drawing-adapter.md) for style settlement and persistence-safe export.
 The host owns its map, permissions, personal-layer UI and persistence.
+Opt-in `selectToggle: true` on both complete toolbar and adapter replaces visible
+Pan with a pressed Select toggle. Navigation mode retains selection/history and
+hides editing handles; unfinished work requires Finish or explicit Cancel before
+switching. Try `demos/demo.map.drawing.html?toggle` or `?bundle=toggle`.
 
 See [the adapter contract](docs/maplibre-drawing-adapter.md) and the local
 `demos/demo.map.drawing.html` (also `?bundle`). MapLibre is supplied by the host;

@@ -447,6 +447,37 @@ Selection/mode changes cancel unfinished style preview before switching. Undo/Re
 
 The complete toolbar accepts `hideUnavailableActions: ["fill", "finish", "cancel"]` as an opt-in. Omitted defaults retain disabled actions. Immediate demos hide irrelevant Fill and idle Finish/Cancel, retaining construction and preview Cancel and disabled Undo/Redo. Select/Pan use canonical mouse-pointer/open-hand SVG icons.
 
+### Optional Select toggle
+
+Pass `selectToggle: true` to both `createMapLibreDrawingAdapter(map, options)` and
+`createMapDrawingTools(container, options)`. Both default to false. Selection starts
+enabled. The toolbar hides Pan and turns Select into a native toggle button:
+pressed means object selection/editing; unpressed in Pan means navigation only.
+Capabilities expose `selectToggle` and `selectionEnabled`; the toolbar reads the
+actual accepted adapter mode, including initial mode and rejected requests.
+Keyboard activation retains button focus and truthful `aria-pressed`/titles.
+
+Navigation preserves selected identity, features, metadata and undo/redo history.
+Vertex handles disappear, pointer editing and editing keyboard shortcuts stop,
+and native map pan/zoom/rotate/tilt retain the host's configured availability.
+Re-enabling Select restores the retained selection and handles.
+
+With this option, changing modes during a live drag, pending style transaction,
+construction draft or draft redo returns false without discarding work.
+Capabilities expose a user-facing `modeTransitionReason` while blocked; the
+complete toolbar displays it as status feedback. Direct rejected adapter calls
+emit `moderejected` with `requestedMode`, actual `mode`, and `reason`.
+Calling the current mode is a no-op. Finish or explicit Cancel remains available; Cancel
+restores transient edits or discards unfinished construction while retaining
+earlier completed layer edits. Finish, Cancel and automatic completion (including
+Point) return to Select. Existing dirty-session guards still apply. Default
+consumers retain the existing mode transition and repeated Point behavior.
+
+Try `demos/demo.map.drawing.html?toggle` or `?bundle=toggle`. Run
+`node tests/map.drawing.toggle.regression.mjs` for Chromium pointer/keyboard
+desktop/mobile-width coverage; physical touch, Safari and assistive technology
+are not covered by these automated checks.
+
 Event semantics: style preview/cancellation dispatches `measure` and `statechange` only, never committed `update`. Successful changed settlement dispatches one `update` for the feature then state; unchanged settlement dispatches state without update/history. Dirty tracking must compare committed `getFeatures()`, never `getState().features`. After context cancellation, a late onChange must retain its original token and call `finishStyleChange(originalToken)` (which returns false), never begin a new transaction for a newly selected object. Native demo callbacks ignore a completed change whose original transaction has already disappeared.
 
 For action visibility, the toolbar opt-in uses `getCapabilities().actionVisibility` before falling back to action availability. This keeps relevant Fill visible but disabled during a pending interaction and shows Path/Polygon Finish before enough vertices exist, while hiding idle immediate object Finish/Cancel. Visibility does not enable an unavailable action.

@@ -1,0 +1,123 @@
+{
+  "baseline": "8858eed7cd92d4668ec9641a886d05426c5d60b7",
+  "candidate": "9d5348778b6f5e3c7034b4cf541c1158550b76bc",
+  "configuration": "?bundle=immediate",
+  "capture": "Canvas pointerdown capture phase before adapter listener; dragging sampled immediately after down. No injected worker delay.",
+  "failure": {
+    "width": 375,
+    "kind": "rectangle",
+    "handle": true,
+    "evidence": {
+      "pointer": [
+        193.8711395263672,
+        276.12579345703125
+      ],
+      "selected": "helper-drawing-1-ce0ab146-45ff-47f6-ab26-9a3e0ed80691",
+      "mode": "select",
+      "revision": 65,
+      "camera": {
+        "center": [
+          123.8854,
+          10.3157
+        ],
+        "zoom": 12,
+        "bearing": 31,
+        "pitch": 40
+      },
+      "feature": {
+        "id": "helper-drawing-1-ce0ab146-45ff-47f6-ab26-9a3e0ed80691",
+        "shape": {
+          "kind": "rectangle",
+          "bounds": [
+            [
+              123.87967522590833,
+              10.301186947229724
+            ],
+            [
+              123.88624545436306,
+              10.324376912145866
+            ]
+          ]
+        },
+        "coordinates": [
+          [
+            123.87967522590833,
+            10.301186947229724
+          ],
+          [
+            123.88624545436306,
+            10.301186947229724
+          ],
+          [
+            123.88624545436306,
+            10.324376912145866
+          ],
+          [
+            123.87967522590833,
+            10.324376912145866
+          ],
+          [
+            123.87967522590833,
+            10.301186947229724
+          ]
+        ]
+      },
+      "hits": [
+        {
+          "id": "helper-drawing-1-114cee2e-3197-4c14-b811-af774c0dac29",
+          "layer": "helper-drawing-1-line"
+        },
+        {
+          "id": "helper-drawing-1-114cee2e-3197-4c14-b811-af774c0dac29",
+          "layer": "helper-drawing-1-fill"
+        }
+      ],
+      "handles": [
+        {
+          "coordinate": [
+            123.88253331184387,
+            10.325168452514049
+          ],
+          "pixel": [
+            135.07011312743597,
+            170.0066895685541
+          ]
+        },
+        {
+          "coordinate": [
+            123.88909935951233,
+            10.325168452514049
+          ],
+          "pixel": [
+            166.71967548557203,
+            156.39726482552496
+          ]
+        },
+        {
+          "coordinate": [
+            123.88909935951233,
+            10.30198860465876
+          ],
+          "pixel": [
+            240.83742654332138,
+            246.81733288536327
+          ]
+        },
+        {
+          "coordinate": [
+            123.88253331184387,
+            10.30198860465876
+          ],
+          "pixel": [
+            206.52694516628893,
+            264.4033427492927
+          ]
+        }
+      ],
+      "dragging": false
+    }
+  },
+  "interpretation": "After body translation Undo, model target was restored but rendered translated handles remained. Circle was topmost at the intended model corner; existing arbitration rejected the drag. Original reviewer failure has no capture, so its specific cause cannot be established.",
+  "fixtureCorrection": "Wait for loaded source, retained selected identity, actual topmost feature hit and rendered handle within one CSS pixel before the next native gesture.",
+  "nearestRenderedHandleDistanceCssPx": 17.250659900155572
+}
