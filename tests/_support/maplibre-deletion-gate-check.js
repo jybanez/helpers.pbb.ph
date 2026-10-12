@@ -118,7 +118,7 @@ async (page) => {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       await Promise.allSettled(document.querySelector('.ui-modal-root').getAnimations({ subtree:true }).map(animation => animation.finished));
     });
-    await page.screenshot({ path:`output/playwright/maplibre-delete-confirm-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage:true });
+    await page.screenshot({ path:`output/playwright/maplibre-delete-confirm-${new URL(page.url()).searchParams.has("bundle") ? 'bundle' : 'source'}-${width}.png`, fullPage:true });
     assert(await page.evaluate(() => __drawing.adapter.getFeatures().length===3), 'modal opens before deletion');
     await page.getByRole('button', { name:'Cancel', exact:true }).click();
     await page.getByRole('dialog').waitFor({ state:'detached' });
@@ -127,7 +127,7 @@ async (page) => {
     await page.locator('#tools [data-action="clear"]').click(); await page.getByRole('dialog').waitFor();
     await page.getByRole('dialog').getByRole('button', { name:'Clear', exact:true }).click();
     await wait(() => __drawing.adapter.getFeatures().length===0, 'modal clear committed');
-    await page.screenshot({ path:`output/playwright/maplibre-delete-gate-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage:true });
+    await page.screenshot({ path:`output/playwright/maplibre-delete-gate-${new URL(page.url()).searchParams.has("bundle") ? 'bundle' : 'source'}-${width}.png`, fullPage:true });
   }
   console.log('PASS canonical deletion gate toolbar/keyboard/modal at1200/375');
 }

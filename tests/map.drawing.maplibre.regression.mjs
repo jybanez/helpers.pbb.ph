@@ -8,6 +8,25 @@ try {
   await cli(`open ${server.origin}/demos/demo.map.drawing.html`);
   for (const suffix of ["", "?bundle"]) {
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const paths = await cli("run-code --filename tests/_support/maplibre-line-path-check.js");
+    if (!paths.stdout.includes('### Result\n"LINE_PATH_OK"')) throw Error(paths.stdout);
+    console.log(`MapLibre distinct Line/Path and segment translation passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const segmentHistory = await cli("run-code --filename tests/_support/maplibre-segment-history-check.js");
+    if (!segmentHistory.stdout.includes('### Result\n"SEGMENT_HISTORY_OK"')) throw Error(segmentHistory.stdout);
+    console.log(`MapLibre segment history/reentrancy passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const boundary = await cli("run-code --filename tests/_support/maplibre-segment-boundary-check.js");
+    if (!boundary.stdout.includes('### Result\n"SEGMENT_BOUNDARY_OK"')) throw Error(boundary.stdout);
+    console.log(`MapLibre segment world/Mercator boundaries passed (${suffix || "source"}).`);
+    if (suffix === "?bundle") {
+      const assets = await cli("run-code --filename tests/_support/maplibre-bundle-assets-check.js");
+      if (!assets.stdout.includes('### Result\n"BUNDLE_ASSETS_OK"')) throw Error(assets.stdout);
+      console.log("MapLibre exactly three Helper bundle assets passed.");
+    }
+  }
+  for (const suffix of ["?legacy", "?bundle=legacy"]) {
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const pending = await cli("run-code --filename tests/_support/maplibre-pending-tile-check.js");
     if (!pending.stdout.includes('### Result\n"PENDING_TILE_OK"')) throw Error(pending.stdout);
     console.log(`MapLibre pending tile initialization passed (${suffix || "source"}).`);

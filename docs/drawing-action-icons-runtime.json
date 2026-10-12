@@ -1,5 +1,6 @@
 {
   "icons": [
+    "map.path",
     "actions.fill",
     "actions.stroke",
     "actions.undo",
@@ -7,10 +8,10 @@
     "actions.clear"
   ],
   "component": "ui.map.drawing",
-  "iconsRevision": "0.21.298",
-  "coreJsRevision": "0.21.298",
-  "mainUiBundleRevision": "0.21.301",
-  "gameBundleRevision": "0.21.298",
+  "iconsRevision": "0.21.302",
+  "coreJsRevision": "0.21.302",
+  "mainUiBundleRevision": "0.21.302",
+  "gameBundleRevision": "0.21.302",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
     {
@@ -19,23 +20,23 @@
     },
     {
       "path": "js/ui/ui.icons.catalog.js",
-      "sha256": "1755b075bbd67bbdc63f6b1f5a2717d10e9de5de4e15d0d1087ea2ff79aaeab1"
+      "sha256": "0c85b61df19315510167478d8b68451a2d3e568486bade0f427cdedd89ea31d3"
     },
     {
       "path": "js/ui/ui.icons.js",
-      "sha256": "133840b5e898c862f938d629638de0481ac46d4de248660fdd459c6a02789f50"
+      "sha256": "b5127d1328bda00851b955e13e1340d773525e5fa99c1d4142384d86b9f84a6c"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
-      "sha256": "fa34effbe7f318d0e5b6c5e59fc55fc1cb1e0a3e5ef29fb5c38d011c51fb7d11"
+      "sha256": "c4fb73d63d185c9f3153f2fda4591f66290f766907c5eaebbd60deddcdf9eaf8"
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "a567059501645e73738670c87a0b773b12e54eff31a1814904e17ea3eeef7cda"
+      "sha256": "032aa480600d36b67b9471568f757f9b0de6c55eac6678d82ebae2eb9f3df17e"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "decd47b054822b7141066063f9a7f5b81b26610402363f3a71b7594f6b2a3b46"
+      "sha256": "1687ff85129df67f74a2f9eee57ad4c266c4668e02c4ea638a53a095fb119483"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
@@ -43,19 +44,19 @@
     },
     {
       "path": "dist/helpers.game.bundle.min.js",
-      "sha256": "7ab9d0ba6d4547152591a7338356242b22f9e4b11d2f93dcf1791002d28cdf70"
+      "sha256": "1ce51e1c604a0e671a0beb1472ea1f5f2d5b5bdb386ddcb3fee920d0c2e552b1"
     },
     {
       "path": "demos/demo.map.drawing.html",
-      "sha256": "73aff0bd04875d48fbded0be9dea71fd5a4449c360d22522884eb7b8df71aef7"
+      "sha256": "40063f1eb6e01982118f81d2a59804117a2097f86b7c5a3b158fef8bdb629481"
     },
     {
       "path": "js/demo/demo.map.drawing.js",
-      "sha256": "388a6547e250df23d44c46a9c3aba8e4dd755b2a4697e575c16068ba4597af59"
+      "sha256": "dea5e6f5c8720b340c7326166bc321eb13044e0a7e8252357cb5e506323f2b73"
     },
     {
       "path": "docs/drawing-action-icons.md",
-      "sha256": "c59eef20e2d1162e230a7ca165d4563e07e25d9abb812a260b7e91ad8af6f572"
+      "sha256": "6b5b4d78ff108620f26522d853d81f1fbf4e4a5e6bfc920e5c0908c665fd9638"
     }
   ]
 }

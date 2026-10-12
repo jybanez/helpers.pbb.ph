@@ -7,8 +7,8 @@ remains engine independent and existing consumers need not adopt this module.
 ```js
 const createAdapter = await uiLoader.get("ui.map.drawing.maplibre");
 const createTools = await uiLoader.get("ui.map.drawing");
-const adapter = createAdapter(map, { onError: reportDrawingError });
-const tools = createTools(toolbar, { adapter, features: adapter.getFeatures(), orientation: "horizontal" });
+const adapter = createAdapter(map, { lineBehavior: "segment", onError: reportDrawingError });
+const tools = createTools(toolbar, { adapter, features: adapter.getFeatures(), orientation: "horizontal", modes: ["select", "pan", "point", "line", "path", "polygon"] });
 tools.setFeatures(existingFeatures);
 adapter.on("update", feature => updateApplicationDraft(feature));
 // Teardown both instances; the toolbar does not own its adapter or map.
@@ -19,7 +19,7 @@ tools.destroy(); adapter.destroy();
 
 The engine uses MapLibre's public GeoJSON source, layer, projection, rendered-hit
 query and navigation-handler APIs directly. No additional drawing engine is
-needed for this deliberately bounded point/line/polygon and vertex-edit scope.
+needed for this deliberately bounded point/line/path/polygon and vertex/segment-edit scope.
 MapLibre is supplied by the host; no global MapLibre dependency exists in the
 adapter or toolbar. The existing local `vendor/maplibre/maplibre-gl.js` and CSS
 are pinned to **4.6.0**, licensed BSD-3-Clause (full local `LICENSE.txt`). The
@@ -37,17 +37,54 @@ the current online documentation.
 
 ## Capabilities and interaction
 
-- Modes: `select`, `pan`, `point`, `line`, `polygon`. Unsupported modes throw
+- Modes: `select`, `pan`, `point`, `line`, `path`, `polygon`. Unsupported modes throw
   `RangeError`; toolbar rectangle/circle buttons are disabled by capabilities.
-- Points commit on click. Lines need two distinct vertices; polygons need three
-  distinct vertices and a closed nonzero-area ring. Finish commits and returns
-  to Select. Click a feature in Select, then drag one existing vertex. Polygon
-  first-vertex edits update the matching closing coordinate. Holes can be
-  imported and their existing vertices edited.
+- Points commit on click. With `lineBehavior: "segment"`, Line anchors its start
+  on the first click, shows a live pointer endpoint preview, and automatically
+  commits exactly two distinct vertices on the second click. Path adds successive
+  connected vertices and completes with double-click or Finish (at least two
+  distinct vertices). The second click of double-click does not duplicate its
+  endpoint; map double-click zoom is disabled during drawing. Preview is not
+  authored geometry and creates no history unit. Polygon needs three distinct
+  vertices and a closed nonzero-area ring. Completion returns to Select.
+- Compatibility: omitted `lineBehavior` defaults to `"legacy-path"`, retaining
+  the old multi-point Line + Finish behavior. Explicit `"segment"` enables the
+  distinct Line workflow; `path` always has Path behavior. Other option values
+  throw `RangeError` before installing listeners. The complete toolbar accepts
+  opt-in `path` without changing its default mode list. Demo defaults to segment;
+  `?legacy` (or `?bundle=legacy`) exercises old consumers.
+- Authored LineStrings store `properties.helperDrawingKind` as `"line"` for
+  segment Line or `"path"` for Path/legacy Line. `getDrawingKind(id)` returns
+  `line` only for a two-point LineString explicitly tagged `line`; all other
+  LineStrings are paths. Imports are never migrated or rewritten. Metadata-free
+  two- or multi-point LineStrings remain unchanged, including numeric ID0.
+- Select a line/path, then drag any segment to translate all vertices together.
+  Hit testing uses projected screen segments, including bearing/pitch; vertex
+  handles within12 pixels win before segment hits within8 pixels. Translation
+  applies one longitude/latitude delta from the original gesture snapshot to
+  every vertex, preserving geographic shape; it does not rotate, scale or snap.
+  Boundary policy: segment translation uses the primary projected copy and
+  stops atomically at longitude[-180,180] and Mercator latitude limits
+  ±85.0511287798066. A candidate violating any vertex bound, a longitude delta
+  greater than180° (world-copy jump), or an original vertex outside Mercator
+  limits is ignored; the last valid preview remains. No vertex is independently
+  wrapped/clamped, no seam splitting occurs, and imports are never migrated.
+  Existing out-of-Mercator data remains readable/exportable but cannot be
+  translated as a segment. Cancel still restores the original snapshot.
+  Vertex editing retains its existing finite bounds (longitude±180°, latitude±90°),
+  including explicit edits beyond Mercator; the stricter whole-segment policy
+  does not change vertex validation. Drag vertex handles to reshape individual vertices; polygon first-vertex edits update the closing
+  coordinate. Holes can be imported and their existing vertices edited.
+  Each released changed gesture is one canonical history unit. In edit sessions,
+  gesture history stays local until Finish; Cancel restores the session baseline.
+  Pointer cancellation/blur/lost capture restores only the active gesture;
+  Escape cancels the session. Removal restores original authored data, stops
+  further notifications and restores navigation. No persistence is performed.
 - `getCapabilities()` dynamically reports `finish`, `cancel`, `undo`, `redo`,
-  `delete`, `clear`, `fill`, `stroke`. Editing is `drag-existing-vertices`; measurement is false.
+  `delete`, `clear`, `fill`, `stroke`. Editing remains `drag-existing-vertices` for compatibility; `segmentTranslation: true`,
+  `lineBehavior` and `drawingKinds: ["line", "path"]` describe the added capabilities. Measurement is false.
   There is no rectangle/circle generation, snapping, vertex insertion/removal,
-  whole-feature translation, multi-selection or geometric topology validation.
+  polygon/point whole-feature translation, multi-selection or geometric topology validation.
 - Map-focused Enter adds a coordinate at map center in drawing modes; Escape
   cancels; Delete/Backspace deletes the selection; Ctrl/Cmd+Z undoes, Shift+Z or
   Ctrl/Cmd+Y redoes. Toolbar controls provide native keyboard access including
