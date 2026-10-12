@@ -43,7 +43,7 @@ async (page) => {
       check(a.getCapabilities().actions.redo && a.beginEdit(0), 'pre-existing redo');
       a.updateFeature(0, { style: { fill } }); a.cancel();
       check(a.getCapabilities().actions.redo && same(a.getFeatures(), original), 'cancel preserves redo');
-      a.beginEdit(0); a.finish(); check(a.getCapabilities().actions.redo, 'no-op accept preserves redo');
+      a.beginEdit(0); check(a.finish() === false, 'clean Finish disabled'); a.acceptEdit(); check(a.getCapabilities().actions.redo, 'no-op accept preserves redo');
       a.redo(); check(a.getFeatures()[1].properties.name === 'prior', 'restored prior redo');
       a.beginEdit(0); const active = a.getState().editSession.id;
       check(!a.updateFeature(0, { style: { fill } }, { sessionId }) && !a.acceptEdit(sessionId) && !a.rollbackEdit(sessionId), 'stale session IDs');

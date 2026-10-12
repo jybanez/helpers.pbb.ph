@@ -45,7 +45,7 @@ the current online documentation.
   first-vertex edits update the matching closing coordinate. Holes can be
   imported and their existing vertices edited.
 - `getCapabilities()` dynamically reports `finish`, `cancel`, `undo`, `redo`,
-  `delete`, `clear`. Editing is `drag-existing-vertices`; measurement is false.
+  `delete`, `clear`, `fill`, `stroke`. Editing is `drag-existing-vertices`; measurement is false.
   There is no rectangle/circle generation, snapping, vertex insertion/removal,
   whole-feature translation, multi-selection or geometric topology validation.
 - Map-focused Enter adds a coordinate at map center in drawing modes; Escape
@@ -217,7 +217,9 @@ persistence require their own design, implementation and acceptance.
 
 Legacy edits remain immediate unless `beginEdit(id)` is called in Select with
 no drag or pending draft. IDs include numeric zero; the method returns false
-when no eligible object exists or another session is active. Read
+when no eligible object exists or the current session is dirty or dragging. A clean
+session can switch directly with `beginEdit(targetId)` or a feature click. The replacement receives a fresh session ID; selecting its own
+object retains the ID. Missing targets and blank clicks retain the current session. Read
 `getState().editSession.id` after beginning and capture it for asynchronous UI.
 
 ```js
@@ -256,8 +258,25 @@ callbacks. Session IDs increase per instance; pass the captured ID to accept,
 rollback and update to reject stale UI results, and separately guard adapter/layer
 identity when an instance is replaced.
 
-Selection clicks, mode changes, imports, delete and clear are blocked while an
-edit session is active (return false); choose explicit accept/rollback first.
+Selection switches are blocked while the session is dirty or dragging; choose
+explicit accept/rollback first. Mode changes, imports, delete and clear remain
+blocked during any edit session. Clean switching preserves the authored model
+and global undo/redo; it discards the old session-local history. After local Undo
+returns to the original model, direct switching becomes available again.
+
+Object `actions.finish` and `actions.cancel` are true only while dirty (Finish
+also requires no active drag). Clean toolbar Finish/Cancel are disabled, while
+explicit `acceptEdit(sessionId)` and `rollbackEdit(sessionId)` remain available
+for application Save/Close settlement. Imperative Cancel/Escape still rolls back
+a clean session. Draft drawing Finish/Cancel keep their previous rules.
+
+Optional toolbar actions `fill` and `stroke` render canonical SVGs and forward
+through `onAction`; the MapLibre adapter exposes capabilities but does not open
+a color dialog. Fill applies to points/polygons; Stroke applies to all supported
+objects. Both are available only during an idle object edit session. Consumers
+use the existing complete color picker, capture session/layer context and submit
+colors through `updateFeature`. The demo routes these actions to its canonical
+pickers. Defaults remain unchanged unless these actions are explicitly included.
 The deletion gate still applies after acceptance/rollback, and any previous
 confirmation becomes stale when a session starts. Ordinary legacy edits still
 use immediate commit/history semantics. `getCapabilities()` adds `editSessions`

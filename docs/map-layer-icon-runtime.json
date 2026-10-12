@@ -1,22 +1,22 @@
 {
   "icon": "map.layer",
   "helperPackage": "0.21.83",
-  "iconsAndGameRevision": "0.21.297",
-  "mainUiBundleRevision": "0.21.297",
+  "iconsAndGameRevision": "0.21.298",
+  "mainUiBundleRevision": "0.21.298",
   "cssContent": "unchanged",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "cc0462dee7e0dc95741873daf7dca6808b45278a7f8fb70acf88c68f03d28e70"
+      "sha256": "c038234766a02d48e71927dbf493cc2f20989187194e984722b46ee5423d93e8"
     },
     {
       "path": "js/ui/ui.icons.js",
-      "sha256": "3f9d596e57f856b5d5e5631bc5b1dc2baf8793e55168e5b07537843b2c2f8f1a"
+      "sha256": "133840b5e898c862f938d629638de0481ac46d4de248660fdd459c6a02789f50"
     },
     {
       "path": "js/ui/ui.icons.catalog.js",
-      "sha256": "b5cf430c1682f965b734cfa020c30eae177e0664c81efdbca9c70984130ef547"
+      "sha256": "1755b075bbd67bbdc63f6b1f5a2717d10e9de5de4e15d0d1087ea2ff79aaeab1"
     },
     {
       "path": "css/ui/ui.icons.css",
@@ -24,15 +24,15 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "8281fcbba03ef7277577201b1de0a2ace42a1473515d95499ae0f5e58c125516"
+      "sha256": "85cb283f6a01df20ba64140a8c57b7ba4329c9798c5653dd14557d4e0d216aad"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "a082e6119b7969a9fd2309662243d8d724518cecc5c84d2aafba31f315eaa953"
+      "sha256": "b6f33b219fe0e049b665f3ecdc658758c5738e8ea07ef6e0f9e91aebdab26405"
     },
     {
       "path": "dist/helpers.game.bundle.min.js",
-      "sha256": "3320fd737cb57f28228cad04651b255c45a12fc0dce29ae594da9d0af8e01205"
+      "sha256": "7ab9d0ba6d4547152591a7338356242b22f9e4b11d2f93dcf1791002d28cdf70"
     },
     {
       "path": "dist/helpers.game.bundle.min.css",

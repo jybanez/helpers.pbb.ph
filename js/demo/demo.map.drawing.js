@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.297";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.298";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createActionModal = await uiLoader.get("ui.action.modal");
@@ -44,7 +44,7 @@ function recreate() {
   cancelPendingDelete();
   tools?.destroy(); adapter?.destroy();
   adapter = createAdapter(map, { beforeDelete, onError(error) { status.textContent = error.message; } });
-  tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", modes: ["select", "pan", "point", "line", "polygon", "rectangle", "circle"] });
+  tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
     updateStatus();
