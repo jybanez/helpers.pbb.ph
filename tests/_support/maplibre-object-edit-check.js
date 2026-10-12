@@ -92,6 +92,52 @@ async (page) => {
     await page.waitForFunction(() => { const { map, adapter } = __drawing; return map.isStyleLoaded() && map.getSource(adapter.getState().sourceId)?.loaded(); });
     assert(await page.evaluate(() => JSON.stringify(__drawing.adapter.getFeatures()) === __editExpected && !!__drawing.map.getPaintProperty(__drawing.adapter.getState().layerIds[0], 'fill-opacity')), 'styled line/polygon rehydrate unchanged');
     await page.screenshot({ path: `output/playwright/maplibre-object-edit-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
+    for (const attempt of ['rollback', 'accept', 'destroy', 'context']) {
+      await page.evaluate(attempt => {
+        const { adapter: a, sample } = __drawing;
+        a.setFeatures(sample); a.updateFeature('route', { properties: { priorHistory: true } });
+        window.__dragBaseline = JSON.stringify(a.getFeatures());
+        a.beginEdit(0); window.__dragReentrant = { attempt, rejected: 0, safe: true };
+      }, attempt);
+      await page.locator('#map canvas').scrollIntoViewIfNeeded();
+      const start = await page.evaluate(() => {
+        const { adapter, map } = __drawing; const b = map.getCanvas().getBoundingClientRect(); const p = map.project(adapter.getFeatures()[0].geometry.coordinates);
+        return { x: b.left + p.x, y: b.top + p.y };
+      });
+      await page.mouse.move(start.x, start.y); await page.mouse.down(); await page.mouse.move(start.x + 16, start.y + 20, { steps: 4 });
+      assert(await page.evaluate(() => __drawing.adapter.getState().dragging), 'supplemental drag active');
+      // Arm immediately before real mouseup, matching the independent review repro.
+      await page.evaluate(() => {
+        const { adapter: a, sample } = __drawing;
+        window.__dragOff = a.on('statechange', state => {
+          if (state.dragging || !state.editSession) return;
+          const before = JSON.stringify(a.getState());
+          const result = __dragReentrant.attempt === 'rollback' ? a.rollbackEdit(state.editSession.id)
+            : __dragReentrant.attempt === 'accept' ? a.acceptEdit(state.editSession.id)
+            : __dragReentrant.attempt === 'destroy' ? a.destroy()
+            : a.setFeatures(sample);
+          __dragReentrant.safe &&= result === false && JSON.stringify(a.getState()) === before;
+          __dragReentrant.rejected++;
+        });
+      });
+      await page.mouse.up();
+      assert(await page.evaluate(() => { __dragOff(); return __dragReentrant.safe && __dragReentrant.rejected > 0 && !!__drawing.adapter.getState().editSession && !__drawing.adapter.getState().dragging; }), `callback ${attempt} rejects without stale continuation`);
+      const check = await page.evaluate(attempt => {
+        const { adapter: a, map, sample } = __drawing;
+        if (attempt === 'accept') {
+          const edited = JSON.stringify(a.getFeatures()); a.acceptEdit(); a.undo();
+          const original = JSON.stringify(a.getFeatures()) === __dragBaseline;
+          a.redo(); const replay = JSON.stringify(a.getFeatures()) === edited;
+          a.undo(); a.undo(); return original && replay && JSON.stringify(a.getFeatures()) === JSON.stringify(sample);
+        }
+        if (attempt === 'destroy') { a.destroy(); return JSON.stringify(a.getFeatures()) === __dragBaseline && map.dragPan.isEnabled() && !a.getState().dragging; }
+        a.rollbackEdit(); const original = JSON.stringify(a.getFeatures()) === __dragBaseline;
+        a.undo(); const history = JSON.stringify(a.getFeatures()) === JSON.stringify(sample);
+        a.redo(); return original && history && JSON.stringify(a.getFeatures()) === __dragBaseline;
+      }, attempt);
+      assert(check, `${attempt} after notification preserves original history and geometry`);
+      if (attempt === 'destroy') await page.locator('#recreate').click();
+    }
     await page.evaluate(() => __drawing.adapter.beginEdit(0));
     await page.locator('#map canvas').focus(); await page.keyboard.press('Escape');
     assert(await page.evaluate(() => !__drawing.adapter.getState().editSession), 'keyboard rollback');
