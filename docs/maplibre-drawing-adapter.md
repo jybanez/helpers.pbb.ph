@@ -71,8 +71,9 @@ the current online documentation.
   wrapped/clamped, no seam splitting occurs, and imports are never migrated.
   Existing out-of-Mercator data remains readable/exportable but cannot be
   translated as a segment. Cancel still restores the original snapshot.
-  Drag vertex handles
-  to reshape individual vertices; polygon first-vertex edits update the closing
+  Vertex editing retains its existing finite bounds (longitude±180°, latitude±90°),
+  including explicit edits beyond Mercator; the stricter whole-segment policy
+  does not change vertex validation. Drag vertex handles to reshape individual vertices; polygon first-vertex edits update the closing
   coordinate. Holes can be imported and their existing vertices edited.
   Each released changed gesture is one canonical history unit. In edit sessions,
   gesture history stays local until Finish; Cancel restores the session baseline.
