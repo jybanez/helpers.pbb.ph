@@ -83,7 +83,25 @@ the current online documentation.
   `delete`, `clear`, `fill`, `stroke`. Editing remains `drag-existing-vertices` for compatibility; `segmentTranslation: true`,
   `lineBehavior` and `drawingKinds: ["line", "path"]` describe the added capabilities. Measurement is false.
   There is no snapping, vertex insertion/removal,
-  polygon/point whole-feature translation, multi-selection or geometric topology validation.
+  point whole-feature translation, multi-selection or geometric topology validation.
+
+Selected ordinary Polygons support whole-object dragging from rendered interior or
+outer/inner ring edges, including transparent-fill edges. Vertex handles retain
+priority. The topmost rendered feature must match the selection, so another object
+covering it cannot move the underlying Polygon. Hole interiors allow map panning.
+Every ring translates from the original gesture snapshot by the same longitude/
+latitude delta; ring order, winding, exact closure, supported 2D coordinates,
+properties and foreign JSON geometry members remain intact. Unknown/mismatched
+shape metadata remains unchanged generic data; recognized Circle/Rectangle retain
+their dedicated transforms. No new coordinate dimensions are accepted.
+
+Whole-Polygon translation follows the whole-segment world/Mercator policy: reject
+the entire candidate, preserve the last valid preview and allow return to valid
+coordinates. Existing out-of-Mercator imports remain intact but cannot be body
+translated. No-op/wholly rejected gestures create no history. Released gestures
+create one Undo unit; existing session rollback and immediate committed-snapshot,
+Escape/cancel/lost-capture/context/removal protections apply. No persistence or
+application Save behavior changes. See `tests/map.drawing.polygon.regression.mjs`.
 - Map-focused Enter adds a coordinate at map center in drawing modes; Escape
   cancels; Delete/Backspace deletes the selection; Ctrl/Cmd+Z undoes, Shift+Z or
   Ctrl/Cmd+Y redoes. Toolbar controls provide native keyboard access including

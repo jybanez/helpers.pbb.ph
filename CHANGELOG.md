@@ -1,5 +1,7 @@
 # Changelog
 
+- Added canonical selected Polygon body/edge dragging with vertex priority and topmost-feature arbitration. All rings translate uniformly with holes/closure/metadata preserved, atomic world/Mercator rejection and existing history/cancellation semantics. Source/bundle immediate/session regressions at desktop/mobile widths and tilted camera; adapter/main UI cache `0.21.306`.
+
 - Added canonical two-click geodesic Circle and geographic Rectangle construction, shape-specific resize/whole movement, validated Polygon shape metadata and atomic world/Mercator boundaries. Opt-in immediate object editing coalesces completed color interactions into undo units with persistence-safe snapshots, explicit settlement and stale-callback guards; legacy sessions remain default. Select/Pan use canonical SVG icons and opt-in action visibility. Source/bundle real-engine regressions and demos; drawing/icons/optional game JavaScript cache `0.21.303`, combined main UI cache `0.21.305`.
 
 - Added optional MapLibre drawing `beforeDelete` gate shared by toolbar/public delete/clear and map Delete/Backspace, with explicit one-shot confirm/cancel and stale-editor/recursion protections. Default deletion stays immediate. Canonical confirmation demo and real source/bundle tests; adapter/main UI cache `0.21.290`, core remains `0.21.288`.
