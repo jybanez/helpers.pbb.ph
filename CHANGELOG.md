@@ -1,5 +1,7 @@
 # Changelog
 
+- Added opt-in canonical Select toggle with hidden Pan, navigation-only handles/edit suppression, retained selection/history, rejection-aware keyboard state and explicit unfinished-work cancellation. Default consumers remain compatible; source/bundle demo and regression coverage. Adapter/core/main UI cache `0.21.307`.
+
 - Added canonical selected Polygon body/edge dragging with vertex priority and topmost-feature arbitration. All rings translate uniformly with holes/closure/metadata preserved, atomic world/Mercator rejection and existing history/cancellation semantics. Source/bundle immediate/session regressions at desktop/mobile widths and tilted camera; adapter/main UI cache `0.21.306`.
 
 - Added canonical two-click geodesic Circle and geographic Rectangle construction, shape-specific resize/whole movement, validated Polygon shape metadata and atomic world/Mercator boundaries. Opt-in immediate object editing coalesces completed color interactions into undo units with persistence-safe snapshots, explicit settlement and stale-callback guards; legacy sessions remain default. Select/Pan use canonical SVG icons and opt-in action visibility. Source/bundle real-engine regressions and demos; drawing/icons/optional game JavaScript cache `0.21.303`, combined main UI cache `0.21.305`.
