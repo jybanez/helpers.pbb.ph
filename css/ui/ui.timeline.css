@@ -5,6 +5,32 @@
   max-width: 100%;
 }
 
+.ui-timeline-boundary-host { position: relative; height: 100%; min-height: 0; }
+.ui-timeline-boundaries { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.ui-timeline-boundaries .ui-timeline-boundary {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ui-surface, #0e1626);
+  color: var(--ui-text, #e6efff);
+  box-shadow: 0 2px 8px #0003;
+  opacity: .65;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.ui-timeline-boundary--start { top: 8px; }
+.ui-timeline-boundary--end { bottom: 8px; }
+.ui-timeline-boundaries .ui-timeline-boundary[hidden] { display: none; }
+.ui-timeline-boundaries .ui-timeline-boundary:is(:hover, :focus-visible) { opacity: 1; }
+.ui-timeline-boundaries .ui-timeline-boundary:focus-visible { outline: 2px solid var(--ui-primary, #7bb5ff); outline-offset: 3px; }
+
 /* A stable pagination-end slot prevents loading toggles changing scroll bounds. */
 .ui-timeline-loading {
   box-sizing: border-box;
