@@ -4,7 +4,7 @@ async (page) => {
   const count = n => page.waitForFunction(n => __drawing.adapter.getFeatures().length === n, n);
   const mode = name => page.locator(`#tools [data-mode="${name}"]`).click();
   const action = name => page.locator(`#tools [data-action="${name}"]`).click();
-  const point = async (x, y) => { const b = await page.locator("#map canvas").boundingBox(); return { x: b.x + b.width * x, y: b.y + b.height * y }; };
+  const point = async (x, y) => { await page.locator("#map canvas").scrollIntoViewIfNeeded(); const b = await page.locator("#map canvas").boundingBox(); return { x: b.x + b.width * x, y: b.y + b.height * y }; };
   const click = async (x, y) => { const p = await point(x, y); await page.mouse.click(p.x, p.y); };
   const rendered = () => page.waitForFunction(() => __drawing.map.isStyleLoaded() && __drawing.map.getSource(__drawing.adapter.getState().sourceId)?.loaded()).catch(e => { throw Error(`style/source readiness: ${e.message}`); });
   for (const width of [1200, 375]) {
@@ -39,8 +39,8 @@ async (page) => {
       };
     });
     await rendered();
-    assert(await page.locator('#tools [data-mode="rectangle"]').isDisabled(), "rectangle must be unavailable");
-    assert(await page.locator('#tools [data-mode="circle"]').isDisabled(), "circle must be unavailable");
+    assert(!await page.locator('#tools [data-mode="rectangle"]').isDisabled(), "rectangle must be available");
+    assert(!await page.locator('#tools [data-mode="circle"]').isDisabled(), "circle must be available");
     // Real pointer drawing and toolbar keyboard completion, not synthetic map events.
     await mode("point"); await click(.22, .3); await count(1);
     const initialPoint = (await read()).features[0];
@@ -115,6 +115,8 @@ async (page) => {
     await page.locator("#reload").click(); await rendered();
     await page.evaluate(() => __drawing.map.setStyle(structuredClone(__drawing.style), { diff: false })); await rendered();
     assert((await read()).features.length === 3, "reload preserves model");
+    await page.locator("#map canvas").scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>{const {map,adapter:a,sample}=__drawing,p=map.project(sample[0].geometry.coordinates);return map.queryRenderedFeatures([[p.x-6,p.y-6],[p.x+6,p.y+6]],{layers:a.getState().layerIds.slice(0,3)}).some(f=>f.properties.__helperId==='0');});
     const projected = await page.evaluate(() => { const p = __drawing.map.project(__drawing.sample[0].geometry.coordinates); return { x: p.x, y: p.y }; });
     const box = await page.locator("#map canvas").boundingBox();
     await page.mouse.click(box.x + projected.x, box.y + projected.y);

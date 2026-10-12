@@ -6108,7 +6108,7 @@ The optional `ui.map.drawing.maplibre` registry entry provides the reusable
 MapLibre4.6.0 engine adapter for the complete drawing toolbar. It supports stable-ID
 points, lines and polygons, selection and existing-vertex dragging, draft/committed
 undo/redo, atomic validated imports, style rehydration and navigation-safe teardown.
-Rectangle, circle, measurement and topology validation are explicitly unsupported.
+Circle and Rectangle support two-click geographic construction, shape resizing/movement and preserved Polygon metadata. Opt-in `editBehavior: "immediate"` commits completed gestures/color interactions as undoable draft units without an object checkpoint; existing edit-session defaults remain compatible. Measurement and topology validation remain unsupported. See [adapter contract](docs/maplibre-drawing-adapter.md) for style settlement and persistence-safe export.
 The host owns its map, permissions, personal-layer UI and persistence.
 
 See [the adapter contract](docs/maplibre-drawing-adapter.md) and the local

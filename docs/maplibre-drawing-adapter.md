@@ -19,7 +19,7 @@ tools.destroy(); adapter.destroy();
 
 The engine uses MapLibre's public GeoJSON source, layer, projection, rendered-hit
 query and navigation-handler APIs directly. No additional drawing engine is
-needed for this deliberately bounded point/line/path/polygon and vertex/segment-edit scope.
+needed for this deliberately bounded point/line/path/polygon/shape and object-edit scope.
 MapLibre is supplied by the host; no global MapLibre dependency exists in the
 adapter or toolbar. The existing local `vendor/maplibre/maplibre-gl.js` and CSS
 are pinned to **4.6.0**, licensed BSD-3-Clause (full local `LICENSE.txt`). The
@@ -37,8 +37,7 @@ the current online documentation.
 
 ## Capabilities and interaction
 
-- Modes: `select`, `pan`, `point`, `line`, `path`, `polygon`. Unsupported modes throw
-  `RangeError`; toolbar rectangle/circle buttons are disabled by capabilities.
+- Modes: `select`, `pan`, `point`, `line`, `path`, `polygon`, `rectangle`, `circle`. Unsupported modes throw `RangeError`. Circle and Rectangle construction and shape editing are described below.
 - Points commit on click. With `lineBehavior: "segment"`, Line anchors its start
   on the first click, shows a live pointer endpoint preview, and automatically
   commits exactly two distinct vertices on the second click. Path adds successive
@@ -83,7 +82,7 @@ the current online documentation.
 - `getCapabilities()` dynamically reports `finish`, `cancel`, `undo`, `redo`,
   `delete`, `clear`, `fill`, `stroke`. Editing remains `drag-existing-vertices` for compatibility; `segmentTranslation: true`,
   `lineBehavior` and `drawingKinds: ["line", "path"]` describe the added capabilities. Measurement is false.
-  There is no rectangle/circle generation, snapping, vertex insertion/removal,
+  There is no snapping, vertex insertion/removal,
   polygon/point whole-feature translation, multi-selection or geometric topology validation.
 - Map-focused Enter adds a coordinate at map center in drawing modes; Escape
   cancels; Delete/Backspace deletes the selection; Ctrl/Cmd+Z undoes, Shift+Z or
@@ -209,7 +208,7 @@ and nested JSON values. GeoJSON properties must be an object or null.
 Geometry accepts only Point/LineString/Polygon with finite **2D** longitude/latitude
 in [-180,180]/[-90,90]. Coordinates use browser double precision without rounding.
 Polygon ring validation uses a 1e-12 degree-squared tolerance on signed twice-area.
-No altitude, circle-radius metadata, antimeridian splitting, ring-orientation
+No altitude, antimeridian splitting, ring-orientation
 normalization or self-intersection/hole-containment validation is performed.
 Input rejection is atomic; the previous model and current gesture remain intact.
 
@@ -394,3 +393,42 @@ map removal is the sole internal forced-disposal path.
 Map removal is an immediate lifetime boundary, including removal inside a read-only notification. Pending drag completion and active-drag rollback stop after removal without restoring stale previews or adding history. Rollback captures its session before notifications; selection, edit acceptance, drawing completion and hydration also check lifetime before continuing. Already completed changes remain completed when removal occurs during their publication.
 
 Initial hydration uses available style structure, not isStyleLoaded(): pending base tiles must not delay the owned GeoJSON source/layers. Creating before style availability still waits for style.load/styledata; creating after style.load hydrates immediately even while tiles remain pending.
+
+
+## Circle, Rectangle and immediate editing (0.21.303)
+
+`editBehavior: "immediate"` opts into completed object edits as global undo units. Omitted `editBehavior` remains `"session"` with the existing begin/accept/rollback API. Immediate mode does not start explicit sessions; `beginEdit` returns false. Completed vertex, segment and shape gestures are one unit, with no object Finish/Cancel checkpoint. Atomic `updateFeature` remains one unit. Undo restores geometry and metadata together. Selection/tool switches after completed edits preserve the layer draft. Application layer Save and dirty-exit confirmation remain application responsibilities.
+
+Circle and Rectangle take two points: center/radius endpoint or opposite corners. Pointer motion previews without committing. Focused canvas Enter uses the map center; with host keyboard navigation enabled, arrow keys pan during these two modes, updating the preview before the second Enter. Escape cancels only unfinished construction/gesture. Path/Polygon retain Finish. Circle has four cardinal radius handles; Rectangle has four corner handles with the opposite corner fixed. A handle takes priority over whole-shape dragging from the interior/boundary.
+
+Exported geometry is Polygon plus `properties.helperShape`:
+
+```js
+{ kind: "circle", center: [longitude, latitude], radiusMeters: 250 }
+{ kind: "rectangle", bounds: [[west, south], [east, north]] }
+```
+
+Circle uses mean Earth radius 6371008.8 metres and 64 deterministic geodesic vertices, starting north and advancing clockwise. Radius is finite, positive and smaller than a hemisphere. Moving it regenerates the geodesic ring from its new center, preserving radius in metres; geographic radius does not imply a screen circle under projection, bearing or pitch. Rectangle sides follow geographic longitude/latitude axes and retain that orientation under camera transforms; it is not a screen-aligned rectangle. Bounds must have positive width and height. Resize/movement atomically update Polygon coordinates and metadata, preserving foreign JSON geometry members and unrelated properties.
+
+Only the exact documented schema with matching deterministic geometry (one ring, expected vertex count, absolute coordinate tolerance 1e-10 degrees) receives shape handles. Invalid, unknown or mismatched metadata remains a generic Polygon, preserving imported geometry/properties byte-for-byte through import/export. No migration regenerates an import. New shapes and shape gestures stop atomically at longitude ±180 and Mercator latitude ±85.0511287798066; Circle checks geographic extrema as well as vertices. Wrapped-world deltas over 180 degrees and degenerate constructions are rejected. A rejected movement retains the last valid preview. No vertex is independently clamped or wrapped. Existing generic imported geometry retains the adapter's legacy coordinate validation and vertex editing limits.
+
+### Completed color interactions
+
+Use the complete picker `onInput` / `onChange` callbacks with the adapter APIs:
+
+```js
+const token = adapter.beginStyleChange(); // selected feature; false if unavailable
+adapter.previewStyle({ fill: rgba, stroke: otherRgba }, token);
+adapter.finishStyleChange(token); // one completed undo unit
+// Or adapter.cancelStyleChange(token): no history unit.
+```
+
+Tokens are adapter-local, stale-safe and rejected during callback reentry. Preview accepts a complete helperStyle object and preserves its RGBA precision. `getState().features` exposes render previews; in immediate mode `getFeatures()` excludes pending geometry/style previews. `getCapabilities().canPersist` is false during pending style, drag, construction or a dirty explicit edit session. Before Save, the app explicitly calls `settleStyleChange({ commit: true })` and verifies `canPersist`; for dialog dismissal, `settleStyleChange()` cancels. Save itself remains app-owned.
+
+Selection/mode changes cancel unfinished style preview before switching. Undo/Redo first cancel a pending preview without consuming earlier history. Valid external `setFeatures` cancels a preview and replaces/reset its context; invalid imports leave it untouched. Destroy/map removal cancel pending preview while retaining earlier completed immediate units. Cancel/no-op creates no undo unit. Old callbacks cannot finish a cancelled token. During a pending style interaction, other feature mutations and deletion are unavailable. Explicit settlement APIs avoid application-local token protocols.
+
+The complete toolbar accepts `hideUnavailableActions: ["fill", "finish", "cancel"]` as an opt-in. Omitted defaults retain disabled actions. Immediate demos hide irrelevant Fill and idle Finish/Cancel, retaining construction and preview Cancel and disabled Undo/Redo. Select/Pan use canonical mouse-pointer/open-hand SVG icons.
+
+Event semantics: style preview/cancellation dispatches `measure` and `statechange` only, never committed `update`. Successful changed settlement dispatches one `update` for the feature then state; unchanged settlement dispatches state without update/history. Dirty tracking must compare committed `getFeatures()`, never `getState().features`. After context cancellation, a late onChange must retain its original token and call `finishStyleChange(originalToken)` (which returns false), never begin a new transaction for a newly selected object. Native demo callbacks ignore a completed change whose original transaction has already disappeared.
+
+For action visibility, the toolbar opt-in uses `getCapabilities().actionVisibility` before falling back to action availability. This keeps relevant Fill visible but disabled during a pending interaction and shows Path/Polygon Finish before enough vertices exist, while hiding idle immediate object Finish/Cancel. Visibility does not enable an unavailable action.

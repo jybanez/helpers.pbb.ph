@@ -2,9 +2,9 @@
   "component": "ui.map.drawing.maplibre",
   "factory": "createMapLibreDrawingAdapter",
   "helperPackage": "0.21.83",
-  "adapterJsRevision": "0.21.302",
-  "coreJsRevision": "0.21.302",
-  "mainUiBundleRevision": "0.21.302",
+  "adapterJsRevision": "0.21.303",
+  "coreJsRevision": "0.21.303",
+  "mainUiBundleRevision": "0.21.305",
   "cssRevision": "0.21.297",
   "maplibreVersion": "4.6.0",
   "drawingEngineDependencies": [],
@@ -12,15 +12,15 @@
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "032aa480600d36b67b9471568f757f9b0de6c55eac6678d82ebae2eb9f3df17e"
+      "sha256": "3ada26647e12ef4a9a30c40a6404fd38379802392b0a9b0cc63c5fbab64da0e7"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
-      "sha256": "c4fb73d63d185c9f3153f2fda4591f66290f766907c5eaebbd60deddcdf9eaf8"
+      "sha256": "42cafa81d97ba7a67be64f484e8a7f5e374ce68223610afe4ef1bf952ba8d246"
     },
     {
       "path": "js/ui/ui.map.drawing.maplibre.js",
-      "sha256": "6657ed0f572d21f75462dc459fcab4e0afc75a1581f20c6d4abaa69e34dfba8a"
+      "sha256": "410d2dd58c5b5d50b3ffe9aa76f6fb108e9da0af365c3be1731ba5e8f443817c"
     },
     {
       "path": "js/ui/ui.dom.js",
@@ -44,11 +44,11 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "1687ff85129df67f74a2f9eee57ad4c266c4668e02c4ea638a53a095fb119483"
+      "sha256": "5ef6c4f7128ba1a3c98f56ceea72dd41df7fa36fed27f1ccbdc4a74bb592b87a"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "b6f33b219fe0e049b665f3ecdc658758c5738e8ea07ef6e0f9e91aebdab26405"
+      "sha256": "1c5a6aa5c33a67ac7baa39805e522861c8e77ee85fcde27a103acd787bc9239a"
     },
     {
       "path": "vendor/maplibre/maplibre-gl.js",
@@ -61,6 +61,10 @@
     {
       "path": "vendor/maplibre/LICENSE.txt",
       "sha256": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2"
+    },
+    {
+      "path": "js/ui/ui.map.drawing.shapes.js",
+      "sha256": "4a7e9296702b929e215e9312075acb48c2b73761c12ce8e20d778a8eb2ef9896"
     }
   ]
 }
