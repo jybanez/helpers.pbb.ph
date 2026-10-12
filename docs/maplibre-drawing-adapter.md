@@ -319,3 +319,5 @@ actions automatically. `destroy()` has no public removal-bypass parameter; actua
 map removal is the sole internal forced-disposal path.
 
 Map removal is an immediate lifetime boundary, including removal inside a read-only notification. Pending drag completion and active-drag rollback stop after removal without restoring stale previews or adding history. Rollback captures its session before notifications; selection, edit acceptance, drawing completion and hydration also check lifetime before continuing. Already completed changes remain completed when removal occurs during their publication.
+
+Initial hydration uses available style structure, not isStyleLoaded(): pending base tiles must not delay the owned GeoJSON source/layers. Creating before style availability still waits for style.load/styledata; creating after style.load hydrates immediately even while tiles remain pending.
