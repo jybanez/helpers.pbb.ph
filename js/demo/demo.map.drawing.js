@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.307";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.308";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createActionModal = await uiLoader.get("ui.action.modal");
@@ -7,6 +7,12 @@ const style = { version: 8, sources: {}, layers: [{ id: "background", type: "bac
 const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, attributionControl: false });
 const status = document.querySelector("#status"), log = document.querySelector("#log");
 const selectToggle = new URLSearchParams(location.search).has("toggle") || new URLSearchParams(location.search).get("bundle") === "toggle";
+const compact = selectToggle && new URLSearchParams(location.search).has("compact");
+if (compact) {
+  document.body.classList.add("compact-drawing");
+  map.getContainer().appendChild(document.querySelector("#tools"));
+  map.resize();
+}
 const immediate = selectToggle || new URLSearchParams(location.search).has("immediate") || new URLSearchParams(location.search).get("bundle") === "immediate";
 if (immediate) {
   document.querySelector("#edit-title").textContent = "Immediate object edits";
@@ -66,7 +72,7 @@ function recreate() {
   tools?.destroy(); adapter?.destroy();
   styleToken = null; styleOwner = null;
   adapter = createAdapter(map, { selectToggle, editBehavior: immediate ? "immediate" : "session", lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
-  tools = createTools(document.querySelector("#tools"), { adapter, selectToggle, hideUnavailableActions: immediate ? ["fill", "finish", "cancel"] : [], orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
+  tools = createTools(document.querySelector("#tools"), { adapter, selectToggle, showModeTransitionStatus: !compact, hideUnavailableActions: immediate ? ["fill", "finish", "cancel"] : [], orientation: compact ? "vertical" : "horizontal", placement: compact ? "map" : "external", labels: compact ? "none" : "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
     if (immediate && name === "select" && payload) { const colors = adapter.getFeatureStyle(); fillPicker.setValue(colors.fill || { r:80,g:184,b:255,a:.22 }); strokePicker.setValue(colors.stroke || "#50b8ff"); }

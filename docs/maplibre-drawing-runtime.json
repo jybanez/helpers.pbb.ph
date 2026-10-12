@@ -3,8 +3,8 @@
   "factory": "createMapLibreDrawingAdapter",
   "helperPackage": "0.21.83",
   "adapterJsRevision": "0.21.307",
-  "coreJsRevision": "0.21.307",
-  "mainUiBundleRevision": "0.21.307",
+  "coreJsRevision": "0.21.308",
+  "mainUiBundleRevision": "0.21.308",
   "cssRevision": "0.21.297",
   "maplibreVersion": "4.6.0",
   "drawingEngineDependencies": [],
@@ -12,11 +12,11 @@
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "d0cdf96e6e29c7fca4c060a484c53b9a5732bdeb12479053fade7fbcab65c883"
+      "sha256": "5bbefd5665e6c35e6f2434e2138a434a508db574187829623d6847838bcab7d8"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
-      "sha256": "9ff23c18d887932332858fad35495d19a35a6442f46916afc91c6255a1a87663"
+      "sha256": "593cedd4fbaa1839c94cede79b1ee7a9c6fafbb7da0c9494e2a31c53cc45e158"
     },
     {
       "path": "js/ui/ui.map.drawing.maplibre.js",
@@ -44,7 +44,7 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "c150e2be0149c5665dd8a9347dd020c7b3caffb467de8106d8f5ea2868402aaf"
+      "sha256": "3c3a15ada6bfe5c7cada14285f928697586956da42dbfb7d6489bf69b2bbf06f"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

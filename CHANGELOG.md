@@ -1,5 +1,7 @@
 # Changelog
 
+- Added default-compatible drawing toolbar `showModeTransitionStatus` presentation option with compact vertical source/bundle demos. Suppression preserves adapter rejection, mode/focus and editing/history guards. Drawing core/main UI cache `0.21.308`; adapter remains `0.21.307`.
+
 - Added opt-in canonical Select toggle with hidden Pan, navigation-only handles/edit suppression, retained selection/history, rejection-aware keyboard state and explicit unfinished-work cancellation. Default consumers remain compatible; source/bundle demo and regression coverage. Adapter/core/main UI cache `0.21.307`.
 
 - Added canonical selected Polygon body/edge dragging with vertex priority and topmost-feature arbitration. All rings translate uniformly with holes/closure/metadata preserved, atomic world/Mercator rejection and existing history/cancellation semantics. Source/bundle immediate/session regressions at desktop/mobile widths and tilted camera; adapter/main UI cache `0.21.306`.

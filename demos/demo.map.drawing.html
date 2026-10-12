@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="../vendor/maplibre/maplibre-gl.css">
 <style>
 *{box-sizing:border-box}body{margin:0;padding:16px;background:#0c1421;color:#d8e7fa;font:15px/1.5 system-ui}main{max-width:1100px;margin:auto}a{color:#7dc6ff}h1{font-size:24px;margin:10px 0}p{margin:10px 0}#tools{margin:14px 0;max-width:100%;overflow:auto}#map{height:460px;border:1px solid #415578;border-radius:10px}#map .maplibregl-canvas:focus-visible{outline:3px solid #fff;outline-offset:-4px}button{font:inherit}nav{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}nav button{background:#1a2b43;color:inherit;border:1px solid #415578;border-radius:6px;padding:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#162337;padding:12px;border-radius:8px;max-height:300px;overflow:auto}#status{min-height:24px}details{margin:12px 0}@media(max-width:500px){body{padding:10px}#map{height:400px}h1{font-size:21px}}
+.compact-drawing #map{position:relative;height:640px}.compact-drawing #tools{position:absolute;top:8px;right:8px;z-index:2;margin:0;max-height:calc(100% - 16px)}
 </style><script src="../vendor/maplibre/maplibre-gl.js"></script>
 </head><body><main>
 <a href="index.html">Back to Helper demos</a><h1>MapLibre drawing adapter</h1>
@@ -18,10 +19,11 @@
 </nav>
 <p><a href="?immediate">Try immediate edits with Circle and Rectangle</a> · <a href="?bundle=immediate">Try the bundled immediate demo</a> · <a href="?legacy">Legacy edit sessions</a></p>
 <p><a href="?toggle">Try the Select toggle</a> · <a href="?bundle=toggle">Try the bundled Select toggle</a>. Select starts pressed; click it again to navigate with handles hidden. Click it to resume editing the retained selection. Finish or Cancel unfinished work before changing modes; completed drawings return to Select.</p>
+<p><a href="?toggle&amp;compact">Try a compact vertical rail</a> · <a href="?bundle=toggle&amp;compact">Try the bundled compact rail</a>. This presentation omits the transition status; pending edits still require Finish or Cancel.</p>
 <p>Circle: center, live radius, second click. Rectangle: first corner, live opposite corner, second click. Select and drag a shape inside its boundary to move it; white handles resize it. Selected Polygons move from their interior or edges, preserving holes; drag a hole interior to pan the map. Circles use metres; rectangles follow geographic axes even on a rotated or tilted map. In immediate mode, completed gestures and color changes are undoable without an object checkpoint.</p>
 <details><summary>Scope and ownership</summary><p>This local, tile-free demo uses the complete Helper toolbar and canonical adapter. Measurement, vertex insertion/removal, snapping and topology validation are unsupported. GeoJSON stays in memory. MapLibre assets and drawing code load locally; no sensor, upload or persistence requests are made.</p><a href="../docs/maplibre-drawing-adapter.md">API, dependencies and lifecycle contract</a></details>
 <h2 id="edit-title">Existing-object edit session</h2><p id="edit-description">Import sample shapes, select an object, then begin an edit. Drag vertices or apply colors. The complete toolbar Finish accepts one undo step; Cancel restores the object and prior history. While unchanged, Finish/Cancel are disabled: click another object to switch, choose Pan or a drawing mode, or use Delete with confirmation. Changed edits must be finished or cancelled before switching or deleting. Cancelling deletion keeps the clean session. Colors remain in GeoJSON properties.helperStyle.</p>
 <nav aria-label="Object edit controls"><button id="edit-object" type="button" disabled>Begin selected object edit</button><button id="apply-style" type="button" disabled>Apply fill and stroke</button></nav>
 <div id="fill-color"></div><div id="stroke-color"></div>
 <h2>Events / GeoJSON</h2><pre id="log">No geometry changes yet.</pre>
-</main><script type="module" src="../js/demo/demo.map.drawing.js?v=0.21.307"></script></body></html>
+</main><script type="module" src="../js/demo/demo.map.drawing.js?v=0.21.308"></script></body></html>
