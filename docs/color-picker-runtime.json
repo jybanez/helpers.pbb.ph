@@ -4,7 +4,7 @@
   "helperPackage": "0.21.83",
   "componentRevision": "0.21.294",
   "formModalRevision": "0.21.294",
-  "mainUiBundleRevision": "0.21.294",
+  "mainUiBundleRevision": "0.21.295",
   "demoRevision": "0.21.294",
   "scope": "Changed runtime and demo assets; optional game and inspection bundles unchanged. Source dependencies use existing canonical components.",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -23,11 +23,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "60985bbc35d49c51150514c2edab59bfd36a4a534b48452cb6b1f8361f1abbdf"
+      "sha256": "1c49a324f759f8fa87eed2fc02c40f59fa6ef33fff282aca9063279a8af0559f"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "fa80f11da251516d3530da705dd94b11647bc1bc6cb590b2eace79f493e41093"
+      "sha256": "2b46a56dfd8c1a53d86071f13fd8e4219dc4d2fab0b09cc9a0725ddc877c3fd8"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

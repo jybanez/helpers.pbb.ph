@@ -15,5 +15,9 @@ try {
     const gate = await cli("run-code --filename tests/_support/maplibre-deletion-gate-check.js");
     if (!gate.stdout.includes("PASS")) throw Error(gate.stdout);
     console.log(`MapLibre deletion gate regression passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const edits = await cli("run-code --filename tests/_support/maplibre-object-edit-check.js");
+    if (!edits.stdout.includes('### Result\n"OBJECT_EDIT_OK"')) throw Error(edits.stdout);
+    console.log(`MapLibre object edit regression passed (${suffix || "source"}).`);
   }
 } finally { try { await cli("close"); } finally { await server.close(); } }
