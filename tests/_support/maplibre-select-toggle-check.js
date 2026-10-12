@@ -38,8 +38,25 @@ async page => {
     check(await page.evaluate(camera=>__drawing.map.getBearing()!==camera.bearing&&__drawing.map.getPitch()!==camera.pitch,camera),'native rotate and tilt');
     check(await page.evaluate(snapshot=>{const a=__drawing.adapter;return JSON.stringify({f:a.getFeatures(),s:a.getState().selectedFeatureId,c:a.getCapabilities().actions})===snapshot;},snapshot),'navigation geometry/selection/history unchanged');
     await page.evaluate(()=>{__drawing.map.stop();__drawing.map.jumpTo({center:[123.8854,10.3157],zoom:12,bearing:31,pitch:40});});
+    // Finish the camera/render work from native navigation before switching to
+    // keyboard activation. Keep one native Enter and the original assertion.
+    await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return !map.isMoving()&&map.loaded()&&map.isSourceLoaded(a.getState().sourceId);});
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await page.evaluate(()=>{
+      window.__toggleEnterEvents=[];
+      window.__toggleEnterObserver=event=>{
+        const button=document.querySelector('#tools [data-mode="select"]');
+        __toggleEnterEvents.push({type:event.type,key:event.key,targetMode:event.target?.dataset?.mode,targetConnected:event.target.isConnected,targetIsCurrent:event.target===button,defaultPrevented:event.defaultPrevented,focused:document.activeElement===button,disabled:button.disabled,pressed:button.getAttribute('aria-pressed'),mode:__drawing.adapter.getMode(),time:performance.now()});
+      };
+      for(const name of ['keydown','keypress','keyup','click'])document.addEventListener(name,__toggleEnterObserver);
+    });
     await select().focus();await page.keyboard.press('Enter');
-    check(await select().getAttribute('aria-pressed')==='true','keyboard on');
+    const keyboard=await page.evaluate(()=>{
+      for(const name of ['keydown','keypress','keyup','click'])document.removeEventListener(name,__toggleEnterObserver);
+      const {map,adapter:a}=__drawing,button=document.querySelector('#tools [data-mode="select"]');
+      return {width:innerWidth,query:location.search,focused:document.activeElement===button,disabled:button.disabled,pressed:button.getAttribute('aria-pressed'),state:a.getState(),capabilities:a.getCapabilities(),camera:{center:map.getCenter().toArray(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch(),moving:map.isMoving(),loaded:map.loaded()},events:__toggleEnterEvents};
+    });
+    check(keyboard.pressed==='true','keyboard on '+JSON.stringify(keyboard));
     await page.evaluate(()=>{const a=__drawing.adapter;a.undo();if(JSON.stringify(a.getFeatures())!==JSON.stringify(__toggleHistoryBefore))throw Error('prior history retained');a.redo();if(JSON.stringify(a.getFeatures())!==JSON.stringify(__toggleHistoryAfter))throw Error('prior redo retained');});
     await page.waitForFunction(()=>__drawing.map.queryRenderedFeatures({layers:[__drawing.adapter.getState().layerIds[3]]}).length>0);
     const vertex=await page.evaluate(()=>{const{map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),p=map.project(a.getFeatures()[0].geometry.coordinates[0][0]);return{x:p.x+b.x,y:p.y+b.y};});
