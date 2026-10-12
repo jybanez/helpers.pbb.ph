@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.305";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.306";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createActionModal = await uiLoader.get("ui.action.modal");
