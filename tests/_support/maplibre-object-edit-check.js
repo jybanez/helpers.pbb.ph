@@ -9,18 +9,19 @@ async (page) => {
       const check = (ok, text) => { if (!ok) throw Error(text); };
       const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
       const original = a.getFeatures();
-      let callbacks = 0;
+      let callbacks = 0, callbackSafe = true;
       const offs = ['select', 'update', 'statechange', 'editchange', 'measure'].map(name => a.on(name, () => {
         callbacks++;
         const before = JSON.stringify(a.getState());
-        const attempts = [() => a.beginEdit('route'), () => a.acceptEdit(), () => a.rollbackEdit(), () => a.finish(), () => a.cancel(), () => a.updateFeature('route', { properties: { reentrant: true } }), () => a.setMode('point'), () => a.setFeatures(sample), () => a.undo(), () => a.redo(), () => a.deleteSelected(), () => a.clear(), () => a.destroy()];
+        const attempts = [() => a.beginEdit('route'), () => a.acceptEdit(), () => a.rollbackEdit(), () => a.finish(), () => a.cancel(), () => a.updateFeature('route', { properties: { reentrant: true } }), () => a.setMode('point'), () => a.setFeatures(sample), () => a.undo(), () => a.redo(), () => a.deleteSelected(), () => a.clear(), () => a.destroy(), () => a.destroy(true)];
         for (const run of attempts) {
-          check(run() === false && JSON.stringify(a.getState()) === before, 'reentrant context mutation rejected');
+          try { callbackSafe &&= run() === false && JSON.stringify(a.getState()) === before; }
+          catch (_) { callbackSafe = false; }
         }
       }));
       check(a.beginEdit(0), 'begin reentrant numeric zero'); a.updateFeature(0, { properties: { preview: true } }); a.rollbackEdit();
       offs.forEach(off => off());
-      check(callbacks > 5 && same(a.getFeatures(), original), 'reentrant rollback preserves original context');
+      check(callbackSafe && callbacks > 5 && same(a.getFeatures(), original), 'reentrant rollback preserves original context');
       check(a.beginEdit(0), 'begin numeric zero');
       const sessionId = a.getState().editSession.id;
       check(a.getState().selectedFeatureId === '0' && same(a.getState().anchor, sample[0].geometry.coordinates), 'selection and geographic anchor');
@@ -66,7 +67,22 @@ async (page) => {
     });
     await page.mouse.move(pos.x, pos.y); await page.mouse.down(); await page.mouse.move(pos.x + 20, pos.y + 25, { steps: 5 });
     assert(await page.evaluate(() => __drawing.adapter.getState().dragging && !__drawing.adapter.acceptEdit() && !__drawing.adapter.updateFeature(0, { properties: {} })), 'active drag blocks finish and edits');
+    assert(await page.evaluate(() => {
+      const { adapter: a, sample } = __drawing; const id = a.getState().editSession.id;
+      let rejects = 0, safe = true; const off = a.on('statechange', state => {
+        if (state.dragging || !state.editSession) return;
+        const before = JSON.stringify(a.getState());
+        try { safe &&= a.acceptEdit(id) === false && a.rollbackEdit(id) === false && a.destroy(true) === false && a.setMode('point') === false && JSON.stringify(a.getState()) === before; }
+        catch (_) { safe = false; }
+        rejects++;
+      });
+      const result = a.rollbackEdit(id); off();
+      return result && safe && rejects > 0 && JSON.stringify(a.getFeatures()) === JSON.stringify(sample) && !a.getState().dragging && !a.getState().editSession && !a.getCapabilities().actions.undo;
+    }), 'rollback during active drag preserves original geometry and history');
     await page.mouse.up();
+    assert(await page.evaluate(() => JSON.stringify(__drawing.adapter.getFeatures()) === JSON.stringify(__drawing.sample) && !__drawing.adapter.getState().editSession), 'late mouseup cannot resurrect active-drag rollback');
+    await page.evaluate(() => __drawing.adapter.beginEdit(0));
+    await page.mouse.move(pos.x, pos.y); await page.mouse.down(); await page.mouse.move(pos.x + 20, pos.y + 25, { steps: 5 }); await page.mouse.up();
     assert(await page.evaluate(() => __drawing.adapter.getState().editSession.dirty), 'real session vertex drag dirty');
     await page.locator('#tools [data-action="cancel"]').click();
     assert(await page.evaluate(() => JSON.stringify(__drawing.adapter.getFeatures()) === JSON.stringify(__drawing.sample) && !__drawing.adapter.getState().editSession), 'complete toolbar rollback');

@@ -290,3 +290,30 @@ explicit destroy) return false while events are being delivered. Observe snapsho
 there; invoke later UI actions outside the callback with captured adapter/layer
 identity and session ID. No rejected mutation is queued or automatically replayed.
 Map removal still disposes the adapter even if initiated during an event.
+
+A supported post-dispatch path is to record context in a read-only listener and
+act only from a subsequent explicit UI action. For example:
+
+```js
+let toolbarContext;
+const owner = adapter;
+owner.on("statechange", state => {
+  toolbarContext = { owner, layerId: activeLayerId,
+    sessionId: state.editSession?.id, revision: state.revision };
+  repositionToolbar(state.anchor); // Project/clamp only; do not mutate adapter.
+});
+function finishFromUserClick() {
+  const expected = toolbarContext;
+  if (!expected || adapter !== expected.owner || activeLayerId !== expected.layerId) return false;
+  const current = adapter.getState();
+  if (current.revision !== expected.revision || current.editSession?.id !== expected.sessionId) return false;
+  return adapter.acceptEdit(expected.sessionId);
+}
+```
+
+Use the same captured-context check for explicit Close/Discard rollback. A Save
+workflow must settle the active object edit first and persist only after successful
+acceptance; captured layer/storage identity still requires its own authorization
+and uncertain-outcome checks. Do not queue/replay rejected destructive or save
+actions automatically. `destroy()` has no public removal-bypass parameter; actual
+map removal is the sole internal forced-disposal path.
