@@ -8,6 +8,10 @@ try {
   await cli(`open ${server.origin}/demos/demo.map.drawing.html`);
   for (const suffix of ["", "?bundle"]) {
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const pending = await cli("run-code --filename tests/_support/maplibre-pending-tile-check.js");
+    if (!pending.stdout.includes('### Result\n"PENDING_TILE_OK"')) throw Error(pending.stdout);
+    console.log(`MapLibre pending tile initialization passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const { stdout } = await cli("run-code --filename tests/_support/maplibre-drawing-check.js");
     if (!stdout.includes("PASS")) throw Error(stdout);
     console.log(`MapLibre drawing real pointer/keyboard regression passed (${suffix || "source"}).`);

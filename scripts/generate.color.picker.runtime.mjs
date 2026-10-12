@@ -4,7 +4,7 @@ const paths = ["js/ui/ui.color.picker.js", "css/ui/ui.color.picker.css", "js/ui/
 const sha256 = path => crypto.createHash("sha256").update(fs.readFileSync(path, "utf8").replaceAll("\r\n", "\n")).digest("hex");
 fs.writeFileSync("docs/color-picker-runtime.json", JSON.stringify({
   component: "ui.color.picker", factory: "createColorPicker", helperPackage: "0.21.83",
-  componentRevision: "0.21.294", formModalRevision: "0.21.294", mainUiBundleRevision: "0.21.295",
+  componentRevision: "0.21.294", formModalRevision: "0.21.294", mainUiBundleRevision: "0.21.296",
   demoRevision: "0.21.294",
   scope: "Changed runtime and demo assets; optional game and inspection bundles unchanged. Source dependencies use existing canonical components.",
   algorithm: "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -14,8 +14,8 @@ fs.writeFileSync("docs/color-picker-runtime.json", JSON.stringify({
 // shared hashes without claiming new drawing/icon source revisions.
 for (const path of ["docs/maplibre-drawing-runtime.json", "docs/map-layer-icon-runtime.json"]) {
   const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
-  manifest.mainUiBundleRevision = "0.21.295";
-  if (manifest.component === "ui.map.drawing.maplibre") manifest.adapterJsRevision = "0.21.295";
+  manifest.mainUiBundleRevision = "0.21.296";
+  if (manifest.component === "ui.map.drawing.maplibre") manifest.adapterJsRevision = "0.21.296";
   manifest.artifacts = manifest.artifacts.map(artifact => ({ ...artifact, sha256: sha256(artifact.path) }));
   fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
 }
