@@ -467,6 +467,15 @@ construction draft or draft redo returns false without discarding work.
 Capabilities expose a user-facing `modeTransitionReason` while blocked; the
 complete toolbar displays it as status feedback. Direct rejected adapter calls
 emit `moderejected` with `requestedMode`, actual `mode`, and `reason`.
+The toolbar option `showModeTransitionStatus` defaults to `true`. Set it to
+`false` at creation or with `tools.update({ showModeTransitionStatus: false })`
+to omit only this status presentation, for example in a compact vertical rail.
+The adapter still exposes its reason and rejects unsafe transitions; disabled
+buttons, truthful pressed state, focus, geometry/history and Finish/Cancel remain
+unchanged. Measurement and other application feedback are independent.
+Try `?toggle&compact` or `?bundle=toggle&compact` in the same demo.
+Run `node tests/map.drawing.status.regression.mjs` for initialization/update,
+pending-state compactness, cancellation and keyboard focus coverage.
 Calling the current mode is a no-op. Finish or explicit Cancel remains available; Cancel
 restores transient edits or discards unfinished construction while retaining
 earlier completed layer edits. Finish, Cancel and automatic completion (including

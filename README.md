@@ -6114,6 +6114,9 @@ Opt-in `selectToggle: true` on both complete toolbar and adapter replaces visibl
 Pan with a pressed Select toggle. Navigation mode retains selection/history and
 hides editing handles; unfinished work requires Finish or explicit Cancel before
 switching. Try `demos/demo.map.drawing.html?toggle` or `?bundle=toggle`.
+The complete toolbar accepts `showModeTransitionStatus: false` (default `true`)
+at creation or update to omit its pending-transition status while preserving all
+adapter guards. Try `?toggle&compact` for the compact vertical presentation.
 
 See [the adapter contract](docs/maplibre-drawing-adapter.md) and the local
 `demos/demo.map.drawing.html` (also `?bundle`). MapLibre is supplied by the host;
