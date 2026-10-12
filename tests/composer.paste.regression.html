@@ -1,0 +1,56 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Composer custom paste</title></head><body data-status="pending"><div id="host"></div><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const bundled=new URLSearchParams(location.search).has('bundle');
+const create=await createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:bundled}).get('ui.chat.composer');
+const host=document.querySelector('#host'),results=document.querySelector('#results');
+const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
+const assert=(ok,msg)=>{if(!ok)throw Error(msg);results.textContent+=`PASS ${msg}\n`;};
+const png=new File(['png'],'image.png',{type:'image/png'}),pdf=new File(['pdf'],'brief.pdf',{type:'application/pdf'}),txt=new File(['txt'],'notes.txt',{type:'text/plain'});
+let c;
+function paste(files=[],{fallback=false,prevented=false,text='clipboard text'}={}) {
+ const event=new Event('paste',{bubbles:true,cancelable:true});
+ Object.defineProperty(event,'clipboardData',{value:{items:fallback?[]:files.map(file=>({kind:'file',getAsFile:()=>file})),files,getData:()=>text}});
+ if(prevented)event.preventDefault();c.refs.input.dispatchEvent(event);return event;
+}
+try {
+ if(bundled)assert(create===window.__PBB_HELPER_UI_BUNDLE__['./ui.chat.composer.js'].createChatComposer,'bundle factory');
+ let calls=0,received,context,resolve,reject,emitted=[],errors=[],native=0,pickers=0;
+ const adapter={mode:'custom',open:async()=>{pickers++;return [{id:'picked',name:'Picked'}];},paste(files,ctx){assert(this===adapter,'adapter receiver retained');calls++;received=files;context=ctx;return new Promise((r,j)=>{resolve=r;reject=j;});}};
+ const options={attachmentAdapter:adapter,accept:'image/*,.pdf',onAttachmentsSelected:(r,m)=>emitted.push({r,m}),onFilesSelected:()=>native++,onAttachmentError:e=>errors.push(e)};
+ c=create(host,{value:'Draft'},options);c.focus();const input=c.refs.input;input.setSelectionRange(2,2);
+ assert(!paste().defaultPrevented&&!paste([txt]).defaultPrevented&&calls===0,'text and all-rejected paste untouched');
+ assert(paste([png,pdf,txt]).defaultPrevented&&calls===1&&received[0]===png&&received[1]===pdf&&received.length===2,'only accepted original files handed off');
+ assert(context.signal instanceof AbortSignal&&context.source==='paste','explicit source and signal');
+ assert(c.refs.attach.disabled&&c.refs.send.disabled&&c.refs.root.getAttribute('aria-busy')==='true','busy before adapter work');
+ assert(!paste([png]).defaultPrevented&&calls===1,'pending paste not reentered');
+ assert(!paste().defaultPrevented,'text paste remains native while pending');
+ input.value='Draft edited';input.dispatchEvent(new Event('input'));c.setAttachmentCount(1);
+ assert(!context.signal.aborted,'typing and queue count preserve operation');
+ resolve([{id:'uploaded',name:'image.png'}]);await tick();
+ assert(emitted.length===1&&emitted[0].m.kind==='repository'&&emitted[0].m.source==='paste'&&native===0,'canonical result emits once, never native callback');
+ assert(c.refs.input===input&&document.activeElement===input&&c.getValue()==='Draft edited'&&!c.refs.attach.disabled,'completion retains input focus and live draft');
+ c.refs.attach.click();await tick();assert(pickers===1&&emitted[1].m.source==='picker','custom picker unchanged');
+ c.update({}, {attachmentOptions:{files:{multiple:false,accept:'.pdf'}}});paste([png,pdf,pdf],{fallback:true});assert(received.length===1&&received[0]===pdf,'per-type accept/multiple and clipboard files fallback');resolve();await tick();assert(emitted.length===2,'void means adapter handled queue/no result');
+ c.focus();const beforeError=c.refs.input;paste([pdf]);reject(Error('Connection lost'));await tick();
+ assert(host.querySelector('[role=alert]').textContent.includes('Check the attachment state')&&errors.length===1&&!c.refs.attach.disabled&&c.refs.input===beforeError&&document.activeElement===beforeError,'error visible without losing focus or replay');
+ const callCount=calls;await tick();assert(calls===callCount,'failure is not automatically retried');
+ paste([pdf]);assert(!host.querySelector('[role=alert]'),'explicit new operation clears old error');resolve([{name:'missing id'}]);await tick();assert(errors.length===2&&emitted.length===2,'invalid adapter result rejected');
+ for(const operation of ['update','busy','destroy']) {
+  paste([pdf]);const signal=context.signal,lateResolve=resolve;
+  if(operation==='update')c.update({value:'New context'});
+  if(operation==='busy')c.setBusy(true);
+  if(operation==='destroy')c.destroy();
+  assert(signal.aborted,`${operation} aborts signal`);lateResolve([{id:'late',name:'Late'}]);await tick();assert(emitted.length===2&&errors.length===2,`${operation} suppresses late result`);
+  if(operation==='busy')c.setBusy(false);
+ }
+ assert(host.childElementCount===0,'destroy not resurrected');
+ c=create(host,{},options);paste([png]);const staleReject=reject;c.update({}, {disabled:true});staleReject(Error('late failure'));await tick();assert(errors.length===2&&!host.querySelector('[role=alert]'),'late errors ignored');
+ const prior=calls;assert(!paste([png]).defaultPrevented&&calls===prior,'disabled guard');c.update({}, {disabled:false,busy:true});assert(!paste([png]).defaultPrevented&&calls===prior,'busy guard');
+ c.update({}, {busy:false,attachmentAdapter:{mode:'custom',open:adapter.open}});assert(!paste([png]).defaultPrevented,'custom mode without paste method untouched');
+ c.update({}, {attachmentAdapter:'native',multiple:false});assert(paste([png,pdf]).defaultPrevented&&native===1&&emitted.at(-1).r.length===1&&emitted.at(-1).m.kind==='native','native paste unchanged');
+ c.update({}, {attachmentAdapter:'none'});assert(!paste([png]).defaultPrevented,'none mode untouched');
+ c.update({}, {attachmentAdapter:adapter,attachments:[]});assert(!paste([png]).defaultPrevented,'disabled files action untouched');
+ c.update({}, {attachments:['files']});const previous=calls;paste([png],{prevented:true});assert(calls===previous,'already handled paste not intercepted');c.destroy();
+ document.body.dataset.status='pass';
+}catch(error){document.body.dataset.status='fail';results.textContent+=error.stack;}
+</script></body></html>

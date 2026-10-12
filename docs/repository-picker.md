@@ -119,8 +119,8 @@ upload was rolled back. Late results after dismissal/context change are ignored.
   workflow. Result emits only `onAttachmentsSelected(records,
   {kind:'repository', source:'picker'})`. Cancellation returns null/[]; an error is
   visible in the composer and optionally reported via `onAttachmentError(error)`.
-  Native clipboard file interception is disabled so custom mode never bypasses
-  the repository workflow. `multiple:false` also limits the returned selection.
+  Clipboard file interception is disabled unless this adapter also supplies the
+  explicit `paste` method below. `multiple:false` also limits the returned picker selection.
 - `'none'`: no attachment button, native file input or file paste interception.
 
 `showAttachmentButton:false` disables all modes. `update`, `destroy`, or setting
@@ -136,3 +136,48 @@ See `demos/demo.repository.picker.html` for delayed/error/empty/permission cases
 upload simulation and composer integration. Run `node tests/repository.picker.regression.mjs`
 for source and bundled lifecycle/adapter tests, plus `node tests/chat.regression.mjs`,
 `node tests/ui.bundle.contract.mjs` and `node tests/registry.contract.mjs`.
+
+## Custom clipboard files (0.21.300)
+
+Custom adapters may opt into file paste explicitly, independently of their picker:
+
+```js
+attachmentAdapter: {
+  mode: 'custom',
+  open: ({ signal }) => picker.pick({ signal }),
+  async paste(files, { signal, source }) {
+    // files: accepted original File objects; source is always 'paste'.
+    // Application owns authorization, uploads and uncertain-outcome reconciliation.
+    return await applicationUpload(files, { signal }); // canonical records, or null/[]/void
+  }
+},
+onAttachmentsSelected(records, { kind, source }) {
+  // kind:'repository'; source:'paste' or 'picker'. Add confirmed records to the draft.
+}
+```
+
+Only generic `accept` and `multiple` rules run in Helper, before preventing the
+paste event or starting busy state. `attachmentOptions.files` overrides top-level
+file options. Text-only paste, all-rejected files, custom adapters without `paste`,
+and modes without file attachments keep browser default behavior. Once at least
+one file is accepted, the mixed clipboard event is consumed and accepted files
+are passed exactly once; clipboard text from that same event is not inserted.
+Native mode retains its existing File callbacks.
+
+The composer blocks additional file attachment operations and Send while awaiting
+`paste`, but keeps the input editable and preserves its DOM, caret and focus on
+success/error. `update`, `destroy`, and `setBusy(true)` abort the supplied signal
+and suppress late results/errors. Typing and `setAttachmentCount` do not cancel.
+Use `update` when project/draft context changes. Adapters must honor the signal and
+check application context before their own queue/storage side effects; abort does
+not prove a server mutation was rolled back.
+
+Return canonical `{id,name,...}` records to emit only `onAttachmentsSelected` with
+`{kind:'repository',source:'paste'}`. Return null, [], or void if there is no result
+or the adapter already updated the application queue; do not add the same records
+through both paths. Helper never creates folders, uploads files, associates a
+message, or validates project authorization. Invalid results/rejections show an
+inline alert and call `onAttachmentError`. Helper never automatically replays an
+upload; the application must reconcile an uncertain outcome before retrying.
+
+Run `node tests/composer.paste.regression.mjs` for the source/bundle fixture.

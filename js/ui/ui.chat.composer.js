@@ -235,8 +235,15 @@ export function createChatComposer(container, data = {}, options = {}) {
     if (metadata.childNodes.length) root.appendChild(metadata);
 
     container.appendChild(root);
-    if (attachmentError) {
-      root.appendChild(createElement('p', {text:attachmentError, attrs:{role:'alert'}}));
+    syncAttachmentError();
+  }
+
+  function syncAttachmentError() {
+    refs.attachmentError?.remove();
+    refs.attachmentError = null;
+    if (attachmentError && refs.root) {
+      refs.attachmentError = createElement('p', {text:attachmentError, attrs:{role:'alert'}});
+      refs.root.appendChild(refs.attachmentError);
     }
   }
 
@@ -278,9 +285,11 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function handlePaste(event) {
-    if (!hasAttachments() || adapter().mode !== 'native' || isInteractionBlocked()) {
+    if (destroyed || event.defaultPrevented || !hasAttachments() || isInteractionBlocked() || attachmentBusy) {
       return;
     }
+    const selectedAdapter = adapter();
+    if (selectedAdapter.mode !== 'native' && !(selectedAdapter.mode === 'custom' && typeof selectedAdapter.paste === 'function')) return;
     const files = getClipboardFiles(event.clipboardData);
     if (!files.length) {
       return;
@@ -290,7 +299,32 @@ export function createChatComposer(container, data = {}, options = {}) {
       return;
     }
     event.preventDefault();
-    emitFilesSelected(acceptedFiles, "paste");
+    if (selectedAdapter.mode === 'custom') void pasteAttachment(acceptedFiles, selectedAdapter);
+    else emitFilesSelected(acceptedFiles, "paste");
+  }
+
+  async function pasteAttachment(files, selectedAdapter) {
+    attachmentError = ''; attachmentBusy = true; attachmentController = new AbortController();
+    const signal = attachmentController.signal, token = ++attachmentRevision, snapshot = currentOptions;
+    syncAttachmentError(); syncButtons();
+    try {
+      const records = await selectedAdapter.paste(files, {signal, source:'paste'});
+      if (destroyed || signal.aborted || token !== attachmentRevision) return;
+      if (records == null || (Array.isArray(records) && !records.length)) return;
+      if (!Array.isArray(records) || records.some(record => !record || record.id == null || typeof record.name !== 'string')) throw new TypeError('The paste adapter must return canonical file records or no result.');
+      snapshot.onAttachmentsSelected?.(records, {kind:'repository', source:'paste'});
+    } catch (error) {
+      if (!destroyed && !signal.aborted && token === attachmentRevision) {
+        attachmentError = `Unable to attach pasted files. ${error?.message || ''} Check the attachment state before pasting again.`;
+        snapshot.onAttachmentError?.(error);
+      }
+    } finally {
+      if (!destroyed && token === attachmentRevision) {
+        attachmentBusy = false; attachmentController = null;
+        // Keep the live input, caret, draft and any focus moved by the user.
+        syncAttachmentError(); syncButtons();
+      }
+    }
   }
 
   function emitFilesSelected(files, source) {
@@ -368,6 +402,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   }
 
   function syncButtons() {
+    refs.root?.setAttribute('aria-busy', String(Boolean(currentOptions.busy || attachmentBusy)));
     if (refs.send) {
       refs.send.disabled = isSendDisabled();
     }
