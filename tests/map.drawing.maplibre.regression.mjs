@@ -12,6 +12,14 @@ try {
     if (!pending.stdout.includes('### Result\n"PENDING_TILE_OK"')) throw Error(pending.stdout);
     console.log(`MapLibre pending tile initialization passed (${suffix || "source"}).`);
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const switches = await cli("run-code --filename tests/_support/maplibre-clean-switch-check.js");
+    if (!switches.stdout.includes('### Result\n"CLEAN_SWITCH_OK"')) throw Error(switches.stdout);
+    console.log(`MapLibre clean edit switching passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const cleanDelete = await cli("run-code --filename tests/_support/maplibre-clean-delete-check.js");
+    if (!cleanDelete.stdout.includes('### Result\n"CLEAN_DELETE_OK"')) throw Error(cleanDelete.stdout);
+    console.log(`MapLibre clean edit deletion passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const { stdout } = await cli("run-code --filename tests/_support/maplibre-drawing-check.js");
     if (!stdout.includes("PASS")) throw Error(stdout);
     console.log(`MapLibre drawing real pointer/keyboard regression passed (${suffix || "source"}).`);
