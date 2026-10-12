@@ -7,3 +7,5 @@ Catalog, icon factory, drawing toolbar and optional game bundle cache revision30
 Fill uses bucket artwork and Stroke an outlined border. Include `fill` and `stroke` in toolbar `actions` to opt in, then use `onAction` with the canonical color picker. The adapter reports geometry-aware Fill/Stroke availability and dirty-aware object Finish/Cancel; see the adapter contract for clean-session switching and explicit Save/Close settlement.
 
 The opt-in `path` mode uses canonical `map.path` connected-segment SVG artwork, distinct from the straight Line symbol. Mode labels, accessible names and native keyboard buttons remain canonical.
+
+Select and Pan now use canonical `map.select` mouse-pointer and `map.pan` open-hand SVG icons (0.21.303), without font/emoji dependence.

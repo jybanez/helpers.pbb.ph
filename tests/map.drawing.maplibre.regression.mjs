@@ -2,11 +2,29 @@ import { startStaticServer } from "./_support/static-server.mjs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 const run = promisify(execFile);
+const legacyOnly = process.argv.includes("--legacy-only");
+const immediateOnly = process.argv.includes("--immediate-only");
+const session = `maplibre-drawing-${legacyOnly ? "legacy" : immediateOnly ? "immediate" : "regression"}-${process.pid}`;
 const server = await startStaticServer({ rootDir: process.cwd(), port: 0 });
-const cli = command => run(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `npx --no-install @playwright/cli -s=maplibre-drawing-regression ${command}`], { timeout: 60000, maxBuffer: 2 ** 22 });
+const cli = command => run(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `npx --no-install @playwright/cli -s=${session} ${command}`], { timeout: 60000, maxBuffer: 2 ** 22 });
 try {
   await cli(`open ${server.origin}/demos/demo.map.drawing.html`);
-  for (const suffix of ["", "?bundle"]) {
+  for (const suffix of legacyOnly ? [] : ["?immediate", "?bundle=immediate"]) {
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const shapes = await cli("run-code --filename tests/_support/maplibre-shapes-immediate-check.js");
+    if (!shapes.stdout.includes('### Result\n"SHAPES_IMMEDIATE_OK"')) throw Error(shapes.stdout);
+    console.log(`MapLibre shapes/immediate editing passed (${suffix}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const shapeBoundary = await cli("run-code --filename tests/_support/maplibre-shape-boundary-check.js");
+    if (!shapeBoundary.stdout.includes('### Result\n"SHAPE_BOUNDARY_OK"')) throw Error(shapeBoundary.stdout);
+    console.log(`MapLibre shape seam/polar boundaries passed (${suffix}).`);
+    if (suffix === "?bundle=immediate") {
+      const assets = await cli("run-code --filename tests/_support/maplibre-bundle-assets-check.js");
+      if (!assets.stdout.includes('### Result\n"BUNDLE_ASSETS_OK"')) throw Error(assets.stdout);
+      console.log("Immediate shapes exactly three Helper assets passed.");
+    }
+  }
+  for (const suffix of legacyOnly || immediateOnly ? [] : ["", "?bundle"]) {
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const paths = await cli("run-code --filename tests/_support/maplibre-line-path-check.js");
     if (!paths.stdout.includes('### Result\n"LINE_PATH_OK"')) throw Error(paths.stdout);
@@ -25,7 +43,7 @@ try {
       console.log("MapLibre exactly three Helper bundle assets passed.");
     }
   }
-  for (const suffix of ["?legacy", "?bundle=legacy"]) {
+  for (const suffix of immediateOnly ? [] : ["?legacy", "?bundle=legacy"]) {
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const pending = await cli("run-code --filename tests/_support/maplibre-pending-tile-check.js");
     if (!pending.stdout.includes('### Result\n"PENDING_TILE_OK"')) throw Error(pending.stdout);

@@ -1,5 +1,7 @@
 # Changelog
 
+- Added canonical two-click geodesic Circle and geographic Rectangle construction, shape-specific resize/whole movement, validated Polygon shape metadata and atomic world/Mercator boundaries. Opt-in immediate object editing coalesces completed color interactions into undo units with persistence-safe snapshots, explicit settlement and stale-callback guards; legacy sessions remain default. Select/Pan use canonical SVG icons and opt-in action visibility. Source/bundle real-engine regressions and demos; drawing/icons/optional game JavaScript cache `0.21.303`, combined main UI cache `0.21.305`.
+
 - Added optional MapLibre drawing `beforeDelete` gate shared by toolbar/public delete/clear and map Delete/Backspace, with explicit one-shot confirm/cancel and stale-editor/recursion protections. Default deletion stays immediate. Canonical confirmation demo and real source/bundle tests; adapter/main UI cache `0.21.290`, core remains `0.21.288`.
 
 - Added the optional canonical MapLibre4.6.0 drawing adapter: point/line/polygon creation, stable-ID vertex edits, draft and committed history, validated imports, style rehydration and navigation-safe teardown. Recursive JSON-data preflight rejects unsupported values before cloning, including through the toolbar boundary. Local real-engine demo and pointer/keyboard regression; adapter/core cache `0.21.288`, reconciled main UI cache `0.21.289`. Drawing toolbar preserves explicit numeric IDs at the adapter boundary and leaves its state unchanged on rejected imports.

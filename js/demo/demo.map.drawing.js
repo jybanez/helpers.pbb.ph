@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.302";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.305";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createActionModal = await uiLoader.get("ui.action.modal");
@@ -6,7 +6,12 @@ const createColorPicker = await uiLoader.get("ui.color.picker");
 const style = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#20344a" } }] };
 const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, attributionControl: false });
 const status = document.querySelector("#status"), log = document.querySelector("#log");
-let adapter, tools;
+const immediate = new URLSearchParams(location.search).has("immediate") || new URLSearchParams(location.search).get("bundle") === "immediate";
+if (immediate) {
+  document.querySelector("#edit-title").textContent = "Immediate object edits";
+  document.querySelector("#edit-description").textContent = "Select an object and drag its handles or body. Each released gesture and completed color interaction is one undo step. Color motion previews live; release completes it. Switching objects or tools cancels an unfinished color preview while retaining earlier changes. There is no object Accept/Cancel checkpoint. Fill is unavailable for Line/Path. GeoJSON remains an in-memory layer draft.";
+}
+let adapter, tools, styleToken = null, styleOwner = null;
 let pendingDelete = null;
 const fillPicker = createColorPicker(document.querySelector("#fill-color"), { label: "Fill", value: { r: 80, g: 184, b: 255, a: 0.22 } });
 const strokePicker = createColorPicker(document.querySelector("#stroke-color"), { label: "Stroke", value: "#50b8ff" });
@@ -36,24 +41,41 @@ const sample = [
   { type: "Feature", id: "route", properties: { name: "Route" }, geometry: { type: "LineString", coordinates: [[123.89, 10.33], [123.9, 10.32]] } },
   { type: "Feature", id: "area", properties: { name: "Area" }, geometry: { type: "Polygon", coordinates: [[[123.88, 10.30], [123.89, 10.30], [123.885, 10.31], [123.88, 10.30]]] } },
 ];
+function pickerInput(part, detail, completed) {
+  if (!immediate || !adapter || adapter.getState().destroyed) return;
+  if (styleOwner !== adapter || adapter.getState().styleChange?.id !== styleToken) { styleToken = null; styleOwner = adapter; if (completed) return; }
+  if (completed && styleToken === null) return;
+  if (styleToken === null) styleToken = adapter.beginStyleChange();
+  if (styleToken === false) { styleToken = null; return; }
+  const style = adapter.getFeatureStyle(); style[part] = detail.value;
+  adapter.previewStyle(style, styleToken);
+  if (completed) { adapter.finishStyleChange(styleToken); styleToken = null; }
+}
+fillPicker.update({ onInput: detail => pickerInput("fill", detail, false), onChange: detail => pickerInput("fill", detail, true) });
+strokePicker.update({ onInput: detail => pickerInput("stroke", detail, false), onChange: detail => pickerInput("stroke", detail, true) });
 function updateStatus() { const state = adapter.getState(); status.textContent = state.destroyed ? "Adapter destroyed. Map navigation restored." : `${state.mode} · ${state.features.length} features · ${state.draft.length} draft vertices · selected ${state.selectedFeatureId ?? "none"}${state.editSession ? ` · object edit ${state.editSession.dirty ? "changed" : "unchanged"}` : ""}`;
+  document.querySelector("#edit-object").hidden = immediate;
+  document.querySelector("#apply-style").hidden = immediate;
+  if (immediate) { const caps = adapter.getCapabilities(); fillPicker.setDisabled(["line", "path"].includes(adapter.getDrawingKind()) || !caps.actions.fill && !state.styleChange); strokePicker.setDisabled(!caps.actions.stroke && !state.styleChange); }
   document.querySelector("#edit-object").disabled = state.destroyed || !!state.editSession || state.selectedFeatureId === null || state.mode !== "select" || state.dragging;
   document.querySelector("#apply-style").disabled = state.destroyed || !state.editSession || state.dragging;
 }
 function recreate() {
   cancelPendingDelete();
   tools?.destroy(); adapter?.destroy();
-  adapter = createAdapter(map, { lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
-  tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
+  styleToken = null; styleOwner = null;
+  adapter = createAdapter(map, { editBehavior: immediate ? "immediate" : "session", lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
+  tools = createTools(document.querySelector("#tools"), { adapter, hideUnavailableActions: immediate ? ["fill", "finish", "cancel"] : [], orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
+    if (immediate && name === "select" && payload) { const colors = adapter.getFeatureStyle(); fillPicker.setValue(colors.fill || { r:80,g:184,b:255,a:.22 }); strokePicker.setValue(colors.stroke || "#50b8ff"); }
     updateStatus();
   });
   adapter.on("statechange", updateStatus);
   window.__drawing = { map, adapter, tools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
   updateStatus();
 }
-const listenerBaseline = Object.fromEntries(["click", "dblclick", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
+const listenerBaseline = Object.fromEntries(["click", "dblclick", "move", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
 map.once("load", () => { recreate(); window.__drawingReady = true; });
 document.querySelector("#import").onclick = () => tools.setFeatures(sample);
 document.querySelector("#export").onclick = () => { log.textContent = JSON.stringify({ type: "FeatureCollection", features: adapter.getFeatures() }, null, 2); };
