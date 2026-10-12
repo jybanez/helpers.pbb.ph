@@ -117,3 +117,50 @@ with `?grouped=1` (or `?grouped=1&bundled=1`) to verify date boundaries during
 expand/collapse, including divider spacing and connector breaks. Also run
 the existing timeline and virtualization regression pages, plus the bundle and
 registry contract tests.
+
+## Optional boundary shortcuts (0.21.298)
+
+```js
+// Give the container a definite height (for example 480px) and min-height: 0.
+const timeline = createTimeline(host, items, {
+  boundaryShortcuts: true, // false by default; vertical timelines only
+  boundaryStartLabel: 'Scroll to top',
+  boundaryEndLabel: 'Scroll to bottom',
+  enableVirtualization: true, // optional; shortcuts also work below the threshold
+  virtualThreshold: 120,
+  hasMore: true,
+  onReachEnd(info) { /* load the next page through the existing guarded adapter */ }
+});
+await timeline.scrollToBoundary('end'); // or 'start'
+```
+
+The complete Timeline owns its viewport, floating controls, observers and cleanup.
+Do not add application scroll listeners or move the buttons into the row renderer.
+For a nonvirtual timeline this option creates an internal scroll viewport; constrain
+its container height and avoid nesting it in a second scrolling host. The default
+nonvirtual page-flow layout stays unchanged when the option is off. Horizontal
+layouts do not show these vertical shortcuts.
+
+The centered caret buttons float at the viewport edges, outside the scrolling
+rows. They are circular and borderless, translucent at rest, and opaque on hover
+or keyboard focus. Each disappears at its own boundary (one CSS pixel tolerance);
+both disappear without overflow. Labels are accessible and localizable, and focus
+moves to the viewport if the activated control hides at its destination.
+
+Navigation is always instant, including under prefers-reduced-motion. Virtual
+feeds first mount and measure the target window, then align to the actual scroll
+boundary, including the reserved loading slot. It jumps to the first/last **loaded,
+filtered** content, never recursively loads all history or overrides filters.
+The end jump checks the existing onReachEnd loading/hasMore/last-ID latch with
+reason `boundary`. A later scroll event cannot duplicate the same boundary request.
+Nonvirtual timelines with shortcuts also use that latch; ordinary static timelines
+without shortcuts retain their previous pagination behavior. Use resetReachEnd
+only for an intentional read retry, as with existing virtual pagination.
+
+`scrollToBoundary` returns a Promise of `{found:true, boundary:'start'|'end'}` or
+`{found:false, reason}` (including destroyed, invalid-boundary, no-viewport, or a
+cancelled measured navigation). The API also works in virtual mode without visible
+shortcuts. Update options through `update(undefined, {...})`; append/prepend, layout
+changes, resize and destroy update or dispose the controls. The API does not mutate
+application items. See the virtual feed in demo.timeline.html and the source/bundle
+browser fixture tests/timeline.boundaries.regression.html for lifecycle examples.

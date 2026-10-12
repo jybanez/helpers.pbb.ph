@@ -38,6 +38,9 @@ const DEFAULT_OPTIONS = {
   collapsible: false,
   defaultCollapsed: false,
   onCollapseChange: null,
+  boundaryShortcuts: false,
+  boundaryStartLabel: "Scroll to top",
+  boundaryEndLabel: "Scroll to bottom",
 };
 
 export function createTimeline(container, items = [], options = {}) {
@@ -65,6 +68,11 @@ export function createTimeline(container, items = [], options = {}) {
   let layoutSnapshot = null;
   let navigationToken = 0;
   let destroyed = false;
+  let boundaryViewport = null;
+  let boundaryControls = null;
+  let boundaryObserver = null;
+  let boundaryFrame = 0;
+  const boundaryEvents = createEventBag();
   const renderedUnits = new Map();
   const rowEvents = new Map();
   const rowMenus = new Map();
@@ -72,6 +80,106 @@ export function createTimeline(container, items = [], options = {}) {
   const collapsedStates = new Map();
   const disclosureIds = new Map();
   const disclosurePrefix = `ui-timeline-disclosure-${++disclosureInstance}`;
+
+  function teardownBoundaryShortcuts() {
+    boundaryEvents.clear();
+    boundaryObserver?.disconnect();
+    boundaryObserver = null;
+    boundaryViewport?.removeEventListener("scroll", onBoundaryScroll);
+    window.removeEventListener("resize", scheduleBoundaryUpdate);
+    if (boundaryFrame) cancelAnimationFrame(boundaryFrame);
+    boundaryFrame = 0;
+    boundaryControls?.remove();
+    boundaryControls = null;
+    boundaryViewport = null;
+  }
+
+  function updateBoundaryVisibility() {
+    if (!boundaryViewport || !boundaryControls || destroyed) return;
+    const end = Math.max(0, boundaryViewport.scrollHeight - boundaryViewport.clientHeight);
+    const buttons = boundaryControls.children;
+    const hidden = [end <= 1 || boundaryViewport.scrollTop <= 1,
+      end <= 1 || boundaryViewport.scrollTop >= end - 1];
+    Array.from(buttons).forEach((button, index) => {
+      // Never strand keyboard focus on a control removed at its destination.
+      if (hidden[index] && document.activeElement === button) boundaryViewport.focus({preventScroll:true});
+      button.hidden = hidden[index];
+    });
+  }
+
+  function scheduleBoundaryUpdate() {
+    if (boundaryFrame || destroyed) return;
+    boundaryFrame = requestAnimationFrame(() => {
+      boundaryFrame = 0;
+      updateBoundaryVisibility();
+    });
+  }
+
+  function onBoundaryScroll() {
+    updateBoundaryVisibility();
+    if (!virtualViewport) checkReachEnd("scroll");
+  }
+
+  function syncBoundaryShortcuts() {
+    if (!currentOptions.boundaryShortcuts || currentOptions.orientation !== "vertical") {
+      teardownBoundaryShortcuts();
+      return;
+    }
+    if (!boundaryControls) {
+      let host = root;
+      boundaryViewport = virtualViewport;
+      if (!boundaryViewport) {
+        host = createElement("div", {className:"ui-timeline-boundary-host"});
+        boundaryViewport = createElement("div", {className:"ui-timeline-viewport", attrs:{tabindex:"0", "aria-label":currentOptions.ariaLabel}});
+        root.replaceWith(host);
+        boundaryViewport.appendChild(root);
+        host.appendChild(boundaryViewport);
+      }
+      boundaryControls = createElement("div", {className:"ui-timeline-boundaries"});
+      for (const [edge, icon] of [["start", "navigation.chevron-up"], ["end", "navigation.chevron-down"]]) {
+        const button = createElement("button", {className:`ui-timeline-boundary ui-timeline-boundary--${edge}`, attrs:{type:"button", hidden:""}});
+        button.appendChild(createIcon(icon, {size:20}));
+        boundaryEvents.on(button, "click", () => { void scrollToBoundary(edge); });
+        boundaryControls.appendChild(button);
+      }
+      host.appendChild(boundaryControls);
+      boundaryViewport.addEventListener("scroll", onBoundaryScroll, {passive:true});
+      window.addEventListener("resize", scheduleBoundaryUpdate);
+      if (typeof ResizeObserver === "function") {
+        boundaryObserver = new ResizeObserver(scheduleBoundaryUpdate);
+        boundaryObserver.observe(boundaryViewport);
+        boundaryObserver.observe(virtualViewport ? virtualViewport.firstElementChild : root);
+      }
+    }
+    [currentOptions.boundaryStartLabel, currentOptions.boundaryEndLabel].forEach((label, index) => {
+      boundaryControls.children[index].setAttribute("aria-label", label);
+      boundaryControls.children[index].title = label;
+    });
+    updateBoundaryVisibility();
+  }
+
+  async function scrollToBoundary(edge) {
+    if (destroyed) return {found:false, reason:"destroyed"};
+    if (edge !== "start" && edge !== "end") return {found:false, reason:"invalid-boundary"};
+    const viewport = virtualViewport || boundaryViewport;
+    if (!viewport) return {found:false, reason:"no-viewport"};
+    if (virtualViewport && visibleItems.length) {
+      const item = edge === "start" ? visibleItems[0] : visibleItems[visibleItems.length - 1];
+      const result = await scrollToItem(item.id, {align:edge});
+      if (!result.found || destroyed || viewport !== virtualViewport) return result;
+    }
+    // Instant navigation is reduced-motion safe and avoids fighting measured
+    // virtualization anchors during a browser smooth-scroll animation.
+    viewport.scrollTo({top:edge === "start" ? 0 : viewport.scrollHeight, behavior:"instant"});
+    if (virtualViewport) {
+      expectedScrollTop = viewport.scrollTop;
+      layoutSnapshot = captureVirtualSnapshot();
+    }
+    updateBoundaryVisibility();
+    // Explicit jumps participate in the existing loading/hasMore/boundary latch.
+    if (edge === "end") checkReachEnd("boundary");
+    return {found:true, boundary:edge};
+  }
 
   function syncLoading() {
     if (!root) return;
@@ -143,6 +251,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function render(reason = "replace", restoreSnapshot = null) {
+    if (destroyed) return;
     syncDisclosure();
     if (!container || container.nodeType !== 1) {
       return;
@@ -153,6 +262,8 @@ export function createTimeline(container, items = [], options = {}) {
       renderVirtual(reason, restoreSnapshot);
       return;
     }
+    const previousScroll = boundaryViewport && !virtualViewport
+      ? {top:boundaryViewport.scrollTop, height:boundaryViewport.scrollHeight} : null;
     teardownVirtualRoot();
     reconcileCustomMounts(visibleItems);
     clearNode(container);
@@ -173,6 +284,7 @@ export function createTimeline(container, items = [], options = {}) {
       }));
       container.appendChild(root);
       syncLoading();
+      syncBoundaryShortcuts();
       return;
     }
 
@@ -184,6 +296,12 @@ export function createTimeline(container, items = [], options = {}) {
 
     container.appendChild(root);
     syncLoading();
+    syncBoundaryShortcuts();
+    if (previousScroll && boundaryViewport) {
+      boundaryViewport.scrollTop = reason === "prepend" && previousScroll.top > currentOptions.topAnchorThreshold
+        ? previousScroll.top + boundaryViewport.scrollHeight - previousScroll.height : previousScroll.top;
+      updateBoundaryVisibility();
+    }
     clearDetachedRowEvents();
   }
 
@@ -279,6 +397,7 @@ export function createTimeline(container, items = [], options = {}) {
     queueExactAnchorRestore(restoreSnapshot);
     layoutSnapshot = captureVirtualSnapshot();
     updateFloatingDate();
+    syncBoundaryShortcuts();
     if (!["layout", "jump", "position", "measure"].includes(reason)) checkReachEnd(reason);
   }
 
@@ -320,6 +439,7 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function teardownVirtualRoot() {
+    teardownBoundaryShortcuts();
     expectedScrollTop = null;
     renderedUnits.clear();
     layoutSnapshot = null;
@@ -476,8 +596,9 @@ export function createTimeline(container, items = [], options = {}) {
   }
 
   function checkReachEnd(reason) {
-    if (!virtualViewport || !visibleItems.length || currentOptions.isLoading || !currentOptions.hasMore || typeof currentOptions.onReachEnd !== "function") return;
-    const distance = Math.max(0, virtualViewport.scrollHeight - virtualViewport.clientHeight - virtualViewport.scrollTop);
+    const viewport = virtualViewport || boundaryViewport;
+    if (!viewport || !visibleItems.length || currentOptions.isLoading || !currentOptions.hasMore || typeof currentOptions.onReachEnd !== "function") return;
+    const distance = Math.max(0, viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop);
     if (distance > currentOptions.endThreshold) return;
     const boundaryId = String(visibleItems[visibleItems.length - 1].id);
     if (reachedBoundaryId === boundaryId) return;
@@ -954,6 +1075,7 @@ export function createTimeline(container, items = [], options = {}) {
     expandAll: () => changeCollapsed(null, false),
     invalidateLayout,
     scrollToItem,
+    scrollToBoundary,
     update,
     append,
     prepend,
@@ -985,6 +1107,9 @@ function normalizeOptions(options) {
   next.includeUndatedInRange = Boolean(next.includeUndatedInRange);
   next.mountItemContent = typeof next.mountItemContent === "function" ? next.mountItemContent : null;
   next.enableVirtualization = Boolean(next.enableVirtualization);
+  next.boundaryShortcuts = Boolean(next.boundaryShortcuts);
+  next.boundaryStartLabel = String(next.boundaryStartLabel || DEFAULT_OPTIONS.boundaryStartLabel);
+  next.boundaryEndLabel = String(next.boundaryEndLabel || DEFAULT_OPTIONS.boundaryEndLabel);
   next.virtualThreshold = normalizeNonNegativeNumber(next.virtualThreshold, 120);
   next.virtualOverscan = normalizeNonNegativeNumber(next.virtualOverscan, 480);
   next.endThreshold = normalizeNonNegativeNumber(next.endThreshold, 320);

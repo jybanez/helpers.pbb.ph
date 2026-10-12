@@ -122,6 +122,7 @@
         { factory: "<code>createTimeline(container, items, options)</code>", arguments: "container, timeline items, options", returns: "Timeline instance" }
       ],
       options: [
+        { option: "<code>boundaryShortcuts</code>", default: "<code>false</code>", description: "Floating top/bottom controls in a bounded vertical host, demonstrated by the virtual feed. Localize with boundaryStartLabel and boundaryEndLabel. Jumps are instant and reduced-motion safe." },
         { option: "<code>orientation</code>", default: "<code>\"vertical\"</code>", description: "Timeline layout direction.", values: ["vertical", "horizontal"] },
         { option: "<code>density</code>", default: "<code>\"comfortable\"</code>", description: "Item spacing preset.", values: ["comfortable", "compact"] },
         { option: "<code>groupByDate</code>", default: "<code>true</code>", description: "Groups vertical timeline items under date labels." },
@@ -449,6 +450,7 @@ const timeline = createTimeline(host, items, {
 
     const virtualTimeline = createTimeline(virtualHost, virtualItems, {
       ariaLabel: "Virtualized incident feed",
+      boundaryShortcuts: true,
       orientation: "vertical",
       groupByDate: true,
       enableVirtualization: true,

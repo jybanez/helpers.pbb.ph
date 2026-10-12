@@ -1,0 +1,56 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Timeline boundary shortcuts</title></head>
+<body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader, DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const bundled=new URLSearchParams(location.search).has('bundle');
+const create=await createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:bundled}).get('ui.timeline');
+const results=document.querySelector('#results');
+const tick=async(ms=80)=>{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await new Promise(resolve=>setTimeout(resolve,ms));};
+function assert(ok,msg){if(!ok)throw Error(msg);results.textContent+=`PASS ${msg}\n`;}
+const items=(n,prefix='row')=>Array.from({length:n},(_,i)=>({id:`${prefix}-${i}`,title:`Row ${i}`,description:'Measured timeline content '.repeat(i%4+1)}));
+try {
+ if(bundled)assert(create===window.__PBB_HELPER_UI_BUNDLE__['./ui.timeline.js'].createTimeline,'bundle factory used');
+ for(const virtual of [false,true]) {
+  const host=document.createElement('div');host.style.cssText='width:375px;height:300px';document.body.prepend(host);
+  let ends=0;
+  const timeline=create(host,items(60),{enableVirtualization:virtual,virtualThreshold:0,groupByDate:false,boundaryShortcuts:true,endThreshold:5,onReachEnd:()=>ends++});
+  await tick();
+  const viewport=()=>host.querySelector('.ui-timeline-viewport');
+  const up=()=>host.querySelector('.ui-timeline-boundary--start');
+  const down=()=>host.querySelector('.ui-timeline-boundary--end');
+  assert(up().hidden&&!down().hidden,'only down visible initially');
+  assert(up().getAttribute('aria-label')==='Scroll to top'&&down().getAttribute('aria-label')==='Scroll to bottom','accessible labels');
+  assert(getComputedStyle(down()).borderTopWidth==='0px'&&getComputedStyle(down()).borderRadius==='50%','borderless circular control');
+  const before=down().getBoundingClientRect();viewport().scrollTop=400;await tick();
+  assert(!up().hidden&&!down().hidden,'both visible between boundaries');
+  assert(Math.abs(down().getBoundingClientRect().top-before.top)<1,'floating control stays at viewport edge');
+  assert(Math.abs((before.left+before.width/2)-(host.getBoundingClientRect().left+host.clientWidth/2))<1,'control centered');
+  await timeline.scrollToBoundary('end');await tick();
+  assert(down().hidden&&!up().hidden,'end jump reaches measured bottom');
+  assert(ends===1,'end jump triggers one pagination callback');
+  await timeline.scrollToBoundary('end');await tick();assert(ends===1,'same boundary stays latched');
+  timeline.append(items(3,'new'));await tick();assert(!down().hidden,'append exposes bottom control');
+  timeline.update(undefined,{isLoading:true});await timeline.scrollToBoundary('end');await tick();assert(ends===1,'loading suppresses pagination');
+  timeline.update(undefined,{isLoading:false,hasMore:false});await timeline.scrollToBoundary('end');assert(ends===1,'hasMore false suppresses pagination');
+  timeline.update(undefined,{hasMore:true});assert(ends===2,'new boundary resumes once');
+  await timeline.scrollToBoundary('start');await tick();assert(up().hidden&&!down().hidden&&viewport().scrollTop===0,'start jump reaches zero');
+  viewport().scrollTop=400;await tick();const oldTop=viewport().scrollTop;
+  timeline.prepend(items(2,'earlier'));await tick();assert(viewport().scrollTop>oldTop&&!up().hidden,'prepend preserves reading position');
+  await timeline.scrollToBoundary('start');down().focus();down().click();await tick(400);
+  assert(down().hidden&&document.activeElement===viewport(),'button activation moves focus before hiding');
+  timeline.update(items(1),{boundaryStartLabel:'First event',boundaryEndLabel:'Last event'});await tick();
+  assert(up().hidden&&down().hidden&&up().getAttribute('aria-label')==='First event','nonoverflow hides both with localized labels');
+  host.style.height='40px';await tick();assert(!down().hidden,'resize recalculates overflow');
+  host.style.height='500px';await tick();assert(up().hidden&&down().hidden,'grow hides controls');
+  timeline.update(undefined,{boundaryShortcuts:false});assert(!up()&&!down(),'opt out removes controls');
+  timeline.update(items(60),{boundaryShortcuts:true});await tick();assert(host.querySelectorAll('.ui-timeline-boundaries').length===1,'re-enable creates one control pair');
+  const detached=down();const pending=timeline.scrollToBoundary('end');timeline.destroy();await pending;await tick();
+  detached.click();await tick();assert(host.childElementCount===0,'destroy cancels pending navigation and detached controls');
+  assert((await timeline.scrollToBoundary('end')).reason==='destroyed','destroyed API inert');
+  const recreated=create(host,items(2),{boundaryShortcuts:true});await tick();assert(host.querySelectorAll('.ui-timeline-boundaries').length===1,'recreate has no leaked overlays');recreated.destroy();host.remove();
+ }
+ const host=document.createElement('div');document.body.append(host);
+ const plain=create(host,items(2));assert(!host.querySelector('.ui-timeline-boundaries'),'default unchanged');
+ plain.update(undefined,{orientation:'horizontal',boundaryShortcuts:true});assert(!host.querySelector('.ui-timeline-boundaries'),'vertical shortcuts excluded in horizontal mode');plain.destroy();
+ document.body.dataset.status='pass';
+} catch(error) {document.body.dataset.status='fail';results.textContent+=error.stack;}
+</script></body></html>
