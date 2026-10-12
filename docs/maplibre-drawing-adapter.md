@@ -317,3 +317,5 @@ acceptance; captured layer/storage identity still requires its own authorization
 and uncertain-outcome checks. Do not queue/replay rejected destructive or save
 actions automatically. `destroy()` has no public removal-bypass parameter; actual
 map removal is the sole internal forced-disposal path.
+
+Map removal is an immediate lifetime boundary, including removal inside a read-only notification. Pending drag completion and active-drag rollback stop after removal without restoring stale previews or adding history. Rollback captures its session before notifications; selection, edit acceptance, drawing completion and hydration also check lifetime before continuing. Already completed changes remain completed when removal occurs during their publication.
