@@ -1,8 +1,9 @@
 async (page) => {
   const assert = (value, message) => { if (!value) throw Error(message); };
+  const wait = async (predicate, label) => { try { await page.waitForFunction(predicate); } catch (error) { throw Error(label + ": " + error.message); } };
   for (const width of [1200, 375]) {
     await page.setViewportSize({ width, height: 1000 }); await page.reload();
-    await page.waitForFunction(() => window.__drawingReady);
+    await wait(() => window.__drawingReady, 'demo ready');
     await page.evaluate(async () => {
       const { uiLoader } = await import(new URL('../js/ui/ui.loader.js', location.href).href);
       const create = await uiLoader.get('ui.map.drawing.maplibre'), createTools = await uiLoader.get('ui.map.drawing');
@@ -28,9 +29,14 @@ async (page) => {
       adapter.setFeatures(__gate.fixture);
     });
     const select = async () => {
-      await page.waitForFunction(() => __drawing.map.getSource(__gate.adapter.getState().sourceId)?.loaded());
+      await wait(() => __drawing.map.getSource(__gate.adapter.getState().sourceId)?.loaded(), 'gate source loaded');
+      await page.locator('#map canvas').scrollIntoViewIfNeeded();
+      await wait(() => {
+        const map = __drawing.map, a = __gate.adapter, p = map.project(a.getFeatures()[0].geometry.coordinates);
+        return map.queryRenderedFeatures(p, { layers: a.getState().layerIds.slice(0, 3) }).some(f => f.properties.__helperId === '0');
+      }, 'gate point rendered');
       const b = await page.locator('#map canvas').boundingBox(); await page.mouse.click(b.x+b.width/2,b.y+b.height/2);
-      await page.waitForFunction(() => __gate.adapter.getState().selectedFeatureId === '0');
+      await wait(() => __gate.adapter.getState().selectedFeatureId === '0', 'gate point selected');
     };
     const snapshot = () => page.evaluate(() => JSON.stringify({ state:__gate.adapter.getState(), caps:__gate.adapter.getCapabilities(), deletes:__gate.deletes, events:__gate.events.length }));
     await select(); const initial = await snapshot();
@@ -59,7 +65,7 @@ async (page) => {
       assert(await snapshot() === failedBefore, `${kind} preserves model/history/events`);
     }
     assert(await page.evaluate(() => __gate.errors.includes('intentional deletion gate error')), 'gate error reported');
-    await page.waitForFunction(() => __gate.errors.includes('intentional async gate error'));
+    await wait(() => __gate.errors.includes('intentional async gate error'), 'async error reported');
     assert(await page.evaluate(() => { const r=__gate.requests.at(-1); r.cancel(); return !r.confirm(); }), 'dismissal invalidates capability');
     // Identical re-import and a mode/draft change both invalidate old requests.
     assert(await page.evaluate(() => { __gate.behavior='veto'; __gate.adapter.deleteSelected(); const r=__gate.requests.at(-1); __gate.adapter.setFeatures(__gate.fixture); return !r.confirm() && __gate.adapter.getFeatures().length===1; }), 'same IDs after import are stale');
@@ -103,7 +109,7 @@ async (page) => {
     assert(await page.evaluate(() => { __gate.adapter.setFeatures(__gate.fixture); return __gate.adapter.clear() && __gate.adapter.getFeatures().length===0; }), 'no-hook public clear is immediate');
     await page.evaluate(() => { __gate.tools.destroy(); __gate.adapter.destroy(); });
     // Complete canonical demo confirmation opens immediately, cancel is inert, confirm commits.
-    await page.reload(); await page.waitForFunction(() => window.__drawingReady);
+    await page.reload(); await wait(() => window.__drawingReady, 'demo ready');
     await page.locator('#import').click(); await page.locator('#confirm-delete').check();
     await page.locator('#tools [data-action="clear"]').click();
     await page.getByRole('dialog').waitFor();
@@ -116,11 +122,11 @@ async (page) => {
     assert(await page.evaluate(() => __drawing.adapter.getFeatures().length===3), 'modal opens before deletion');
     await page.getByRole('button', { name:'Cancel', exact:true }).click();
     await page.getByRole('dialog').waitFor({ state:'detached' });
-    await page.waitForFunction(() => !__drawing.deletionPending);
+    await wait(() => !__drawing.deletionPending, 'modal cancellation settled');
     assert(await page.evaluate(() => __drawing.adapter.getFeatures().length===3), 'modal cancellation preserves data');
     await page.locator('#tools [data-action="clear"]').click(); await page.getByRole('dialog').waitFor();
     await page.getByRole('dialog').getByRole('button', { name:'Clear', exact:true }).click();
-    await page.waitForFunction(() => __drawing.adapter.getFeatures().length===0);
+    await wait(() => __drawing.adapter.getFeatures().length===0, 'modal clear committed');
     await page.screenshot({ path:`output/playwright/maplibre-delete-gate-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage:true });
   }
   console.log('PASS canonical deletion gate toolbar/keyboard/modal at1200/375');

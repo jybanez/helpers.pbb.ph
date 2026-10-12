@@ -259,7 +259,7 @@ rollback and update to reject stale UI results, and separately guard adapter/lay
 identity when an instance is replaced.
 
 Selection switches are blocked while the session is dirty or dragging; choose
-explicit accept/rollback first. Mode changes, imports, delete and clear remain
+explicit accept/rollback first. Mode changes, imports and clear remain
 blocked during any edit session. Clean switching preserves the authored model
 and global undo/redo; it discards the old session-local history. After local Undo
 returns to the original model, direct switching becomes available again.
@@ -277,6 +277,17 @@ objects. Both are available only during an idle object edit session. Consumers
 use the existing complete color picker, capture session/layer context and submit
 colors through `updateFeature`. The demo routes these actions to its canonical
 pickers. Defaults remain unchanged unless these actions are explicitly included.
+Selected-object Delete is available during a clean, idle session. The existing
+`beforeDelete` request is unchanged: veto, errors, asynchronous returns and Cancel
+preserve the clean session, selection, authored data and global history. Explicit
+one-shot confirmation ends that unchanged session and commits deletion as one
+global undo unit. Dirty or dragging sessions reject deletion before opening the
+hook; finish or cancel explicitly first. Clear still requires no object session.
+A clean switch, mutation/Undo, gesture, settlement, import or destruction makes
+an earlier request stale. Confirmation additionally checks the captured session
+identity. A no-hook consumer retains immediate deletion. Deletion callbacks
+observe the ended session; its final `editchange(null)` is omitted after removal.
+
 The deletion gate still applies after acceptance/rollback, and any previous
 confirmation becomes stale when a session starts. Ordinary legacy edits still
 use immediate commit/history semantics. `getCapabilities()` adds `editSessions`
