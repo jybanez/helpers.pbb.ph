@@ -107,7 +107,7 @@ async (page) => {
     });
     await page.waitForFunction(() => { const { map, adapter } = __drawing; return map.isStyleLoaded() && map.getSource(adapter.getState().sourceId)?.loaded(); });
     assert(await page.evaluate(() => JSON.stringify(__drawing.adapter.getFeatures()) === __editExpected && !!__drawing.map.getPaintProperty(__drawing.adapter.getState().layerIds[0], 'fill-opacity')), 'styled line/polygon rehydrate unchanged');
-    await page.screenshot({ path: `output/playwright/maplibre-object-edit-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `output/playwright/maplibre-object-edit-${new URL(page.url()).searchParams.has("bundle") ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
     for (const attempt of ['rollback', 'accept', 'destroy', 'context']) {
       await page.evaluate(attempt => {
         const { adapter: a, sample } = __drawing;

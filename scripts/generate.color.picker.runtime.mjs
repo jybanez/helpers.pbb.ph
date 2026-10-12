@@ -4,7 +4,7 @@ const paths = ["js/ui/ui.color.picker.js", "css/ui/ui.color.picker.css", "js/ui/
 const sha256 = path => crypto.createHash("sha256").update(fs.readFileSync(path, "utf8").replaceAll("\r\n", "\n")).digest("hex");
 fs.writeFileSync("docs/color-picker-runtime.json", JSON.stringify({
   component: "ui.color.picker", factory: "createColorPicker", helperPackage: "0.21.83",
-  componentRevision: "0.21.294", formModalRevision: "0.21.294", mainUiBundleRevision: "0.21.301",
+  componentRevision: "0.21.294", formModalRevision: "0.21.294", mainUiBundleRevision: "0.21.302",
   demoRevision: "0.21.294",
   scope: "Shared runtime hashes refreshed; optional game JavaScript includes canonical icon catalog changes, inspection unchanged. Source dependencies use existing canonical components.",
   algorithm: "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -14,10 +14,10 @@ fs.writeFileSync("docs/color-picker-runtime.json", JSON.stringify({
 // shared hashes without claiming new drawing/icon source revisions.
 for (const path of ["docs/maplibre-drawing-runtime.json", "docs/map-layer-icon-runtime.json"]) {
   const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
-  manifest.mainUiBundleRevision = "0.21.301";
-  if (manifest.icon === "map.layer") manifest.iconsAndGameRevision = "0.21.298";
-  if (manifest.component === "ui.map.drawing.maplibre") manifest.adapterJsRevision = "0.21.301";
-  if (manifest.component === "ui.map.drawing.maplibre") manifest.coreJsRevision = "0.21.298";
+  manifest.mainUiBundleRevision = "0.21.302";
+  if (manifest.icon === "map.layer") manifest.iconsAndGameRevision = "0.21.302";
+  if (manifest.component === "ui.map.drawing.maplibre") manifest.adapterJsRevision = "0.21.302";
+  if (manifest.component === "ui.map.drawing.maplibre") manifest.coreJsRevision = "0.21.302";
   if (manifest.component === "ui.map.drawing.maplibre") manifest.cssRevision = "0.21.297";
   manifest.artifacts = manifest.artifacts.map(artifact => ({ ...artifact, sha256: sha256(artifact.path) }));
   fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
@@ -25,4 +25,4 @@ for (const path of ["docs/maplibre-drawing-runtime.json", "docs/map-layer-icon-r
 console.log("Updated color picker and shared map runtime provenance.");
 
 const drawingIconPaths = ["css/ui/ui.map.drawing.css", "js/ui/ui.icons.catalog.js", "js/ui/ui.icons.js", "js/ui/ui.map.drawing.js", "js/ui/ui.loader.js", "dist/helpers.ui.bundle.min.js", "dist/helpers.ui.bundle.min.css", "dist/helpers.game.bundle.min.js", "demos/demo.map.drawing.html", "js/demo/demo.map.drawing.js", "docs/drawing-action-icons.md"];
-fs.writeFileSync("docs/drawing-action-icons-runtime.json", JSON.stringify({ icons:["actions.fill","actions.stroke","actions.undo","actions.redo","actions.clear"], component:"ui.map.drawing", iconsRevision:"0.21.298", coreJsRevision:"0.21.298", mainUiBundleRevision:"0.21.301", gameBundleRevision:"0.21.298", algorithm:"SHA256 of UTF-8 text normalized CRLF to LF", artifacts:drawingIconPaths.map(path=>({path,sha256:sha256(path)})) },null,2)+"\n");
+fs.writeFileSync("docs/drawing-action-icons-runtime.json", JSON.stringify({ icons:["map.path","actions.fill","actions.stroke","actions.undo","actions.redo","actions.clear"], component:"ui.map.drawing", iconsRevision:"0.21.302", coreJsRevision:"0.21.302", mainUiBundleRevision:"0.21.302", gameBundleRevision:"0.21.302", algorithm:"SHA256 of UTF-8 text normalized CRLF to LF", artifacts:drawingIconPaths.map(path=>({path,sha256:sha256(path)})) },null,2)+"\n");

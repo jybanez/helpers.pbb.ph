@@ -143,7 +143,7 @@ async (page) => {
       const off2 = adapter.on("delete", () => { delivered = true; });
       adapter.clear(); off(); off2(); adapter.undo(); return delivered && adapter.getFeatures().length === 3;
     }), "observer isolation");
-    await page.screenshot({ path: `output/playwright/maplibre-drawing-${new URL(page.url()).search ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `output/playwright/maplibre-drawing-${new URL(page.url()).searchParams.has("bundle") ? 'bundle' : 'source'}-${width}.png`, fullPage: true });
     // Preserve host-disabled navigation and remove only owned resources/subscriptions.
     await page.evaluate(() => __drawing.map.keyboard.disable()); await mode("line");
     await page.locator("#map canvas").focus(); await page.keyboard.press("Enter");

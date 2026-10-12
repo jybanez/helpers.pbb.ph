@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.301";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.302";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createActionModal = await uiLoader.get("ui.action.modal");
@@ -43,8 +43,8 @@ function updateStatus() { const state = adapter.getState(); status.textContent =
 function recreate() {
   cancelPendingDelete();
   tools?.destroy(); adapter?.destroy();
-  adapter = createAdapter(map, { beforeDelete, onError(error) { status.textContent = error.message; } });
-  tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "polygon", "rectangle", "circle"] });
+  adapter = createAdapter(map, { lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
+  tools = createTools(document.querySelector("#tools"), { adapter, orientation: "horizontal", placement: "external", labels: "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
     updateStatus();
@@ -53,7 +53,7 @@ function recreate() {
   window.__drawing = { map, adapter, tools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
   updateStatus();
 }
-const listenerBaseline = Object.fromEntries(["click", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
+const listenerBaseline = Object.fromEntries(["click", "dblclick", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
 map.once("load", () => { recreate(); window.__drawingReady = true; });
 document.querySelector("#import").onclick = () => tools.setFeatures(sample);
 document.querySelector("#export").onclick = () => { log.textContent = JSON.stringify({ type: "FeatureCollection", features: adapter.getFeatures() }, null, 2); };
