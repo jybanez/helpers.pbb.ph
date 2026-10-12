@@ -19,7 +19,7 @@ const testsDir = path.dirname(fileURLToPath(import.meta.url));
 let server;
 try {
   server = await startStaticServer({ rootDir: path.resolve(testsDir, ".."), port: 0 });
-  for (const page of ["markdown.regression.html", "markdown.csp.html", "markdown.csp-denied.html"]) for (const suffix of ["", "?bundle"]) {
+  for (const page of ["markdown.spacing.html", "markdown.regression.html", "markdown.csp.html", "markdown.csp-denied.html"]) for (const suffix of ["", "?bundle"]) {
   const { stdout } = await execFileAsync(browserPath, [
     "--headless=new",
     "--disable-gpu",

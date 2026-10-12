@@ -92,6 +92,8 @@ Against 0.21.216 (Git blob bytes), the initial candidate adds **79,620 raw / 26,
 
 ## Verification
 
+Rendered block content isolates itself from inherited host `white-space` styles. Parser formatting newlines between blocks do not create extra visible lines, even inside a `pre-wrap` host. Source soft breaks, paragraph margins, code indentation, plain-text fallback and compact clamping retain their existing behavior. The browser suite measures full, clamped and expanded geometry under both normal and pre-wrap hosts for source and bundle loading.
+
 Run `node tests/markdown.regression.mjs`. It checks modular/bundle paths on Chrome/Edge, including normal HTML, strict CSP/Trusted Types and denied-policy fallback pages. The corpus covers literal hostile markup, namespace/clobbering payloads, protocol filtering, image suppression, full/compact profiles, clamping, updates, limits, safe failure, disposal, and internal overflow.
 
 Also run the registry/bundle contract and loader regressions after `npm run build:ui-bundle`. Chromium interactive checks cover native keyboard toggle behavior, resizing, narrow layout and the demo. Firefox and WebKit runtimes were unavailable locally; those engines are not claimed as tested. The library targets current browsers with ES2020, ResizeObserver and TextEncoder; there is no IE or SSR guarantee.

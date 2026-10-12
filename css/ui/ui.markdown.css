@@ -1,5 +1,5 @@
 .ui-markdown { min-width: 0; max-width: 100%; color: var(--ui-text, inherit); overflow-wrap: anywhere; }
-.ui-markdown-content { min-width: 0; max-width: 100%; line-height: 1.5; }
+.ui-markdown-content { min-width: 0; max-width: 100%; line-height: 1.5; white-space: normal; }
 .ui-markdown-content p, .ui-markdown-plain { white-space: pre-wrap; }
 .ui-markdown-content > :first-child { margin-top: 0; }
 .ui-markdown-content > :last-child { margin-bottom: 0; }
