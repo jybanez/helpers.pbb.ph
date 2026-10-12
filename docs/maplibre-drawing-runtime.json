@@ -20,7 +20,7 @@
     },
     {
       "path": "js/ui/ui.map.drawing.maplibre.js",
-      "sha256": "45fdfbff6f09a6d245a09954310e34ef7b56ba7fb3fc8ce01d8dadf9329820cb"
+      "sha256": "6dddfce5ae199cdca1b456e540164f9263a3832e5560a9a20bfe12876e86205a"
     },
     {
       "path": "js/ui/ui.dom.js",
@@ -44,7 +44,7 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "2b46a56dfd8c1a53d86071f13fd8e4219dc4d2fab0b09cc9a0725ddc877c3fd8"
+      "sha256": "a48068912385c767f70e13ead153bd97e448ff9450eb2d30a43e1b6e1f7a96e8"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

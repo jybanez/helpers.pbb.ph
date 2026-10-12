@@ -283,3 +283,10 @@ The app still owns object-toolbar/navigation UI, dirty-close confirmation,
 permission checks, session save, offline recovery and uncertain persistence.
 The demo uses the complete drawing toolbar and color-picker components to
 exercise selected-object begin, Fill/Stroke and Finish/Cancel.
+
+Adapter event listeners are read-only: reentrant mutation calls (including
+begin/accept/rollback, import, undo/redo, update, mode changes, deletion and
+explicit destroy) return false while events are being delivered. Observe snapshots
+there; invoke later UI actions outside the callback with captured adapter/layer
+identity and session ID. No rejected mutation is queued or automatically replayed.
+Map removal still disposes the adapter even if initiated during an event.

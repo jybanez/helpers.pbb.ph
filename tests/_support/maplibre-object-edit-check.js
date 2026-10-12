@@ -9,6 +9,18 @@ async (page) => {
       const check = (ok, text) => { if (!ok) throw Error(text); };
       const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
       const original = a.getFeatures();
+      let callbacks = 0;
+      const offs = ['select', 'update', 'statechange', 'editchange', 'measure'].map(name => a.on(name, () => {
+        callbacks++;
+        const before = JSON.stringify(a.getState());
+        const attempts = [() => a.beginEdit('route'), () => a.acceptEdit(), () => a.rollbackEdit(), () => a.finish(), () => a.cancel(), () => a.updateFeature('route', { properties: { reentrant: true } }), () => a.setMode('point'), () => a.setFeatures(sample), () => a.undo(), () => a.redo(), () => a.deleteSelected(), () => a.clear(), () => a.destroy()];
+        for (const run of attempts) {
+          check(run() === false && JSON.stringify(a.getState()) === before, 'reentrant context mutation rejected');
+        }
+      }));
+      check(a.beginEdit(0), 'begin reentrant numeric zero'); a.updateFeature(0, { properties: { preview: true } }); a.rollbackEdit();
+      offs.forEach(off => off());
+      check(callbacks > 5 && same(a.getFeatures(), original), 'reentrant rollback preserves original context');
       check(a.beginEdit(0), 'begin numeric zero');
       const sessionId = a.getState().editSession.id;
       check(a.getState().selectedFeatureId === '0' && same(a.getState().anchor, sample[0].geometry.coordinates), 'selection and geographic anchor');
@@ -42,7 +54,7 @@ async (page) => {
       const paint = map.getSource(a.getState().sourceId)._data.features.find(f => f.properties.__helperId === '0').properties;
       check(paint.__helperfillOpacity === fill.a && paint.__helperstrokeOpacity === 0 && paint.__helperfillColor === 'rgb(13,124,250)', 'precise render data');
       check(map.getPaintProperty(a.getState().layerIds[2], 'circle-stroke-opacity') !== undefined, 'point stroke paint');
-      const exported = a.getFeatures(); a.setFeatures(exported); check(same(a.getFeatures(), exported), 'style round trip');
+      const exported = JSON.parse(JSON.stringify(a.getFeatures())); a.setFeatures(exported); check(same(a.getFeatures(), exported), 'style JSON storage round trip');
       a.updateFeature(0, { style: null }); check(same(a.getFeatureStyle(0), {}), 'remove style restores defaults');
       a.setFeatures(sample); a.beginEdit(0);
       return { sessionId: a.getState().editSession.id };
