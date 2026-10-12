@@ -13,6 +13,7 @@ async (page) => {
   });
   await page.locator('#map canvas').scrollIntoViewIfNeeded();
   const location=async id=>page.evaluate(id=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),p=map.project(a.getFeatures().find(f=>String(f.id)===String(id)).geometry.coordinates);return{x:b.left+p.x,y:b.top+p.y};},id);
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing,p=map.project(a.getFeatures().find(f=>f.id==='other').geometry.coordinates);return map.queryRenderedFeatures(p,{layers:a.getState().layerIds.slice(0,3)}).some(f=>f.properties.__helperId==='other');});
   const other=await location('other');await page.mouse.click(other.x,other.y);
   assert(await page.evaluate(()=>__drawing.adapter.getState().editSession?.featureId==='other'&&!__drawing.adapter.getState().editSession.dirty&&JSON.stringify(__drawing.adapter.getFeatures())===__switchBaseline),'Actual pointer clean switch');
   await page.evaluate(()=>{window.__sameToken=__drawing.adapter.getState().editSession.id;window.__sameEditEvents=0;window.__sameOff=__drawing.adapter.on('editchange',()=>window.__sameEditEvents++);});

@@ -12,6 +12,10 @@ try {
     if (!pending.stdout.includes('### Result\n"PENDING_TILE_OK"')) throw Error(pending.stdout);
     console.log(`MapLibre pending tile initialization passed (${suffix || "source"}).`);
     await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
+    const modes = await cli("run-code --filename tests/_support/maplibre-clean-mode-check.js");
+    if (!modes.stdout.includes('### Result\n"CLEAN_MODE_OK"')) throw Error(modes.stdout);
+    console.log(`MapLibre clean edit mode transition passed (${suffix || "source"}).`);
+    await cli(`goto ${server.origin}/demos/demo.map.drawing.html${suffix}`);
     const switches = await cli("run-code --filename tests/_support/maplibre-clean-switch-check.js");
     if (!switches.stdout.includes('### Result\n"CLEAN_SWITCH_OK"')) throw Error(switches.stdout);
     console.log(`MapLibre clean edit switching passed (${suffix || "source"}).`);
