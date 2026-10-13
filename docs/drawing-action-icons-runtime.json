@@ -14,7 +14,7 @@
   "component": "ui.map.drawing",
   "iconsRevision": "0.21.315",
   "coreJsRevision": "0.21.315",
-  "mainUiBundleRevision": "0.21.315",
+  "mainUiBundleRevision": "0.21.316",
   "gameBundleRevision": "0.21.315",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
@@ -36,11 +36,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "b98c80a2752072d5187125307e71dc60fe5833c9e919a7a3b3f175c3dfb66a41"
+      "sha256": "8896c2f140c4125b220f6c8c963d1334c17b29b138cab941f8491955ebfbee33"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "71950b926fd85170094bb8bda415d23ec469e72b091bf960e813938bfca2ef47"
+      "sha256": "d004f76fe76dd67edeab031fbc4388fe9d3aa3b8a07c0b6d6326a15c3913333e"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
@@ -52,11 +52,11 @@
     },
     {
       "path": "demos/demo.map.drawing.html",
-      "sha256": "91e523931a5d7285192ba52fec2a69024e2b1cadf87e542d301bcbf56373c450"
+      "sha256": "a53052fdfff3d845d82d36732aa7375bbbdabe7132bcd01a52cc95aa5a8e36a6"
     },
     {
       "path": "js/demo/demo.map.drawing.js",
-      "sha256": "3b8d43ef18bea4b98870e8c1371a781a8eaedc363a70d2cf78db72fa0964e3f0"
+      "sha256": "1065d7415ef2ea9ee4d52d8992ee59d5526533e15baad0b0f6b6864d66c1f900"
     },
     {
       "path": "docs/drawing-action-icons.md",

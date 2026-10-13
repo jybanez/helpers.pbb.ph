@@ -18,4 +18,6 @@ The renderer chooses the world copy nearest the camera when world copies are ena
 
 The model follows half the camera pitch toward upright to retain a legible teardrop near the horizon, while its actual volumetric geometry still responds to tilt. Light direction remains geographic, so bearing changes its shading. Omitted state fields in `update` retain the current selection and visibility.
 
-Revision scope: main bundle, drawing adapter/tools, pin renderer and icons 315; drawing CSS 311, shapes 309, ruler 314, scale 310. Game bundle changes because it includes the shared icon catalog; its revision is 315. Package remains 0.21.83. Existing editor guard, zero-ID and metadata protections remain in force.
+Revision scope: main bundle and drawing adapter 316; drawing tools, pin renderer and icons 315; drawing CSS 311, shapes 309, ruler 314, scale 310. Game bundle changes because it includes the shared icon catalog; its revision is 315. Package remains 0.21.83. Existing editor guard, zero-ID and metadata protections remain in force.
+
+Pin positions accept exactly two finite longitude/latitude values or a third finite altitude value. Altitude is retained as metadata through import, movement, color, history and export; display anchoring still follows terrain. Four-element positions and nonnumeric/nonfinite altitude are rejected atomically. Plain Points and other geometry retain their existing 2D validation.

@@ -12,7 +12,7 @@ async page => {
   const canvas = await page.locator('.maplibregl-canvas').boundingBox();
   await page.mouse.click(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
   await page.waitForFunction(() => __drawing.adapter.getPinBounds().length === 1);
-  await page.evaluate(() => { const f = __drawing.adapter.getFeatures()[0]; if (f.geometry.type !== 'Point' || f.properties.helperDrawingKind !== 'pin') throw Error('pin metadata'); window.__pinId = f.id; window.__pinAnchor = f.geometry.coordinates; });
+  await page.evaluate(() => { const a = __drawing.adapter, f = a.getFeatures()[0]; if (f.geometry.type !== 'Point' || f.properties.helperDrawingKind !== 'pin') throw Error('pin metadata'); f.geometry.coordinates.push(37); f.properties.altitudeMetadata = { keep: true }; a.setFeatures(a.validateFeatures([f])); for (const coordinates of [[0,0,37,9],[0,0,'37']]) { let rejected = false; try { a.validateFeatures([{...f, geometry: {type:'Point', coordinates}}]); } catch { rejected = true; } if (!rejected) throw Error('invalid pin altitude accepted'); } window.__pinId = f.id; window.__pinAnchor = f.geometry.coordinates; });
   await page.getByRole('button', { name: 'Select', exact: true }).click();
   let handle = await page.evaluate(() => { const b = __drawing.adapter.getPinBounds()[0], c = __drawing.map.getCanvas().getBoundingClientRect(); return { x: c.x + (b.left + b.right) / 2, y: c.y + (b.top + b.bottom) / 2 }; });
   await page.mouse.click(handle.x, handle.y);
@@ -26,6 +26,7 @@ async page => {
   await page.waitForFunction(() => __drawing.adapter.getState().dragging && __drawing.adapter.getPinBounds().length === 1);
   await page.evaluate(() => { if (JSON.stringify(__drawing.adapter.getState().features[0].geometry.coordinates) === JSON.stringify(__pinAnchor)) throw Error('continuous pin movement'); });
   await page.mouse.up();
+  await page.evaluate(() => { const f = __drawing.adapter.getFeatures()[0]; if (f.geometry.coordinates[2] !== 37 || !f.properties.altitudeMetadata.keep) throw Error('native altitude preservation'); });
   await page.evaluate(() => { const a = __drawing.adapter; if (a.getState().dragging || JSON.stringify(a.getFeatures()[0].geometry.coordinates) === JSON.stringify(__pinAnchor)) throw Error('native pin drag'); a.undo(); if (JSON.stringify(a.getFeatures()[0].geometry.coordinates) !== JSON.stringify(__pinAnchor)) throw Error('pin undo'); a.redo(); });
   for (const [zoom, pitch, bearing] of [[5, 0, 0], [12, 50, 31], [8, 60, 85], [8, 80, 150]]) {
     await page.evaluate(({ zoom, pitch, bearing }) => { const { map, adapter } = __drawing; map.jumpTo({ center: adapter.getFeatures()[0].geometry.coordinates, zoom, pitch, bearing }); }, { zoom, pitch, bearing });
@@ -37,7 +38,7 @@ async page => {
     const pin = adapter.getFeatures()[0]; pin.id = 0; pin.properties.ownerMetadata = { keep: true };
     adapter.setFeatures([pin, { type: 'Feature', id: 'plain', properties: {}, geometry: { type: 'Point', coordinates: [pin.geometry.coordinates[0] + 5, pin.geometry.coordinates[1]] } }]);
     adapter.setMode('select'); map.fire('click', { point: map.project(pin.geometry.coordinates), lngLat: map.getCenter() });
-    const loader = await import('/js/ui/ui.loader.js?v=0.21.315'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
+    const loader = await import('/js/ui/ui.loader.js?v=0.21.316'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
     const create = await loader.uiLoader.get('ui.map.pin'); window.__readonlyPin = create(map, { id: 'readonly-pin-test', features: [pin] });
     const saved = adapter.getFeatures(); adapter.setFeatures(saved); if (saved[0].id !== 0 || !saved[0].properties.ownerMetadata.keep || saved[1].properties.helperDrawingKind) throw Error('zero id/roundtrip/plain distinction');
     map.setStyle({ version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#20344a' } }] }, { diff: false });
@@ -86,6 +87,7 @@ async page => {
     await mobile.getByRole('button', { name: 'Pin', exact: true }).tap(); await mobile.locator('.maplibregl-canvas').scrollIntoViewIfNeeded();
     const c = await mobile.locator('.maplibregl-canvas').boundingBox(); await mobile.touchscreen.tap(c.x + c.width / 2, c.y + c.height / 2);
     await mobile.waitForFunction(() => __drawing.adapter.getPinBounds().length === 1);
+    await mobile.evaluate(() => { const a = __drawing.adapter, f = a.getFeatures()[0]; f.id = 0; f.geometry.coordinates.push(37); f.properties.altitudeMetadata = { keep: true }; a.setFeatures(a.validateFeatures([f])); });
     await mobile.getByRole('button', { name: 'Select', exact: true }).tap();
     let h = await mobile.evaluate(() => { const b = __drawing.adapter.getPinBounds()[0], c = __drawing.map.getCanvas().getBoundingClientRect(); return { x: c.x + (b.left + b.right) / 2, y: c.y + (b.top + b.bottom) / 2 }; });
     await mobile.touchscreen.tap(h.x, h.y);
@@ -98,7 +100,7 @@ async page => {
     for (let i = 1; i <= 5; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: h.x + 8 + i * 4, y: h.y + i * 3, id: 0 }] });
     await mobile.evaluate(before => { const s = __drawing.adapter.getState(); if (!s.dragging || JSON.stringify(before) === JSON.stringify(s.features[0].geometry.coordinates)) throw Error('touch continuous movement'); }, before);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await mobile.evaluate(before => { const a = __drawing.adapter; if (a.getState().dragging || JSON.stringify(before) === JSON.stringify(a.getFeatures()[0].geometry.coordinates)) throw Error('touch pin move'); if (!__drawing.map.dragPan.isEnabled()) throw Error('touch gesture restore'); }, before);
+    await mobile.evaluate(before => { const a = __drawing.adapter; if (a.getState().dragging || JSON.stringify(before) === JSON.stringify(a.getFeatures()[0].geometry.coordinates)) throw Error('touch pin move'); if (!__drawing.map.dragPan.isEnabled()) throw Error('touch gesture restore'); const f = a.getFeatures()[0]; if (f.id !== 0 || f.geometry.coordinates[2] !== 37 || !f.properties.altitudeMetadata.keep) throw Error('touch altitude preservation'); a.undo(); if (a.getFeatures()[0].geometry.coordinates[2] !== 37) throw Error('touch altitude undo'); a.redo(); a.setFeatures(a.validateFeatures(a.getFeatures())); }, before);
     await mobile.locator('.maplibregl-canvas').screenshot({ path: `output/playwright/pin-${kind}-touch.png` });
   } finally { await context.close(); }
   const mapErrors = await page.evaluate(() => __pinMapErrors); if (errors.length || mapErrors.length) throw Error([...errors, ...mapErrors].join(';'));
