@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.311";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.315";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createObjectTools = await uiLoader.get("ui.map.drawing.object");
@@ -77,7 +77,7 @@ function recreate() {
   tools?.destroy(); adapter?.destroy();
   styleToken = null; styleOwner = null;
   adapter = createAdapter(map, { selectToggle, editBehavior: immediate ? "immediate" : "session", lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
-  tools = createTools(document.querySelector("#tools"), { adapter, selectToggle, showModeTransitionStatus: !compact, hideUnavailableActions: immediate ? ["fill", "finish", "cancel"] : [], orientation: compact ? "vertical" : "horizontal", placement: compact ? "map" : "external", labels: compact ? "none" : "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["select", "pan", "point", "line", "path", "polygon", "rectangle", "circle"] });
+  tools = createTools(document.querySelector("#tools"), { adapter, selectToggle, showModeTransitionStatus: !compact, hideUnavailableActions: immediate ? ["fill", "finish", "cancel"] : [], orientation: compact ? "vertical" : "horizontal", placement: compact ? "map" : "external", labels: compact ? "none" : "always", actions: ["finish", "cancel", "fill", "stroke", "undo", "redo", "delete", "clear"], onAction(action) { if (["fill", "stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }, modes: ["pan", "select", "pin", "point", "line", "path", "polygon", "rectangle", "circle"] });
   for (const name of ["create", "update", "delete", "select", "modechange", "measure"]) adapter.on(name, payload => {
     if (name !== "measure") { events.push({ name, payload }); log.textContent = JSON.stringify(events.slice(-4), null, 2); }
     if (immediate && name === "select" && payload) { const colors = adapter.getFeatureStyle(); fillPicker.setValue(colors.fill || { r:80,g:184,b:255,a:.22 }); strokePicker.setValue(colors.stroke || "#50b8ff"); }
