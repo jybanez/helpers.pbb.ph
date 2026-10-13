@@ -10,6 +10,7 @@
 </head><body><main>
 <a href="index.html">Back to Helper demos</a><h1>MapLibre drawing adapter</h1>
 <p>Choose Line: click its start, move to preview, then click its end to complete. Path adds connected segments; double-click its last endpoint or press Finish. Polygon uses Finish. Cancel discards the draft. Select a line/path and drag any segment to move the whole object; white vertex handles reshape it.</p>
+<p>Select an object to show its controls. Move is the default; choose Rotate and drag the object to change its orientation. Points and circles show only Fill, Stroke and Delete. Use Undo/Redo for completed gestures, or Escape to cancel a live gesture.</p>
 <p>On the focused map, Enter adds a vertex at the map center, Escape cancels, Delete removes the selection and Ctrl/Cmd+Z undoes (Shift+Z redoes). Finish also works with its toolbar button by keyboard.</p>
 <div id="tools"></div><div id="map" aria-label="Drawing map"></div>
 <p><label><input id="confirm-delete" type="checkbox"> Ask before deleting or clearing drawings</label></p>
@@ -26,4 +27,4 @@
 <nav aria-label="Object edit controls"><button id="edit-object" type="button" disabled>Begin selected object edit</button><button id="apply-style" type="button" disabled>Apply fill and stroke</button></nav>
 <div id="fill-color"></div><div id="stroke-color"></div>
 <h2>Events / GeoJSON</h2><pre id="log">No geometry changes yet.</pre>
-</main><script type="module" src="../js/demo/demo.map.drawing.js?v=0.21.308"></script></body></html>
+</main><script type="module" src="../js/demo/demo.map.drawing.js?v=0.21.309"></script></body></html>

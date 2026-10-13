@@ -1,5 +1,10 @@
 # MapLibre drawing adapter
 
+Selected-object Move/Rotate uses the complete `ui.map.drawing.object` control
+and adapter-owned gestures. See [its API, oriented rectangles and coordinate
+contract](drawing-object-rotation.md). Point/Circle omit the interaction row;
+Move remains implicit. Construction and persistence remain independent.
+
 `ui.map.drawing.maplibre` exports `createMapLibreDrawingAdapter(map, options)`.
 It implements the complete existing `ui.map.drawing` adapter boundary; the toolbar
 remains engine independent and existing consumers need not adopt this module.

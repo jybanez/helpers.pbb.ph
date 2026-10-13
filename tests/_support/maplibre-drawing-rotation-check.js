@@ -1,0 +1,72 @@
+async page => {
+ const check=(v,m)=>{if(!v)throw Error(m);};
+ for(const width of [1200,375])for(const tilted of [false,true]){
+  await page.setViewportSize({width,height:1000}); await page.reload();await page.waitForFunction(()=>window.__drawingReady);
+  await page.locator('#map canvas').scrollIntoViewIfNeeded();
+  await page.evaluate(tilted=>{
+   const {map,adapter:a}=__drawing;map.jumpTo({bearing:tilted?31:0,pitch:tilted?40:0});
+   const center=map.getCenter(),x=center.lng,y=center.lat;
+   const ring=[[x-.012,y-.007],[x+.012,y-.007],[x+.012,y+.007],[x-.012,y+.007],[x-.012,y-.007]];
+   a.setFeatures([{type:'Feature',id:0,properties:{helperShape:{kind:'rectangle',bounds:[[x-.012,y-.007],[x+.012,y+.007]]},helperStyle:{fill:{r:4,g:5,b:6,a:.5}},nested:{retained:true}},geometry:{type:'Polygon',coordinates:[ring]}}]);
+  },tilted);
+  const point=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),ring=a.getFeatures()[0].geometry.coordinates[0],p=map.project([(ring[1][0]+ring[2][0])/2,ring[1][1]+.002]);return{x:b.x+p.x,y:b.y+p.y};});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return !map.isMoving()&&map.loaded()&&map.isSourceLoaded(a.getState().sourceId);});
+  await page.mouse.click(point.x,point.y);
+  check(await page.evaluate(()=>__drawing.adapter.getState().selectedFeatureId==='0'),'numeric0 selection');
+  const rotate=()=>page.locator('#object-tools [data-object-mode="rotate"]');
+  check(await page.locator('#object-tools button').count()===5,'complete five controls');
+  check(await page.locator('#object-tools [data-object-mode="move"]').getAttribute('aria-pressed')==='true','default Move');
+  const boxes=await page.locator('#object-tools button').evaluateAll(nodes=>nodes.map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y})));
+  const twoRowSize=await page.evaluate(()=>__drawing.objectTools.getSize());
+  check(Math.abs(boxes[0].y-boxes[1].y)<1&&boxes[2].y>boxes[0].y&&Math.abs(boxes[2].y-boxes[4].y)<1,'two rows');
+  await rotate().focus();await page.keyboard.press('Space');
+  check(await rotate().getAttribute('aria-pressed')==='true'&&await rotate().evaluate(n=>n===document.activeElement),'keyboard exclusive focused Rotate');
+  await page.evaluate(()=>{window.__rotationBefore=__drawing.adapter.getFeatures();});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return map.queryRenderedFeatures({layers:[a.getState().layerIds[3]]}).length===0;});
+  const target=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),s=a.getFeatures()[0].properties.helperShape.bounds,c=[(s[0][0]+s[1][0])/2,(s[0][1]+s[1][1])/2],p=map.project([c[0],c[1]+.012]);return{x:b.x+p.x,y:b.y+p.y};});
+  const start=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),ring=a.getFeatures()[0].geometry.coordinates[0],p=map.project([(ring[1][0]+ring[2][0])/2,ring[1][1]+.002]);return{x:b.x+p.x,y:b.y+p.y};});
+  await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.up();
+  check(await page.evaluate(()=>JSON.stringify(__drawing.adapter.getFeatures())===JSON.stringify(__rotationBefore)&&!__drawing.adapter.getCapabilities().actions.undo),'no-op native rotation preserves legacy bounds and history');
+  await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(target.x,target.y,{steps:8});
+  check(await page.evaluate(()=>__drawing.adapter.getState().dragging),'native rotation drag '+JSON.stringify(await page.evaluate(({start,target})=>{const{map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect();return{start,target,box:{x:b.x,y:b.y,width:b.width,height:b.height},state:a.getState(),caps:a.getCapabilities(),hit:map.queryRenderedFeatures([start.x-b.x,start.y-b.y],{layers:a.getState().layerIds.slice(0,3)}).map(f=>f.properties)};},{start,target})));
+  check(await page.evaluate(()=>JSON.stringify(__drawing.adapter.getFeatures())===JSON.stringify(__rotationBefore)),'committed snapshot excludes preview');
+  check(await page.evaluate(()=>__drawing.adapter.setObjectMode('move')===false),'active rotation rejects switch');
+  check(await page.locator('#object-tools [data-object-mode="move"]').isDisabled()&&await rotate().getAttribute('aria-pressed')==='true'&&await page.locator('#object-tools button').count()===5,'guard retains row and authoritative pressed state');
+  await page.mouse.up();
+  check(await page.evaluate(()=>{const a=__drawing.adapter,f=a.getFeatures()[0];window.__rotationAfter=a.getFeatures();return !a.getState().dragging&&f.properties.helperShape.projection==='mercator'&&f.properties.helperShape.angleDegrees>10&&f.id===0&&f.properties.nested.retained&&f.properties.helperStyle.fill.a===.5;}),'rotation completed metadata');
+  await page.evaluate(()=>{const a=__drawing.adapter;a.undo();if(JSON.stringify(a.getFeatures())!==JSON.stringify(__rotationBefore))throw Error('one undo exact baseline');if(a.getCapabilities().actions.undo)throw Error('one gesture one history entry');a.redo();if(JSON.stringify(a.getFeatures())!==JSON.stringify(__rotationAfter))throw Error('redo exact orientation');});
+  // Export/reimport retains oriented metadata and meaningful rotation capability.
+  await page.evaluate(()=>__drawing.adapter.setFeatures(__rotationAfter));
+  check(await page.evaluate(()=>__drawing.adapter.getCapabilities().objectModes.rotate),'reimport rotation');
+  const rp=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),ring=a.getFeatures()[0].geometry.coordinates[0],p=map.project(ring[1].map((n,i)=>(n+ring[2][i])/2));return{x:b.x+p.x,y:b.y+p.y};});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return map.isSourceLoaded(a.getState().sourceId);});
+  await page.mouse.move(rp.x,rp.y);await page.mouse.down();await page.mouse.move(rp.x+20,rp.y+15,{steps:4});
+  check(await page.evaluate(()=>__drawing.adapter.getState().dragging),'second native drag');
+  await page.locator('#map canvas').focus();await page.keyboard.press('Escape');await page.mouse.up();
+  check(await page.evaluate(()=>!__drawing.adapter.getState().dragging&&JSON.stringify(__drawing.adapter.getFeatures())===JSON.stringify(__rotationAfter)&&!__drawing.adapter.getCapabilities().actions.undo),'Escape restores reimported baseline/history');
+  await page.locator('#object-tools [data-object-mode="move"]').click();
+  const corner=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),p=map.project(a.getFeatures()[0].geometry.coordinates[0][0]);return{x:b.x+p.x,y:b.y+p.y};});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return map.isSourceLoaded(a.getState().sourceId)&&map.queryRenderedFeatures({layers:[a.getState().layerIds[3]]}).length>0;});
+  await page.mouse.move(corner.x,corner.y);await page.mouse.down();await page.mouse.move(corner.x-7,corner.y+9,{steps:4});
+  check(await page.evaluate(()=>__drawing.adapter.getState().dragging),'oriented native resize drag');await page.mouse.up();
+  await page.evaluate(()=>{const a=__drawing.adapter,shape=a.getFeatures()[0].properties.helperShape,old=__rotationAfter[0].properties.helperShape;if(shape.projection!=='mercator'||shape.angleDegrees!==old.angleDegrees||shape.width===old.width&&shape.height===old.height)throw Error('oriented resize coherent');a.undo();if(JSON.stringify(a.getFeatures())!==JSON.stringify(__rotationAfter))throw Error('oriented resize undo');});
+  await page.locator('#object-tools [data-object-mode="rotate"]').click();
+  await page.evaluate(()=>{const a=__drawing.adapter,t=a.beginStyleChange();if(!t)throw Error('style guard setup');const before=JSON.stringify(a.getState());if(a.setObjectMode('move')!==false||JSON.stringify(a.getState())!==before)throw Error('style rejects object mode');a.cancelStyleChange(t);a.setMode('path');});
+  const dp=await page.evaluate(()=>{const b=__drawing.map.getCanvas().getBoundingClientRect();return{x:b.x+b.width*.5,y:b.y+b.height*.5};});
+  await page.mouse.click(dp.x,dp.y);
+  await page.evaluate(()=>{const a=__drawing.adapter;if(!a.getState().draft.length||a.setObjectMode('move')!==false)throw Error('draft guard');a.undo();if(!a.getCapabilities().actions.redo||a.setObjectMode('move')!==false)throw Error('redo-only guard');a.cancel();});
+  await page.screenshot({path:`output/playwright/drawing-rotation-${page.url().includes('bundle=')?'bundle':'source'}-${width}-${tilted?'tilted':'flat'}.png`});
+  await page.evaluate(()=>{const a=__drawing.adapter;a.setMode('pan');if(a.setObjectMode('move')!==false)throw Error('pan rejects object switch');a.setMode('select');a.setFeatures([{type:'Feature',id:1,properties:{},geometry:{type:'Point',coordinates:[123.8854,10.3157]}}]);});
+  const pp=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),p=map.project(a.getFeatures()[0].geometry.coordinates);return{x:b.x+p.x,y:b.y+p.y};});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return map.isSourceLoaded(a.getState().sourceId);});await page.mouse.click(pp.x,pp.y);
+  check(await page.evaluate(()=>__drawing.adapter.getObjectMode()==='move'&&!__drawing.adapter.getCapabilities().objectModes.rotate),'different Point resets Move and disables Rotate');
+  check(await rotate().count()===0&&await page.locator('#object-tools button').count()===3,'Point interaction row omitted');
+  const oneRowSize=await page.evaluate(()=>__drawing.objectTools.getSize());
+  check(oneRowSize.height<twoRowSize.height-20&&Math.abs(oneRowSize.width-twoRowSize.width)<1,'Point measurement removes row gap');
+  await page.evaluate(async()=>{const {shapeFromPoints}=await import('/js/ui/ui.map.drawing.shapes.js?v=0.21.309');const a=__drawing.adapter,c=__drawing.map.getCenter(),built=shapeFromPoints('circle',[c.lng,c.lat],[c.lng+.01,c.lat]);a.setFeatures([{type:'Feature',id:'circle',properties:{helperShape:built.shape},geometry:built.geometry}]);});
+  const cp=await page.evaluate(()=>{const {map,adapter:a}=__drawing,b=map.getCanvas().getBoundingClientRect(),p=map.project(a.getFeatures()[0].properties.helperShape.center);return{x:b.x+p.x,y:b.y+p.y};});
+  await page.waitForFunction(()=>{const {map,adapter:a}=__drawing;return map.isSourceLoaded(a.getState().sourceId);});await page.mouse.click(cp.x,cp.y);
+  check(await rotate().count()===0&&await page.locator('#object-tools button').count()===3&&await page.evaluate(()=>__drawing.adapter.setObjectMode('rotate')===false),'Circle row omitted, rotation rejected');
+ }
+ return 'DRAWING_ROTATION_OK';
+}
