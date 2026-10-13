@@ -1,0 +1,69 @@
+{
+  "component": "ui.map.ruler",
+  "factory": "createMapRuler",
+  "icon": "map.ruler",
+  "componentRevision": "0.21.312",
+  "mainUiBundleRevision": "0.21.312",
+  "iconsAndGameRevision": "0.21.312",
+  "mapEngineVersion": "4.6.0",
+  "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
+  "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
+  "artifacts": [
+    {
+      "path": "js/ui/ui.map.ruler.js",
+      "sha256": "3d8bb78d956193cc46c67f353ae9951ada09b571cf38fc9a5fc6b8a583cfb5ec"
+    },
+    {
+      "path": "css/ui/ui.map.ruler.css",
+      "sha256": "bf6fc9e58f6a95c6a0cd77c0721a57c63f3e58fbc68281a064722d40ec1c03fd"
+    },
+    {
+      "path": "js/ui/ui.map.controls.js",
+      "sha256": "e0253ac6849afbb86add426bb0442cf57c247e01530a37abba3ba127ba9cfcbd"
+    },
+    {
+      "path": "js/ui/ui.icons.js",
+      "sha256": "5882f0949d85cc29b9b5fadce10cd9f0519a2a3e2f897782e7e87049d565ca24"
+    },
+    {
+      "path": "js/ui/ui.icons.catalog.js",
+      "sha256": "f64e6f7d512db53b0e82e57433603b2ae11b9765dd883e7dc8c04f1f5c2b0e7c"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "e988c0e83d2847c05f63c667a4d2766f4b75d7c68cdb09286b7674f94963c8b9"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "da095516d6465ef341f0e1aefe7bd7528cc1d8133713a0332f92d4ba50384db6"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "596045519e2f7ca36941565eee5b3d0434dcfbdf6784042d6db89659c3675454"
+    },
+    {
+      "path": "dist/helpers.game.bundle.min.js",
+      "sha256": "f50ce7e191bf318f226cf07013950be62d26b839e1a3b6241a6f98aa7fde1a6e"
+    },
+    {
+      "path": "demos/demo.map.ruler.html",
+      "sha256": "f1c05e41168648ad6715dca5ca4519f8501c99afecf3899de4b040c0cadba5ce"
+    },
+    {
+      "path": "js/demo/demo.map.ruler.js",
+      "sha256": "c6b771b2b7ead3f27272d68b39e0231954e5acd413a036fac0f5c525fc47555d"
+    },
+    {
+      "path": "docs/map-ruler.md",
+      "sha256": "2f4717d06ada9b2b56d1eda7f409aba73c32946d9fdaabd0ff471ea47d5970a3"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.js",
+      "sha256": "7912439cb42081c0da576f2857368a80fc3bd16f9f0f154179c5c18d4c1271fd"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.css",
+      "sha256": "576b085fdd9487a65a19215328c1e086c07ce5bf6da09b666b3806d3d008dae9"
+    }
+  ]
+}
