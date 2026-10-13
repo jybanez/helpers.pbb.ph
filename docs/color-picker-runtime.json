@@ -4,7 +4,7 @@
   "helperPackage": "0.21.83",
   "componentRevision": "0.21.294",
   "formModalRevision": "0.21.294",
-  "mainUiBundleRevision": "0.21.312",
+  "mainUiBundleRevision": "0.21.313",
   "demoRevision": "0.21.294",
   "scope": "Shared runtime hashes refreshed; optional game JavaScript includes canonical icon catalog changes, inspection unchanged. Source dependencies use existing canonical components.",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -23,11 +23,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "e988c0e83d2847c05f63c667a4d2766f4b75d7c68cdb09286b7674f94963c8b9"
+      "sha256": "aa4d27bd663f7f2ce090269c9f032b59d43846d0a246274010b25be160004446"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "da095516d6465ef341f0e1aefe7bd7528cc1d8133713a0332f92d4ba50384db6"
+      "sha256": "36571db59a6865df49b1e93b83b8f312da7b69aeeec17cf67cc243e25309b040"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
