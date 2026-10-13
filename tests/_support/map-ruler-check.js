@@ -28,7 +28,8 @@ async page => {
       await page.locator('.map-wrap').screenshot({ path: `output/playwright/map-ruler-${kind}-${width}-${pitch}.png` });
       // Real pointer drag retains navigation and must not replace the fixed pair.
       const prior = await page.evaluate(() => JSON.stringify(__rulerDemo.ruler.getState().start));
-      await page.mouse.move(positions[0].x, positions[0].y); await page.mouse.down(); await page.mouse.move(positions[0].x + 50, positions[0].y + 30, { steps: 10 }); await page.mouse.up();
+      const navigation = await page.locator('.maplibregl-canvas').boundingBox();
+      await page.mouse.move(navigation.x + 30, navigation.y + 40); await page.mouse.down(); await page.mouse.move(navigation.x + 80, navigation.y + 70, { steps: 10 }); await page.mouse.up();
       if (await page.evaluate(() => JSON.stringify(__rulerDemo.ruler.getState().start)) !== prior) throw Error('drag registered endpoint');
       await page.getByRole('button', { name: 'Reset ruler', exact: true }).click();
       if (!await page.evaluate(() => __rulerDemo.ruler.getState().active && __rulerDemo.ruler.getState().phase === 'ready')) throw Error('reset ownership');

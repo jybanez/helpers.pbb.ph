@@ -42,6 +42,12 @@ async page => {
       await page.mouse.click(a.x, a.y); await page.mouse.move(b.x, b.y);
       await visible('preview', `${width}-preview`);
       await page.mouse.click(b.x, b.y); await visible('complete', `${width}-fixed`);
+      for (const endpoint of ['start', 'end']) {
+        const handle = await page.evaluate(endpoint => { const { map, ruler } = __rulerDemo, p = map.project(ruler.getState()[endpoint]), box = map.getCanvas().getBoundingClientRect(); return { x: box.x + p.x, y: box.y + p.y }; }, endpoint);
+        await page.mouse.move(handle.x, handle.y); await page.mouse.down(); await page.mouse.move(handle.x + 20, handle.y + 10, { steps: 5 });
+        if (!await page.evaluate(endpoint => __rulerDemo.ruler.getState().dragging === endpoint, endpoint)) throw Error('pending terrain endpoint drag');
+        await visible('complete'); await page.mouse.up(); await visible('complete', `${width}-drag-${endpoint}`);
+      }
       if (await page.evaluate(() => __rulerDemo.map.isStyleLoaded())) throw Error('pending tile guard was not exercised');
       // Incremental replacement removes runtime resources without style.load.
       await page.evaluate(() => {

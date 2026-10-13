@@ -2,9 +2,9 @@
   "component": "ui.map.ruler",
   "factory": "createMapRuler",
   "icon": "map.ruler",
-  "componentRevision": "0.21.313",
+  "componentRevision": "0.21.314",
   "cssRevision": "0.21.312",
-  "mainUiBundleRevision": "0.21.313",
+  "mainUiBundleRevision": "0.21.314",
   "iconsAndGameRevision": "0.21.312",
   "mapEngineVersion": "4.6.0",
   "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
@@ -12,7 +12,7 @@
   "artifacts": [
     {
       "path": "js/ui/ui.map.ruler.js",
-      "sha256": "c3496ed1e20b582f8bfa53d7a12822791b6257db270d16bca9e137f4b66f0bb5"
+      "sha256": "73fd938f67e9848925f78bf8619ded93af66188267d3d21aa64d73ada883b23b"
     },
     {
       "path": "css/ui/ui.map.ruler.css",
@@ -32,11 +32,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "aa4d27bd663f7f2ce090269c9f032b59d43846d0a246274010b25be160004446"
+      "sha256": "df288976e29df3bee51cf4fc5df4aa81f02c56da4672538506311cf9564e7a16"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "36571db59a6865df49b1e93b83b8f312da7b69aeeec17cf67cc243e25309b040"
+      "sha256": "a65fc708266039b94ce185ab6140d261ffc897b769cc941ec68f38531116130c"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
@@ -48,15 +48,15 @@
     },
     {
       "path": "demos/demo.map.ruler.html",
-      "sha256": "eb9ec6a6cd8ad5fc884499e989c35ced6201423abb504bd18f023b0f4f0db3ab"
+      "sha256": "c7acf1df671f38bd4b2a25d030075584e1f6695205259195b630f19c017b13ce"
     },
     {
       "path": "js/demo/demo.map.ruler.js",
-      "sha256": "1ef674aef360bd0c8aed1bd3885237de15f4b35de8c03aa02d070feb0e8464d1"
+      "sha256": "4f2ed1ec54967a6154fe76b0ffd4aff791c10b82c683e35d3ce461000951d1b5"
     },
     {
       "path": "docs/map-ruler.md",
-      "sha256": "580173bf2c04db356ba987dfcdefb8a0c69070258ed0a895d141ffc407cd6cf3"
+      "sha256": "8530f94dc6cb88575ee8ec5f57068980b15923586b8f281086f39447add51185"
     },
     {
       "path": "vendor/maplibre/maplibre-gl.js",
