@@ -124,6 +124,10 @@
     search.focus(); search.click();
     controls.setActionState("search", { expanded: true });
     assert(document.activeElement === search && search.getAttribute('aria-expanded') === "true", "state update preserves focus");
+    controls.setActionState("search", { pressed: true });
+    assert(document.activeElement === search && search.getAttribute('aria-pressed') === "true" && search.classList.contains('is-active'), "custom pressed state preserves focus and shows active state");
+    controls.setActionState("search", { pressed: null });
+    assert(!search.hasAttribute('aria-pressed') && !search.classList.contains('is-active'), "nullable custom pressed state clears");
     controls.setActionState("search", { disabled: true });
     search.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     assert(activations === 1 && search.disabled, "disabled action guarded");

@@ -2,7 +2,7 @@
   "component": "ui.map.scale",
   "factory": "createMapScale",
   "componentRevision": "0.21.310",
-  "mainUiBundleRevision": "0.21.311",
+  "mainUiBundleRevision": "0.21.312",
   "mapEngineVersion": "4.6.0",
   "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -17,15 +17,15 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "7c966ee3c8a769981858262e8335b5964bc6e3c2cebfbdf4208782ee7a44758d"
+      "sha256": "e988c0e83d2847c05f63c667a4d2766f4b75d7c68cdb09286b7674f94963c8b9"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "6fd9c1a1f0c1741df32c5d3c2f749f7cb45c6a18e878eca50faf6e87f10f74a2"
+      "sha256": "da095516d6465ef341f0e1aefe7bd7528cc1d8133713a0332f92d4ba50384db6"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "0460d460ae1f09024191d67809864fc21e48213623aa5c6646886046a6d2b8f7"
+      "sha256": "596045519e2f7ca36941565eee5b3d0434dcfbdf6784042d6db89659c3675454"
     },
     {
       "path": "demos/demo.map.scale.html",

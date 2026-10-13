@@ -1,0 +1,24 @@
+# Ruler verification and integration handoff
+
+Task 245 adds the complete `ui.map.ruler` / `createMapRuler` component and `map.ruler` icon. The standard demo is `demos/demo.map.ruler.html` (add `?bundle` for bundle loading). The supported API and exclusive input ownership contract are in [map-ruler.md](map-ruler.md).
+
+Main UI JS/CSS, icon catalog/import and optional game JS revisions are 0.21.312. The optional game contains the shared icon catalog; game CSS and inspection are unchanged. Drawing adapter/core remain 309, drawing CSS 311 and scale 310. Package version is unchanged at 0.21.83. No drawing geometry or persistence contract changed. `map-ruler-runtime.json` adds 14 normalized SHA256 entries; five existing runtime manifests are refreshed for the shared loader/bundles. Run `scripts/generate.map.ruler.runtime.mjs` last after older manifest generators to retain current shared revisions.
+
+## Checks
+
+- `npm run build:ui-bundle`, `node tests/ui.bundle.contract.mjs`, `node tests/registry.contract.mjs`: generated bundle alignment and 135 registry entries / 9 groups.
+- `node tests/map.ruler.regression.mjs`: real MapLibre, source and bundle. Native mouse first/preview/second points at 1200px and 375px widths, flat and 50° pitch / 31° bearing; bottom-center result bounds; drag retains navigation without replacing a pair; reset retains ownership; exit and native Escape clear. Fresh touch-enabled Chromium context confirms two native emulated taps complete a result. Screenshots under `output/playwright/map-ruler-*` inspected.
+- Lifecycle/API checks: pending guard promise deduplication, false and throwing guards, AbortSignal and late approval after exit, pending update cancellation, immediate callback context cancellation before guard call, original enabled/disabled double-click restoration, snapshot copies, rejected map replacement, duplicate controller rejection, style replacement (`diff:false`), idempotent destroy/recreate, engine removal.
+- Synthetic exact endpoint cases on the real engine: 1° equatorial separation 111195.0802335329 m (±0.1 m), same-point zero, 0.001° rendered as 111 m, longitude seam 179.5° to −179.5° with 1° unwrapped line, invalid/nonfinite/null/out-of-range endpoints ignored, third click restart.
+- Explicit copy-button gestures with controlled clipboard API: exact displayed text, resolved/rejected/unavailable clipboard, duplicate pending click, reset invalidating late feedback. These test component behavior, not actual OS clipboard permissions. Already-issued clipboard writes cannot be cancelled.
+- `node tests/map.ruler.offline.regression.mjs`: fresh cold browser with all unknown requests blocked. Exactly three retained Helper resources (loader, main JS, main CSS) plus existing MapLibre engine/CSS, native two clicks, teardown, no fallback/error requests. HTML fixture is test scaffolding; no real network required.
+- `node tests/map.controls.regression.mjs`: source, bundle, existing demo; custom nullable pressed state preserves focus and active styling, existing controls intact.
+- `node tests/icons.regression.mjs`: source/bundle catalogs and existing map-layer dark/light previews.
+
+## Findings retained
+
+The first screen-coordinate known-distance assertion incorrectly assumed subpixel clicks hit exact longitude. It was corrected to independently calculate distance from the actual clicked coordinates; exact known-coordinate cases remain separate. The first demo bounds check caught the shell's panel-child rearrangement detaching overlay positioning. Keeping map/overlays in a single live wrapper fixed this. A synthetic endpoint run revealed skipped source updates when `isStyleLoaded()` was temporarily false during source work; installed-source updates now continue, initial installation retries at engine idle. The style-replacement fixture initially awaited `style.load` after an incremental diff (which need not reload the style), timed out and closed its browser; it now forces a full style replacement. Engine-removal testing caught attempts to access an already destroyed style; removal now disposes owned DOM/listeners without calling removed engine layer APIs. Failed checks are not counted as passes; final corrected source/bundle runs pass.
+
+## Limits and app adoption
+
+No physical-device touch/pinch, Safari, screen-reader session or actual clipboard-permission outcome is claimed. No application dirty/save/POI/search workflow was exercised in Helper: Developer must test the existing completion-aware editor exit confirmation and suspend competing handlers before returning true from `beforeActivate`; restore on exit through state callbacks. Application overlay clearance must use result `getElement/getSize`, including copy feedback height. Straight spherical geographic separation is not routing or terrain-surface distance. Review/publication/merge requires Alfred's exact-head acceptance; application push/deployment remains outside this work.
