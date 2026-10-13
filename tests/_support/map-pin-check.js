@@ -38,7 +38,7 @@ async page => {
     const pin = adapter.getFeatures()[0]; pin.id = 0; pin.properties.ownerMetadata = { keep: true };
     adapter.setFeatures([pin, { type: 'Feature', id: 'plain', properties: {}, geometry: { type: 'Point', coordinates: [pin.geometry.coordinates[0] + 5, pin.geometry.coordinates[1]] } }]);
     adapter.setMode('select'); map.fire('click', { point: map.project(pin.geometry.coordinates), lngLat: map.getCenter() });
-    const loader = await import('/js/ui/ui.loader.js?v=0.21.316'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
+    const loader = await import('/js/ui/ui.loader.js?v=0.21.317'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
     const create = await loader.uiLoader.get('ui.map.pin'); window.__readonlyPin = create(map, { id: 'readonly-pin-test', features: [pin] });
     const saved = adapter.getFeatures(); adapter.setFeatures(saved); if (saved[0].id !== 0 || !saved[0].properties.ownerMetadata.keep || saved[1].properties.helperDrawingKind) throw Error('zero id/roundtrip/plain distinction');
     map.setStyle({ version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#20344a' } }] }, { diff: false });
