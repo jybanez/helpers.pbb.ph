@@ -1,4 +1,4 @@
-import { uiLoader } from '../ui/ui.loader.js?v=0.21.312';
+import { uiLoader } from '../ui/ui.loader.js?v=0.21.313';
 if (new URLSearchParams(location.search).has('bundle')) uiLoader.setPreferBundles(true);
 const [createRuler, createControls] = await Promise.all([uiLoader.get('ui.map.ruler'), uiLoader.get('ui.map.controls')]);
 const style = () => ({ version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#20344a' } }] });
