@@ -18,6 +18,17 @@ async page => {
   check(await page.locator('#object-tools [data-object-mode="move"]').getAttribute('aria-pressed')==='true','default Move');
   const boxes=await page.locator('#object-tools button').evaluateAll(nodes=>nodes.map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y})));
   const twoRowSize=await page.evaluate(()=>__drawing.objectTools.getSize());
+  check(await page.evaluate(()=>{
+   const root=__drawing.objectTools.getElement?.()||document.querySelector('#object-tools .ui-map-drawing'),groups=[...root.querySelectorAll('.ui-map-drawing-group')].filter(g=>g.querySelector('button'));
+   const a=groups[0].getBoundingClientRect(),b=groups[1].getBoundingClientRect(),r=root.getBoundingClientRect(),size=__drawing.objectTools.getSize(),style=getComputedStyle(root);
+   return Math.abs((a.left+a.width/2)-(b.left+b.width/2))<1&&a.width<b.width&&Math.abs(size.width-r.width)<1&&Math.abs(size.height-r.height)<1&&style.backgroundColor==='rgba(0, 0, 0, 0)'&&style.borderTopWidth==='0px'&&[...root.querySelectorAll('button')].every(n=>parseFloat(getComputedStyle(n).borderTopWidth)>0);
+  }),'centered rows/chrome:false/button chrome/measurement');
+  await page.evaluate(()=>__drawing.objectTools.update({busy:true}));
+  check(await page.locator('#object-tools button').evaluateAll(nodes=>nodes.every(n=>n.disabled)),'busy buttons');
+  await page.evaluate(()=>__drawing.objectTools.update({busy:false,disabled:true}));
+  check(await page.locator('#object-tools button').evaluateAll(nodes=>nodes.every(n=>n.disabled)),'disabled buttons');
+  await page.evaluate(()=>__drawing.objectTools.update({disabled:false}));
+  await page.screenshot({path:`output/playwright/object-row-center-${page.url().includes('bundle=')?'bundle':'source'}-${width}-${tilted?'tilted':'flat'}.png`});
   check(Math.abs(boxes[0].y-boxes[1].y)<1&&boxes[2].y>boxes[0].y&&Math.abs(boxes[2].y-boxes[4].y)<1,'two rows');
   await rotate().focus();await page.keyboard.press('Space');
   check(await rotate().getAttribute('aria-pressed')==='true'&&await rotate().evaluate(n=>n===document.activeElement),'keyboard exclusive focused Rotate');

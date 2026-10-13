@@ -4,15 +4,15 @@
   "helperPackage": "0.21.83",
   "adapterJsRevision": "0.21.309",
   "coreJsRevision": "0.21.309",
-  "mainUiBundleRevision": "0.21.310",
-  "cssRevision": "0.21.309",
+  "mainUiBundleRevision": "0.21.311",
+  "cssRevision": "0.21.311",
   "maplibreVersion": "4.6.0",
   "drawingEngineDependencies": [],
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "488ff795e961aa40e4b1cb6c5b92fb136702e33d6e210a0b29b69d03202fa248"
+      "sha256": "7c966ee3c8a769981858262e8335b5964bc6e3c2cebfbdf4208782ee7a44758d"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
@@ -40,15 +40,15 @@
     },
     {
       "path": "css/ui/ui.map.drawing.css",
-      "sha256": "2369812aedc1700b75a2d7b5b36d9bc7445f604de061c2100a7085e661e671a7"
+      "sha256": "5ebcf327f0a646fd8025d9a4ad1b91fd13dbeb21d274aa3379b1dc7de6c9030e"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "60624759b60899a83eba623ed9b531b81b36c5409de77ee030b13497baf09a55"
+      "sha256": "6fd9c1a1f0c1741df32c5d3c2f749f7cb45c6a18e878eca50faf6e87f10f74a2"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "6aa8ecde68b789dfb9c6e436d898afc9756d7cb3b4eae60703e6ebb28950c3d0"
+      "sha256": "0460d460ae1f09024191d67809864fc21e48213623aa5c6646886046a6d2b8f7"
     },
     {
       "path": "vendor/maplibre/maplibre-gl.js",
@@ -68,7 +68,7 @@
     },
     {
       "path": "docs/drawing-object-rotation.md",
-      "sha256": "aa0fc5b526968fe21d9d4aca49b63b2a8245c3cfea2f8d951749b81f72184811"
+      "sha256": "22c06d9b52412632b5afa0aafe32bc8dec1d5c1051815a701d87166621d6d926"
     }
   ],
   "objectControlComponent": "ui.map.drawing.object",
