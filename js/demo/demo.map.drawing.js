@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.316";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.317";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createObjectTools = await uiLoader.get("ui.map.drawing.object");
