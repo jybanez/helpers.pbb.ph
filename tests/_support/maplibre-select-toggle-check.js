@@ -1,4 +1,14 @@
 async page => {
+    // Keep readiness failures reviewable without replaying input or changing assertions.
+    const originalWait = page.waitForFunction.bind(page); let readinessStage = 0;
+    page.waitForFunction = async (...args) => {
+      const stage = ++readinessStage;
+      try { return await originalWait(...args); }
+      catch(error) {
+        const diagnostic = await page.evaluate(() => {const {map,adapter:a}=window.__drawing||{},b=map?.getCanvas().getBoundingClientRect();return {width:innerWidth,url:location.search,box:b?{x:b.x,y:b.y,width:b.width,height:b.height}:null,state:a?.getState(),caps:a?.getCapabilities(),camera:map?{center:map.getCenter().toArray(),bearing:map.getBearing(),pitch:map.getPitch(),zoom:map.getZoom(),moving:map.isMoving(),loaded:map.loaded(),sourceLoaded:map.isSourceLoaded(a.getState().sourceId)}:null};});
+        throw Error(`Select readiness stage ${stage}: ${error.message}; ${JSON.stringify({argument:args[1],diagnostic})}`);
+      }
+    };
   const check=(value,message)=>{if(!value)throw Error(message);};
   const select=()=>page.locator('#tools [data-mode="select"]');
   for(const width of [1200,375]) {

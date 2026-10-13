@@ -1,10 +1,14 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.308";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.309";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
+const createObjectTools = await uiLoader.get("ui.map.drawing.object");
+const objectHost = document.createElement("div"); objectHost.id = "object-tools";
 const createActionModal = await uiLoader.get("ui.action.modal");
 const createColorPicker = await uiLoader.get("ui.color.picker");
 const style = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#20344a" } }] };
 const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, attributionControl: false });
+map.getContainer().appendChild(objectHost);
+Object.assign(objectHost.style,{position:"absolute",right:"8px",bottom:"8px",zIndex:"2"});
 const status = document.querySelector("#status"), log = document.querySelector("#log");
 const selectToggle = new URLSearchParams(location.search).has("toggle") || new URLSearchParams(location.search).get("bundle") === "toggle";
 const compact = selectToggle && new URLSearchParams(location.search).has("compact");
@@ -69,6 +73,7 @@ function updateStatus() { const state = adapter.getState(); status.textContent =
 }
 function recreate() {
   cancelPendingDelete();
+  window.__drawing?.objectTools?.destroy();
   tools?.destroy(); adapter?.destroy();
   styleToken = null; styleOwner = null;
   adapter = createAdapter(map, { selectToggle, editBehavior: immediate ? "immediate" : "session", lineBehavior: (new URLSearchParams(location.search).has("legacy") || new URLSearchParams(location.search).get("bundle") === "legacy") ? "legacy-path" : "segment", beforeDelete, onError(error) { status.textContent = error.message; } });
@@ -79,7 +84,8 @@ function recreate() {
     updateStatus();
   });
   adapter.on("statechange", updateStatus);
-  window.__drawing = { map, adapter, tools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
+  const objectTools = createObjectTools(objectHost, {adapter, onAction(action) { if (["fill","stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }});
+  window.__drawing = { map, adapter, tools, objectTools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
   updateStatus();
 }
 const listenerBaseline = Object.fromEntries(["click", "dblclick", "move", "style.load", "styledata", "remove"].map(name => [name, map._listeners?.[name]?.length || 0]));
@@ -87,8 +93,8 @@ map.once("load", () => { recreate(); window.__drawingReady = true; });
 document.querySelector("#import").onclick = () => tools.setFeatures(sample);
 document.querySelector("#export").onclick = () => { log.textContent = JSON.stringify({ type: "FeatureCollection", features: adapter.getFeatures() }, null, 2); };
 document.querySelector("#reload").onclick = () => map.setStyle(structuredClone(style));
-document.querySelector("#destroy").onclick = () => { cancelPendingDelete(); tools.destroy(); adapter.destroy(); updateStatus(); };
+document.querySelector("#destroy").onclick = () => { cancelPendingDelete(); window.__drawing?.objectTools?.destroy(); tools.destroy(); adapter.destroy(); updateStatus(); };
 document.querySelector("#recreate").onclick = recreate;
 document.querySelector("#edit-object").onclick = () => { if (adapter.beginEdit()) { const style = adapter.getFeatureStyle(); fillPicker.setValue(style.fill || { r: 80, g: 184, b: 255, a: .22 }); strokePicker.setValue(style.stroke || "#50b8ff"); } };
 document.querySelector("#apply-style").onclick = () => { const state = adapter.getState(); adapter.updateFeature(state.selectedFeatureId, { style: { fill: fillPicker.getValue(), stroke: strokePicker.getValue() } }, { sessionId: state.editSession?.id }); };
-window.addEventListener("pagehide", () => { cancelPendingDelete(); tools?.destroy(); adapter?.destroy(); map.remove(); }, { once: true });
+window.addEventListener("pagehide", () => { cancelPendingDelete(); window.__drawing?.objectTools?.destroy(); tools?.destroy(); adapter?.destroy(); map.remove(); }, { once: true });
