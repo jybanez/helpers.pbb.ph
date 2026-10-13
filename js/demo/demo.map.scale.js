@@ -1,0 +1,15 @@
+import { uiLoader } from '../ui/ui.loader.js?v=0.21.310';
+if (new URLSearchParams(location.search).has('bundle')) uiLoader.setPreferBundles(true);
+const create = await uiLoader.get('ui.map.scale');
+const map = new maplibregl.Map({ container: 'map', attributionControl: false, center: [123.8854, 10.3157], zoom: 12, style: { version: 8, sources: {}, layers: [{id:'background',type:'background',paint:{'background-color':'#20344a'}}] } });
+let scale = create({ map }), offset = 0;
+const status = text => { document.querySelector('#status').textContent = text; };
+document.querySelector('#zoom-in').onclick = () => map.zoomIn();
+document.querySelector('#zoom-out').onclick = () => map.zoomOut();
+document.querySelector('#tilt').onclick = () => map.easeTo({pitch:map.getPitch() ? 0 : 50,bearing:31});
+document.querySelector('#offset').onclick = () => { offset = offset ? 0 : 64; scale.update({offset}); status(`Overlay clearance: ${offset}px`); };
+document.querySelector('#destroy').onclick = () => { scale.destroy(); status('Scale destroyed.'); };
+document.querySelector('#recreate').onclick = () => { scale.destroy(); scale = create({map,offset}); window.__scaleDemo.scale = scale; status('Scale recreated.'); };
+window.__scaleDemo = {map,scale,create};
+window.addEventListener('pagehide', () => { scale.destroy(); map.remove(); }, {once:true});
+status('Ready. Pan or zoom the map.');

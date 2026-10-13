@@ -1,0 +1,51 @@
+{
+  "component": "ui.map.scale",
+  "factory": "createMapScale",
+  "componentRevision": "0.21.310",
+  "mainUiBundleRevision": "0.21.310",
+  "mapEngineVersion": "4.6.0",
+  "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
+  "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
+  "artifacts": [
+    {
+      "path": "js/ui/ui.map.scale.js",
+      "sha256": "38827af7162c7ecae580ee35c46703bf3f2c9efbe7c5c7bfe6f983cf2d6fb1a0"
+    },
+    {
+      "path": "css/ui/ui.map.scale.css",
+      "sha256": "e922095f3fe62645057096773752ecece66f4763cb0beace8d516bf4668e9317"
+    },
+    {
+      "path": "js/ui/ui.loader.js",
+      "sha256": "488ff795e961aa40e4b1cb6c5b92fb136702e33d6e210a0b29b69d03202fa248"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "sha256": "60624759b60899a83eba623ed9b531b81b36c5409de77ee030b13497baf09a55"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "sha256": "6aa8ecde68b789dfb9c6e436d898afc9756d7cb3b4eae60703e6ebb28950c3d0"
+    },
+    {
+      "path": "demos/demo.map.scale.html",
+      "sha256": "afb91720cb0c63beabcb65434b7422e8afe4e9000fd1617ac49d8027b0e7374b"
+    },
+    {
+      "path": "js/demo/demo.map.scale.js",
+      "sha256": "cbc2965525ca10205a18c3d472531c00b0393d7dc4e97e563420015388b4ac43"
+    },
+    {
+      "path": "docs/map-scale.md",
+      "sha256": "65039ae1d905e1dae8c546774d751e59ec12ba39fe5d27f37100496be4cc2a96"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.js",
+      "sha256": "7912439cb42081c0da576f2857368a80fc3bd16f9f0f154179c5c18d4c1271fd"
+    },
+    {
+      "path": "vendor/maplibre/maplibre-gl.css",
+      "sha256": "576b085fdd9487a65a19215328c1e086c07ce5bf6da09b666b3806d3d008dae9"
+    }
+  ]
+}

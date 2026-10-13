@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Map Scale Demo</title>
+<link rel="stylesheet" href="../css/demo/demo.shell.css">
+<link rel="stylesheet" href="../vendor/maplibre/maplibre-gl.css">
+<style>
+body{margin:0;padding:24px;background:var(--demo-bg,var(--ui-bg,#0c1017));color:var(--demo-text,var(--ui-text,#d7e0f4));font-family:var(--ui-font,system-ui)}.page{max-width:1180px;margin:auto;display:grid;gap:14px}.panel{background:var(--demo-panel-bg,var(--ui-bg-soft,#111826));border:1px solid var(--demo-border,var(--ui-border,#263146));border-radius:10px;padding:14px}.muted{font-size:13px;color:var(--demo-muted,var(--ui-muted,#9fb2d8))}#map{height:440px;border-radius:8px}nav{display:flex;flex-wrap:wrap;gap:8px}button{font:inherit;padding:6px 10px}a{color:inherit}@media(max-width:500px){body{padding:10px}#map{height:400px}}
+</style>
+<script src="../vendor/maplibre/maplibre-gl.js"></script>
+<script type="module" src="../js/demo/demo.shell.js"></script>
+</head><body class="demo-shell-sidebar"><main class="page">
+<section class="panel"><a href="index.html">← Back to Home</a><h1>Map scale</h1><p class="muted">A compact metric scale updates as you move, zoom or resize the map. It requires no location permission.</p><p class="muted">This distance is a local reference at the left edge, halfway down the viewport. Tilt and terrain can vary scale across the view.</p><a href="?bundle">Bundled demo</a> · <a href="../docs/map-scale.md">Component API</a></section>
+<section class="panel"><div id="map" aria-label="Scale demonstration map"></div></section>
+<section class="panel"><nav aria-label="Scale demo controls"><button id="zoom-in">Zoom in</button><button id="zoom-out">Zoom out</button><button id="tilt">Toggle tilt</button><button id="offset">Toggle overlay clearance</button><button id="destroy">Destroy scale</button><button id="recreate">Recreate scale</button></nav><p id="status" role="status">Loading…</p></section>
+</main><script type="module" src="../js/demo/demo.map.scale.js?v=0.21.310"></script></body></html>

@@ -1,0 +1,13 @@
+# Map scale
+
+Load `ui.map.scale` through the canonical UI loader and call `createMapScale({map, maplibre, offset})`. `map` is an existing MapLibre map. `maplibre` defaults to the installed global `maplibregl`; this component does not download the engine or request geolocation. Default presentation is compact metric m/km, maximum width 100px, bottom-left. There are no end-user unit settings.
+
+The complete installed MapLibre 4.6.0 `ScaleControl` owns distance calculation, rounding, labels and move updates. Helper wraps its supported `onAdd`, `onRemove` and `setUnit` APIs; it uses `setUnit('metric')` on map resize because this engine version only subscribes its control to move. No vendor patch or application distance math is required.
+
+MapLibre samples two unprojected positions at `[0, containerHeight/2]` and `[100, containerHeight/2]`, then uses their geographic distance. The label is therefore a **local reference at the left edge, halfway down the viewport**, even though the control appears at bottom-left. It is not a uniform metres-per-pixel assertion over tilted, perspective or terrain views and does not measure terrain surface/path distance. Helper leaves that calculation unchanged. Terrain itself requires app-supplied cached/available data; the scale makes no terrain availability claim.
+
+The return value supports `getElement()`, `getSize()` (rendered width/height), `update({offset})` and idempotent `destroy()`. Offset is a finite nonnegative CSS-pixel clearance added above the bottom safe-area margin; invalid updates throw before changing placement. Use it to reserve space for app toasts/overlays. The control participates in MapLibre's native bottom-left control stack; Helper does not detect unrelated overlay rectangles or change other controls. CSS uses canonical `--ui-bg-soft`, `--ui-text`, `--ui-font` tokens and left/bottom safe-area insets. The app should update offset as overlay occupancy changes, and call `map.resize()` when changing its container layout.
+
+Only one Helper scale may exist on a map; duplicate creation throws without replacing the existing control. Destroy removes native and Helper listeners/control DOM; map removal also disposes it. A new instance can be created after destroy. The accessible image label includes the current distance and reference location; it is noninteractive, not a focus stop or noisy live announcement on every camera frame.
+
+Bundle consumers retain exactly `ui.loader.js`, `helpers.ui.bundle.min.js` and `helpers.ui.bundle.min.css` for Helper runtime with bundle preference enabled. The existing MapLibre engine/CSS are separate app-owned prerequisites. No additional modular Helper requests are necessary. See the [demo](../demos/demo.map.scale.html) and its `?bundle` version.
