@@ -4,8 +4,8 @@
   "icon": "map.ruler",
   "componentRevision": "0.21.314",
   "cssRevision": "0.21.312",
-  "mainUiBundleRevision": "0.21.314",
-  "iconsAndGameRevision": "0.21.312",
+  "mainUiBundleRevision": "0.21.315",
+  "iconsAndGameRevision": "0.21.315",
   "mapEngineVersion": "4.6.0",
   "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
   "algorithm": "SHA256 of UTF-8 text normalized CRLF to LF",
@@ -24,19 +24,19 @@
     },
     {
       "path": "js/ui/ui.icons.js",
-      "sha256": "5882f0949d85cc29b9b5fadce10cd9f0519a2a3e2f897782e7e87049d565ca24"
+      "sha256": "fc0b140954399ec916d986e716e1b858e1ac90e9e9b6390a280632424968b472"
     },
     {
       "path": "js/ui/ui.icons.catalog.js",
-      "sha256": "f64e6f7d512db53b0e82e57433603b2ae11b9765dd883e7dc8c04f1f5c2b0e7c"
+      "sha256": "1f33c2e1935dc343020293d3e6a224f17bcc8ce2f6e15bc890c458207ef66768"
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "df288976e29df3bee51cf4fc5df4aa81f02c56da4672538506311cf9564e7a16"
+      "sha256": "b98c80a2752072d5187125307e71dc60fe5833c9e919a7a3b3f175c3dfb66a41"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "a65fc708266039b94ce185ab6140d261ffc897b769cc941ec68f38531116130c"
+      "sha256": "71950b926fd85170094bb8bda415d23ec469e72b091bf960e813938bfca2ef47"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
@@ -44,7 +44,7 @@
     },
     {
       "path": "dist/helpers.game.bundle.min.js",
-      "sha256": "f50ce7e191bf318f226cf07013950be62d26b839e1a3b6241a6f98aa7fde1a6e"
+      "sha256": "3e0e91c71ad0338db45952d0dd138910cea7affa51835b47830c9ad3acc5f29a"
     },
     {
       "path": "demos/demo.map.ruler.html",

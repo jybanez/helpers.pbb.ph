@@ -1,0 +1,13 @@
+import './generate.map.ruler.runtime.mjs';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const sha256 = path => crypto.createHash('sha256').update(fs.readFileSync(path, 'utf8').replaceAll('\r\n', '\n')).digest('hex');
+const rulerPath = 'docs/map-ruler-runtime.json', ruler = JSON.parse(fs.readFileSync(rulerPath));
+ruler.mainUiBundleRevision = '0.21.315'; ruler.iconsAndGameRevision = '0.21.315';
+fs.writeFileSync(rulerPath, JSON.stringify(ruler, null, 2) + '\n');
+const drawingPath = 'docs/maplibre-drawing-runtime.json', drawing = JSON.parse(fs.readFileSync(drawingPath));
+drawing.pinRendererRevision = '0.21.315';
+if (!drawing.artifacts.some(a => a.path === 'js/ui/ui.map.pin.js')) drawing.artifacts.push({ path: 'js/ui/ui.map.pin.js', sha256: sha256('js/ui/ui.map.pin.js') });
+fs.writeFileSync(drawingPath, JSON.stringify(drawing, null, 2) + '\n');
+const paths = ['js/ui/ui.map.pin.js', 'js/ui/ui.map.drawing.maplibre.js', 'js/ui/ui.map.drawing.js', 'js/ui/ui.icons.js', 'js/ui/ui.icons.catalog.js', 'js/ui/ui.loader.js', 'dist/helpers.ui.bundle.min.js', 'dist/helpers.ui.bundle.min.css', 'dist/helpers.game.bundle.min.js', 'demos/demo.map.drawing.html', 'js/demo/demo.map.drawing.js', 'docs/map-pin.md'];
+fs.writeFileSync('docs/map-pin-runtime.json', JSON.stringify({ component: 'ui.map.pin', factory: 'createMapPinRenderer', adapter: 'createMapLibreDrawingAdapter', componentRevision: '0.21.315', mainUiBundleRevision: '0.21.315', iconsAndGameRevision: '0.21.315', drawingCssRevision: '0.21.311', shapesRevision: '0.21.309', algorithm: 'SHA256 of UTF-8 text normalized CRLF to LF', mapEngineVersion: '4.6.0', artifacts: paths.map(path => ({ path, sha256: sha256(path) })) }, null, 2) + '\n');
