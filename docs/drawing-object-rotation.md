@@ -76,3 +76,6 @@ its independent construction tools. `?toggle` uses immediate edits; `?bundle=tog
 exercises the delivered bundle. Automated mobile coverage uses desktop Chromium
 at a mobile viewport width; physical touch, Safari and assistive technology
 require separate verification.
+## Selected-object row alignment
+
+The complete object-tools component centers each rendered row within its measured width. Move/Rotate is centered above Fill/Stroke/Delete. Use the existing `chrome:false` option to omit component background/border/padding while retaining individual button styling. An application-owned host background must be removed by the application. Point/Circle still omit the entire interaction row, and `getSize()` reflects actual rendered dimensions. Construction toolbar alignment is unchanged. Presentation CSS revision311; adapter/geometry contracts remain309.

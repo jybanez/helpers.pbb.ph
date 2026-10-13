@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.309";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.311";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createObjectTools = await uiLoader.get("ui.map.drawing.object");
@@ -84,7 +84,7 @@ function recreate() {
     updateStatus();
   });
   adapter.on("statechange", updateStatus);
-  const objectTools = createObjectTools(objectHost, {adapter, onAction(action) { if (["fill","stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }});
+  const objectTools = createObjectTools(objectHost, {adapter, chrome:false, onAction(action) { if (["fill","stroke"].includes(action)) document.querySelector(`#${action}-color input`)?.focus(); }});
   window.__drawing = { map, adapter, tools, objectTools, events, sample, style, listenerBaseline, get deletionPending() { return !!pendingDelete; } };
   updateStatus();
 }
