@@ -24,7 +24,7 @@ async page => {
       await page.evaluate(transition=>{const {map}=__drawing;if(transition==='camera')map.jumpTo({center:[123.88721598482132,10.316162060901429],zoom:16,pitch:60,bearing:31});else if(transition==='exaggeration')map.setTerrain({source:'real-terrain',exaggeration:.8});else if(transition==='terrain-off')map.setTerrain(null);else if(transition==='terrain-on')map.setTerrain({source:'real-terrain',exaggeration:1.6});else map.setStyle(map.getStyle(),{diff:transition==='diff-style'});},transition);
       await page.waitForFunction(()=>__drawing.adapter.getPinBounds().length===1);
       await page.evaluate(()=>new Promise(resolve=>{let n=0;const tick=()=>{if(++n===20){__drawing.map.off('render',tick);resolve();}else __drawing.map.triggerRepaint();};__drawing.map.on('render',tick);__drawing.map.triggerRepaint();}));
-      const check=await page.evaluate(()=>{const {map,adapter}=__drawing,b=adapter.getPinBounds()[0],r=__realReference.getElement().getBoundingClientRect(),c=map.getCanvas().getBoundingClientRect();return {delta:Math.hypot(b.tip.x-(r.x+.5-c.x),b.tip.y-(r.y+.5-c.y)),height:b.bottom-b.top};});
+      const check=await page.evaluate(()=>{const {map,adapter}=__drawing,b=adapter.getPinBounds()[0],r=__realReference.getElement().getBoundingClientRect(),c=map.getCanvas().getBoundingClientRect();return {delta:Math.hypot(b.tip.x-(r.x+.5-c.x),b.tip.y-(r.y+.5-c.y)),height:Math.max(b.bottom-b.top,b.right-b.left)};});
       if(check.delta>2||Math.abs(check.height-32)>.5)throw Error(transition+': '+JSON.stringify(check));
     }
     result.terrainErrors=await page.evaluate(()=>__realTerrainErrors);

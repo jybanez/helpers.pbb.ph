@@ -2,8 +2,8 @@
   "component": "ui.map.pin",
   "factory": "createMapPinRenderer",
   "adapter": "createMapLibreDrawingAdapter",
-  "componentRevision": "0.21.317",
-  "mainUiBundleRevision": "0.21.317",
+  "componentRevision": "0.21.318",
+  "mainUiBundleRevision": "0.21.318",
   "iconsAndGameRevision": "0.21.315",
   "drawingCssRevision": "0.21.311",
   "shapesRevision": "0.21.309",
@@ -12,11 +12,11 @@
   "artifacts": [
     {
       "path": "js/ui/ui.map.pin.js",
-      "sha256": "79c7c47f41e1b4237ab45ebc1ad841d5ba30c616d711ca60478f07203d39b23b"
+      "sha256": "8f214f13e078dd737cda56f717f49b6d942ccc49aa5989f25c766fb4cae745a6"
     },
     {
       "path": "js/ui/ui.map.drawing.maplibre.js",
-      "sha256": "ab29cc201cc7722d9a667a86133ac6fe8dd129fbe3cdeabbee7cec9634c86d6e"
+      "sha256": "a5997c73a75046b96fe6d63cff5d0918dbca5289e97d514d6aea489207e7a995"
     },
     {
       "path": "js/ui/ui.map.drawing.js",
@@ -32,11 +32,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "5660b135ab1871bf7dd979e70ac339f87933a433ce17dec59af506b0c8f043db"
+      "sha256": "165a31830263dd76d6a9bae2207f559fda831a928c24ea474fc0fe547c16efcf"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "b745839414004c3739cd4d1922fc39b40c89e7fdfaccf4779ab892777c9eb5a8"
+      "sha256": "475fa53c62af615633fa8a5f47503de01f95e2c22c1e57d4b0f46de39a7ac42b"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
@@ -48,15 +48,15 @@
     },
     {
       "path": "demos/demo.map.drawing.html",
-      "sha256": "2d468c3b1fd6dee53e366d845090336cafbe5df4c3c6447310d2f886a3bb4ec6"
+      "sha256": "40db7fb88c54d70ebcf9c985f822d5340432ed1f8e34b19389583e8142673852"
     },
     {
       "path": "js/demo/demo.map.drawing.js",
-      "sha256": "2c5cf900953611b154b161219141f38e8a43077fe8bdde0484a715efc46de4f5"
+      "sha256": "2dab6cdda2d140cf4a15aa49e9d7b52d3f3d7e1fdad3f6469397eb3ced2afa47"
     },
     {
       "path": "docs/map-pin.md",
-      "sha256": "23caf2786ced470fe497c8b949c28b7cbfaecb2ac556220681b48d8ae3479604"
+      "sha256": "5694bc086a37a9ebbb163782493d42dbea394b0227ed09fb064f0a35af95723d"
     }
   ]
 }
