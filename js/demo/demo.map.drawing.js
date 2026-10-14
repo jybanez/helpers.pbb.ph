@@ -1,4 +1,4 @@
-import { uiLoader } from "../ui/ui.loader.js?v=0.21.317";
+import { uiLoader } from "../ui/ui.loader.js?v=0.21.318";
 if (new URLSearchParams(location.search).has("bundle")) uiLoader.setPreferBundles(true);
 const [createTools, createAdapter] = await Promise.all([uiLoader.get("ui.map.drawing"), uiLoader.get("ui.map.drawing.maplibre")]);
 const createObjectTools = await uiLoader.get("ui.map.drawing.object");
@@ -6,7 +6,7 @@ const objectHost = document.createElement("div"); objectHost.id = "object-tools"
 const createActionModal = await uiLoader.get("ui.action.modal");
 const createColorPicker = await uiLoader.get("ui.color.picker");
 const style = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#20344a" } }] };
-const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, attributionControl: false });
+const map = new maplibregl.Map({ container: "map", style, center: [123.8854, 10.3157], zoom: 12, maxPitch: 85, attributionControl: false });
 map.getContainer().appendChild(objectHost);
 Object.assign(objectHost.style,{position:"absolute",right:"8px",bottom:"8px",zIndex:"2"});
 const status = document.querySelector("#status"), log = document.querySelector("#log");

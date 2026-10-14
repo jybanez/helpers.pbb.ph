@@ -28,9 +28,10 @@ async page => {
   await page.mouse.up();
   await page.evaluate(() => { const f = __drawing.adapter.getFeatures()[0]; if (f.geometry.coordinates[2] !== 37 || !f.properties.altitudeMetadata.keep) throw Error('native altitude preservation'); });
   await page.evaluate(() => { const a = __drawing.adapter; if (a.getState().dragging || JSON.stringify(a.getFeatures()[0].geometry.coordinates) === JSON.stringify(__pinAnchor)) throw Error('native pin drag'); a.undo(); if (JSON.stringify(a.getFeatures()[0].geometry.coordinates) !== JSON.stringify(__pinAnchor)) throw Error('pin undo'); a.redo(); });
-  for (const [zoom, pitch, bearing] of [[5, 0, 0], [12, 50, 31], [8, 60, 85], [8, 80, 150]]) {
+  for (const [zoom, pitch, bearing] of [[5, 0, 0], [12, 45, 31], [8, 85, 0], [8, 85, 150], [8, 0, 85]]) {
     await page.evaluate(({ zoom, pitch, bearing }) => { const { map, adapter } = __drawing; map.jumpTo({ center: adapter.getFeatures()[0].geometry.coordinates, zoom, pitch, bearing }); }, { zoom, pitch, bearing });
-    await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0], p = __drawing.map.project(__drawing.adapter.getFeatures()[0].geometry.coordinates); return b && Math.abs(b.bottom - b.top - 32) < .5 && Math.hypot(b.tip.x - p.x, b.tip.y - p.y) < .5; });
+    await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0], p = __drawing.map.project(__drawing.adapter.getFeatures()[0].geometry.coordinates); return b && Math.abs(Math.max(b.bottom - b.top, b.right - b.left) - 32) < .5 && Math.hypot(b.tip.x - p.x, b.tip.y - p.y) < .5; });
+    await page.evaluate(({pitch}) => { const b=__drawing.adapter.getPinBounds()[0], ratio=(b.right-b.left)/(b.bottom-b.top); if(Math.abs(__drawing.map.getPitch()-pitch)>.01)throw Error('requested pitch not reached');if(pitch===0&&Math.abs(ratio-1)>.05)throw Error('top view not circular');if(pitch===85&&ratio>.8)throw Error('side view not tapered profile'); },{pitch});
     await page.locator('.maplibregl-canvas').screenshot({ path: `output/playwright/pin-${kind}-${zoom}-${pitch}-${bearing}.png` });
   }
   await page.evaluate(async () => {
@@ -38,7 +39,7 @@ async page => {
     const pin = adapter.getFeatures()[0]; pin.id = 0; pin.properties.ownerMetadata = { keep: true };
     adapter.setFeatures([pin, { type: 'Feature', id: 'plain', properties: {}, geometry: { type: 'Point', coordinates: [pin.geometry.coordinates[0] + 5, pin.geometry.coordinates[1]] } }]);
     adapter.setMode('select'); map.fire('click', { point: map.project(pin.geometry.coordinates), lngLat: map.getCenter() });
-    const loader = await import('/js/ui/ui.loader.js?v=0.21.317'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
+    const loader = await import('/js/ui/ui.loader.js?v=0.21.318'); if (location.search.includes('bundle')) loader.uiLoader.setPreferBundles(true);
     const create = await loader.uiLoader.get('ui.map.pin'); window.__readonlyPin = create(map, { id: 'readonly-pin-test', features: [pin] });
     const saved = adapter.getFeatures(); adapter.setFeatures(saved); if (saved[0].id !== 0 || !saved[0].properties.ownerMetadata.keep || saved[1].properties.helperDrawingKind) throw Error('zero id/roundtrip/plain distinction');
     map.setStyle({ version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#20344a' } }] }, { diff: false });
@@ -75,7 +76,7 @@ async page => {
   await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0], reference = __pinTipReference.getElement().getBoundingClientRect(), c = __drawing.map.getCanvas().getBoundingClientRect(); return b && Math.hypot(b.tip.x - (reference.x + .5 - c.x), b.tip.y - (reference.y + .5 - c.y)) < 2; });
   await page.evaluate(() => __pinTipReference.remove());
   stage = 'terrain bounds';
-  await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0]; return b && Math.abs(b.bottom - b.top - 32) < .5; });
+  await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0]; return b && Math.abs(Math.max(b.bottom - b.top, b.right - b.left) - 32) < .5; });
   await page.locator('.maplibregl-canvas').screenshot({ path: `output/playwright/pin-${kind}-terrain.png` });
   await page.evaluate(() => { const { map } = __drawing; map.setTerrain(null); const style = map.getStyle(); style.layers = style.layers.filter(l => !l.id.startsWith('helper-drawing-')); for (const id of Object.keys(style.sources)) if (id.startsWith('helper-drawing-')) delete style.sources[id]; map.setStyle(style); });
   stage = 'diff restoration';
