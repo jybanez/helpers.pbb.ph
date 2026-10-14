@@ -1,5 +1,7 @@
 # Upright Pin perspective correction
 
+Alfred request10531 found that the first pitch85/bearing0 screenshot clipped the model despite the early bounds check. The fixture now scrolls the canvas fully into view, waits20 explicit render frames after each public camera `jumpTo`, retains pitch/shape/size/anchor assertions, and requires the complete projected bounds to have24px clearance from every canvas edge before capturing each image. This is a fixture/evidence-only successor; production geometry, camera behavior and runtime assets remain unchanged.
+
 Owner message 10524 and Alfred request 10525 supersede the camera-facing visual design accepted previously. Downloaded and inspected all three owner screenshots. Earlier sizing/anchoring checks proved that implementation, but did not establish the intended natural upright perspective.
 
 The procedural teardrop is now a circular lathed volume along map-space elevation, with its tip at the geographic terrain anchor and a recessed neutral circular top face/rim. Removed camera heading rotation and half-pitch tilt. Model and lighting remain fixed in map space. Top-down pitch 0 shows a circular head; intermediate pitch reveals depth; near 85 shows the inverted teardrop profile. The top rim foreshortens naturally and may be mostly hidden side-on.

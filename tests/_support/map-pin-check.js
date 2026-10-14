@@ -30,8 +30,11 @@ async page => {
   await page.evaluate(() => { const a = __drawing.adapter; if (a.getState().dragging || JSON.stringify(a.getFeatures()[0].geometry.coordinates) === JSON.stringify(__pinAnchor)) throw Error('native pin drag'); a.undo(); if (JSON.stringify(a.getFeatures()[0].geometry.coordinates) !== JSON.stringify(__pinAnchor)) throw Error('pin undo'); a.redo(); });
   for (const [zoom, pitch, bearing] of [[5, 0, 0], [12, 45, 31], [8, 85, 0], [8, 85, 150], [8, 0, 85]]) {
     await page.evaluate(({ zoom, pitch, bearing }) => { const { map, adapter } = __drawing; map.jumpTo({ center: adapter.getFeatures()[0].geometry.coordinates, zoom, pitch, bearing }); }, { zoom, pitch, bearing });
+    await page.locator('.maplibregl-canvas').scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise(resolve => { const map=__drawing.map; let frames=0; const rendered=()=>{if(++frames===20){map.off('render',rendered);resolve();}else map.triggerRepaint();};map.on('render',rendered);map.triggerRepaint(); }));
     await page.waitForFunction(() => { const b = __drawing.adapter.getPinBounds()[0], p = __drawing.map.project(__drawing.adapter.getFeatures()[0].geometry.coordinates); return b && Math.abs(Math.max(b.bottom - b.top, b.right - b.left) - 32) < .5 && Math.hypot(b.tip.x - p.x, b.tip.y - p.y) < .5; });
     await page.evaluate(({pitch}) => { const b=__drawing.adapter.getPinBounds()[0], ratio=(b.right-b.left)/(b.bottom-b.top); if(Math.abs(__drawing.map.getPitch()-pitch)>.01)throw Error('requested pitch not reached');if(pitch===0&&Math.abs(ratio-1)>.05)throw Error('top view not circular');if(pitch===85&&ratio>.8)throw Error('side view not tapered profile'); },{pitch});
+    await page.evaluate(() => { const {map,adapter}=__drawing,b=adapter.getPinBounds()[0],c=map.getCanvas();if(!b||b.left<24||b.top<24||b.right>c.clientWidth-24||b.bottom>c.clientHeight-24)throw Error('complete model not framed: '+JSON.stringify(b)); });
     await page.locator('.maplibregl-canvas').screenshot({ path: `output/playwright/pin-${kind}-${zoom}-${pitch}-${bearing}.png` });
   }
   await page.evaluate(async () => {
