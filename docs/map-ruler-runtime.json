@@ -4,7 +4,7 @@
   "icon": "map.ruler",
   "componentRevision": "0.21.314",
   "cssRevision": "0.21.312",
-  "mainUiBundleRevision": "0.21.318",
+  "mainUiBundleRevision": "0.21.319",
   "iconsAndGameRevision": "0.21.315",
   "mapEngineVersion": "4.6.0",
   "mapEngineOwnership": "Existing app prerequisite; not bundled by Helper",
@@ -32,11 +32,11 @@
     },
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "165a31830263dd76d6a9bae2207f559fda831a928c24ea474fc0fe547c16efcf"
+      "sha256": "e1e4539c46b4fc3e6d87c8943cf3dbaae97b0daeb74cb000761faaa2ab5419e7"
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "475fa53c62af615633fa8a5f47503de01f95e2c22c1e57d4b0f46de39a7ac42b"
+      "sha256": "09932264129695772b8d747f64713ba77387601781e6c29b707eeb0dd2dfcd97"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",

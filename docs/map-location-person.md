@@ -116,10 +116,12 @@ or per-view ground foreshortening normalization. `sizePx` applies only in screen
 mode. Terrain offset, world bearing, device heading and exact base anchor are
 preserved in both modes.
 
-`minSizePx`/`maxSizePx` bound the larger width/height of the projected 3D bounding
+`minSizePx`/`maxSizePx` bound the larger width/height of the projected actual mesh
 envelope in **CSS pixels**, default 8/64; validate 4 <= min <= max <= 128. The
-envelope conservatively includes the person, base and available heading arrow,
-so visible painted pixels may occupy less space. Bounds continuously rescale
+envelope includes exact unique person/base positions and the direction arrow only
+when heading is available. Equal bounds (for example 34/34) keep that full mesh
+extent constant across camera distance and orientation. Rasterization and natural
+occlusion can affect painted pixel coverage; this is not an occlusion query. Bounds continuously rescale
 the model; strict near/far ordering becomes a plateau when either bound is
 reached. Near-plane intersections reduce scale toward the upper bound where
 possible. A behind-camera/near-plane anchor or zero-size viewport skips rendering
@@ -133,7 +135,7 @@ measurement; 0 for legacy screen mode). View diagnostics are read through
 `getState()`; frame rendering does not emit repeated callbacks or repaint itself.
 `setScaleMode` validates before updating, requests one repaint, and is inert after
 destroy. Bounds/world height are construction options. Integration uses
-`ui.map.location.person.js?v=0.21.282` and main UI bundle revision 0.21.282;
+`ui.map.location.person.js?v=0.21.319` and main UI bundle revision 0.21.319;
 marker CSS remains 0.21.278. Deliver the loader and generated bundle together.
 `docs/map-person-perspective-runtime.json` lists the coherent artifacts and SHA-256
 checksums (UTF-8, line endings normalized to LF for transport verification).
