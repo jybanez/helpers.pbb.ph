@@ -1,18 +1,18 @@
 {
   "component": "ui.map.location.person",
-  "componentRevision": "0.21.282",
-  "mainBundleRevision": "0.21.282",
+  "componentRevision": "0.21.319",
+  "mainBundleRevision": "0.21.319",
   "componentCssRevision": "0.21.278",
   "maplibre": "4.6.x",
   "checksumEncoding": "UTF-8 with CRLF normalized to LF",
   "artifacts": [
     {
       "path": "js/ui/ui.loader.js",
-      "sha256": "011cb779d1e735b69beb8901e9b39d3217f26b52bafd8c749b42f9ca098a4a58"
+      "sha256": "e1e4539c46b4fc3e6d87c8943cf3dbaae97b0daeb74cb000761faaa2ab5419e7"
     },
     {
       "path": "js/ui/ui.map.location.person.js",
-      "sha256": "1b108068715f19c1e0099a267293fb538217687a1ceebf7889d3b1dbe87307e2"
+      "sha256": "64ebdc0e9cd277400d687abca7c9477945195e328f7cc3ea8fa1b248bd80b58f"
     },
     {
       "path": "js/ui/ui.map.location.person.renderer.js",
@@ -24,11 +24,11 @@
     },
     {
       "path": "dist/helpers.ui.bundle.min.js",
-      "sha256": "4b6d7ccbcd68cebaeb66003ecf783826de966dc56491dc792f82129aa28100a2"
+      "sha256": "09932264129695772b8d747f64713ba77387601781e6c29b707eeb0dd2dfcd97"
     },
     {
       "path": "dist/helpers.ui.bundle.min.css",
-      "sha256": "e0f5d71aebb6fb04019b653f9f0ba29829b4d7998281da6db8836ffb4b9de7b0"
+      "sha256": "596045519e2f7ca36941565eee5b3d0434dcfbdf6784042d6db89659c3675454"
     }
   ]
 }
