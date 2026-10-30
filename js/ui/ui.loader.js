@@ -152,13 +152,13 @@ export const DEFAULT_COMPONENT_REGISTRY = {
     export: "createWindowManager",
   },
   "ui.modal": {
-    js: `./ui.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
+    js: "./ui.modal.js?v=0.21.320",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css"],
     deps: [],
     export: "createModal",
   },
   "ui.action.modal": {
-    js: `./ui.modal.js?v=${UI_OVERLAY_ROUTING_REV}`,
+    js: "./ui.modal.js?v=0.21.320",
     css: [UI_TOKENS_CSS, UI_COMPONENTS_CSS, "../../css/ui/ui.modal.css"],
     deps: ["ui.modal"],
     export: "createActionModal",

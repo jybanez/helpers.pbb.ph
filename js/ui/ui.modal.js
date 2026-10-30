@@ -210,6 +210,10 @@ export function createModal(options = {}) {
   }
 
   function setSlot(target, value) {
+    // Busy/title updates must not detach an unchanged subtree (and lose scroll/focus).
+    if (value instanceof HTMLElement && target.childNodes.length === 1 && target.firstChild === value) {
+      return;
+    }
     clearNode(target);
     appendSlotValue(target, value);
   }
