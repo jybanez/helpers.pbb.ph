@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert = (ok, msg) => { if (!ok) throw Error(msg); };
+const tick = () => new Promise(r => setTimeout(r, 40));
+try {
+  const bundled = new URLSearchParams(location.search).has('bundle');
+  const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: bundled });
+  const create = await loader.get('ui.tree');
+  if (bundled) assert(create === window.__PBB_HELPER_UI_BUNDLE__?.['./ui.tree.js']?.createTree, 'bundle factory');
+  const host = document.createElement('div'); document.body.append(host);
+  const leaves = Array.from({ length: 80 }, (_, i) => ({ id: String(i), label: `Folder ${i}` }));
+  let selections = 0;
+  const tree = create(host, leaves, { enableVirtualization: true, virtualHeight: 240, virtualRowHeight: 40, onSelect: () => selections++ });
+  const vp = () => host.querySelector('.ui-tree-viewport');
+  const scroll = async value => { vp().scrollTop = value; vp().dispatchEvent(new Event('scroll')); await tick(); return vp().scrollTop; };
+  const same = value => assert(Math.abs(vp().scrollTop - value) < 1, `scroll preserved: ${vp().scrollTop} vs ${value}`);
+  const position = await scroll(521.538);
+  [...host.querySelectorAll('.ui-tree-label')].find(el => el.textContent === 'Folder 20').click();
+  same(position); await tick(); same(position);
+  assert(tree.getState().selectedId === '20' && selections === 1, 'selection callback and state');
+  // Capture current viewport even before its asynchronous scroll event fires.
+  vp().scrollTop = 733.5; const immediate = vp().scrollTop;
+  tree.setSelected('25'); same(immediate);
+  assert(tree.getState().selectedId === '25' && selections === 1, 'programmatic selection semantics');
+  tree.update(leaves); same(immediate);
+  assert(host.querySelectorAll('.ui-tree-item').length < 80, 'window remains virtual');
+  assert([...host.querySelectorAll('.ui-tree-label')].some(el => el.textContent === 'Folder 25'), 'correct restored window');
+  const groups = [{ id: 'group', label: 'Group', children: leaves }, ...leaves.map(n => ({id: `tail-${n.id}`, label: `Tail ${n.id}`}))];
+  tree.update(groups); tree.expandAll(); await scroll(4000);
+  tree.collapseAll();
+  assert(Math.abs(vp().scrollTop - (vp().scrollHeight - vp().clientHeight)) < 1, `collapse clamps: ${vp().scrollTop} / ${vp().scrollHeight - vp().clientHeight}`);
+  const clamped = vp().scrollTop; tree.setSelected('tail-79'); same(clamped);
+  assert(!tree.getState().expanded.length, 'collapse semantics');
+  tree.update(leaves.slice(0, 2)); assert(vp().scrollTop === 0, 'short data clamps to zero');
+  tree.update([]); tree.update(leaves); assert(vp().scrollTop === 0, 'empty reset remains zero');
+  tree.update(groups, { enableVirtualization: false }); tree.expandAll(); tree.setSelected('20');
+  assert(!vp() && host.querySelectorAll('.ui-tree-item').length === 161, 'nonvirtual renders every expanded node');
+  assert(tree.getState().selectedId === '20', 'nonvirtual selection');
+  tree.collapseAll(); assert(host.querySelectorAll('.ui-tree-item').length === 81, 'nonvirtual collapse');
+  tree.destroy(); assert(!host.children.length, 'destroy');
+  document.body.dataset.status = 'pass'; document.querySelector('#results').textContent = 'PASS tree scroll and semantics';
+} catch (e) { document.body.dataset.status = 'fail'; document.querySelector('#results').textContent = e.stack; }
+</script>

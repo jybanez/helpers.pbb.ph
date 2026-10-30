@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert = (ok, msg) => { if (!ok) throw Error(msg); };
+try {
+  const bundle = new URLSearchParams(location.search).has('bundle');
+  const loader = createUiLoader(DEFAULT_COMPONENT_REGISTRY, { preferBundles: bundle });
+  const create = await loader.get('ui.action.modal');
+  const createTree = await loader.get('ui.tree');
+  const content = document.createElement('div');
+  const nested = document.createElement('div'); nested.style.cssText = 'height:120px;overflow:auto';
+  const tall = document.createElement('div'); tall.style.height = '1200px'; nested.append(tall); content.append(nested);
+  const treeHost = document.createElement('div'); content.append(treeHost);
+  const nodes = Array.from({length:80}, (_, i) => ({id:String(i),label:`Folder ${i}`}));
+  const modal = create({title:'Files', content, actions:[]}); modal.open();
+  const tree = createTree(treeHost, nodes, {enableVirtualization:true,virtualHeight:200});
+  const vp = () => treeHost.querySelector('.ui-tree-viewport');
+  nested.scrollTop = 311; vp().scrollTop = 711;
+  const expected = vp().scrollTop;
+  const parent = content.parentNode;
+  const observer = new MutationObserver(() => {}); observer.observe(parent,{childList:true});
+  modal.setBusy(true);
+  assert(!observer.takeRecords().length, 'busy true must not detach unchanged content');
+  assert(modal.isBusy() && nested.scrollTop === 311 && vp().scrollTop === expected, 'busy preserves nested scroll');
+  tree.setSelected('26'); tree.update(nodes);
+  modal.setBusy(false);
+  assert(!observer.takeRecords().length, 'busy false must not detach unchanged content');
+  assert(!modal.isBusy() && vp().scrollTop === expected && tree.getState().selectedId === '26', 'tree selection/update plus busy transition');
+  modal.setContent(content);
+  assert(!observer.takeRecords().length && nested.scrollTop === 311, 'same direct node remains mounted');
+  const other = document.createElement('div'); other.textContent='Replacement';
+  modal.setContent(other); assert(parent.firstChild === other && !content.isConnected, 'changed node replaces');
+  modal.setContent('<b>literal</b>'); assert(parent.textContent === '<b>literal</b>' && !parent.querySelector('b'), 'string remains text');
+  modal.setContent([other,' tail']); assert(parent.childNodes.length === 2 && parent.firstChild === other && parent.textContent === 'Replacement tail', 'array mounts all entries');
+  modal.setContent(other); assert(parent.childNodes.length === 1, 'extra siblings removed even for existing node');
+  let calls = 0; modal.setContent(() => { calls++; return content; }); modal.setBusy(true); modal.setBusy(false);
+  assert(calls === 3, 'function content retains reevaluation contract');
+  modal.setContent(null); assert(!parent.childNodes.length, 'null clears');
+  observer.disconnect(); tree.destroy(); modal.destroy();
+  document.body.dataset.status='pass'; document.querySelector('#results').textContent='PASS modal identity and nested tree scroll';
+} catch(e) { document.body.dataset.status='fail'; document.querySelector('#results').textContent=e.stack; }
+</script>

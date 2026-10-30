@@ -41,6 +41,11 @@ export function createTree(container, data = [], options = {}) {
     if (!container || container.nodeType !== 1) {
       return;
     }
+    // Read the live viewport even if its scroll event has not fired yet.
+    if (viewport) viewportScrollTop = viewport.scrollTop;
+    viewport = null;
+    rowsLayer = null;
+    staticHost = null;
     events.clear();
     rowEvents.clear();
     clearNode(container);
@@ -51,6 +56,7 @@ export function createTree(container, data = [], options = {}) {
     });
 
     if (!treeData.length) {
+      viewportScrollTop = 0;
       root.appendChild(createElement("p", { className: "ui-tree-empty", text: "No tree nodes." }));
       container.appendChild(root);
       return;
@@ -74,7 +80,10 @@ export function createTree(container, data = [], options = {}) {
         viewportScrollTop = viewport.scrollTop;
         renderVirtualRows();
       });
+      // Establish the scroll extent before restoring; an empty layer clamps to zero.
+      renderVirtualRows();
       viewport.scrollTop = viewportScrollTop;
+      viewportScrollTop = viewport.scrollTop;
       renderVirtualRows();
       return;
     }
