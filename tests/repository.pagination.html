@@ -1,0 +1,54 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import { createUiLoader, DEFAULT_COMPONENT_REGISTRY } from '../js/ui/ui.loader.js';
+const assert=(ok,msg)=>{if(!ok)throw Error(msg)};
+const delay=()=>new Promise(r=>setTimeout(r,30));
+const until=async test=>{for(let i=0;i<50;i++){if(test())return;await delay()}throw Error('Timed out')};
+const files=(start,n)=>Array.from({length:n},(_,i)=>({id:`f${i+start}`,name:`File ${i+start}.txt`}));
+const batch=(page,items,id=null,total=3)=>({folder:{id,name:'Files'},breadcrumbs:[{id,name:'Files'}],files:items,folders:[],pagination:{page,total_pages:total}});
+try {
+ const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')});
+ const create=await loader.get('ui.repository.picker');
+ let calls=0, pending, received;
+ const picker=create({loadFolder:()=>batch(1,files(0,25)),loadMore:args=>{calls++;received=args;return new Promise((resolve,reject)=>pending={resolve,reject})}});
+ picker.open(); await until(()=>picker.getState().status==='ready'); await delay();
+ const r=picker.refs, scroller=getComputedStyle(r.list).overflowY==='visible'?r.body:r.list;
+ assert(scroller.scrollHeight>scroller.clientHeight,'overflow fixture');
+ const file=id=>[...r.list.querySelectorAll('[data-kind=file]')].find(n=>n.dataset.id===`string:${id}`);
+ file('f0').click(); scroller.scrollTop=scroller.scrollHeight; await until(()=>calls===1);
+ const top=scroller.scrollTop;
+ file('f24').focus({preventScroll:true});
+ for(let i=0;i<10;i++)scroller.dispatchEvent(new Event('scroll'));
+ assert(calls===1 && received.pagination.page===1,'one read and current pagination');
+ assert(!r.cancel.disabled && !r.confirm.disabled,'append keeps dismissal/selection available');
+ pending.resolve(batch(2,[...files(24,26),...files(49,1)])); await until(()=>!picker.getState().loadingMore);
+ assert(r.list.querySelectorAll('[data-kind=file]').length===50,'cross-page dedup');
+ assert(scroller.scrollTop===top,'append preserves scroll');
+ assert(document.activeElement===file('f24'),'append preserves focus');
+ file('f49').click(); assert(picker.getState().selection.length===2,'selection across batches');
+ scroller.scrollTop=scroller.scrollHeight; scroller.dispatchEvent(new Event("scroll")); await until(()=>calls===2);
+ pending.reject(Error('Offline')); await until(()=>!!picker.getState().loadMoreError);
+ scroller.dispatchEvent(new Event('scroll')); await delay(); assert(calls===2,'no automatic retry');
+ assert(picker.getState().selection.length===2 && r.list.querySelectorAll('[data-kind=file]').length===50,'failure retains files/selection');
+ r.pageRetry.click(); await until(()=>calls===3); assert(received.pagination.page===2,'retry same page');
+ pending.resolve(batch(3,files(50,25))); await until(()=>!picker.getState().loadingMore);
+ scroller.scrollTop=scroller.scrollHeight; await delay(); assert(calls===3&&!picker.getState().hasMore,'last page stops');
+ picker.destroy();
+ // Initial underfilled viewport must load until full or terminal, without a scroll event.
+ let automatic=0;
+ const tiny=create({loadFolder:()=>batch(1,files(0,1)),loadMore:({pagination})=>{automatic++;return batch(pagination.page+1,files(pagination.page,1))}});
+ tiny.open(); await until(()=>tiny.getState().pagination?.page===3); assert(automatic===2,'underfilled three pages'); tiny.destroy();
+ // Stale replies cannot leak across folder, context, close or destroy boundaries.
+ for(const action of ['folder','context','close','destroy']) {
+  let late, signal;
+  const p=create({context:'old',loadFolder:({folderId})=>batch(1,files(0,25),folderId),loadMore:args=>{signal=args.signal;return new Promise(resolve=>late=resolve)}});
+  p.open();await until(()=>p.getState().status==='ready');const read=p.loadMore();
+  if(action==='folder') await p.navigate('new');
+  if(action==='context') {p.update({context:'new'});await until(()=>p.getState().status==='ready')}
+  if(action==='close') await p.close();
+  if(action==='destroy') p.destroy();
+  assert(signal.aborted,`${action} abort`);late(batch(2,[{id:'stale',name:'STALE'}]));await read;
+  assert(!p.refs.list.textContent.includes('STALE'),`${action} suppress late result`);p.destroy();
+ }
+ document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS pagination, actual scroll, dedup, selection/focus/scroll, retry, cancellation';
+}catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack}
+</script>

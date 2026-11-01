@@ -77,9 +77,7 @@ true), `loadFolder`, `onUpload`, `onClose`, and `open` (default false). Each ope
 starts a fresh selection; navigation retains it. Selection persists across folders. In the ready state, Escape first clears all
 selected files and keeps the dialog open; a subsequent Escape closes it. Cancel
 and the close button always dismiss directly. While loading or uploading, Escape
-also dismisses directly and aborts/invalidates pending work. `multiple:false` keeps one file. There is no
-remote search or server pagination contract in this version: supply appropriately
-bounded folder results. Desktop retains the 40vh scrollable list. At widths of 640px or less, the list
+also dismisses directly and aborts/invalidates pending work. `multiple:false` keeps one file. Remote search remains application-owned. Optional pagination is described below. Desktop retains the 40vh scrollable list. At widths of 640px or less, the list
 has no independent height cap or scrolling; the canonical modal body is the only
 scroll region. Short folders use the available full-height space, while long
 folders scroll beneath the fixed header/footer with canonical safe-area padding.
@@ -181,3 +179,45 @@ inline alert and call `onAttachmentError`. Helper never automatically replays an
 upload; the application must reconcile an uncertain outcome before retrying.
 
 Run `node tests/composer.paste.regression.mjs` for the source/bundle fixture.
+
+## Paginated folders (0.21.321)
+
+Provide `pagination: {page: 1, total_pages: 3}` on the initial listing and an optional
+`loadMore({folderId, pagination, signal, context})` callback. The pagination argument
+is a copy of the **current** page metadata; request `pagination.page + 1`.
+Return `{folder: {id: folderId}, files, folders, pagination}` with the next page.
+Breadcrumbs and permissions remain those from the initial folder load. Both page
+fields must be integers with `1 <= page <= total_pages`; append responses must
+advance by exactly one page. Omit pagination for an unpaginated listing.
+
+```js
+const picker = createRepositoryPicker({
+  context: projectId,
+  loadFolder: ({folderId, signal, context}) => listFiles(context, folderId, 1, signal),
+  loadMore: ({folderId, pagination, signal, context}) =>
+    listFiles(context, folderId, pagination.page + 1, signal),
+});
+```
+
+The picker loads within 64px of the bottom and checks an initially underfilled
+viewport, continuing until filled or the last page is reached. Desktop uses the
+list scroller; mobile uses the modal body. Only one append read runs at a time.
+Paginated rows preserve server order within folders/files; duplicate IDs across
+pages update the existing record without adding a row. Unpaginated listings retain
+name sorting. Selection spans pages; refreshed `selectable:false` removes a known
+revoked selection. Server authorization is still required on submission.
+
+Append loading uses an inline live status, not modal busy: selection, navigation,
+and dismissal remain available. Upload is disabled during the append read. Errors
+preserve loaded records, selection and pagination; **Retry loading more files**
+explicitly retries the read. Scroll events never retry a failed read. Existing
+upload failure and uncertain-outcome safeguards are unchanged.
+
+`loadMore()` returns a Promise of boolean and supports explicit loading/retry.
+`getState()` adds `pagination`, `hasMore`, `loadingMore` and `loadMoreError`; the main
+status stays `ready` during appends. `refs.pageNotice` and `refs.pageRetry` expose the
+canonical feedback. Changing `loadMore` through `update` also reloads the picker.
+Navigation, reload, context changes, close and destroy abort pending reads and ignore
+late responses. Adapters must honor `signal` and their own context/authorization.
+
+Run `node tests/repository.pagination.mjs` for source/bundle desktop/mobile coverage.
