@@ -150,7 +150,7 @@ export function createRepositoryPicker(supplied = {}) {
     if (!active || destroyed || status === 'uploading') return false;
     invalidate(); folderId = id; listing = null; controller = new AbortController();
     const token = revision, signal = controller.signal, load = options.loadFolder;
-    setStatus('loading', 'Loading folderâ€¦');
+    setStatus('loading', 'Loading folder…');
     try {
       if (typeof load !== 'function') throw new Error('Configure loadFolder to load repository data.');
       const data = await load({folderId:id, signal, context:options.context});
@@ -220,7 +220,7 @@ export function createRepositoryPicker(supplied = {}) {
     if (!canUpload() || !Array.isArray(files) || !files.length || files.some(file => !(file instanceof File))) return false;
     invalidate(); controller = new AbortController();
     const token = revision, signal = controller.signal, id = folderId, callback = options.onUpload;
-    setStatus('uploading', 'Uploading filesâ€¦');
+    setStatus('uploading', 'Uploading files…');
     try {
       const result = await callback(files, {folderId:id, signal, context:options.context});
       if (!active || token !== revision || signal.aborted) return false;

@@ -10,7 +10,7 @@ try {
  const create=await loader.get('ui.repository.picker');
  let calls=0, pending, received;
  const picker=create({loadFolder:()=>batch(1,files(0,25)),loadMore:args=>{calls++;received=args;return new Promise((resolve,reject)=>pending={resolve,reject})}});
- picker.open(); await until(()=>picker.getState().status==='ready'); await delay();
+ picker.open(); assert(picker.refs.notice.textContent === 'Loading folder\u2026','UTF-8 folder loading message'); await until(()=>picker.getState().status==='ready'); await delay();
  const r=picker.refs, scroller=getComputedStyle(r.list).overflowY==='visible'?r.body:r.list;
  assert(scroller.scrollHeight>scroller.clientHeight,'overflow fixture');
  const file=id=>[...r.list.querySelectorAll('[data-kind=file]')].find(n=>n.dataset.id===`string:${id}`);
@@ -49,6 +49,10 @@ try {
   assert(signal.aborted,`${action} abort`);late(batch(2,[{id:'stale',name:'STALE'}]));await read;
   assert(!p.refs.list.textContent.includes('STALE'),`${action} suppress late result`);p.destroy();
  }
+ const uploading=create({loadFolder:()=>({...batch(1,[],null,1),permissions:{canUpload:true}}),onUpload:()=>new Promise(()=>{})});
+ uploading.open();await until(()=>uploading.getState().status==='ready');
+ void uploading.uploadFiles([new File(['x'],'x.txt')]);
+ assert(uploading.refs.notice.textContent === 'Uploading files\u2026','UTF-8 upload loading message');uploading.destroy();
  document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS pagination, actual scroll, dedup, selection/focus/scroll, retry, cancellation';
 }catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack}
 </script>
