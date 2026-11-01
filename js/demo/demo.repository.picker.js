@@ -1,5 +1,5 @@
-import {uiLoader} from '../ui/ui.loader.js?v=0.21.229';
-import './demo.shell.js?v=0.21.229';
+import {uiLoader} from '../ui/ui.loader.js?v=0.21.321';
+import './demo.shell.js?v=0.21.321';
 const createPicker = await uiLoader.get('ui.repository.picker');
 const createComposer = await uiLoader.get('ui.chat.composer');
 const scenario = document.querySelector('#scenario');
@@ -7,13 +7,22 @@ const data = new Map([[null,[{id:'brief',name:'Project brief.md'},{id:'metrics',
 for (const [mode,count] of [['six',6],['long',40]]) data.set(mode,Array.from({length:count},(_,i)=>({id:`${mode}-${i}`,name:`Document ${String(i+1).padStart(2,'0')}.pdf`})));
 const dataKey = folderId => ['six','long'].includes(scenario.value) ? scenario.value : folderId;
 const delay = ms => new Promise(resolve=>setTimeout(resolve,ms));
-let serial=0;
+let serial=0, appendFailed=false;
+const paged = () => ['paged','page-error'].includes(scenario.value);
+const pageFiles = page => Array.from({length:15},(_,i)=>({id:`page-${page}-${i}`,name:`Batch ${page} file ${i+1}.txt`}));
 const picker = createPicker({
   loadFolder:async({folderId,signal})=>{
     const mode=scenario.value; await delay(mode==='slow'?3000:250); if(signal.aborted) throw Error('Cancelled');
+    if(paged()) { appendFailed=false; return {folder:{id:folderId,name:'Paged files'},breadcrumbs:[{id:folderId,name:'Paged files'}],folders:[],files:pageFiles(1),pagination:{page:1,total_pages:3}}; }
     if(mode==='error') throw Error('Demo access failure. Close and choose another scenario.');
     return {folder:{id:folderId,name:folderId || 'Project files'},breadcrumbs:folderId ? [{id:null,name:'Project files'},{id:folderId,name:'Design'}] : [{id:null,name:'Project files'}],
       folders:folderId || ['empty','six','long'].includes(mode)?[]:[{id:'design',name:'Design'}],files:mode==='empty'?[]:data.get(dataKey(folderId)),permissions:{showUpload:mode!=='hidden',canUpload:mode!=='denied'}};
+  },
+  loadMore:async({folderId,pagination,signal})=>{
+    await delay(600); if(signal.aborted) throw Error('Cancelled');
+    if(scenario.value==='page-error' && !appendFailed) {appendFailed=true;throw Error('Simulated read failure. Try again.');}
+    const page=pagination.page+1;
+    return {folder:{id:folderId},files:pageFiles(page),folders:[],pagination:{page,total_pages:3}};
   },
   onUpload:async(files,{folderId,signal})=>{
     await delay(700); if(signal.aborted) throw Error('Cancelled');
