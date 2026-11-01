@@ -37,9 +37,12 @@ try {
   console.log(`${fixture} passed (${suffix||'source'}).`);
  }
 } finally {
- socket?.close();processHandle?.kill();await server?.close();
+ // Graceful browser shutdown releases Windows profile locks before cleanup.
+ if(socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({id:999999,method:'Browser.close'}));
+ for(let i=0;processHandle && processHandle.exitCode === null && i<50;i++) await wait(100);
+ socket?.close();if(processHandle?.exitCode === null) processHandle.kill();await server?.close();
  await wait(500);
  // Exact temporary directory created above; no user browser profile is touched.
  if(path.dirname(path.resolve(profile)) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('helper-repository-pagination-'))throw Error('Unexpected temporary profile path');
- fs.rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});
+ fs.rmSync(profile,{recursive:true,force:true,maxRetries:10,retryDelay:300});
 }
