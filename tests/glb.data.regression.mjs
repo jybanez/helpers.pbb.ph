@@ -31,4 +31,16 @@ for(const modify of [j=>j.bufferViews[1].byteLength=37,j=>j.bufferViews[1].byteO
 for(const indices of [[0,1,3],[0,0,2]]) {const bad=bin.slice();bad.set(indices);assert.throws(()=>validateGlb(glb(sparse,bad)),/sparse indices/);}
 const backed=structuredClone(sparse);delete backed.accessors[0].sparse;backed.accessors[0].bufferView=1;validateGlb(glb(backed,bin));
 backed.accessors[0].count=4;assert.throws(()=>validateGlb(glb(backed,bin)),/range/);
-console.log('GLB geometry budget, ranges, accessor types and valid zero/sparse geometry passed.');
+const specularFile=fs.readFileSync(new URL('./fixtures/specular-room.glb',import.meta.url));
+const specular=validateGlb(specularFile.buffer.slice(specularFile.byteOffset,specularFile.byteOffset+specularFile.byteLength));
+assert.deepEqual(specular.extensionsRequired,['KHR_materials_specular']);
+assert.equal(specular.materials[0].extensions.KHR_materials_specular.specularTexture.index,0);
+assert.equal(specular.images[0].mimeType,'image/png');
+const specularOnly={asset:{version:'2.0'},extensionsRequired:['KHR_materials_specular'],materials:[{extensions:{KHR_materials_specular:{specularFactor:0.8}}}]};
+validateGlb(glb(specularOnly));
+specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture={uri:'https://example.invalid/map.png'};
+assert.throws(()=>validateGlb(glb(specularOnly)),/URI resources/);
+specularOnly.extensionsRequired.push('KHR_materials_transmission');
+delete specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture;
+assert.throws(()=>validateGlb(glb(specularOnly)),/Unsupported extension/);
+console.log('GLB geometry budget, ranges, accessor types, zero/sparse geometry and narrow specular support passed.');
