@@ -27,3 +27,5 @@ class Stream(io.BytesIO):
 out=Stream()
 with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as z:z.writestr('streamed.txt',b'Data descriptor')
 (root/'zip-descriptor.zip').write_bytes(out.getvalue())
+
+(root/'zip-grid.zip').write_bytes(build([('models/',b'',0),('models/room.glb',(root/'specular-room.glb').read_bytes(),8),('notes/readme.txt',b'Synthetic archive preview.\n',0),('root.txt',b'x'*2048,8)]+[(f'notes/file-{i:02}.txt',b'example',0) for i in range(30)]))
