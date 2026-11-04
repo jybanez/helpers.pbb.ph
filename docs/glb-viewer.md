@@ -1,4 +1,4 @@
-# GLB viewer (0.21.326)
+# GLB viewer (0.21.327)
 
 `ui.glb.viewer` exports `createGlbViewer(options)`, a complete fullscreen canonical
 modal for self-contained glTF 2.0 binary files. Interaction follows the orbit,
@@ -38,9 +38,19 @@ Labeled native buttons provide all operations. WebGL2 support is required.
 Only GLB version 2, standard mesh geometry and embedded PNG/JPEG/WebP bufferView
 textures are accepted. URI resources, including data URIs, are rejected before
 rendering. Supported extensions: KHR_materials_specular, KHR_materials_unlit, KHR_texture_transform,
-KHR_mesh_quantization, KHR_lights_punctual. Other extensions (including Draco,
-Meshopt and KTX2) produce an export-guidance error; export uncompressed geometry
-and embedded standard textures. Cameras/animation playback are follow-up scope;
+KHR_mesh_quantization, KHR_lights_punctual. Unsupported optional extensions are
+removed from a detached copy before any loader handler runs, including features
+known to Three but outside this supported subset. The viewer renders standard
+glTF fallback data and shows a notice naming skipped features. Unsupported
+`extensionsRequired` entries reject preview with their exact names.
+
+For optional `KHR_materials_variants`, only each primitive's base/default material
+is rendered; variant selection is not supported. Optional compression/texture
+features still need valid uncompressed geometry and embedded standard textures
+as fallback. URI restrictions and geometry budgets apply to the original file,
+including ignored extension payloads and alternate resources; this is not a way
+to bypass validation. Original input bytes remain unchanged.
+Cameras/animation playback are follow-up scope;
 this version shows the default static scene using its own perspective camera.
 
 Node `extras.pivot` is interpreted by the pinned loader as a private exporter

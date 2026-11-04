@@ -1,5 +1,5 @@
 import { createModal } from './ui.modal.js';
-import { validateGlb } from './ui.glb.data.js';
+import { prepareGlb } from './ui.glb.data.js?v=0.21.327';
 
 export function createGlbViewer(supplied = {}) {
   let options = {title:'3D model',maxBytes:64*1024*1024,...supplied};
@@ -31,13 +31,13 @@ export function createGlbViewer(supplied = {}) {
       let data=typeof snapshot.load==='function'?await snapshot.load({signal,context:snapshot.context}):snapshot.source;
       if(!current())return false;
       if(data instanceof Blob){if(data.size>snapshot.maxBytes)throw new Error('Model exceeds the preview size limit. Export a smaller GLB.');data=await data.arrayBuffer();}
-      if(!current())return false;validateGlb(data,snapshot.maxBytes);
+      if(!current())return false;const prepared=prepareGlb(data,snapshot.maxBytes);
       // Resolve relative to this deployed module in source and main-bundle modes.
       const bundled=new URL(import.meta.url).pathname.endsWith('/helpers.ui.bundle.min.js');
       const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.326':'../../vendor/three/glb.runtime.js?v=0.21.326',import.meta.url);
       const engine=await import(url.href);if(!current())return false;
-      const mounted=await engine.mountGlb(host,data,signal);
-      if(!current()){mounted.dispose();return false;}runtime=mounted;setStatus('ready');return true;
+      const mounted=await engine.mountGlb(host,prepared.bytes,signal);
+      if(!current()){mounted.dispose();return false;}runtime=mounted;setStatus('ready',prepared.skippedExtensions.length ? `Showing standard fallback. Skipped optional features: ${prepared.skippedExtensions.join(', ')}.` : '');return true;
     }catch(cause){if(!current())return false;runtime?.dispose();runtime=null;host.replaceChildren();setStatus('error',`Unable to preview model. ${cause?.message||'Check the GLB file and retry.'}`);return false;}
   }
   function destroy(){if(destroyed)return;active=false;invalidate();destroyed=true;status='destroyed';modal.destroy();}

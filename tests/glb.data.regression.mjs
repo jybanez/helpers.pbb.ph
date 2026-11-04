@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {validateGlb} from '../js/ui/ui.glb.data.js';
+import {validateGlb,prepareGlb} from '../js/ui/ui.glb.data.js';
 export function glb(json, bin) {
  const encoded=new TextEncoder().encode(JSON.stringify(json)), size=Math.ceil(encoded.length/4)*4;
  const n=bin?Math.ceil(bin.length/4)*4:0, buffer=new ArrayBuffer(20+size+(bin?8+n:0)), view=new DataView(buffer);
@@ -42,5 +42,35 @@ specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture={uri
 assert.throws(()=>validateGlb(glb(specularOnly)),/URI resources/);
 specularOnly.extensionsRequired.push('KHR_materials_transmission');
 delete specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture;
-assert.throws(()=>validateGlb(glb(specularOnly)),/Unsupported extension/);
+assert.throws(()=>validateGlb(glb(specularOnly)),/Unsupported required extension/);
 console.log('GLB geometry budget, ranges, accessor types, zero/sparse geometry and narrow specular support passed.');
+
+const variants={asset:{version:'2.0'},extensionsUsed:['KHR_materials_variants'],extensions:{KHR_materials_variants:{variants:[{name:'Alternate'}]}}};
+validateGlb(glb(variants));
+assert.throws(()=>validateGlb(glb({...variants,extensionsRequired:['KHR_materials_variants']})),/Unsupported required extensions: KHR_materials_variants/);
+validateGlb(glb({...variants,extensionsUsed:['KHR_unknown']}));
+variants.extensions.KHR_materials_variants.uri='https://example.invalid/alternate';
+assert.throws(()=>validateGlb(glb(variants)),/URI resources/);
+delete variants.extensions.KHR_materials_variants.uri;
+assert.throws(()=>validateGlb(glb({...scene(1000000000),...variants})),/128 MiB/);
+console.log('Optional variants accepted; required variants, URIs and oversized geometry rejected.');
+
+const optional={asset:{version:'2.0'},extensionsUsed:['EXT_invented','KHR_materials_transmission'],extensions:{EXT_invented:{note:'ignored'}},materials:[{extensions:{KHR_materials_transmission:{transmissionFactor:1},KHR_materials_specular:{specularFactor:0.5}}}]};
+const original=glb(optional), originalCopy=new Uint8Array(original).slice(), prepared=prepareGlb(original);
+const clean=validateGlb(prepared.bytes);
+assert.deepEqual(prepared.skippedExtensions,['EXT_invented','KHR_materials_transmission']);
+assert.deepEqual(clean.extensions,{});assert.deepEqual(clean.extensionsUsed,[]);
+assert.deepEqual(Object.keys(clean.materials[0].extensions),['KHR_materials_specular']);
+assert.deepEqual(new Uint8Array(original),originalCopy);
+assert.throws(()=>prepareGlb(glb({...optional,extensionsRequired:['EXT_invented','KHR_materials_transmission']})),/EXT_invented, KHR_materials_transmission/);
+console.log('Unknown and Three-known optional handlers isolated; required names reported; supported payloads and original bytes preserved.');
+
+const fixture=fs.readFileSync(new URL('./fixtures/extensions-optional.glb',import.meta.url));
+const input=fixture.buffer.slice(fixture.byteOffset,fixture.byteOffset+fixture.byteLength);
+const output=prepareGlb(input).bytes;
+const binaryTail=bytes=>new Uint8Array(bytes,20+new DataView(bytes).getUint32(12,true));
+assert.deepEqual(binaryTail(output),binaryTail(input),'embedded binary chunk stays byte-for-byte intact');
+assert.throws(()=>prepareGlb(input,100),/size limit/);
+const nested=structuredClone(optional);nested.extensions.EXT_invented.uri='https://example.invalid/blocked';
+assert.throws(()=>prepareGlb(glb(nested)),/URI resources/);
+assert.throws(()=>prepareGlb(glb({...scene(1000000000),...optional})),/128 MiB/);
