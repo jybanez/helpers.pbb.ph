@@ -26,3 +26,13 @@ doc['materials'][0]['extensions']={'KHR_materials_specular':{'specularFactor':0.
 doc['materials'][0]['pbrMetallicRoughness']['roughnessFactor']=0.25
 j=json.dumps(doc,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
 Path('tests/fixtures/specular-room.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
+
+# Parent-with-child exporter pivot convention and ordinary descriptive extras.
+import copy
+for label,pivot in [('string','hinge near the trunk'),('numeric',[1,0,0]),('container',None)]:
+    model=copy.deepcopy(doc)
+    model['nodes']=[{'name':'parent','translation':[2,1,0],'rotation':[0,0,0.7071067811865476,0.7071067811865476],'children':[1],'extras':{'description':'Synthetic parent','pivot':pivot}}, {'mesh':0,'translation':[-1,0,0]}]
+    if label=='container':del model['nodes'][0]['extras']['pivot']
+    model['scenes']=[{'nodes':[0]}]
+    j=json.dumps(model,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
+    Path(f'tests/fixtures/pivot-{label}.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
