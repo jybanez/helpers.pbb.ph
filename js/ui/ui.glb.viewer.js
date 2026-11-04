@@ -14,12 +14,14 @@ export function createGlbViewer(supplied = {}) {
   for (const [label,action] of [['Fit','fit'],['Reset','reset'],['Orbit left','orbitLeft'],['Orbit right','orbitRight'],['Orbit up','orbitUp'],['Orbit down','orbitDown'],['Pan left','panLeft'],['Pan right','panRight'],['Pan up','panUp'],['Pan down','panDown'],['Zoom in','zoomIn'],['Zoom out','zoomOut']]) {
     const button=document.createElement('button');button.type='button';button.className='ui-button ui-button-borderless';button.textContent=label;button.addEventListener('click',()=>{if(action==='fit')runtime?.fit();else if(action==='reset')runtime?.reset();else runtime?.action(action);});toolbar.append(button);buttons.push(button);
   }
+  const wireframeButton=document.createElement('button');wireframeButton.type='button';wireframeButton.className='ui-button ui-button-borderless';wireframeButton.textContent='Wireframe';wireframeButton.setAttribute('aria-pressed','false');wireframeButton.addEventListener('click',()=>setWireframe(!runtime?.getState().wireframe));toolbar.prepend(wireframeButton);buttons.push(wireframeButton);
   root.append(notice,retry,host,help);
   const modal=createModal({title:options.title,content:root,footer:toolbar,size:'full',className:'ui-glb-modal',closeWhileBusy:true,escapeCloseWhileBusy:true,backdropCloseWhileBusy:true,
     onBeforeClose(){active=false;invalidate();status='closed';return true;},
     onClose(meta){setStatus('closed');options.onClose?.(meta);}});
-  function invalidate(){revision++;controller?.abort();controller=null;runtime?.dispose();runtime=null;host.replaceChildren();}
+  function invalidate(){revision++;controller?.abort();controller=null;runtime?.dispose();runtime=null;host.replaceChildren();wireframeButton.setAttribute('aria-pressed','false');}
   function setStatus(next,message=''){status=next;error=next==='error'?message:'';notice.textContent=message;notice.hidden=!message;notice.setAttribute('role',error?'alert':'status');retry.hidden=next!=='error';modal.setBusy(next==='loading',{message:'Loading 3D model...',cancelBusy:false});buttons.forEach(button=>button.disabled=next!=='ready');}
+  function setWireframe(value){if(status!=='ready'||!runtime)return false;const enabled=runtime.setWireframe(value);wireframeButton.setAttribute('aria-pressed',String(enabled));return enabled;}
   function open(patch){if(destroyed)return false;if(patch)update(patch);if(active)return true;active=true;modal.open();void reload();return true;}
   function update(patch={}){if(destroyed)return false;options={...options,...patch};if(Object.hasOwn(patch,'source')&&!Object.hasOwn(patch,'load'))options.load=null;if(Object.hasOwn(patch,'load')&&!Object.hasOwn(patch,'source'))options.source=null;modal.update({title:options.title,ariaLabel:options.title});if(['source','load','context','maxBytes'].some(key=>Object.hasOwn(patch,key))){invalidate();if(active)void reload();}return true;}
   async function reload(){
@@ -34,13 +36,13 @@ export function createGlbViewer(supplied = {}) {
       if(!current())return false;const prepared=prepareGlb(data,snapshot.maxBytes);
       // Resolve relative to this deployed module in source and main-bundle modes.
       const bundled=new URL(import.meta.url).pathname.endsWith('/helpers.ui.bundle.min.js');
-      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.326':'../../vendor/three/glb.runtime.js?v=0.21.326',import.meta.url);
+      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.328':'../../vendor/three/glb.runtime.js?v=0.21.328',import.meta.url);
       const engine=await import(url.href);if(!current())return false;
       const mounted=await engine.mountGlb(host,prepared.bytes,signal);
       if(!current()){mounted.dispose();return false;}runtime=mounted;setStatus('ready',prepared.skippedExtensions.length ? `Showing standard fallback. Skipped optional features: ${prepared.skippedExtensions.join(', ')}.` : '');return true;
     }catch(cause){if(!current())return false;runtime?.dispose();runtime=null;host.replaceChildren();setStatus('error',`Unable to preview model. ${cause?.message||'Check the GLB file and retry.'}`);return false;}
   }
   function destroy(){if(destroyed)return;active=false;invalidate();destroyed=true;status='destroyed';modal.destroy();}
-  const api={open,update,reload,close:meta=>modal.close(meta),destroy,fit:()=>runtime?.fit(),reset:()=>runtime?.reset(),getState:()=>({open:active,status,error,destroyed,view:runtime?.getState()||null}),refs:{...modal.refs,viewport:host,notice,retry,controls:toolbar}};
+  const api={open,update,reload,close:meta=>modal.close(meta),destroy,setWireframe,fit:()=>runtime?.fit(),reset:()=>runtime?.reset(),getState:()=>({open:active,status,error,destroyed,view:runtime?.getState()||null}),refs:{...modal.refs,viewport:host,notice,retry,wireframeButton,controls:toolbar}};
   setStatus('idle');if(options.open)open();return api;
 }
