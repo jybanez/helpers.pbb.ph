@@ -36,3 +36,15 @@ for label,pivot in [('string','hinge near the trunk'),('numeric',[1,0,0]),('cont
     model['scenes']=[{'nodes':[0]}]
     j=json.dumps(model,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
     Path(f'tests/fixtures/pivot-{label}.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
+
+# Optional variant mappings must leave the specular base material unchanged.
+model=copy.deepcopy(doc)
+model['extensionsUsed'].append('KHR_materials_variants')
+model['extensionsRequired']=[]
+model['extensions']={'KHR_materials_variants':{'variants':[{'name':'Magenta alternate'}]}}
+model['materials'].append({'pbrMetallicRoughness':{'baseColorFactor':[1,0,1,1]}})
+model['meshes'][0]['primitives'][0]['extensions']={'KHR_materials_variants':{'mappings':[{'material':1,'variants':[0]}]}}
+for label in ['optional','required']:
+    if label=='required':model['extensionsRequired']=['KHR_materials_variants']
+    j=json.dumps(model,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
+    Path(f'tests/fixtures/variants-{label}.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)

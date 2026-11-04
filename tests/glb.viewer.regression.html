@@ -22,6 +22,16 @@ try {
  const canvas=viewer.refs.viewport.querySelector('canvas');assert(canvas&&canvas.width>100&&canvas.height>100,'canvas dimensions');
  const gl=canvas.getContext('webgl2');const pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
  const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>20,'required specular textured scene actually rendered');
+ const variantSource=await (await fetch('./fixtures/variants-optional.glb')).arrayBuffer();
+ const variantOriginal=new Uint8Array(variantSource).slice();
+ viewer.update({source:variantSource});await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
+ const variantCanvas=viewer.refs.viewport.querySelector('canvas'),variantGl=variantCanvas.getContext('webgl2'),variantPixels=new Uint8Array(pixels.length);
+ variantGl.readPixels(0,0,variantCanvas.width,variantCanvas.height,variantGl.RGBA,variantGl.UNSIGNED_BYTE,variantPixels);
+ assert(variantPixels.every((v,i)=>v===pixels[i]),'optional variants render exactly the base material, not the alternate');
+ assert(variantOriginal.every((v,i)=>v===new Uint8Array(variantSource)[i]),'variant source bytes unchanged');
+ const requiredVariants=await (await fetch('./fixtures/variants-required.glb')).arrayBuffer();
+ viewer.update({source:requiredVariants});await until(()=>viewer.getState().status==='error');
+ assert(viewer.getState().error.includes('Unsupported required extension KHR_materials_variants'),'required variants remain rejected');
  const views=[];
  for(const kind of ['container','string','numeric']){
   const source=await (await fetch(`./fixtures/pivot-${kind}.glb`)).arrayBuffer();const original=new Uint8Array(source).slice();

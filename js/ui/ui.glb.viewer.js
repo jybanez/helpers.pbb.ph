@@ -1,5 +1,5 @@
 import { createModal } from './ui.modal.js';
-import { validateGlb } from './ui.glb.data.js';
+import { validateGlb } from './ui.glb.data.js?v=0.21.327';
 
 export function createGlbViewer(supplied = {}) {
   let options = {title:'3D model',maxBytes:64*1024*1024,...supplied};

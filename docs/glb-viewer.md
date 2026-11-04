@@ -1,4 +1,4 @@
-# GLB viewer (0.21.326)
+# GLB viewer (0.21.327)
 
 `ui.glb.viewer` exports `createGlbViewer(options)`, a complete fullscreen canonical
 modal for self-contained glTF 2.0 binary files. Interaction follows the orbit,
@@ -38,7 +38,11 @@ Labeled native buttons provide all operations. WebGL2 support is required.
 Only GLB version 2, standard mesh geometry and embedded PNG/JPEG/WebP bufferView
 textures are accepted. URI resources, including data URIs, are rejected before
 rendering. Supported extensions: KHR_materials_specular, KHR_materials_unlit, KHR_texture_transform,
-KHR_mesh_quantization, KHR_lights_punctual. Other extensions (including Draco,
+KHR_mesh_quantization, KHR_lights_punctual. Optional `KHR_materials_variants`
+metadata is accepted, but only each primitive's base/default material is rendered;
+variant selection and mapped alternate materials are not supported. If variants
+appears in `extensionsRequired`, preview is rejected. URI restrictions and geometry
+budgets still apply to the entire file, including alternate resources. Other extensions (including Draco,
 Meshopt and KTX2) produce an export-guidance error; export uncompressed geometry
 and embedded standard textures. Cameras/animation playback are follow-up scope;
 this version shows the default static scene using its own perspective camera.

@@ -20,16 +20,19 @@ export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
   }
   if (json?.asset?.version !== '2.0') throw new Error('Only glTF 2.0 models are supported.');
   const allowed = new Set(['KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
+  // Optional variant mappings are metadata only; the loader renders the base material.
+  const optionalMetadata = new Set(['KHR_materials_variants']);
   const visit = value => {
     if (!value || typeof value !== 'object') return;
-    if (value.extensions) for (const name of Object.keys(value.extensions)) if (!allowed.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
+    if (value.extensions) for (const name of Object.keys(value.extensions)) if (!allowed.has(name) && !optionalMetadata.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
     for (const [name, child] of Object.entries(value)) {
       if (name === 'uri') throw new Error('External and URI resources are not allowed. Embed all buffers and textures in the GLB.');
       if (name !== 'extras') visit(child);
     }
   };
   visit(json);
-  for (const name of [...(json.extensionsRequired || []), ...(json.extensionsUsed || [])]) if (!allowed.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
+  for (const name of json.extensionsRequired || []) if (!allowed.has(name)) throw new Error(`Unsupported required extension ${name}. Export a GLB with supported default materials.`);
+  for (const name of json.extensionsUsed || []) if (!allowed.has(name) && !optionalMetadata.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
   if ((json.buffers || []).length > 1 || (json.buffers?.[0]?.byteLength || 0) > binLength) throw new Error('Missing embedded model buffer.');
   validateGeometry(json, buffer, binOffset, binLength);
   for (const image of json.images || []) if (!Number.isInteger(image.bufferView) || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Textures must be embedded PNG, JPEG or WebP images.');

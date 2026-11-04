@@ -42,5 +42,15 @@ specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture={uri
 assert.throws(()=>validateGlb(glb(specularOnly)),/URI resources/);
 specularOnly.extensionsRequired.push('KHR_materials_transmission');
 delete specularOnly.materials[0].extensions.KHR_materials_specular.specularTexture;
-assert.throws(()=>validateGlb(glb(specularOnly)),/Unsupported extension/);
+assert.throws(()=>validateGlb(glb(specularOnly)),/Unsupported required extension/);
 console.log('GLB geometry budget, ranges, accessor types, zero/sparse geometry and narrow specular support passed.');
+
+const variants={asset:{version:'2.0'},extensionsUsed:['KHR_materials_variants'],extensions:{KHR_materials_variants:{variants:[{name:'Alternate'}]}}};
+validateGlb(glb(variants));
+assert.throws(()=>validateGlb(glb({...variants,extensionsRequired:['KHR_materials_variants']})),/Unsupported required extension KHR_materials_variants/);
+assert.throws(()=>validateGlb(glb({...variants,extensionsUsed:['KHR_unknown']})),/Unsupported extension/);
+variants.extensions.KHR_materials_variants.uri='https://example.invalid/alternate';
+assert.throws(()=>validateGlb(glb(variants)),/URI resources/);
+delete variants.extensions.KHR_materials_variants.uri;
+assert.throws(()=>validateGlb(glb({...scene(1000000000),...variants})),/128 MiB/);
+console.log('Optional variants accepted; required variants, unknown extensions, URIs and oversized geometry rejected.');
