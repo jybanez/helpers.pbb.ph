@@ -1,4 +1,7 @@
 .ui-zip-viewer{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;width:100%}
-.ui-zip-tree{min-width:0;overflow:auto;flex:1}.ui-zip-detail{overflow-wrap:anywhere}.ui-zip-tools{display:flex;flex-wrap:wrap;gap:8px}
-.ui-zip-modal .ui-modal-body{display:flex;min-height:0}.ui-zip-tree .ui-tree-label{overflow-wrap:anywhere;white-space:normal}
+.ui-zip-grid{min-width:0;overflow:auto;flex:1}.ui-zip-detail{overflow-wrap:anywhere}.ui-zip-tools{display:flex;flex-wrap:wrap;gap:8px}
+.ui-zip-modal .ui-modal-body{display:flex;min-height:0}
 .ui-zip-viewer [hidden],.ui-zip-tools [hidden]{display:none!important}
+
+.ui-zip-filename{max-width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere;padding:0;color:var(--ui-primary,#8cbcff)}
+.ui-zip-grid .ui-grid-table-wrap{max-width:100%}

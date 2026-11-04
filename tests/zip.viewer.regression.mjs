@@ -38,6 +38,13 @@ try {
    if(['pass','fail','failed'].includes(state?.status))break;
   }
   if(state?.status!=='pass')throw Error(JSON.stringify(state));
+  await wait(350);
+  await send('Runtime.evaluate',{expression:`window.viewer.refs.grid.querySelector('[data-zip-preview="1"]').focus()`});
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r',unmodifiedText:'\r'});
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  let keyboardReady=false;for(let i=0;i<150;i++){await wait(40);const result=await send('Runtime.evaluate',{expression:'window.getChild()?.getState().status',returnByValue:true});if(result.result.value==='ready'){keyboardReady=true;break;}}
+  if(!keyboardReady){const detail=await send('Runtime.evaluate',{expression:'({viewer:window.viewer.getState(),child:window.getChild()?.getState(),focus:document.activeElement?.outerHTML})',returnByValue:true});throw Error('Keyboard filename activation failed: '+JSON.stringify(detail.result.value));}
+  await send('Runtime.evaluate',{expression:'window.getChild().close()',awaitPromise:true});await wait(300);
   const shot=await send('Page.captureScreenshot',{format:'png'});fs.mkdirSync(path.join(root,'output/zip-viewer'),{recursive:true});fs.writeFileSync(path.join(root,`output/zip-viewer/${suffix.includes('bundle')?'bundle':'source'}-${suffix.includes('mobile')?'mobile':'desktop'}.png`),Buffer.from(shot.data,'base64'));
   console.log(`${fixture} passed (${suffix||'source'}).`);
  }

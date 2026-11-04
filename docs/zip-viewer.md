@@ -1,9 +1,16 @@
-# ZIP viewer (0.21.324)
+# ZIP viewer (0.21.325)
 
 `ui.zip.viewer` exports `createZipViewer(options)`, a complete canonical fullscreen
-modal composed with `ui.tree`. It lists directory metadata without decompressing
+modal composed with the complete `ui.grid`. It lists directory metadata without decompressing
 entries. Preview and download extract only the selected file, verifying size and
 CRC before returning any bytes. No archive contents are executed or unpacked to disk.
+
+The grid shows one row per file: Filename, archive-relative Folder (`(root)` for
+root files), human-readable Size (1024-based B/KB/MB), and Actions. Previewable
+filenames are native buttons (click, Enter or Space); unsupported filenames are
+plain text. Each row has a download icon with a filename-specific accessible label.
+The selected-action footer is removed. Grid DOM and scroll stay intact during
+entry actions; child-close focus returns to the invoking filename without scrolling.
 
 ## Application contract
 
@@ -26,7 +33,7 @@ idle/loading/ready/extracting/error/closed/destroyed.
 
 `open` shows immediately before reads. Duplicate openings do not reload.
 Source/load/context/callback changes invalidate old work and reload if open.
-Close/destroy abort reads and extraction, release the archive/tree and revoke
+Close/destroy abort reads and extraction, release the archive/grid and revoke
 download URLs; late results are ignored. Selection operations serialize. Cancel
 entry operation preserves the directory. Errors remain visible and dismissible.
 No mutations or automatic retries occur. Source bytes are snapshotted locally.
