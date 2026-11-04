@@ -1,4 +1,4 @@
-# GLB viewer (0.21.323)
+# GLB viewer (0.21.326)
 
 `ui.glb.viewer` exports `createGlbViewer(options)`, a complete fullscreen canonical
 modal for self-contained glTF 2.0 binary files. Interaction follows the orbit,
@@ -43,6 +43,13 @@ Meshopt and KTX2) produce an export-guidance error; export uncompressed geometry
 and embedded standard textures. Cameras/animation playback are follow-up scope;
 this version shows the default static scene using its own perspective camera.
 
+Node `extras.pivot` is interpreted by the pinned loader as a private exporter
+transform convention. The preview accepts only an array of exactly three finite
+numbers for that convention. Descriptive strings and malformed pivot hints are
+ignored in the loader's detached JSON before transforms are constructed; other
+extras and the original GLB bytes remain unchanged. Finite numeric vectors retain
+the loader's existing pivot reconstruction behavior.
+
 Before importing the renderer, a separate fixed 128 MiB decoded geometry budget
 checks all accessors (including unreferenced ones and zero-filled accessors without
 bufferViews). Accounting includes copied bufferViews, twice each accessor's
@@ -82,3 +89,6 @@ Run `node tests/glb.data.regression.mjs` for allocation/range validation and to
 regenerate the tiny oversized-accessor and valid sparse-triangle fixtures. The
 browser suite verifies malicious input rejection before renderer loading and
 renders the valid sparse fixture.
+`node tests/glb.metadata.regression.mjs` verifies malformed pivot filtering and
+finite-vector preservation. Synthetic parent-child string/numeric pivot fixtures
+are rendered in all four browser modes and compared with exporter-container bounds.

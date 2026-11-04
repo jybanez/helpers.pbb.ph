@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { sanitizeNodePivots } from './ui.glb.metadata.js';
 
 export async function mountGlb(host, bytes, signal) {
   let renderer, controls, observer, model, disposed = false;
@@ -31,6 +32,7 @@ export async function mountGlb(host, bytes, signal) {
     manager.setURLModifier(url => { if (!url.startsWith('blob:')) throw new Error('Model resource request blocked. Embed all textures and buffers.'); return url; });
     const loader = new GLTFLoader(manager);
     loader.register(parser => {
+      sanitizeNodePivots(parser.json);
       const original = parser.getDependency.bind(parser);
       parser.getDependency = (type,index) => original(type,index).then(value => ['material','texture','mesh','scene'].includes(type) ? track(value) : value);
       return {name:'HELPER_resource_lifecycle'};

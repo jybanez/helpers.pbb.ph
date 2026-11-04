@@ -34,7 +34,7 @@ export function createGlbViewer(supplied = {}) {
       if(!current())return false;validateGlb(data,snapshot.maxBytes);
       // Resolve relative to this deployed module in source and main-bundle modes.
       const bundled=new URL(import.meta.url).pathname.endsWith('/helpers.ui.bundle.min.js');
-      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.322':'../../vendor/three/glb.runtime.js?v=0.21.322',import.meta.url);
+      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.326':'../../vendor/three/glb.runtime.js?v=0.21.326',import.meta.url);
       const engine=await import(url.href);if(!current())return false;
       const mounted=await engine.mountGlb(host,data,signal);
       if(!current()){mounted.dispose();return false;}runtime=mounted;setStatus('ready');return true;
