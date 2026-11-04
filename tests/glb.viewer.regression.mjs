@@ -15,8 +15,12 @@ try {
  server=await startStaticServer({rootDir:root,port:0});
  processHandle=spawn(chrome,['--headless=new','--enable-unsafe-swiftshader','--no-first-run','--force-prefers-reduced-motion',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
  const portFile=path.join(profile,'DevToolsActivePort');
- for(let i=0;!fs.existsSync(portFile)&&i<100;i++)await wait(100);
- const port=fs.readFileSync(portFile,'utf8').split('\n')[0];
+ let port;
+ for(let i=0;i<100;i++) {
+  try {port=fs.readFileSync(portFile,'utf8').split('\n')[0].trim();if(/^\d+$/.test(port))break;} catch(error) {if(!['ENOENT','EBUSY','EPERM'].includes(error.code))throw error;}
+  await wait(100);
+ }
+ if(!/^\d+$/.test(port||''))throw Error('Chrome did not publish its debugging port');
  const targets=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
  socket=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);
  await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});
