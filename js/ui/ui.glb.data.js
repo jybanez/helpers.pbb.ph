@@ -1,3 +1,5 @@
+const SUPPORTED_EXTENSIONS = new Set(['KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
+
 // Validate the container before handing any bytes to the rendering dependency.
 export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
   if (!(buffer instanceof ArrayBuffer)) throw new TypeError('Choose a GLB file or return a Blob/ArrayBuffer from load.');
@@ -19,20 +21,16 @@ export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
     offset += size + 8; chunks++;
   }
   if (json?.asset?.version !== '2.0') throw new Error('Only glTF 2.0 models are supported.');
-  const allowed = new Set(['KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
-  // Optional variant mappings are metadata only; the loader renders the base material.
-  const optionalMetadata = new Set(['KHR_materials_variants']);
+  const unsupportedRequired = (json.extensionsRequired || []).filter(name => !SUPPORTED_EXTENSIONS.has(name));
+  if (unsupportedRequired.length) throw new Error(`Unsupported required extensions: ${[...new Set(unsupportedRequired)].join(', ')}. Export a GLB with supported standard fallback data.`);
   const visit = value => {
     if (!value || typeof value !== 'object') return;
-    if (value.extensions) for (const name of Object.keys(value.extensions)) if (!allowed.has(name) && !optionalMetadata.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
     for (const [name, child] of Object.entries(value)) {
       if (name === 'uri') throw new Error('External and URI resources are not allowed. Embed all buffers and textures in the GLB.');
       if (name !== 'extras') visit(child);
     }
   };
   visit(json);
-  for (const name of json.extensionsRequired || []) if (!allowed.has(name)) throw new Error(`Unsupported required extension ${name}. Export a GLB with supported default materials.`);
-  for (const name of json.extensionsUsed || []) if (!allowed.has(name) && !optionalMetadata.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
   if ((json.buffers || []).length > 1 || (json.buffers?.[0]?.byteLength || 0) > binLength) throw new Error('Missing embedded model buffer.');
   validateGeometry(json, buffer, binOffset, binLength);
   for (const image of json.images || []) if (!Number.isInteger(image.bufferView) || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Textures must be embedded PNG, JPEG or WebP images.');
@@ -91,4 +89,28 @@ function validateGeometry(json, buffer, binOffset, binLength) {
     if(primitive.indices!==undefined)reference(primitive.indices);
     for(const target of primitive.targets??[])for(const index of Object.values(target))reference(index);
   }
+}
+
+// Validate original standard data and resources before discarding optional features.
+// Rebuild a detached GLB so no unsupported payload can reach any loader handler.
+export function prepareGlb(buffer, maxBytes) {
+  const json = validateGlb(buffer, maxBytes);
+  const skipped = new Set((json.extensionsUsed || []).filter(name => !SUPPORTED_EXTENSIONS.has(name)));
+  const strip = value => {
+    if (!value || typeof value !== 'object') return;
+    if (value.extensions) for (const name of Object.keys(value.extensions)) {
+      if (!SUPPORTED_EXTENSIONS.has(name)) {skipped.add(name);delete value.extensions[name];}
+    }
+    for (const [name, child] of Object.entries(value)) if (name !== 'extras') strip(child);
+  };
+  strip(json);
+  if (!skipped.size) return {bytes:buffer,skippedExtensions:[]};
+  if (json.extensionsUsed) json.extensionsUsed=json.extensionsUsed.filter(name=>SUPPORTED_EXTENSIONS.has(name));
+  const encoded=new TextEncoder().encode(JSON.stringify(json)), padded=Math.ceil(encoded.length/4)*4;
+  const source=new DataView(buffer), tailOffset=20+source.getUint32(12,true);
+  const bytes=new ArrayBuffer(20+padded+buffer.byteLength-tailOffset), view=new DataView(bytes);
+  [0x46546c67,2,bytes.byteLength,padded,0x4e4f534a].forEach((v,i)=>view.setUint32(i*4,v,true));
+  new Uint8Array(bytes,20,padded).fill(32);new Uint8Array(bytes,20,encoded.length).set(encoded);
+  new Uint8Array(bytes,20+padded).set(new Uint8Array(buffer,tailOffset));
+  return {bytes,skippedExtensions:[...skipped].sort()};
 }

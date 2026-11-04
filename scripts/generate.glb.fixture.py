@@ -48,3 +48,14 @@ for label in ['optional','required']:
     if label=='required':model['extensionsRequired']=['KHR_materials_variants']
     j=json.dumps(model,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
     Path(f'tests/fixtures/variants-{label}.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
+
+# Unsupported optional payloads include a real Three material handler.
+model=copy.deepcopy(doc)
+model['extensionsUsed']+=['EXT_helper_invented','KHR_materials_transmission']
+model['extensionsRequired']=[]
+model['extensions']={'EXT_helper_invented':{'note':'standard fallback'}}
+model['materials'][0]['extensions']['KHR_materials_transmission']={'transmissionFactor':1}
+for label in ['optional','required']:
+    if label=='required':model['extensionsRequired']=['EXT_helper_invented']
+    j=json.dumps(model,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
+    Path(f'tests/fixtures/extensions-{label}.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
