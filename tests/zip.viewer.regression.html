@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const assert=(v,m)=>{if(!v)throw Error(m)},sleep=()=>new Promise(r=>setTimeout(r,40));
+const until=async fn=>{for(let i=0;i<200;i++){if(fn())return;await sleep();}throw Error('Timeout');};
+const read=async name=>(await fetch('./fixtures/'+name)).arrayBuffer();
+try {
+ const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')});
+ const create=await loader.get('ui.zip.viewer');assert(!performance.getEntriesByType('resource').some(e=>e.name.includes('ui.zip.runtime')),'parser lazy before open');
+ let resolve,signal,calls=0,child;
+ const viewer=create({canPreview:entry=>entry.name.endsWith('.glb'),load:args=>{signal=args.signal;return new Promise(r=>resolve=r);},onPreview:async args=>{calls++;assert(args.entry.path==='models/room.glb','nested entry');const glb=await loader.get('ui.glb.viewer');if(args.signal.aborted)return;const own=glb({source:args.blob,onClose:()=>args.restoreFocus()});child=own;args.signal.addEventListener('abort',()=>own.destroy(),{once:true});own.open();}});
+ viewer.open();assert(viewer.getState().status==='loading'&&viewer.refs.panel.isConnected,'modal opens before read');viewer.open();await viewer.close();assert(signal.aborted,'load abort');resolve(await read('preview.zip'));await sleep();assert(!viewer.getState().entries.length,'stale load ignored');
+ viewer.open({source:await read('preview.zip')});await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);assert(viewer.getState().entries.length===3,'nested listing');assert(calls===0,'listing does not preview');
+ assert(!await viewer.preview('2'),'canPreview denies unsupported entry');
+ let downloaded;const click=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){downloaded={href:this.href,name:this.download};};
+ assert(await viewer.download('2'),'unsupported preview still downloadable');HTMLAnchorElement.prototype.click=click;assert(downloaded.name==='readme.txt'&&downloaded.href.startsWith('blob:'),'download selected leaf');
+ assert(await viewer.preview('1'),'preview callback');await until(()=>child.getState().status!=='loading');assert(child.getState().status==='ready',child.getState().error);assert(child.refs.viewport.querySelector('canvas'),'nested GLB rendered');assert(viewer.getState().open,'archive stays open behind child');await child.close();await new Promise(r=>setTimeout(r,300));assert(document.activeElement?.textContent.includes('room.glb'),'focus restored to selected entry');child.destroy();
+ for(const name of ['zip-traversal.zip','zip-duplicate.zip','zip-range.zip']){viewer.update({source:await read(name)});await until(()=>viewer.getState().status==='error');assert(!viewer.refs.closeButton.disabled,'error dismissible');}
+ viewer.update({source:await read('zip-expansion.zip')});await until(()=>viewer.getState().status==='ready');assert(!await viewer.download('0')&&viewer.getState().error.includes('expanded'),'actual expansion rejected');assert(calls===1,'bad bytes not delivered');
+ viewer.update({source:await read('zip-crc.zip')});await until(()=>viewer.getState().status==='ready');assert(!await viewer.download('0')&&viewer.getState().error.includes('CRC'),'CRC rejected');
+ viewer.update({source:await read('preview.zip')});await until(()=>viewer.getState().status==='ready');const pending=viewer.preview('1');await viewer.close();await pending;assert(calls===1,'close cancels extraction');
+ viewer.open();await until(()=>viewer.getState().status==='ready');
+ assert(getComputedStyle(viewer.refs.cancelButton).display==='none'&&getComputedStyle(viewer.refs.retry).display==='none','inactive buttons hidden');
+ assert(await viewer.preview('1'),'child preview reopened');await until(()=>child.getState().status==='ready');
+ viewer.update({context:'new',source:await read('preview.zip')});assert(child.getState().destroyed,'context change aborts child');await until(()=>viewer.getState().status==='ready');
+ assert(viewer.refs.panel.getBoundingClientRect().width<=innerWidth,'mobile modal fits');
+ window.viewer=viewer;document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS directory, lazy parser, nested GLB, malformed/bounded extraction, cancellation and reopen';
+}catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack;}
+</script>

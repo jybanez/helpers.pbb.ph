@@ -92,6 +92,7 @@ const DEMO_GROUPS = [
       { href: "./demo.media.viewer.html", label: "Media Viewer" },
       { href: "./demo.pdf.viewer.html", label: "PDF Viewer" },
       { href: "./demo.glb.viewer.html", label: "GLB Viewer" },
+      { href: "./demo.zip.viewer.html", label: "ZIP Viewer" },
       { href: "./demo.json.viewer.html", label: "JSON Viewer" },
       { href: "./demo.markdown.viewer.html", label: "Markdown Viewer" },
       { href: "./demo.csv.viewer.html", label: "CSV Viewer" },

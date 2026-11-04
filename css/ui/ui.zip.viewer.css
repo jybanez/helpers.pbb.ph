@@ -1,0 +1,4 @@
+.ui-zip-viewer{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;width:100%}
+.ui-zip-tree{min-width:0;overflow:auto;flex:1}.ui-zip-detail{overflow-wrap:anywhere}.ui-zip-tools{display:flex;flex-wrap:wrap;gap:8px}
+.ui-zip-modal .ui-modal-body{display:flex;min-height:0}.ui-zip-tree .ui-tree-label{overflow-wrap:anywhere;white-space:normal}
+.ui-zip-viewer [hidden],.ui-zip-tools [hidden]{display:none!important}
