@@ -1,0 +1,8 @@
+.ui-glb-modal .ui-modal-body { display:flex; min-height:0; }
+.ui-glb-viewer { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; }
+.ui-glb-viewport { position:relative; flex:1; min-height:200px; overflow:hidden; background:#182130; }
+.ui-glb-viewport canvas { display:block; max-width:100%; touch-action:none; }
+.ui-glb-viewport canvas:focus-visible { outline:2px solid var(--ui-primary,#60a5fa); outline-offset:-3px; }
+.ui-glb-tools { display:flex; flex-wrap:wrap; gap:.25rem; }
+.ui-glb-viewer p { margin:.5rem 0; }
+.ui-glb-viewer [hidden] { display:none; }

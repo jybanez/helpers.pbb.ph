@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GLB Viewer · Helper</title><link rel="stylesheet" href="../css/demo/demo.shell.css"></head><body class="demo-shell-sidebar"><main class="demo-workbench" style="padding:24px;max-width:1000px;margin:auto"><h1>GLB Viewer</h1><p>Preview self-contained glTF 2.0 binary scenes locally. Drag to orbit, right-drag to pan, scroll/pinch to zoom. Keyboard and labeled controls offer the same actions.</p><button id="scene">Open textured room</button><label>Open your GLB <input id="file" type="file" accept=".glb,model/gltf-binary"></label><button id="bad">Try malformed input</button><h2>Developer reference</h2><pre><code>const create = await uiLoader.get('ui.glb.viewer');
+const viewer = create({title: 'Scene', context: projectId,
+  load: ({signal, context}) =&gt; readAuthorizedFile(context, fileId, signal)
+});
+viewer.open(); // Shows immediately; renderer loads lazily.
+// Or viewer.open({source: file}); // File, Blob or ArrayBuffer
+// viewer.update({context: nextProject, load: nextRead});
+// viewer.close(); viewer.destroy();</code></pre><p><a href="../docs/glb-viewer.md">Complete contract and format limits</a></p><p>The demo scene is synthetic and contains an embedded checker texture, floor and two props. No model data is uploaded. The rendering module is served from this site. Compressed geometry, external textures and animation controls are outside this first version.</p></main><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js?v=0.21.322';
+import '../js/demo/demo.shell.js';
+const create=await uiLoader.get('ui.glb.viewer');const viewer=create();
+document.querySelector('#scene').onclick=()=>viewer.open({title:'Textured room',load:async({signal})=>{const response=await fetch('../tests/fixtures/textured-room.glb',{signal});if(!response.ok)throw Error('Demo file unavailable');return response.arrayBuffer();}});
+document.querySelector('#file').onchange=event=>{const file=event.target.files[0];if(file)viewer.open({title:file.name,source:file});event.target.value='';};
+document.querySelector('#bad').onclick=()=>viewer.open({title:'Malformed model',source:new ArrayBuffer(8)});
+</script></body></html>
