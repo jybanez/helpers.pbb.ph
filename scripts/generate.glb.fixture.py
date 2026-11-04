@@ -18,3 +18,11 @@ for part in parts:
 doc={'asset':{'version':'2.0','generator':'Helper synthetic fixture'},'scene':0,'scenes':[{'nodes':[0,1,2]}],'nodes':[{'mesh':0,'scale':[3,.1,2],'translation':[0,-1,0]},{'mesh':0,'scale':[.6,.8,.6],'translation':[-1,0,0]},{'mesh':0,'scale':[.35,.4,.35],'translation':[1,-.5,.3]}],'meshes':[{'primitives':[{'attributes':{'POSITION':0,'NORMAL':1,'TEXCOORD_0':2},'indices':3,'material':0}]}],'accessors':[{'bufferView':0,'componentType':5126,'count':24,'type':'VEC3','min':[-1,-1,-1],'max':[1,1,1]},{'bufferView':1,'componentType':5126,'count':24,'type':'VEC3'},{'bufferView':2,'componentType':5126,'count':24,'type':'VEC2'},{'bufferView':3,'componentType':5123,'count':36,'type':'SCALAR'}],'materials':[{'doubleSided':True,'pbrMetallicRoughness':{'baseColorTexture':{'index':0},'metallicFactor':0,'roughnessFactor':.8}}],'textures':[{'source':0}],'images':[{'bufferView':4,'mimeType':'image/png'}],'bufferViews':views,'buffers':[{'byteLength':len(binary)}]}
 j=json.dumps(doc,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
 Path('tests/fixtures/textured-room.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
+
+# Required specular extension with embedded intensity and color texture maps.
+doc['extensionsUsed']=['KHR_materials_specular']
+doc['extensionsRequired']=['KHR_materials_specular']
+doc['materials'][0]['extensions']={'KHR_materials_specular':{'specularFactor':0.8,'specularColorFactor':[0.8,0.9,1.0],'specularTexture':{'index':0},'specularColorTexture':{'index':0}}}
+doc['materials'][0]['pbrMetallicRoughness']['roughnessFactor']=0.25
+j=json.dumps(doc,separators=(',',':')).encode();j+=b' '*(-len(j)%4)
+Path('tests/fixtures/specular-room.glb').write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)

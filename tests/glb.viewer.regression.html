@@ -15,13 +15,13 @@ try {
  const viewer=create({load:({signal})=>{received=signal;return new Promise(r=>resolve=r)}});
  viewer.open();assert(viewer.getState().status==='loading'&&viewer.refs.panel.isConnected,'immediate canonical loading modal');
  viewer.open();await viewer.close();assert(received.aborted,'close aborts');
- const data=await (await fetch('./fixtures/textured-room.glb')).arrayBuffer();resolve(data);await sleep();assert(!viewer.refs.viewport.children.length,'stale load ignored');
+ const data=await (await fetch('./fixtures/specular-room.glb')).arrayBuffer();resolve(data);await sleep();assert(!viewer.refs.viewport.children.length,'stale load ignored');
  viewer.update({source:data});viewer.open();await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
  const sparse=await (await fetch('./fixtures/sparse-triangle.glb')).arrayBuffer();viewer.update({source:sparse});await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
  viewer.update({source:data});await until(()=>viewer.getState().status==='ready');
  const canvas=viewer.refs.viewport.querySelector('canvas');assert(canvas&&canvas.width>100&&canvas.height>100,'canvas dimensions');
  const gl=canvas.getContext('webgl2');const pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
- const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>20,'textured scene actually rendered');
+ const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>20,'required specular textured scene actually rendered');
  await new Promise(r=>setTimeout(r,300));viewer.reset();
  const before=JSON.stringify(viewer.getState().view.camera);canvas.focus();canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(JSON.stringify(viewer.getState().view.camera)!==before,'keyboard orbit');viewer.reset();assert(viewer.getState().view.camera.every((x,i)=>Math.abs(x-JSON.parse(before)[i])<0.00001),'reset view');
  for(const label of ['Pan left','Zoom in','Fit']) [...viewer.refs.controls.children].find(n=>n.textContent===label).click();

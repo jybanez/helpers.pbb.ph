@@ -19,7 +19,7 @@ export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
     offset += size + 8; chunks++;
   }
   if (json?.asset?.version !== '2.0') throw new Error('Only glTF 2.0 models are supported.');
-  const allowed = new Set(['KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
+  const allowed = new Set(['KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
   const visit = value => {
     if (!value || typeof value !== 'object') return;
     if (value.extensions) for (const name of Object.keys(value.extensions)) if (!allowed.has(name)) throw new Error(`Unsupported extension ${name}. Export an uncompressed standard GLB.`);
