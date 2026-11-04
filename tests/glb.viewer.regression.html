@@ -7,12 +7,18 @@ try {
  const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')});
  const create=await loader.get('ui.glb.viewer');
  assert(!performance.getEntriesByType('resource').some(x=>x.name.includes('glb.runtime')),'renderer lazy before open');
+ const malicious=await (await fetch('./fixtures/oversized-accessor.glb')).arrayBuffer();
+ const rejected=create({source:malicious});rejected.open();await until(()=>rejected.getState().status==='error');
+ assert(rejected.getState().error.includes('128 MiB'),'tiny oversized accessor rejected by decoded budget');
+ assert(!performance.getEntriesByType('resource').some(x=>x.name.includes('glb.runtime')),'malicious geometry rejected before renderer import');await rejected.close();rejected.destroy();
  let resolve,received;
  const viewer=create({load:({signal})=>{received=signal;return new Promise(r=>resolve=r)}});
  viewer.open();assert(viewer.getState().status==='loading'&&viewer.refs.panel.isConnected,'immediate canonical loading modal');
  viewer.open();await viewer.close();assert(received.aborted,'close aborts');
  const data=await (await fetch('./fixtures/textured-room.glb')).arrayBuffer();resolve(data);await sleep();assert(!viewer.refs.viewport.children.length,'stale load ignored');
  viewer.update({source:data});viewer.open();await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
+ const sparse=await (await fetch('./fixtures/sparse-triangle.glb')).arrayBuffer();viewer.update({source:sparse});await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
+ viewer.update({source:data});await until(()=>viewer.getState().status==='ready');
  const canvas=viewer.refs.viewport.querySelector('canvas');assert(canvas&&canvas.width>100&&canvas.height>100,'canvas dimensions');
  const gl=canvas.getContext('webgl2');const pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
  const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>20,'textured scene actually rendered');

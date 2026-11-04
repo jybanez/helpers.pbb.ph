@@ -43,6 +43,18 @@ Meshopt and KTX2) produce an export-guidance error; export uncompressed geometry
 and embedded standard textures. Cameras/animation playback are follow-up scope;
 this version shows the default static scene using its own perspective camera.
 
+Before importing the renderer, a separate fixed 128 MiB decoded geometry budget
+checks all accessors (including unreferenced ones and zero-filled accessors without
+bufferViews). Accounting includes copied bufferViews, twice each accessor's
+float-width expanded size, sparse index/value storage, and the same accessor
+reserve per primitive attribute/index/morph-target reference for conversion or
+cloning. This conservative allocation estimate is independent of `maxBytes`;
+raising the file cap does not raise it. It is not a cap on total browser/GPU
+memory, decoded textures, or scene objects. Export smaller geometry on failure.
+Counts, component types, strides, offsets and embedded bufferView ranges are
+validated, as are sparse counts, index/value ranges and increasing in-range
+indices. Small zero-initialized and sparse accessors remain supported.
+
 ## Dependency and deployment
 
 Three.js 0.187.0 + GLTFLoader + OrbitControls (MIT) are pinned and built locally
@@ -66,3 +78,7 @@ Run `node tests/glb.viewer.regression.mjs` for source/bundle desktop/mobile
 software-WebGL rendering, lifecycle and input tests. The synthetic textured
 fixture is reproducible with `python scripts/generate.glb.fixture.py` and has no
 external asset license. See `demos/demo.glb.viewer.html` for interactive use.
+Run `node tests/glb.data.regression.mjs` for allocation/range validation and to
+regenerate the tiny oversized-accessor and valid sparse-triangle fixtures. The
+browser suite verifies malicious input rejection before renderer loading and
+renders the valid sparse fixture.
