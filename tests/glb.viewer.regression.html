@@ -24,6 +24,23 @@ try {
  const canvas=viewer.refs.viewport.querySelector('canvas');assert(canvas&&canvas.width>100&&canvas.height>100,'canvas dimensions');
  const gl=canvas.getContext('webgl2');const pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
  const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>20,'required specular textured scene actually rendered');
+ const toggle=viewer.refs.wireframeButton;
+ assert(!toggle.disabled&&toggle.getAttribute('aria-pressed')==='false'&&!viewer.getState().view.wireframe,'textured default');
+ const cameraBefore=JSON.stringify(viewer.getState().view.camera),targetBefore=JSON.stringify(viewer.getState().view.target);
+ toggle.click();assert(toggle.getAttribute('aria-pressed')==='true'&&viewer.getState().view.wireframe,'accessible wireframe state');
+ const wirePixels=new Uint8Array(pixels.length);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,wirePixels);
+ assert(wirePixels.some((v,i)=>v!==pixels[i]),'wireframe visibly differs');
+ assert(JSON.stringify(viewer.getState().view.camera)===cameraBefore&&JSON.stringify(viewer.getState().view.target)===targetBefore,'toggle preserves camera and target');
+ const second=create({source:data});second.open();await until(()=>second.getState().status==='ready');
+ assert(!second.getState().view.wireframe&&viewer.getState().view.wireframe,'separate viewer defaults independent');
+ second.setWireframe(true);viewer.setWireframe(false);assert(second.getState().view.wireframe&&!viewer.getState().view.wireframe,'instance changes isolated');
+ await second.close();second.destroy();
+ const restoredPixels=new Uint8Array(pixels.length);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,restoredPixels);
+ assert(restoredPixels.every((v,i)=>v===pixels[i]),'textured pixels restored exactly');
+ toggle.focus();assert(document.activeElement===toggle,'toggle keyboard focusable');
+ const toggleBounds=toggle.getBoundingClientRect();assert(toggleBounds.left>=0&&toggleBounds.right<=innerWidth&&toggleBounds.top>=0&&toggleBounds.bottom<=innerHeight,'wireframe fits narrow layout');
+ viewer.setWireframe(true);viewer.reset();assert(viewer.getState().view.wireframe,'camera reset preserves render mode');
+ viewer.setWireframe(false);
  for (const fixture of ['variants','extensions']) {
  const variantSource=await (await fetch(`./fixtures/${fixture}-optional.glb`)).arrayBuffer();
  const variantOriginal=new Uint8Array(variantSource).slice();
@@ -51,9 +68,9 @@ try {
  await new Promise(r=>setTimeout(r,300));viewer.reset();
  const before=JSON.stringify(viewer.getState().view.camera);activeCanvas.focus();activeCanvas.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(JSON.stringify(viewer.getState().view.camera)!==before,'keyboard orbit');viewer.reset();assert(viewer.getState().view.camera.every((x,i)=>Math.abs(x-JSON.parse(before)[i])<0.00001),'reset view');
  for(const label of ['Pan left','Zoom in','Fit']) [...viewer.refs.controls.children].find(n=>n.textContent===label).click();
- const activeContext=activeCanvas.getContext('webgl2');await viewer.close();assert(!viewer.refs.viewport.children.length&&activeContext.isContextLost(),'close disposes renderer');viewer.open();await until(()=>viewer.getState().status==='ready');
+ const activeContext=activeCanvas.getContext('webgl2');viewer.setWireframe(true);await viewer.close();assert(!viewer.refs.viewport.children.length&&activeContext.isContextLost(),'close disposes renderer');viewer.open();await until(()=>viewer.getState().status==='ready');assert(!viewer.getState().view.wireframe&&toggle.getAttribute('aria-pressed')==='false','reopen resets wireframe');
  const invalid=[new ArrayBuffer(8),makeJson({asset:{version:'1.0'}}),makeJson({asset:{version:'2.0'},buffers:[{uri:'https://example.invalid/secret',byteLength:4}]}),makeJson({asset:{version:'2.0'},extensionsRequired:['KHR_draco_mesh_compression']})];
- for(const source of invalid){viewer.update({source});await until(()=>viewer.getState().status==='error');assert(!viewer.refs.retry.hidden&&!viewer.refs.closeButton.disabled,'actionable error and dismissible');}
+ for(const source of invalid){viewer.update({source});await until(()=>viewer.getState().status==='error');assert(!viewer.refs.retry.hidden&&!viewer.refs.closeButton.disabled&&viewer.refs.wireframeButton.disabled&&viewer.refs.wireframeButton.getAttribute('aria-pressed')==='false','actionable error, dismissible and toggle disabled');}
  assert(!performance.getEntriesByType('resource').some(x=>x.name.includes('example.invalid')),'external reference never fetched');
  let stale;viewer.update({load:()=>new Promise(r=>stale=r),context:'old'});viewer.update({source:data,context:'new'});stale(new ArrayBuffer(1));await until(()=>viewer.getState().status==='ready');assert(!viewer.getState().error,'context stale response ignored');
  window.viewer=viewer;document.body.dataset.status='pass';document.querySelector('#results').textContent='PASS textured scene, keyboard, fit/reset, invalid/external input, abort, dispose, context change and reopen';

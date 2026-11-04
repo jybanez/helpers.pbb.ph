@@ -1,4 +1,4 @@
-# GLB viewer (0.21.327)
+# GLB viewer (0.21.328)
 
 `ui.glb.viewer` exports `createGlbViewer(options)`, a complete fullscreen canonical
 modal for self-contained glTF 2.0 binary files. Interaction follows the orbit,
@@ -102,3 +102,15 @@ renders the valid sparse fixture.
 `node tests/glb.metadata.regression.mjs` verifies malformed pivot filtering and
 finite-vector preservation. Synthetic parent-child string/numeric pivot fixtures
 are rendered in all four browser modes and compared with exporter-container bounds.
+
+### Wireframe mode
+
+The accessible **Wireframe** button toggles `aria-pressed` and switches mesh
+materials in place, preserving camera, target and controls. Textured/material view
+is the default. Toggle off restores every original material's wireframe flag,
+including material arrays and shared materials; materials and textures are never
+replaced. Lines/points are unchanged. `viewer.setWireframe(true|false)` applies
+only when ready and returns the resulting enabled state (false when unavailable).
+`viewer.getState().view.wireframe` reports the current mode. Fit/Reset retain the
+mode; close/reopen, reload, or a new source resets to the model's original view.
+Each viewer owns its mode independently. Loading/error states disable the toggle.

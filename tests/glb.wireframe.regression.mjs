@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {Scene,Mesh,BoxGeometry,MeshStandardMaterial} from 'three';
+import {createWireframeMode} from '../js/ui/ui.glb.wireframe.js';
+const scene=new Scene(),a=new MeshStandardMaterial(),b=new MeshStandardMaterial({wireframe:true});
+const materials=[a,b],geometry=new BoxGeometry(),mesh=new Mesh(geometry,materials),shared=new Mesh(geometry,a);scene.add(mesh,shared);
+const control=createWireframeMode(scene);assert.equal(control.get(),false);control.set(true);
+assert.equal(a.wireframe,true);assert.equal(b.wireframe,true);assert.equal(mesh.material,materials);assert.equal(shared.material,a);
+control.set(false);assert.equal(a.wireframe,false);assert.equal(b.wireframe,true);assert.equal(mesh.material,materials);
+control.set(true);control.dispose();assert.equal(a.wireframe,false);assert.equal(b.wireframe,true);assert.equal(control.set(true),false);
+geometry.dispose();a.dispose();b.dispose();console.log('Wireframe preserves multi-material/shared references and original flags, including disposal.');

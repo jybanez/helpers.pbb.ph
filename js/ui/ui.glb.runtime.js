@@ -2,10 +2,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createWireframeMode } from './ui.glb.wireframe.js';
 import { sanitizeNodePivots } from './ui.glb.metadata.js';
 
 export async function mountGlb(host, bytes, signal) {
-  let renderer, controls, observer, model, disposed = false;
+  let renderer, controls, observer, model, wireframe, disposed = false;
   const resources = new Set(), bitmaps = new Set(), released = new WeakSet();
   const release = value => {
     if (!value || typeof value !== 'object' || released.has(value)) return;
@@ -21,6 +22,7 @@ export async function mountGlb(host, bytes, signal) {
     if (disposed) return; disposed = true;
     signal.removeEventListener('abort',dispose); observer?.disconnect(); controls?.dispose();
     model?.traverse(node => { if (node.geometry) resources.add(node.geometry); if (node.material) resources.add(node.material); node.skeleton?.dispose(); });
+    wireframe?.dispose();
     resources.forEach(release); resources.clear();
     renderer?.dispose(); renderer?.forceContextLoss(); renderer?.domElement.remove();
   }
@@ -39,6 +41,7 @@ export async function mountGlb(host, bytes, signal) {
     });
     const gltf = await loader.parseAsync(bytes,'');
     model = gltf.scene;
+    wireframe=createWireframeMode(model);
     // Include resources in every scene, even when only the default scene is shown.
     for (const scene of gltf.scenes) scene.traverse(node => { if (node.geometry) track(node.geometry); if (node.material) track(node.material); });
     if (signal.aborted || disposed) { model.traverse(node=>node.skeleton?.dispose()); throw new DOMException('Cancelled','AbortError'); }
@@ -79,6 +82,6 @@ export async function mountGlb(host, bytes, signal) {
     });
     const resize = () => { if(disposed)return; const {width,height}=host.getBoundingClientRect(); renderer.setSize(Math.max(width,1),Math.max(height,1)); camera.aspect=Math.max(width,1)/Math.max(height,1);camera.updateProjectionMatrix();render(); };
     observer = new ResizeObserver(resize); observer.observe(host); resize(); fit(true);
-    return {dispose,fit:()=>fit(),reset:()=>fit(true),action, getState:()=>({camera:camera.position.toArray(),target:controls.target.toArray(),meshes:renderer.info.render.calls})};
+    return {dispose,setWireframe:value=>{if(disposed)return false;wireframe.set(value);render();return wireframe.get();},fit:()=>fit(),reset:()=>fit(true),action, getState:()=>({wireframe:wireframe.get(),camera:camera.position.toArray(),target:controls.target.toArray(),meshes:renderer.info.render.calls})};
   } catch (error) { dispose(); throw error; }
 }
