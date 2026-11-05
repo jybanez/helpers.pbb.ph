@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>GLB budget benchmark</title><body><script type="module">
+window.__models=[];window.__contexts=[];
+const original=HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext=function(...args){const gl=original.apply(this,args);if(!gl||args[0]!=='webgl2'||gl.__bench)return gl;gl.__bench=true;
+ const buffers=new Map(),textures=new Set();let peak=0,lost=false;
+ const bind=(name,fn)=>{const original=gl[name].bind(gl);gl[name]=(...args)=>fn(original,args);};
+ bind('createBuffer',(fn,a)=>{const b=fn(...a);buffers.set(b,0);return b;});
+ bind('bufferData',(fn,a)=>{const result=fn(...a),b=gl.getParameter(a[0]===gl.ARRAY_BUFFER?gl.ARRAY_BUFFER_BINDING:gl.ELEMENT_ARRAY_BUFFER_BINDING);const bytes=typeof a[1]==='number'?a[1]:(a[4]===undefined?a[1]?.byteLength:a[4]*a[1].BYTES_PER_ELEMENT)||0;buffers.set(b,bytes);peak=Math.max(peak,[...buffers.values()].reduce((s,n)=>s+n,0));return result;});
+ bind('deleteBuffer',(fn,a)=>{buffers.delete(a[0]);return fn(...a);});
+ bind('createTexture',(fn,a)=>{const t=fn(...a);textures.add(t);return t;});bind('deleteTexture',(fn,a)=>{textures.delete(a[0]);return fn(...a);});
+ this.addEventListener('webglcontextlost',()=>{lost=true;});
+ const debug=gl.getExtension('WEBGL_debug_renderer_info'),renderer=debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);window.__contexts.push({gl,snapshot:()=>({bufferBytes:[...buffers.values()].reduce((s,n)=>s+n,0),buffers:buffers.size,textures:textures.size,peakBufferBytes:peak,lost:lost||gl.isContextLost(),renderer})});return gl;};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const until=async fn=>{for(let i=0;i<1200;i++){if(fn())return;await sleep(50);}throw Error('preview timeout')};
+window.runCase=async ({name,cap,overlap=false})=>{
+ const {createGlbViewer:create}=await import(`/output/glb-budget-benchmark/viewer${cap}.js`);
+ const source=await (await fetch(`/output/glb-budget-benchmark/${name}.glb`)).arrayBuffer();
+ const result={name,cap,overlap,cycles:[]},firstContext=__contexts.length;let second;
+ const viewer=create({source,title:'Budget benchmark'});
+ const sample=()=>__contexts.slice(firstContext).map(c=>c.snapshot());
+ for(let cycle=0;cycle<3;cycle++){
+  const t=performance.now();viewer.open();await until(()=>viewer.getState().status!=='loading');const state=viewer.getState();
+  if(state.status!=='ready'){result.error=state.error;await viewer.close();break;}
+  const c=__contexts.at(-1),openMs=performance.now()-t;c.gl.finish();
+  const record={openMs,model:__models.at(-1),textured:sample()};
+  if(cycle===0){
+   const orbit=async()=>{const times=[];for(let i=0;i<8;i++){const start=performance.now();[...viewer.refs.controls.children].find(b=>b.textContent==='Orbit right').click();c.gl.finish();await new Promise(requestAnimationFrame);times.push(performance.now()-start);}return times.sort((a,b)=>a-b);};
+   record.texturedOrbitMs=await orbit();const toggle=performance.now();viewer.setWireframe(true);c.gl.finish();record.wireframeToggleMs=performance.now()-toggle;record.wireframe=sample();record.wireframeOrbitMs=await orbit();viewer.setWireframe(false);c.gl.finish();record.restored=sample();
+   if(overlap){second=create({source:source.slice(0)});const start=performance.now();second.open();await until(()=>second.getState().status!=='loading');record.overlapOpenMs=performance.now()-start;record.overlapStatus=second.getState().status;record.overlap=sample();second.setWireframe(true);__contexts.at(-1).gl.finish();record.overlapWireframe=sample();}
+   window.__active={viewer,second,result};window.__checkpoint=true;await until(()=>!window.__checkpoint);
+  }
+  await second?.close();second?.destroy();second=null;await viewer.close();await sleep(100);record.closed=sample();result.cycles.push(record);
+ }
+ viewer.destroy();window.__active=null;return result;
+};
+window.ready=true;
+</script>

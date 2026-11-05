@@ -1,0 +1,633 @@
+{
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "results": [
+    {
+      "mode": {
+        "name": "desktop",
+        "width": 1200,
+        "rate": 1
+      },
+      "name": "vessel",
+      "cap": 144,
+      "overlap": true,
+      "cycles": [
+        {
+          "openMs": 545.5,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "texturedOrbitMs": [
+            2.5,
+            13.5,
+            14.199999995529652,
+            15.899999998509884,
+            16.200000002980232,
+            16.299999997019768,
+            16.600000001490116,
+            17
+          ],
+          "wireframeToggleMs": 42.69999999552965,
+          "wireframe": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "wireframeOrbitMs": [
+            1.3999999985098839,
+            8.100000001490116,
+            14.200000002980232,
+            41.5,
+            43.900000005960464,
+            45.29999999701977,
+            45.69999999552965,
+            55
+          ],
+          "restored": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "overlapOpenMs": 177.19999999552965,
+          "overlapStatus": "ready",
+          "overlap": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "overlapWireframe": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        },
+        {
+          "openMs": 90,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        },
+        {
+          "openMs": 82.79999999701977,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        }
+      ],
+      "before": {
+        "heap": {
+          "usedSize": 504980,
+          "totalSize": 1048576,
+          "embedderHeapUsedSize": 289696,
+          "backingStorageSize": 3882
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 11,
+          "jsEventListeners": 0
+        }
+      },
+      "active": {
+        "heap": {
+          "usedSize": 2708264,
+          "totalSize": 3145728,
+          "embedderHeapUsedSize": 478376,
+          "backingStorageSize": 141591199
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 143,
+          "jsEventListeners": 62
+        }
+      },
+      "after": {
+        "heap": {
+          "usedSize": 2663464,
+          "totalSize": 3145728,
+          "embedderHeapUsedSize": 355544,
+          "backingStorageSize": 752816
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 11,
+          "jsEventListeners": 0
+        }
+      }
+    },
+    {
+      "mode": {
+        "name": "cpu4-narrow",
+        "width": 375,
+        "rate": 4
+      },
+      "name": "vessel",
+      "cap": 144,
+      "overlap": true,
+      "cycles": [
+        {
+          "openMs": 281.80000000447035,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "texturedOrbitMs": [
+            12.400000005960464,
+            14.899999998509884,
+            14.899999998509884,
+            15.5,
+            15.800000004470348,
+            16.100000001490116,
+            17.19999999552965,
+            20.80000000447035
+          ],
+          "wireframeToggleMs": 57.900000005960464,
+          "wireframe": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "wireframeOrbitMs": [
+            2.100000001490116,
+            2.600000001490116,
+            16.600000001490116,
+            41.5,
+            44.30000000447035,
+            44.80000000447035,
+            52.79999999701977,
+            73.69999999552965
+          ],
+          "restored": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "overlapOpenMs": 195.90000000596046,
+          "overlapStatus": "ready",
+          "overlap": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "overlapWireframe": [
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 46327544,
+              "buffers": 5,
+              "textures": 5,
+              "peakBufferBytes": 46327544,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        },
+        {
+          "openMs": 117.10000000149012,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        },
+        {
+          "openMs": 134.80000000447035,
+          "model": {
+            "geometries": 1,
+            "attributeBytes": 24090296,
+            "uniqueArrayBufferBytes": 24090296,
+            "textures": 0,
+            "decodedTextureBytes": 0,
+            "mipTextureEstimate": 0
+          },
+          "textured": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 24090296,
+              "buffers": 4,
+              "textures": 5,
+              "peakBufferBytes": 24090296,
+              "lost": false,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ],
+          "closed": [
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 46327544,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            },
+            {
+              "bufferBytes": 0,
+              "buffers": 0,
+              "textures": 4,
+              "peakBufferBytes": 24090296,
+              "lost": true,
+              "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+            }
+          ]
+        }
+      ],
+      "before": {
+        "heap": {
+          "usedSize": 725208,
+          "totalSize": 1572864,
+          "embedderHeapUsedSize": 304616,
+          "backingStorageSize": 3927
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 11,
+          "jsEventListeners": 0
+        }
+      },
+      "active": {
+        "heap": {
+          "usedSize": 2766408,
+          "totalSize": 3145728,
+          "embedderHeapUsedSize": 486264,
+          "backingStorageSize": 141591199
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 143,
+          "jsEventListeners": 62
+        }
+      },
+      "after": {
+        "heap": {
+          "usedSize": 2654020,
+          "totalSize": 3145728,
+          "embedderHeapUsedSize": 358064,
+          "backingStorageSize": 752816
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 11,
+          "jsEventListeners": 0
+        }
+      }
+    }
+  ]
+}
