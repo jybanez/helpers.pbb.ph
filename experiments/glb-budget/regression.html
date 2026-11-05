@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createGlbViewer as create} from '/output/glb-allocation-prototype/viewer.js';
+import {prototypePool as pool} from './budget.mjs';
+const assert=(v,m)=>{if(!v)throw Error(m)},wait=ms=>new Promise(r=>setTimeout(r,ms)),until=async fn=>{for(let i=0;i<1200;i++){if(fn())return;await wait(25);}throw Error('timeout');};
+const read=async name=>(await fetch(`/output/glb-budget-benchmark/${name}.glb`)).arrayBuffer();
+try{
+ const evidence={cases:[],mode:location.search.includes('mobile')?'CPU4 narrow':'desktop'};
+ for(const name of ['vessel','shared32','distinct32','distinct96-control','texture2048','distinct128-control']){
+  const source=await read(name),v=create({source}),row={name,cycles:[]};
+  for(let i=0;i<3;i++){
+   const start=performance.now();v.open();await until(()=>v.getState().status!=='loading');
+   if(name==='distinct128-control'){assert(v.getState().status==='error'&&pool.getState().contexts===0,'oversized rejected without lease');row.error=v.getState().error;await v.close();break;}
+   assert(v.getState().status==='ready',v.getState().error);assert(pool.getState().contexts===1,'reservation held while visible');
+   const canvas=v.refs.viewport.querySelector('canvas'),gl=canvas.getContext('webgl2'),debug=gl.getExtension('WEBGL_debug_renderer_info');evidence.renderer=gl.getParameter(debug.UNMASKED_RENDERER_WEBGL);
+   const reserved=pool.getState();v.setWireframe(true);assert(v.getState().view.wireframe,'wireframe works');const elapsed=performance.now()-start;
+   await v.close();await until(()=>pool.getState().contexts===0);assert(gl.isContextLost(),'context disposed');row.cycles.push({openAndWireframeMs:elapsed,reserved,closed:pool.getState()});
+  }v.destroy();evidence.cases.push(row);
+ }
+ const vessel=await read('vessel'),one=create({source:vessel}),two=create({source:vessel.slice(0)});one.open();await until(()=>one.getState().status==='ready');two.open();await until(()=>two.getState().status==='error');assert(two.getState().error.includes('Aggregate'),'overlap denied');assert(pool.getState().contexts===1,'denial leaves original lease intact');await two.close();two.destroy();await one.close();one.destroy();assert(pool.getState().contexts===0,'overlap released');
+ const shared=await read('shared32'),a=create({source:shared}),b=create({source:shared.slice(0)});a.open();b.open();await until(()=>a.getState().status==='ready'&&b.getState().status==='ready');assert(pool.getState().contexts===2,'small overlap allowed');await a.close();await b.close();a.destroy();b.destroy();assert(pool.getState().contexts===0,'both small leases released');
+ // Cancel immediately after a synchronous reservation, while import/mount awaits.
+ const cancelled=create({source:vessel});cancelled.open();const during=pool.getState();assert(during.contexts===1,'pending load reserves');await cancelled.close();await until(()=>pool.getState().contexts===0);cancelled.destroy();
+ let resolve;const stale=create({load:()=>new Promise(r=>resolve=r)});stale.open();await stale.close();resolve(vessel);await wait(50);assert(pool.getState().contexts===0,'late read does not reserve');stale.destroy();
+ // A valid empty GLB passes admission but fails renderer initialization.
+ const text=new TextEncoder().encode('{"asset":{"version":"2.0"},"scenes":[{"nodes":[]}],"scene":0}'),n=Math.ceil(text.length/4)*4,empty=new ArrayBuffer(20+n),dv=new DataView(empty);[0x46546c67,2,20+n,n,0x4e4f534a].forEach((v,i)=>dv.setUint32(i*4,v,true));new Uint8Array(empty,20).fill(32);new Uint8Array(empty,20,text.length).set(text);
+ const failure=create({source:empty});failure.open();await until(()=>failure.getState().status==='error');assert(pool.getState().contexts===0,'mount failure releases');failure.destroy();
+ evidence.lifecycle='large overlap denied; small overlap allowed; cancel, stale read, mount failure and three close/reopen cycles release reservations';window.evidence=evidence;document.body.dataset.status='pass';document.querySelector('#results').textContent=JSON.stringify(evidence);
+}catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack;}
+</script>

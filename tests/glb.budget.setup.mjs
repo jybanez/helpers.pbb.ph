@@ -6,7 +6,7 @@ import {deflateSync} from 'node:zlib';
 const dir='output/glb-budget-benchmark';fs.mkdirSync(dir,{recursive:true});
 const encode=(json,bin)=>{const j=Buffer.from(JSON.stringify(json)),n=Math.ceil(j.length/4)*4,b=Buffer.alloc(28+n+bin.length);[0x46546c67,2,b.length,n,0x4e4f534a].forEach((v,i)=>b.writeUInt32LE(v,i*4));b.fill(32,20,20+n);j.copy(b,20);b.writeUInt32LE(bin.length,20+n);b.writeUInt32LE(0x004e4942,24+n);bin.copy(b,28+n);return b;};
 const geometry=new SphereGeometry(1,96,64), baseArrays=[geometry.attributes.position.array,geometry.attributes.normal.array,geometry.attributes.uv.array,geometry.index.array];
-for(const [label,count,distinct] of [['shared32',32,false],['distinct32',32,true],['distinct96-control',96,true]]){
+for(const [label,count,distinct] of [['shared32',32,false],['distinct32',32,true],['distinct96-control',96,true],['distinct128-control',128,true]]){
  const json={asset:{version:'2.0'},scene:0,scenes:[{nodes:[]}],nodes:[],meshes:[],materials:[{pbrMetallicRoughness:{baseColorFactor:[0.3,0.7,0.8,1],metallicFactor:0,roughnessFactor:0.6}}],accessors:[],bufferViews:[],buffers:[]};const parts=[];let offset=0;
  for(let m=0;m<count;m++){
   const first=distinct?json.accessors.length:0;

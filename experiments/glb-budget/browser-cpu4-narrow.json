@@ -1,0 +1,232 @@
+{
+  "cases": [
+    {
+      "name": "vessel",
+      "cycles": [
+        {
+          "openAndWireframeMs": 255.80000000447035,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 161.20000000298023,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 182.5,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "shared32",
+      "cycles": [
+        {
+          "openAndWireframeMs": 50.600000001490116,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 63.19999999552965,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 51.399999998509884,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct32",
+      "cycles": [
+        {
+          "openAndWireframeMs": 124.39999999850988,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 142.39999999850988,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 129.5,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct96-control",
+      "cycles": [
+        {
+          "openAndWireframeMs": 303.79999999701977,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 344.6000000014901,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 302.5,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "texture2048",
+      "cycles": [
+        {
+          "openAndWireframeMs": 168.39999999850988,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 153.09999999403954,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 184.69999999552965,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct128-control",
+      "cycles": [],
+      "error": "Unable to preview model. Preview allocation budget exceeded"
+    }
+  ],
+  "mode": "CPU4 narrow",
+  "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "lifecycle": "large overlap denied; small overlap allowed; cancel, stale read, mount failure and three close/reopen cycles release reservations"
+}
