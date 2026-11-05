@@ -41,7 +41,7 @@ export function estimateAllocation(buffer,validate){
  let triangles=0,draws=0,instances=0;
  const visit=(index,ancestors)=>{integer(index);if(!nodes[index]||ancestors.has(index))throw Error('Invalid/cyclic node reference');if(ancestors.size>=LIMITS.depth||++instances>LIMITS.nodes)throw Error('Node work budget exceeded');const n=nodes[index];if(n.mesh!==undefined){integer(n.mesh);const w=work[n.mesh];if(!w)throw Error('Invalid mesh reference');triangles=add(triangles,w.triangles);draws+=w.draws;if(triangles>LIMITS.triangles||draws>LIMITS.draws)throw Error('Render work budget exceeded');}const next=new Set(ancestors);next.add(index);for(const child of n.children??[])visit(child,next);};
  for(const s of list('scenes'))for(const node of s.nodes??[])visit(node,new Set());
- let pixels=0;const imageSizes=images.map(image=>{
+ const imageDimensions=[];let pixels=0;const imageSizes=images.map(image=>{
   if(image.mimeType!=='image/png')throw Error('Prototype budgets embedded PNG only; other formats fail closed');
   const v=views[image.bufferView];if(!v||v.buffer!==0)throw Error('Invalid image view');
   // Bounds are checked here before reading a header, then by the full validator.
@@ -50,6 +50,7 @@ export function estimateAllocation(buffer,validate){
   const p=new DataView(buffer,start,size);if(p.getUint32(0)!==0x89504e47||p.getUint32(4)!==0x0d0a1a0a||p.getUint32(8)!==13||p.getUint32(12)!==0x49484452)throw Error('Invalid PNG header');
   if(p.getUint8(24)!==8)throw Error('Prototype budgets 8-bit PNG only');
   const width=integer(p.getUint32(16),1),height=integer(p.getUint32(20),1);if(width>LIMITS.textureEdge||height>LIMITS.textureEdge)throw Error('Texture dimension budget exceeded');
+  imageDimensions.push(Object.freeze({width,height}));
   const count=integer(width*height);pixels=add(pixels,count);if(pixels>LIMITS.texturePixels)throw Error('Decoded texture budget exceeded');
   categories.textures=add(categories.textures,count*4*2);return count*4;
  });
@@ -58,7 +59,7 @@ export function estimateAllocation(buffer,validate){
  // Inject the isolated original validator with only its obsolete accounting cap
  // lifted. This retains resource/container/range/sparse/extension validation.
  validate(buffer);
- return Object.freeze({bytes,triangles,draws,instances,pixels,categories:Object.freeze(categories)});
+ return Object.freeze({bytes,triangles,draws,instances,pixels,imageDimensions:Object.freeze(imageDimensions),categories:Object.freeze(categories)});
 }
 export function createBudgetPool(){
  let bytes=0,triangles=0,contexts=0;
@@ -71,3 +72,18 @@ export function createBudgetPool(){
 }
 
 export const prototypePool=createBudgetPool();
+
+// After decoding but before creating a renderer/uploading textures. Match the
+// actual unique decoded image set to reserved header dimensions; unused images
+// may remain un-decoded, but unexpected copies/dimensions fail closed.
+export function reconcileDecodedImages(images,estimate){
+  const remaining=estimate.imageDimensions.map(x=>({...x}));let pixels=0,count=0;
+  for(const image of new Set(images)){
+    const width=integer(image?.width,1),height=integer(image?.height,1);
+    const index=remaining.findIndex(x=>x.width===width&&x.height===height);
+    if(index<0||width>LIMITS.textureEdge||height>LIMITS.textureEdge)throw Error('Decoded texture differs from reservation');
+    remaining.splice(index,1);pixels=add(pixels,width*height);count++;
+    if(pixels>estimate.pixels||pixels>LIMITS.texturePixels)throw Error('Decoded texture exceeds reservation');
+  }
+  return {images:count,pixels};
+}

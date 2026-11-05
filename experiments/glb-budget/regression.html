@@ -7,12 +7,12 @@ try{
  const evidence={cases:[],mode:location.search.includes('mobile')?'CPU4 narrow':'desktop'};
  for(const name of ['vessel','shared32','distinct32','distinct96-control','texture2048','distinct128-control']){
   const source=await read(name),v=create({source}),row={name,cycles:[]};
-  for(let i=0;i<3;i++){
+  for(let i=0;i<((name==='vessel'||name==='texture2048')?20:3);i++){
    const start=performance.now();v.open();await until(()=>v.getState().status!=='loading');
    if(name==='distinct128-control'){assert(v.getState().status==='error'&&pool.getState().contexts===0,'oversized rejected without lease');row.error=v.getState().error;await v.close();break;}
    assert(v.getState().status==='ready',v.getState().error);assert(pool.getState().contexts===1,'reservation held while visible');
    const canvas=v.refs.viewport.querySelector('canvas'),gl=canvas.getContext('webgl2'),debug=gl.getExtension('WEBGL_debug_renderer_info');evidence.renderer=gl.getParameter(debug.UNMASKED_RENDERER_WEBGL);
-   const reserved=pool.getState();v.setWireframe(true);assert(v.getState().view.wireframe,'wireframe works');const elapsed=performance.now()-start;
+   const reserved=pool.getState();if(name==='texture2048')assert(v.getState().view.decodedTextures.pixels===4194304,'decoded texture reconciled');v.setWireframe(true);assert(v.getState().view.wireframe,'wireframe works');const elapsed=performance.now()-start;
    await v.close();await until(()=>pool.getState().contexts===0);assert(gl.isContextLost(),'context disposed');row.cycles.push({openAndWireframeMs:elapsed,reserved,closed:pool.getState()});
   }v.destroy();evidence.cases.push(row);
  }
@@ -24,6 +24,6 @@ try{
  // A valid empty GLB passes admission but fails renderer initialization.
  const text=new TextEncoder().encode('{"asset":{"version":"2.0"},"scenes":[{"nodes":[]}],"scene":0}'),n=Math.ceil(text.length/4)*4,empty=new ArrayBuffer(20+n),dv=new DataView(empty);[0x46546c67,2,20+n,n,0x4e4f534a].forEach((v,i)=>dv.setUint32(i*4,v,true));new Uint8Array(empty,20).fill(32);new Uint8Array(empty,20,text.length).set(text);
  const failure=create({source:empty});failure.open();await until(()=>failure.getState().status==='error');assert(pool.getState().contexts===0,'mount failure releases');failure.destroy();
- evidence.lifecycle='large overlap denied; small overlap allowed; cancel, stale read, mount failure and three close/reopen cycles release reservations';window.evidence=evidence;document.body.dataset.status='pass';document.querySelector('#results').textContent=JSON.stringify(evidence);
+ evidence.lifecycle='large overlap denied; small overlap allowed; cancel, stale read, mount failure and 20 vessel/texture and three other close/reopen cycles release reservations';window.evidence=evidence;document.body.dataset.status='pass';document.querySelector('#results').textContent=JSON.stringify(evidence);
 }catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack;}
 </script>

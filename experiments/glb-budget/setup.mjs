@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import {build} from 'esbuild';
 await import('../../tests/glb.budget.setup.mjs');
 const dir='output/glb-allocation-prototype';fs.mkdirSync(dir,{recursive:true});
 const data=fs.readFileSync('js/ui/ui.glb.data.js','utf8').replace('= 128 * 1024 * 1024','= Number.MAX_SAFE_INTEGER');
@@ -9,7 +11,18 @@ wrapper=wrapper.replace('runtime=mounted;setStatus', 'const held=lease;lease=nul
 wrapper=wrapper.replace("return false;}\n  }\n  function destroy", "return false;}finally{lease?.release();}\n  }\n  function destroy");
 // Keep lease until pending import/mount settles after cancellation; never release
 // while an aborted decoder may still be holding allocations.
-wrapper=wrapper.replace(/const url=new URL\(bundled\?[^;]+;/,"const url=new URL('/vendor/three/glb.runtime.js?v=0.21.328',import.meta.url);");
+wrapper=wrapper.replace(/const url=new URL\(bundled\?[^;]+;/,"const url=new URL('./runtime.js',import.meta.url);");
 if(!wrapper.includes('finally{lease?.release();}')||!wrapper.includes('prototypePool.acquire'))throw Error('Wrapper changed: inspect prototype injection');
+wrapper=wrapper.replace('engine.mountGlb(host,prepared.bytes,signal)','engine.mountGlb(host,prepared.bytes,signal,lease.estimate)');
 fs.writeFileSync(dir+'/viewer.js',wrapper);
 console.log('Isolated allocation prototype generated; production sources untouched.');
+
+let runtime=fs.readFileSync('js/ui/ui.glb.runtime.js','utf8');
+runtime="import {reconcileDecodedImages} from '../../experiments/glb-budget/budget.mjs';\n"+runtime;
+runtime=runtime.replace('mountGlb(host, bytes, signal)', 'mountGlb(host, bytes, signal, estimate)');
+runtime=runtime.replace('    const bounds =', `    const decoded=[];
+    for(const s of gltf.scenes)s.traverse(node=>{for(const m of Array.isArray(node.material)?node.material:[node.material])if(m)for(const t of Object.values(m))if(t?.isTexture&&t.source?.data)decoded.push(t.source.data);});
+    const reconciled=reconcileDecodedImages(decoded,estimate);
+    const bounds =`);
+runtime=runtime.replace('getState:()=>({wireframe:', 'getState:()=>({decodedTextures:reconciled,wireframe:');
+await build({stdin:{contents:runtime,resolveDir:path.resolve('js/ui'),sourcefile:'prototype-runtime.js'},bundle:true,format:'esm',outfile:dir+'/runtime.js',minify:true});

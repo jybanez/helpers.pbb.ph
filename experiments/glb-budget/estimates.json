@@ -18,6 +18,7 @@
       "draws": 1,
       "instances": 1,
       "pixels": 0,
+      "imageDimensions": [],
       "categories": {
         "inputParser": 72285800,
         "viewCopies": 24090296,
@@ -35,6 +36,7 @@
       "draws": 32,
       "instances": 32,
       "pixels": 0,
+      "imageDimensions": [],
       "categories": {
         "inputParser": 879632,
         "viewCopies": 274336,
@@ -52,6 +54,7 @@
       "draws": 32,
       "instances": 32,
       "pixels": 0,
+      "imageDimensions": [],
       "categories": {
         "inputParser": 26568528,
         "viewCopies": 8778752,
@@ -69,6 +72,7 @@
       "draws": 96,
       "instances": 96,
       "pixels": 0,
+      "imageDimensions": [],
       "categories": {
         "inputParser": 79708628,
         "viewCopies": 26336256,
@@ -86,6 +90,12 @@
       "draws": 3,
       "instances": 3,
       "pixels": 4194304,
+      "imageDimensions": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
       "categories": {
         "inputParser": 79524,
         "viewCopies": 22039,

@@ -38,7 +38,7 @@ Render work walks scene roots and counts each expanded instance, including share
 
 The injected validator is copied from the current production validator; only its obsolete geometry-accounting threshold is lifted for the isolated experiment. The new estimator runs before it and then delegates full GLB/container, URI, bufferView, accessor, sparse and required-extension validation before mounting. Arithmetic uses safe-integer checks. Unsupported optional extension stripping remains the original `prepareGlb` behavior.
 
-This first prototype **fails closed** for skins, animations, morph targets, non-triangle primitives, non-PNG textures and PNG bit depths other than 8. Those paths need verified allocation models; this is deliberately narrower than the canonical viewer, not a compatible replacement. Missing required fallback attributes fail. PNG headers are read before decode, but post-decode dimension reconciliation and accurate native image working-space accounting remain adoption blockers. The original validator is not upgraded into a complete glTF schema validator by this work.
+This first prototype **fails closed** for skins, animations, morph targets, non-triangle primitives, non-PNG textures and PNG bit depths other than 8. Those paths need verified allocation models; this is deliberately narrower than the canonical viewer, not a compatible replacement. Missing required fallback attributes fail. PNG headers are read before decode, but post-decode dimensions are now reconciled before GPU upload; accurate native image working-space accounting remains an adoption blocker. The original validator is not upgraded into a complete glTF schema validator by this work.
 
 ## Reservation lifecycle
 
@@ -61,7 +61,7 @@ Original vessel hash: `bb1ac773041be0e869312444758cea4e5da989c4b6aadc6a27b64b327
 
 Distinct96 was an over-144-MiB control under the old accounting. Its admission here is an **intentional policy difference**, not a claim that its old result was invalid. Distinct128 is the new allocation-overflow control. Repeated-instance render work and aggregate triangles also have independent rejection tests.
 
-Browser checks passed at desktop 1200×800 and 375×800 with CPU4 throttling on the same Intel UHD D3D11 GPU. Three open/wireframe/close cycles passed for each admitted fixture, with reservations zero after close and WebGL context loss. Tests also cover large overlap denial, small overlap admission, immediate cancellation while loading, late read, failed renderer initialization, and preservation of the first preview's reservation when another is denied. Node tests cover exact wireframe reservation, shared versus distinct accounting, valid/invalid sparse data, malformed references, URI denial, unknown required extensions, oversized counts, texture dimensions/aggregate pixels, cyclic graphs, context/triangle limits and repeated release.
+Browser checks passed at desktop 1200Ã—800 and 375Ã—800 with CPU4 throttling on the same Intel UHD D3D11 GPU. Twenty open/wireframe/close cycles passed for the vessel and texture fixture in each browser mode; three cycles passed for other admitted fixtures, with reservations zero after close and WebGL context loss. Tests also cover large overlap denial, small overlap admission, immediate cancellation while loading, late read, failed renderer initialization, and preservation of the first preview's reservation when another is denied. Node tests cover exact wireframe reservation, shared versus distinct accounting, valid/invalid sparse data, malformed references, URI denial, unknown required extensions, oversized counts, texture dimensions/aggregate pixels, cyclic graphs, context/triangle limits and repeated release.
 
 **No genuinely constrained-memory hardware was available. CPU throttling is not that evidence.** The prior benchmark report records memory measurements and timing outliers. This prototype run tests admission/lifecycle behavior, not a new calibrated peak-memory or sustained-performance claim. Raw estimates and browser timings are attached alongside this README. Original production data/pivot/wireframe regressions also passed.
 
@@ -74,4 +74,36 @@ Browser checks passed at desktop 1200×800 and 375×800 with CPU4 throttling on 
 
 The setup regenerates synthetic fixtures and isolated wrapper/validator files under `output/`. No deployed bundle rebuild or revision change is needed. The browser runner uses the installed Chrome/Edge and a temporary profile; it never touches a user's browser profile.
 
-Before any adoption: review the exact candidate, model remaining supported glTF/image paths, verify image dimensions after decode, quantify framebuffer/driver/transient reserves, exercise long-run cancellation/overlap, and test actual constrained hardware. Keep deployed 128 MiB unchanged until a separate reviewed integration decision.
+Before any adoption: review the exact candidate, model remaining supported glTF/image paths, extend decoded-image reconciliation to the excluded formats, quantify framebuffer/driver/transient reserves, exercise long-run cancellation/overlap, and test actual constrained hardware. Keep deployed 128 MiB unchanged until a separate reviewed integration decision.
+
+## Follow-up to review #14056
+
+PR remains isolated and unmerged: no adoption or higher default was approved.
+The generated experimental runtime now gathers unique decoded image objects from
+all loaded scenes, reconciles their dimensions/count against the reserved PNG
+headers, and rejects mismatches before creating the WebGL renderer or uploading
+textures. Reused image identities count once; unexpected copies or dimensions
+fail closed. Unit tests include same-pixel-count/different-dimension mismatch,
+unexpected duplicate decodes and invalid dimensions. Actual PNG decode passed
+browser reconciliation. This occurs after decode, so it cannot prevent all native
+decoder transient allocations; the pre-decode bounds still matter.
+
+Stress was extended to 20 vessel and 20 texture cycles per mode (80 combined),
+plus three cycles for other accepted fixtures and the existing overlap/cancel/
+failure cases. Every close returned reservations to zero and lost its context.
+This verifies ownership/lifecycle counters, not a new OS/driver leak measurement
+or proof of arbitrarily long stability. Raw browser evidence was refreshed.
+
+Still unverified or unavailable:
+
+- A representative real assembled review scene beyond the supplied collapsed
+  vessel; requested from Developer in #14059. Synthetic shared/distinct scenes
+  are tested but are not substituted for that missing real-scene evidence.
+- Actual constrained-memory hardware, lower-end GPU and software rendering;
+  CPU4 throttling on this desktop is labeled separately.
+- Production asset parity for JPEG/WebP, morphs, skins, animations and other
+  primitive modes. Any future production integration must either establish
+  parity or retain the unchanged canonical path for those assets. This PR does
+  neither and is not an adoption candidate.
+- Calibrated native decoder/driver/framebuffer transient reserves and a
+  cross-tab aggregate policy. Proposed numeric bounds remain experimental.

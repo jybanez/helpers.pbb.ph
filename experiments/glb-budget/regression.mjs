@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';
-import {estimateAllocation,createBudgetPool,LIMITS} from './budget.mjs';
+import {estimateAllocation,createBudgetPool,LIMITS,reconcileDecodedImages} from './budget.mjs';
 import {validateGlb} from '../../output/glb-allocation-prototype/data.js';
 const read=name=>{const b=fs.readFileSync(`output/glb-budget-benchmark/${name}.glb`);return b.buffer.slice(b.byteOffset,b.byteOffset+b.length);};
 const edit=(source,change)=>{const v=new DataView(source),json=JSON.parse(new TextDecoder().decode(new Uint8Array(source,20,v.getUint32(12,true))));change(json);const j=new TextEncoder().encode(JSON.stringify(json)),n=Math.ceil(j.length/4)*4,tail=new Uint8Array(source,20+v.getUint32(12,true)),out=new ArrayBuffer(20+n+tail.length),dv=new DataView(out);[0x46546c67,2,out.byteLength,n,0x4e4f534a].forEach((x,i)=>dv.setUint32(i*4,x,true));new Uint8Array(out,20,n).fill(32);new Uint8Array(out,20,j.length).set(j);new Uint8Array(out,20+n).set(tail);return out;};
@@ -18,3 +18,10 @@ assert.throws(()=>estimateAllocation(edit(read('texture2048'),j=>{j.images=Array
 const texture=read('texture2048'),badTexture=texture.slice(0);const tv=new DataView(badTexture),tj=JSON.parse(new TextDecoder().decode(new Uint8Array(badTexture,20,tv.getUint32(12,true))));tv.setUint32(28+tv.getUint32(12,true)+tj.bufferViews[4].byteOffset+16,8192);assert.throws(()=>estimateAllocation(badTexture,validateGlb),/dimension/);
 assert.deepEqual(pool.getState(),{bytes:0,triangles:0,contexts:0});
 fs.writeFileSync('output/glb-allocation-prototype/estimates.json',JSON.stringify({limits:LIMITS,estimates},null,2));console.log('Prototype allocation, aggregate/context/work, sparse/malformed/URI/texture bounds and idempotent release passed.');
+
+const image={width:2048,height:2048},textureEstimate=estimates.texture2048;
+assert.deepEqual(reconcileDecodedImages([image,image],textureEstimate),{images:1,pixels:4194304});
+assert.throws(()=>reconcileDecodedImages([{width:1024,height:4096}],textureEstimate),/differs/);
+assert.throws(()=>reconcileDecodedImages([image,{...image}],textureEstimate),/differs/);
+assert.throws(()=>reconcileDecodedImages([{width:NaN,height:2048}],textureEstimate));
+console.log('Post-decode image dimensions, unique identities and reservation matching passed.');
