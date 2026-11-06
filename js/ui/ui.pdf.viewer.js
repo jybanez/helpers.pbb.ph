@@ -1,3 +1,4 @@
+import {createViewerHeaderActions} from './ui.viewer.actions.js';
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
 
@@ -52,6 +53,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
   let readyTimer = null;
   let pendingFrameSrc = "";
   const events = createEventBag();
+  const headerActions=createViewerHeaderActions();
 
   const api = {
     open,
@@ -104,7 +106,8 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
       titleEl = createElement("h2", { className: "ui-pdf-viewer-title", text: options.title });
       stateEl = createElement("p", { className: "ui-pdf-viewer-state", attrs: { "aria-live": "polite" } });
       heading.append(titleEl, stateEl);
-      header.appendChild(heading);
+      heading.style.flex="1 1 auto";
+      header.append(heading,headerActions.element);
 
       if (options.showCloseButton) {
         closeBtn = createElement("button", {
@@ -151,6 +154,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
   }
 
   function refresh() {
+    headerActions.update(options.headerActions,{context:options.context,url:options.url});
     if (!frameEl) {
       return;
     }
@@ -179,7 +183,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
     if (!shell && ownsContainer) {
       render();
     }
-    focusReturnEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if(!isOpen || !focusReturnEl)focusReturnEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
     const host = ownsContainer ? shell : container;
     host?.classList.add("is-open");
@@ -193,6 +197,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
     if (!isOpen) {
       return api;
     }
+    headerActions.cancel();
     isOpen = false;
     const host = ownsContainer ? shell : container;
     host?.classList.remove("is-open");
@@ -212,6 +217,7 @@ export function createPdfViewer(containerOrOptions = null, maybeOptions = {}) {
   }
 
   function destroy() {
+    headerActions.destroy();
     clearReadyTimer();
     events.clear();
     const host = ownsContainer ? shell : container;

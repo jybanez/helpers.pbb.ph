@@ -1,3 +1,4 @@
+import {createViewerHeaderActions} from './ui.viewer.actions.js';
 import { createElement, clearNode } from "./ui.dom.js";
 import { createEventBag } from "./ui.events.js";
 import { createAudioGraph } from "./ui.audio.audiograph.js";
@@ -52,6 +53,7 @@ const tabbableSelector = [
 
 export function createMediaViewer(container, options = {}) {
   const events = createEventBag();
+  const headerActions=createViewerHeaderActions();
   let currentOptions = normalizeOptions(options);
   let currentItems = normalizeItems(currentOptions.items, currentOptions);
   let isOpen = Boolean(currentOptions.open);
@@ -128,7 +130,8 @@ export function createMediaViewer(container, options = {}) {
       if (currentOptions.showCounter) {
         headingWrap.appendChild(counterEl);
       }
-      header.appendChild(headingWrap);
+      headingWrap.style.flex="1 1 auto";
+      header.append(headingWrap,headerActions.element);
       if (currentOptions.showClose) {
         closeBtn = createElement("button", {
           className: "ui-button ui-button-ghost ui-media-viewer-close",
@@ -234,6 +237,7 @@ export function createMediaViewer(container, options = {}) {
     mediaEl = null;
 
     const item = currentItems[activeIndex] || null;
+    headerActions.update(currentOptions.headerActions,{context:currentOptions.context,item,index:activeIndex});
     if (!item) {
       titleEl && (titleEl.textContent = "No media");
       counterEl && (counterEl.textContent = "0 / 0");
@@ -364,9 +368,11 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function onDocumentKeyDown(event) {
-    if (!isOpen) {
+    if (!isOpen || event.defaultPrevented) {
       return;
     }
+    const targetDialog=event.target?.closest?.('[role="dialog"]');
+    if(targetDialog && targetDialog!==dialog)return;
     if (event.key === "Tab" && currentOptions.trapFocus) {
       trapDialogFocus(event);
       return;
@@ -592,7 +598,7 @@ export function createMediaViewer(container, options = {}) {
     }
     const targetIndex = clampIndex(index, currentItems.length);
     const wasOpen = isOpen;
-    focusReturnEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if(!wasOpen || !focusReturnEl)focusReturnEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
     activeIndex = targetIndex;
     if (!wasOpen) {
@@ -612,6 +618,7 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function close() {
+    headerActions.cancel();
     if (!isOpen) {
       return;
     }
@@ -867,6 +874,7 @@ export function createMediaViewer(container, options = {}) {
   }
 
   function destroy() {
+    headerActions.destroy();
     isOpen = false;
     clearGesture();
     pauseVideo();
