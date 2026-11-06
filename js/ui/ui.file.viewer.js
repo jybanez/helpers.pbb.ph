@@ -1,3 +1,4 @@
+import {createViewerHeaderActions} from './ui.viewer.actions.js';
 import { createModal } from "./ui.modal.js";
 import { createDataInspector } from "./ui.data.inspector.js";
 import { createMarkdownView } from "./ui.markdown.js";
@@ -33,8 +34,9 @@ function createFileViewer(format, supplied = {}) {
   const fullscreen = document.createElement("button");
   fullscreen.type = "button"; fullscreen.className = "ui-button ui-button-borderless";
   toolbar.append(external, download, fullscreen);
+  const headerActions=createViewerHeaderActions();
   const modal = createModal({
-    title: options.title, ariaLabel: options.title, content: root, headerActions: toolbar,
+    title: options.title, ariaLabel: options.title, content: root, headerActions: toolbar, headerActionsWhileBusy:true,
     className: "ui-file-viewer-modal", size: options.fullscreen ? "full" : "xl",
     closeWhileBusy: true, escapeCloseWhileBusy: true, backdropCloseWhileBusy: true,
     onBeforeClose() { invalidate(); return true; },
@@ -58,7 +60,7 @@ function createFileViewer(format, supplied = {}) {
       sourceUrl: viewerSourceUrl(next.sourceUrl, document.baseURI) };
   }
   function getState() { return { format, open: !destroyed && modal.getState().open, destroyed, status, error, rowCount, fullscreen: Boolean(options.fullscreen) }; }
-  function invalidate() { revision++; controller?.abort(); controller = null; }
+  function invalidate() { headerActions.cancel(); revision++; controller?.abort(); controller = null; }
   function clearContent() { renderer?.destroy(); renderer = null; host.replaceChildren(); rowCount = null; }
   function syncChrome() {
     const focused = document.activeElement;
@@ -67,9 +69,14 @@ function createFileViewer(format, supplied = {}) {
       link.hidden = !source;
       if (source) link.href = source; else link.removeAttribute("href");
     }
+    download.hidden = !source || options.showDownload === false;
+    headerActions.update(options.headerActions,{context:options.context,format});
+    const custom=headerActions.element.childElementCount>0 && headerActions.element.style.display!=="none";
+    modal.setHeaderActions(custom?headerActions.element:toolbar);
+    modal.setSecondaryHeader(custom?toolbar:null);
     fullscreen.textContent = options.fullscreen ? "Exit fullscreen" : "Fullscreen";
     fullscreen.setAttribute("aria-pressed", String(Boolean(options.fullscreen)));
-    modal.update({ title: options.title, ariaLabel: options.title, size: options.fullscreen ? "full" : "xl" });
+    modal.update({ className: `ui-file-viewer-modal${custom?" has-file-header-actions":""}`, title: options.title, ariaLabel: options.title, size: options.fullscreen ? "full" : "xl" });
     if (modal.getState().open && modal.refs.panel.contains(focused) && !focused.disabled) {
       focused.focus({ preventScroll: true });
     }
@@ -152,7 +159,7 @@ function createFileViewer(format, supplied = {}) {
     invalidate(); clearContent(); destroyed = true; status = "destroyed";
     const returnFocus = modal.getState().open;
     // Destroy is synchronous; avoid leaving an asynchronous close finalizer behind.
-    modal.destroy();
+    headerActions.destroy(); modal.destroy();
     if (returnFocus && opener?.isConnected) opener.focus({ preventScroll: true });
     retryButton.removeEventListener("click", reload);
   }

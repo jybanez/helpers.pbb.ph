@@ -1,3 +1,4 @@
+import {createViewerHeaderActions} from './ui.viewer.actions.js';
 import {createModal} from './ui.modal.js';
 import {createGrid} from './ui.grid.js';
 import {createIcon} from './ui.icons.js';
@@ -12,10 +13,12 @@ export function createZipViewer(supplied={}) {
  const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='ui-button';b.textContent=label;b.onclick=fn;return b;};
  const cancelButton=button('Cancel entry operation',()=>{operation?.abort();operation=null;setStatus('ready','Entry operation cancelled.');});
  const retry=button('Reload archive',()=>void reload());tools.append(cancelButton);root.append(notice,retry,host,detail);
- const modal=createModal({title:options.title,content:root,footer:tools,size:'full',className:'ui-zip-modal',closeWhileBusy:true,escapeCloseWhileBusy:true,backdropCloseWhileBusy:true,
+ const headerActions=createViewerHeaderActions();
+ headerActions.update(options.headerActions,{context:options.context});
+ const modal=createModal({title:options.title,content:root,headerActions:headerActions.element,headerActionsWhileBusy:true,footer:tools,size:'full',className:'ui-zip-modal',closeWhileBusy:true,escapeCloseWhileBusy:true,backdropCloseWhileBusy:true,
   onBeforeClose(){active=false;invalidate();status='closed';return true;},onClose(meta){if(!active)setStatus('closed');options.onClose?.(meta);}});
  function revoke(){for(const [url,timer] of urls){clearTimeout(timer);URL.revokeObjectURL(url);}urls.clear();}
- function invalidate(){revision++;controller?.abort();operation?.abort();controller=null;operation=null;archive?.dispose();archive=null;grid?.destroy();grid=null;selected=null;host.replaceChildren();detail.textContent='';revoke();}
+ function invalidate(){headerActions.cancel();revision++;controller?.abort();operation?.abort();controller=null;operation=null;archive?.dispose();archive=null;grid?.destroy();grid=null;selected=null;host.replaceChildren();detail.textContent='';revoke();}
  function canPreview(entry){try{return typeof options.onPreview==='function'&&(typeof options.canPreview!=='function'||options.canPreview({...entry})===true);}catch{return false;}}
  function focusSelected(){if(!active||destroyed)return false;const label=[...host.querySelectorAll('[data-zip-preview]')].find(node=>node.dataset.zipPreview===selected);label?.focus({preventScroll:true});return !!label;}
  function setStatus(next,message='') {status=next;error=next==='error'?message:'';notice.textContent=message;notice.hidden=!message;notice.setAttribute('role',error?'alert':'status');const busy=['loading','extracting'].includes(next);modal.setBusy(busy,{message:next==='loading'?'Loading archive...':'Reading selected entry...',cancelBusy:false});host.querySelectorAll('[data-zip-preview]').forEach(node=>node.setAttribute('aria-disabled',String(busy)));host.querySelectorAll('[data-zip-download]').forEach(node=>node.disabled=busy);cancelButton.hidden=next!=='extracting';retry.hidden=next!=='error';}
@@ -30,7 +33,7 @@ export function createZipViewer(supplied={}) {
   ]});
  }
  function open(patch){if(destroyed)return false;if(patch)update(patch);if(active)return true;active=true;modal.open();void reload();return true;}
- function update(patch={}){if(destroyed)return false;options={...options,...patch};if(Object.hasOwn(patch,'source')&&!Object.hasOwn(patch,'load'))options.load=null;if(Object.hasOwn(patch,'load')&&!Object.hasOwn(patch,'source'))options.source=null;modal.update({title:options.title,ariaLabel:options.title});if(['source','load','context','onPreview','canPreview'].some(k=>Object.hasOwn(patch,k))){invalidate();if(active)void reload();}return true;}
+ function update(patch={}){if(destroyed)return false;options={...options,...patch};if(Object.hasOwn(patch,'source')&&!Object.hasOwn(patch,'load'))options.load=null;if(Object.hasOwn(patch,'load')&&!Object.hasOwn(patch,'source'))options.source=null;headerActions.update(options.headerActions,{context:options.context});modal.update({title:options.title,ariaLabel:options.title});if(['source','load','context','onPreview','canPreview'].some(k=>Object.hasOwn(patch,k))){invalidate();if(active)void reload();}return true;}
  async function reload(){
   if(!active||destroyed)return false;invalidate();controller=new AbortController();const signal=controller.signal,token=revision,snapshot={...options},current=()=>active&&!destroyed&&revision===token&&!signal.aborted;
   setStatus('loading','Loading archive directory...');
@@ -56,7 +59,7 @@ export function createZipViewer(supplied={}) {
    if(!current())return false;setStatus('ready',`${entry.path} ${kind==='preview'?'sent to preview':'download requested'}.`);return true;
   }catch(cause){if(!current())return false;setStatus('error',`Unable to ${kind} entry. ${cause.message}`);return false;}
  }
- function destroy(){if(destroyed)return;active=false;invalidate();destroyed=true;status='destroyed';modal.destroy();}
+ function destroy(){if(destroyed)return;active=false;invalidate();destroyed=true;status='destroyed';headerActions.destroy();modal.destroy();}
  const api={open,update,reload,focusSelected,close:meta=>modal.close(meta),destroy,preview:id=>act('preview',id),download:id=>act('download',id),getState:()=>({open:active,status,error,destroyed,selectedId:selected,entries:archive?.entries.map(e=>({...e}))||[]}),refs:{...modal.refs,grid:host,notice,detail,cancelButton,retry}};
  setStatus('idle');if(options.open)open();return api;
 }

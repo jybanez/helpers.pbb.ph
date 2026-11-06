@@ -14,3 +14,5 @@
   .ui-file-viewer-modal .ui-modal-header-actions { order: 3; flex-basis: 100%; }
   .ui-file-viewer-modal .ui-modal-body { padding: .75rem; }
 }
+.ui-file-viewer-modal.has-file-header-actions .ui-modal-header { flex-wrap: nowrap; }
+.ui-file-viewer-modal.has-file-header-actions .ui-modal-header-actions { order: initial; flex-basis: auto; }

@@ -9,6 +9,7 @@ const DEFAULT_OPTIONS = {
   ariaLabel: "Modal dialog",
   content: null,
   headerActions: null,
+  headerActionsWhileBusy: false,
   secondaryHeader: null,
   footer: null,
   showHeader: true,
@@ -276,6 +277,9 @@ export function createModal(options = {}) {
     if (!open || event.defaultPrevented) {
       return;
     }
+    // Complete PDF/media viewers also own dialogs outside the modal DOM tree.
+    const targetDialog=event.target?.closest?.('[role="dialog"]');
+    if(targetDialog && targetDialog!==panel && !panel.contains(targetDialog))return;
     // Background modals must not close or trap focus beneath an active alert.
     const foreground = [...getDocumentContext().querySelectorAll('[data-ui-modal-id][aria-hidden="false"]')].at(-1);
     if (foreground !== root) return;
@@ -651,7 +655,7 @@ export function createModal(options = {}) {
   }
 
   function syncBusyInteractivity(busy) {
-    toggleBusyDisabled(headerActions.querySelectorAll("button, input, select, textarea"), busy);
+    toggleBusyDisabled(headerActions.querySelectorAll("button, input, select, textarea"), busy && !currentOptions.headerActionsWhileBusy);
     toggleBusyDisabled(secondaryHeader.querySelectorAll("button, input, select, textarea"), busy);
     toggleBusyDisabled(footer.querySelectorAll("button, input, select, textarea"), busy);
     toggleBusyDisabled(body.querySelectorAll("button, input, select, textarea"), busy);
