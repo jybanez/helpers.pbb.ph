@@ -1,5 +1,6 @@
 // Bounded parsers shared by the complete text-file viewers. All values stay data.
 export const FILE_VIEWER_LIMITS = Object.freeze({
+  html: {maxBytes:256*1024},
   json: { maxBytes: 1024 * 1024, maxNodes: 5000, maxDepth: 32 },
   markdown: { maxBytes: 256 * 1024 },
   csv: { maxBytes: 2 * 1024 * 1024, maxRows: 20000, maxColumns: 128, maxCells: 200000 },

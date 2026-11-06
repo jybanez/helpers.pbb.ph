@@ -7,6 +7,7 @@
 <section class="panel"><h2>Try the viewer</h2><label for="example">Example</label><select id="example"><option value="normal">Project sample</option><option value="empty">Empty</option><option value="invalid">Malformed / unsafe content</option><option value="large">Large sample</option></select>
 <label for="source">File content</label><textarea id="source" rows="10" spellcheck="false"></textarea>
 <div class="controls"><button disabled id="preview">Open content</button><button disabled id="blob">Load content through URL</button><button disabled id="error">Try a missing URL</button><label><input id="full" type="checkbox"> Open fullscreen</label></div><p id="state" role="status"></p></section>
+<section class="panel"><h2>Approved inline images</h2><p>Images are disabled by default. Enable <code>images: true</code> with a host <code>resolveImage(reference, {signal, alt})</code> callback returning an approved raster Blob. Raw HTML remains escaped; rejected images retain alt text. Try the <a href="./demo.html.viewer.html">document image playground</a> and read the <a href="../docs/document-previews.md">integration and limits reference</a>.</p></section>
 <section class="panel"><h2>Integration</h2><pre><code>const createViewer = await uiLoader.get("ui.markdown.viewer");
 const viewer = createViewer({ title: "Project file", url: fileUrl });
 viewer.open(); // Visible loading before fetch starts.
