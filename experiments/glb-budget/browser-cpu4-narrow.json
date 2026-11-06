@@ -1,0 +1,674 @@
+{
+  "cases": [
+    {
+      "name": "vessel",
+      "cycles": [
+        {
+          "openAndWireframeMs": 279.79999999701977,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 183.20000000298023,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 190.60000000149012,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 220.70000000298023,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 268.80000000447035,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 186.10000000149012,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 203.60000000149012,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 210.90000000596046,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 218.10000000149012,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 249.69999999552965,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 236.79999999701977,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 206.79999999701977,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 243.5,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 280.40000000596046,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 179.70000000298023,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 191.79999999701977,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 298.70000000298023,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 192.59999999403954,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 215,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 247.10000000149012,
+          "reserved": {
+            "bytes": 263353776,
+            "triangles": 926552,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "shared32",
+      "cycles": [
+        {
+          "openAndWireframeMs": 60.30000000447035,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 48.79999999701977,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 55.19999999552965,
+          "reserved": {
+            "bytes": 36039440,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct32",
+      "cycles": [
+        {
+          "openAndWireframeMs": 146.39999999850988,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 135.60000000149012,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 157.39999999850988,
+          "reserved": {
+            "bytes": 111494992,
+            "triangles": 387072,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct96-control",
+      "cycles": [
+        {
+          "openAndWireframeMs": 333.1000000014901,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 246.5,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 244.20000000298023,
+          "reserved": {
+            "bytes": 267379156,
+            "triangles": 1161216,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "texture2048",
+      "cycles": [
+        {
+          "openAndWireframeMs": 144.79999999701977,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 168.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 154.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 166.79999999701977,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 170.90000000596046,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 179.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 188.79999999701977,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 192.10000000149012,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 199.69999999552965,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 179.69999999552965,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 185.60000000149012,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 141.29999999701977,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 203.39999999850988,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 159.79999999701977,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 163.39999999850988,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 173.90000000596046,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 184.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 142.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 171.60000000149012,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        },
+        {
+          "openAndWireframeMs": 197.5,
+          "reserved": {
+            "bytes": 89583073,
+            "triangles": 36,
+            "contexts": 1
+          },
+          "closed": {
+            "bytes": 0,
+            "triangles": 0,
+            "contexts": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "distinct128-control",
+      "cycles": [],
+      "error": "Unable to preview model. Preview allocation budget exceeded"
+    }
+  ],
+  "mode": "CPU4 narrow",
+  "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A78) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "lifecycle": "large overlap denied; small overlap allowed; cancel, stale read, mount failure and 20 vessel/texture and three other close/reopen cycles release reservations"
+}

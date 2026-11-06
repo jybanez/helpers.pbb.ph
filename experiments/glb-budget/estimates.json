@@ -1,0 +1,111 @@
+{
+  "limits": {
+    "previewBytes": 268435456,
+    "aggregateBytes": 402653184,
+    "contexts": 2,
+    "triangles": 2000000,
+    "aggregateTriangles": 2000000,
+    "draws": 256,
+    "nodes": 2048,
+    "depth": 64,
+    "texturePixels": 16777216,
+    "textureEdge": 4096
+  },
+  "estimates": {
+    "vessel": {
+      "bytes": 263353776,
+      "triangles": 926552,
+      "draws": 1,
+      "instances": 1,
+      "pixels": 0,
+      "imageDimensions": [],
+      "categories": {
+        "inputParser": 72285800,
+        "viewCopies": 24090296,
+        "accessorCopies": 0,
+        "gpuAccessors": 29649584,
+        "conversion": 59299168,
+        "wireframe": 44474496,
+        "textures": 0,
+        "headroom": 33554432
+      }
+    },
+    "shared32": {
+      "bytes": 36039440,
+      "triangles": 387072,
+      "draws": 32,
+      "instances": 32,
+      "pixels": 0,
+      "imageDimensions": [],
+      "categories": {
+        "inputParser": 879632,
+        "viewCopies": 274336,
+        "accessorCopies": 0,
+        "gpuAccessors": 346912,
+        "conversion": 693824,
+        "wireframe": 290304,
+        "textures": 0,
+        "headroom": 33554432
+      }
+    },
+    "distinct32": {
+      "bytes": 111494992,
+      "triangles": 387072,
+      "draws": 32,
+      "instances": 32,
+      "pixels": 0,
+      "imageDimensions": [],
+      "categories": {
+        "inputParser": 26568528,
+        "viewCopies": 8778752,
+        "accessorCopies": 0,
+        "gpuAccessors": 11101184,
+        "conversion": 22202368,
+        "wireframe": 9289728,
+        "textures": 0,
+        "headroom": 33554432
+      }
+    },
+    "distinct96-control": {
+      "bytes": 267379156,
+      "triangles": 1161216,
+      "draws": 96,
+      "instances": 96,
+      "pixels": 0,
+      "imageDimensions": [],
+      "categories": {
+        "inputParser": 79708628,
+        "viewCopies": 26336256,
+        "accessorCopies": 0,
+        "gpuAccessors": 33303552,
+        "conversion": 66607104,
+        "wireframe": 27869184,
+        "textures": 0,
+        "headroom": 33554432
+      }
+    },
+    "texture2048": {
+      "bytes": 89583073,
+      "triangles": 36,
+      "draws": 3,
+      "instances": 3,
+      "pixels": 4194304,
+      "imageDimensions": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "categories": {
+        "inputParser": 79524,
+        "viewCopies": 22039,
+        "accessorCopies": 0,
+        "gpuAccessors": 912,
+        "conversion": 1824,
+        "wireframe": 288,
+        "textures": 55924054,
+        "headroom": 33554432
+      }
+    }
+  }
+}

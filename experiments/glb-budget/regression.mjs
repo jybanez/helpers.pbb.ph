@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+import {estimateAllocation,createBudgetPool,LIMITS,reconcileDecodedImages} from './budget.mjs';
+import {validateGlb} from '../../output/glb-allocation-prototype/data.js';
+const read=name=>{const b=fs.readFileSync(`output/glb-budget-benchmark/${name}.glb`);return b.buffer.slice(b.byteOffset,b.byteOffset+b.length);};
+const edit=(source,change)=>{const v=new DataView(source),json=JSON.parse(new TextDecoder().decode(new Uint8Array(source,20,v.getUint32(12,true))));change(json);const j=new TextEncoder().encode(JSON.stringify(json)),n=Math.ceil(j.length/4)*4,tail=new Uint8Array(source,20+v.getUint32(12,true)),out=new ArrayBuffer(20+n+tail.length),dv=new DataView(out);[0x46546c67,2,out.byteLength,n,0x4e4f534a].forEach((x,i)=>dv.setUint32(i*4,x,true));new Uint8Array(out,20,n).fill(32);new Uint8Array(out,20,j.length).set(j);new Uint8Array(out,20+n).set(tail);return out;};
+const vessel=read('vessel'),shared=read('shared32'),distinct=read('distinct32');
+const estimates={};for(const n of ['vessel','shared32','distinct32','distinct96-control','texture2048'])estimates[n]=estimateAllocation(read(n),validateGlb);
+assert(estimates.vessel.bytes<LIMITS.previewBytes);assert(estimates.shared32.categories.viewCopies<estimates.distinct32.categories.viewCopies);
+assert.equal(estimates.vessel.categories.wireframe,44474496);assert.equal(estimates.texture2048.pixels,4194304);
+assert.throws(()=>estimateAllocation(read('distinct128-control'),validateGlb),/budget/);
+const pool=createBudgetPool(),a=pool.acquire(vessel,validateGlb);assert.throws(()=>pool.acquire(vessel,validateGlb),/Aggregate/);assert.equal(pool.getState().contexts,1);a.release();a.release();assert.deepEqual(pool.getState(),{bytes:0,triangles:0,contexts:0});
+const b=pool.acquire(shared,validateGlb),c=pool.acquire(shared,validateGlb);assert.throws(()=>pool.acquire(shared,validateGlb),/Aggregate/);b.release();c.release();
+for(const mutate of [j=>j.accessors[0].count=1e9,j=>j.accessors[0].count=-1,j=>j.bufferViews[0].byteOffset=1e9,j=>j.accessors[0].componentType=123,j=>j.buffers[0].uri='https://example.invalid/bad',j=>j.nodes[0].children=[0],j=>j.extensionsRequired=['EXT_unknown'],j=>j.accessors[0].sparse={count:1,indices:{bufferView:0,componentType:5126},values:{bufferView:1}}])assert.throws(()=>estimateAllocation(edit(vessel,mutate),validateGlb));
+const work=edit(shared,j=>{j.nodes=Array.from({length:192},()=>({mesh:0}));j.scenes=[{nodes:j.nodes.map((_,i)=>i)}];});assert.throws(()=>estimateAllocation(work,validateGlb),/work budget/);
+const aggregateWork=edit(shared,j=>{j.nodes=Array.from({length:100},()=>({mesh:0}));j.scenes=[{nodes:j.nodes.map((_,i)=>i)}];});const w=pool.acquire(aggregateWork,validateGlb);assert.throws(()=>pool.acquire(aggregateWork,validateGlb),/Aggregate/);w.release();
+const sparseBytes=fs.readFileSync('tests/fixtures/sparse-triangle.glb');estimateAllocation(sparseBytes.buffer.slice(sparseBytes.byteOffset,sparseBytes.byteOffset+sparseBytes.length),validateGlb);
+assert.throws(()=>estimateAllocation(edit(read('texture2048'),j=>{j.images=Array.from({length:5},()=>({...j.images[0]}));}),validateGlb),/texture budget/);
+const texture=read('texture2048'),badTexture=texture.slice(0);const tv=new DataView(badTexture),tj=JSON.parse(new TextDecoder().decode(new Uint8Array(badTexture,20,tv.getUint32(12,true))));tv.setUint32(28+tv.getUint32(12,true)+tj.bufferViews[4].byteOffset+16,8192);assert.throws(()=>estimateAllocation(badTexture,validateGlb),/dimension/);
+assert.deepEqual(pool.getState(),{bytes:0,triangles:0,contexts:0});
+fs.writeFileSync('output/glb-allocation-prototype/estimates.json',JSON.stringify({limits:LIMITS,estimates},null,2));console.log('Prototype allocation, aggregate/context/work, sparse/malformed/URI/texture bounds and idempotent release passed.');
+
+const image={width:2048,height:2048},textureEstimate=estimates.texture2048;
+assert.deepEqual(reconcileDecodedImages([image,image],textureEstimate),{images:1,pixels:4194304});
+assert.throws(()=>reconcileDecodedImages([{width:1024,height:4096}],textureEstimate),/differs/);
+assert.throws(()=>reconcileDecodedImages([image,{...image}],textureEstimate),/differs/);
+assert.throws(()=>reconcileDecodedImages([{width:NaN,height:2048}],textureEstimate));
+console.log('Post-decode image dimensions, unique identities and reservation matching passed.');
