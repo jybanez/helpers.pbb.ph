@@ -1,12 +1,15 @@
+import {GLB_DRACO_WORK_LIMITS} from './ui.glb.policy.js';
 // Built separately; this dependency is never included in the main UI bundle.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createWireframeMode } from './ui.glb.wireframe.js';
 import { sanitizeNodePivots } from './ui.glb.metadata.js';
+import {createBoundedDraco} from './ui.glb.draco.js';
+import {validateGlb,dracoManifest} from './ui.glb.data.js';
 
 export async function mountGlb(host, bytes, signal) {
-  let renderer, controls, observer, model, wireframe, disposed = false;
+  let renderer, controls, observer, model, wireframe, draco, disposed = false;
   const resources = new Set(), bitmaps = new Set(), released = new WeakSet();
   const release = value => {
     if (!value || typeof value !== 'object' || released.has(value)) return;
@@ -21,6 +24,7 @@ export async function mountGlb(host, bytes, signal) {
   function dispose() {
     if (disposed) return; disposed = true;
     signal.removeEventListener('abort',dispose); observer?.disconnect(); controls?.dispose();
+    draco?.dispose();
     model?.traverse(node => { if (node.geometry) resources.add(node.geometry); if (node.material) resources.add(node.material); node.skeleton?.dispose(); });
     wireframe?.dispose();
     resources.forEach(release); resources.clear();
@@ -29,22 +33,39 @@ export async function mountGlb(host, bytes, signal) {
   signal.addEventListener('abort',dispose,{once:true});
   try {
     if (signal.aborted) throw new DOMException('Cancelled','AbortError');
+    const definitions=dracoManifest(validateGlb(bytes));
     const manager = new THREE.LoadingManager();
     // Preflight allows bufferView textures only. GLTFLoader creates blob URLs for those.
     manager.setURLModifier(url => { if (!url.startsWith('blob:')) throw new Error('Model resource request blocked. Embed all textures and buffers.'); return url; });
     const loader = new GLTFLoader(manager);
+    if (definitions.size) {draco=createBoundedDraco(signal,track);loader.setDRACOLoader(draco);}
     loader.register(parser => {
       sanitizeNodePivots(parser.json);
       const original = parser.getDependency.bind(parser);
-      parser.getDependency = (type,index) => original(type,index).then(value => ['material','texture','mesh','scene'].includes(type) ? track(value) : value);
+      parser.getDependency = (type,index) => original(type,index).then(value => {
+        if (type==='bufferView' && definitions.has(index)) draco.bind(value,definitions.get(index));
+        return ['material','texture','mesh','scene'].includes(type) ? track(value) : value;
+      });
       return {name:'HELPER_resource_lifecycle'};
     });
     const gltf = await loader.parseAsync(bytes,'');
+    draco?.dispose();
     model = gltf.scene;
     wireframe=createWireframeMode(model);
     // Include resources in every scene, even when only the default scene is shown.
     for (const scene of gltf.scenes) scene.traverse(node => { if (node.geometry) track(node.geometry); if (node.material) track(node.material); });
     if (signal.aborted || disposed) { model.traverse(node=>node.skeleton?.dispose()); throw new DOMException('Cancelled','AbortError'); }
+    if (definitions.size) {
+      let calls=0,triangles=0,bytes=0;const buffers=new Set();
+      for(const scene of gltf.scenes)scene.traverse(node=>{
+        if(!node.isMesh)return;
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        const passes=materials.some(m=>m.transparent&&m.side===THREE.DoubleSide&&!m.forceSinglePass)?2:1;
+        calls+=passes*Math.max(1,node.geometry.groups.length);triangles+=passes*(node.geometry.index?.count??node.geometry.attributes.position?.count??0)/3;
+        for(const a of [node.geometry.index,...Object.values(node.geometry.attributes)])if(a){const b=(a.array??a.data.array).buffer;if(!buffers.has(b)){buffers.add(b);bytes+=b.byteLength;}}
+      });
+      if(calls>GLB_DRACO_WORK_LIMITS.draws||triangles>GLB_DRACO_WORK_LIMITS.triangles||bytes>128*1024*1024)throw new Error('Decoded Draco scene exceeds the geometry or render-work preview budget. Export a smaller scene.');
+    }
     const bounds = new THREE.Box3().setFromObject(model), sphere = bounds.getBoundingSphere(new THREE.Sphere());
     if (bounds.isEmpty() || !Number.isFinite(sphere.radius) || sphere.radius <= 0) throw new Error('No visible model geometry. Export a scene containing meshes.');
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0x182130); scene.add(model);

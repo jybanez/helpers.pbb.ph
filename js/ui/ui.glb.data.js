@@ -1,4 +1,5 @@
-const SUPPORTED_EXTENSIONS = new Set(['KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
+import {GLB_DRACO_WORK_LIMITS} from './ui.glb.policy.js';
+const SUPPORTED_EXTENSIONS = new Set(['KHR_draco_mesh_compression','KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
 
 // Validate the container before handing any bytes to the rendering dependency.
 export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
@@ -33,8 +34,49 @@ export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
   visit(json);
   if ((json.buffers || []).length > 1 || (json.buffers?.[0]?.byteLength || 0) > binLength) throw new Error('Missing embedded model buffer.');
   validateGeometry(json, buffer, binOffset, binLength);
+  dracoManifest(json);
   for (const image of json.images || []) if (!Number.isInteger(image.bufferView) || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Textures must be embedded PNG, JPEG or WebP images.');
   return json;
+}
+
+// Additional bounds apply only to Draco scenes; retain the existing path for
+// uncompressed models. Accessor geometry accounting above remains unchanged.
+export function dracoManifest(json) {
+  const definitions = new Map(), size = {SCALAR:1,VEC2:2,VEC3:3,VEC4:4};
+  const fail = message => {throw new Error(`Invalid Draco model: ${message}. Export a smaller, valid GLB.`);};
+  for (const mesh of json.meshes || []) for (const p of mesh.primitives || []) {
+    const d = p.extensions?.KHR_draco_mesh_compression; if (!d) continue;
+    if ((p.mode ?? 4)!==4 || !Number.isSafeInteger(d.bufferView) || !json.bufferViews?.[d.bufferView] || !d.attributes || typeof d.attributes!=='object') fail('expected embedded triangle data');
+    const position=json.accessors?.[p.attributes?.POSITION], index=json.accessors?.[p.indices];
+    if (!position || position.type!=='VEC3' || !index || index.type!=='SCALAR' || ![5121,5123,5125].includes(index.componentType) || index.count%3) fail('indexed triangle accessors are required');
+    const attributes={};
+    for (const [semantic,id] of Object.entries(d.attributes)) {
+      const a=json.accessors?.[p.attributes?.[semantic]];
+      if (!Number.isSafeInteger(id) || id<0 || Object.hasOwn(attributes,id) || !a || !size[a.type] || a.count!==position.count || a.sparse) fail('compressed attribute mapping is invalid');
+      attributes[id]={size:size[a.type],count:a.count};
+    }
+    if (!Object.hasOwn(d.attributes,'POSITION') || index.sparse) fail('compressed position and indices are required');
+    const entry={points:position.count,indices:index.count,indexType:index.componentType,attributes};
+    const entries=definitions.get(d.bufferView) || [];entries.push(entry);definitions.set(d.bufferView,entries);
+  }
+  if (!definitions.size) return definitions;
+  if (definitions.size>1024 || (json.nodes?.length??0)>4096) fail('scene exceeds the decoder workload limit');
+  let draws=0,triangles=0,nodes=0;
+  const visit=(id,ancestors)=>{
+    if (!Number.isSafeInteger(id) || !json.nodes?.[id] || ancestors.has(id) || ancestors.size>=64 || ++nodes>4096) fail('scene hierarchy exceeds the preview limit');
+    const node=json.nodes[id], next=new Set(ancestors);next.add(id);
+    if (node.mesh!==undefined) {
+      const mesh=json.meshes?.[node.mesh];if(!mesh)fail('missing mesh');
+      for(const p of mesh.primitives || []) {
+        const material=json.materials?.[p.material],passes=material?.doubleSided&&material.alphaMode==='BLEND'?2:1;
+        draws+=passes;triangles+=passes*(json.accessors?.[p.indices]?.count??json.accessors?.[p.attributes?.POSITION]?.count??0)/3;
+      }
+    }
+    if (draws>GLB_DRACO_WORK_LIMITS.draws || triangles>GLB_DRACO_WORK_LIMITS.triangles) fail('scene exceeds 2048 draw calls or 3000000 triangles');
+    for(const child of node.children||[])visit(child,next);
+  };
+  for(const scene of json.scenes||[])for(const id of scene.nodes||[])visit(id,new Set());
+  return definitions;
 }
 
 // Independent of compressed/file size. Include copied bufferViews, expanded
