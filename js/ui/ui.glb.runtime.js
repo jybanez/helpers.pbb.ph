@@ -1,3 +1,4 @@
+import {GLB_DRACO_WORK_LIMITS} from './ui.glb.policy.js';
 // Built separately; this dependency is never included in the main UI bundle.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -63,7 +64,7 @@ export async function mountGlb(host, bytes, signal) {
         calls+=passes*Math.max(1,node.geometry.groups.length);triangles+=passes*(node.geometry.index?.count??node.geometry.attributes.position?.count??0)/3;
         for(const a of [node.geometry.index,...Object.values(node.geometry.attributes)])if(a){const b=(a.array??a.data.array).buffer;if(!buffers.has(b)){buffers.add(b);bytes+=b.byteLength;}}
       });
-      if(calls>1024||triangles>2000000||bytes>128*1024*1024)throw new Error('Decoded Draco scene exceeds the geometry or render-work preview budget. Export a smaller scene.');
+      if(calls>GLB_DRACO_WORK_LIMITS.draws||triangles>GLB_DRACO_WORK_LIMITS.triangles||bytes>128*1024*1024)throw new Error('Decoded Draco scene exceeds the geometry or render-work preview budget. Export a smaller scene.');
     }
     const bounds = new THREE.Box3().setFromObject(model), sphere = bounds.getBoundingSphere(new THREE.Sphere());
     if (bounds.isEmpty() || !Number.isFinite(sphere.radius) || sphere.radius <= 0) throw new Error('No visible model geometry. Export a scene containing meshes.');

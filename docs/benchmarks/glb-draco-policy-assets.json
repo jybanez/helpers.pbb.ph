@@ -1,0 +1,62 @@
+{
+  "revision": "0.21.330 candidate",
+  "root": "https://syndicatum.wizaya.com/vendor/pbb-helper/",
+  "hashSource": "canonical Git index blobs; not working-tree CRLF bytes",
+  "assets": [
+    {
+      "path": "js/ui/ui.loader.js",
+      "bytes": 52613,
+      "sha256": "34177d4e53ac99b8eab4311bd3dd1bb760b0ff8077b92542544a4e162f52300a"
+    },
+    {
+      "path": "js/ui/ui.glb.viewer.js",
+      "bytes": 6246,
+      "sha256": "016ff5a1c7442bc923e79f2b6016ee398f17142b5c21b248b1acad3b2dc9e5fb"
+    },
+    {
+      "path": "js/ui/ui.glb.data.js",
+      "bytes": 11809,
+      "sha256": "1b80391d394eae4a87be7fb7c0d405fd6bea318b75aa912ec5371959ff2fcb38"
+    },
+    {
+      "path": "js/ui/ui.glb.policy.js",
+      "bytes": 229,
+      "sha256": "9adea51ea2157db18a2160456be3682229e0cfad9ab5d29311600d6b295b95fd"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.js",
+      "bytes": 1433159,
+      "sha256": "6fd1145b75c5d091eba74ce2f3a61ead6d4c2e3b3a9c118e9373a0781c346c6f"
+    },
+    {
+      "path": "dist/helpers.ui.bundle.min.css",
+      "bytes": 297387,
+      "sha256": "a42c9b3ae869cd55cdcd924ff645518fe49f64f7790a0821d17d0f0f565b14b9"
+    },
+    {
+      "path": "vendor/three/glb.runtime.js",
+      "bytes": 656501,
+      "sha256": "9ce07514743f4f5e96a9a0241c2ed06c6ee6b93c12798aacd86ccd315fc4db35"
+    },
+    {
+      "path": "vendor/three/draco-r187/worker.js",
+      "bytes": 3822,
+      "sha256": "7d3fc87f5de94318dcc02f62eb87f7d28c1481be99a49c62bde6e598be3c6809"
+    },
+    {
+      "path": "vendor/three/draco-r187/draco_wasm_wrapper.js",
+      "bytes": 58456,
+      "sha256": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6"
+    },
+    {
+      "path": "vendor/three/draco-r187/draco_decoder.wasm",
+      "bytes": 192420,
+      "sha256": "5f9ef3ae497cb1efbde0825396cd591b344584cb9417dd77f689ff16ad522fd5"
+    },
+    {
+      "path": "vendor/three/draco-r187/LICENSE.txt",
+      "bytes": 13898,
+      "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4"
+    }
+  ]
+}
