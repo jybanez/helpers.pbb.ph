@@ -12,9 +12,11 @@ try {
  assert(hash==='a971be6d84a606e33f78bcb1ce39a4e75e56dabd0529a5dbb22507a8e5814fde','exact authorized private fixture required');
  const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')}),create=await loader.get('ui.glb.viewer');
  assert(!performance.getEntriesByType('resource').some(x=>x.name.includes('draco-r187')),'decoder lazy');
- const rejected=create({source:privateBytes});rejected.open();await until(()=>rejected.getState().status==='error');assert(rejected.getState().error.includes('draw calls'),'private scene fails separate render-work guard');assert(workers.size===0,'workload rejected before decode');rejected.destroy();
- const viewer=create({source:bytes});
- for(let cycle=0;cycle<3;cycle++) {
+ for(const fixture of ['over-draws','over-triangles','over-transparent-draws']) {
+  const rejected=create({source:await (await fetch('../output/glb-draco/'+fixture+'.glb')).arrayBuffer()});rejected.open();await until(()=>rejected.getState().status==='error');assert(rejected.getState().error.includes('draw calls'),'over-limit workload rejected');assert(workers.size===0,'workload rejected before decode');rejected.destroy();
+ }
+ const viewer=create({source:privateBytes});
+ for(let cycle=0;cycle<10;cycle++) {
   const start=performance.now();viewer.open();assert(viewer.getState().status==='loading','immediate modal');
   await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);
   const openMs=performance.now()-start;
@@ -25,10 +27,23 @@ try {
   const colors=new Set();for(let i=0;i<pixels.length;i+=64)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);assert(colors.size>3,'scene pixels rendered');
   const camera=JSON.stringify(viewer.getState().view.camera),wireStart=performance.now();viewer.setWireframe(true);gl.finish();const wireMs=performance.now()-wireStart;assert(JSON.stringify(viewer.getState().view.camera)===camera,'wireframe preserves camera');viewer.setWireframe(false);
   const orbit=[];for(let i=0;i<5;i++){const t=performance.now();[...viewer.refs.controls.children].find(b=>b.textContent==='Orbit left').click();gl.finish();orbit.push(performance.now()-t)}
+  if(cycle===0){
+   const began=performance.now(),samples=[];let n=0;
+   while(performance.now()-began<60000){
+    const start=performance.now();
+    if(n%10===0)viewer.setWireframe(!viewer.getState().view.wireframe);
+    const action=['Orbit left','Orbit right','Pan left','Pan right','Zoom in','Zoom out','Fit','Reset'][n%8];
+    [...viewer.refs.controls.children].find(b=>b.textContent===action).click();gl.finish();
+    samples.push(performance.now()-start);assert(viewer.getState().view.camera.every(Number.isFinite)&&!gl.isContextLost()&&workers.size===0,'sustained finite view and resource stability');
+    n++;await sleep(200);
+   }
+   viewer.setWireframe(false);viewer.reset();report.sustained={durationMs:performance.now()-began,samplesMs:samples};
+  }
   report.cycles.push({openMs,wireMs,orbitMs:orbit,draws:viewer.getState().view.meshes,colors:colors.size});
   await viewer.close();assert(gl.isContextLost()&&workers.size===0,'context and workers cleaned');
  }
  viewer.open();await until(()=>workers.size>0);await viewer.close();await sleep(100);assert(workers.size===0&&viewer.getState().status==='closed'&&!viewer.refs.viewport.children.length,'abort pending decoder, no late render');report.cancelled=true;
+ viewer.open();await until(()=>workers.size>0);viewer.update({source:bytes});await until(()=>viewer.getState().status==='ready');assert(workers.size===0,'source change settles old worker');await viewer.close();report.sourceChanged=true;
  viewer.destroy();
  for(const fixture of ['count-mismatch','invalid']){const bad=create({source:await (await fetch('../output/glb-draco/'+fixture+'.glb')).arrayBuffer()});bad.open();await until(()=>bad.getState().status!=='loading');assert(bad.getState().status==='error','malformed decode rejected');assert(workers.size===0&&!bad.refs.viewport.children.length,'failure cleanup');bad.destroy();}
  document.body.dataset.status='pass';document.querySelector('#results').textContent=JSON.stringify(report,null,2);

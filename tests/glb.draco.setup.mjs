@@ -12,4 +12,11 @@ const bad=structuredClone(json);bad.accessors[0].count=bad.accessors[1].count=ba
 await fs.writeFile('output/glb-draco/count-mismatch.glb',pack(bad,compressed));
 const invalid=compressed.slice();invalid.fill(0);
 await fs.writeFile('output/glb-draco/invalid.glb',pack(json,invalid));
+for (const name of ['over-draws','over-triangles','over-transparent-draws']) {
+  const control=structuredClone(json),count=name==='over-draws'?2049:name==='over-triangles'?1000:1025;
+  control.nodes=Array.from({length:count},()=>({mesh:0}));control.scenes[0].nodes=control.nodes.map((_,i)=>i);
+  if(name==='over-triangles')control.accessors[3].count=9003; // Declared-work control: reject before decoding.
+  if(name==='over-transparent-draws'){control.materials=[{doubleSided:true,alphaMode:'BLEND'}];control.meshes[0].primitives[0].material=0;}
+  await fs.writeFile(`output/glb-draco/${name}.glb`,pack(control,compressed));
+}
 console.log('Generated synthetic Draco cube and rejection controls.');

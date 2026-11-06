@@ -1,3 +1,4 @@
+import {GLB_DRACO_WORK_LIMITS} from './ui.glb.policy.js';
 const SUPPORTED_EXTENSIONS = new Set(['KHR_draco_mesh_compression','KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
 
 // Validate the container before handing any bytes to the rendering dependency.
@@ -71,7 +72,7 @@ export function dracoManifest(json) {
         draws+=passes;triangles+=passes*(json.accessors?.[p.indices]?.count??json.accessors?.[p.attributes?.POSITION]?.count??0)/3;
       }
     }
-    if (draws>1024 || triangles>2000000) fail('scene exceeds 1024 draw calls or 2000000 triangles');
+    if (draws>GLB_DRACO_WORK_LIMITS.draws || triangles>GLB_DRACO_WORK_LIMITS.triangles) fail('scene exceeds 2048 draw calls or 3000000 triangles');
     for(const child of node.children||[])visit(child,next);
   };
   for(const scene of json.scenes||[])for(const id of scene.nodes||[])visit(id,new Set());

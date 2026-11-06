@@ -1,6 +1,7 @@
 // Use real frames: dump-dom virtual time can finish before resize/navigation frames.
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,7 +13,15 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 let processHandle, server, socket;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 try {
- server=await startStaticServer({rootDir:root,port:0});
+ const cspSmoke=process.env.GLB_DRACO_CSP==='1',fixtures={};
+ const workerPath='/vendor/three/draco-r187/worker.js';
+ if(cspSmoke){
+  const body=fs.readFileSync('tests/glb.draco.csp.html','utf8'),hash=createHash('sha256').update(body.match(/<script type="module">([\s\S]*?)<\/script>/)[1]).digest('base64');
+  fixtures['/tests/glb.draco.csp.html']={body,headers:{'content-type':'text/html','content-security-policy':`default-src 'self'; script-src 'self' 'sha256-${hash}' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob:; img-src 'self' blob:; style-src 'self' 'unsafe-inline'`}};
+  fixtures[workerPath]={body:fs.readFileSync('vendor/three/draco-r187/worker.js'),headers:{'content-type':'text/javascript'}};
+  fixtures['/vendor/three/draco-r187/draco_decoder.wasm']={body:fs.readFileSync('vendor/three/draco-r187/draco_decoder.wasm'),headers:{'content-type':'application/wasm'}};
+ }
+ server=await startStaticServer({rootDir:root,port:0,fixtures});
  processHandle=spawn(chrome,['--headless=new','--enable-unsafe-swiftshader','--no-first-run','--force-prefers-reduced-motion',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
  const portFile=path.join(profile,'DevToolsActivePort');
  let port;
@@ -27,13 +36,13 @@ try {
  let serial=0;const pending=new Map();
  socket.addEventListener('message',e=>{const msg=JSON.parse(e.data);if(pending.has(msg.id)){const {resolve,reject,timer}=pending.get(msg.id);clearTimeout(timer);pending.delete(msg.id);msg.error?reject(Error(msg.error.message)):resolve(msg.result);}});
  const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++serial;const timer=setTimeout(()=>{pending.delete(id);reject(Error(`Timed out: ${method}`));},15000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}));});
- const diagnostic=process.env.GLB_DRACO_DIAGNOSTIC==='1';
- for(const fixture of ['glb.draco.regression.html']) for(const suffix of diagnostic?['','?mobile']:['', '?bundle', '?mobile', '?bundle&mobile']) {
+ for(const fixture of [cspSmoke?'glb.draco.csp.html':'glb.draco.regression.html']) for(const suffix of cspSmoke?['','?deny']:['', '?bundle', '?mobile', '?bundle&mobile']) {
+  if(cspSmoke)fixtures[workerPath].headers['content-security-policy']=`default-src 'none'; script-src 'self' ${suffix.includes('deny')?'':"'wasm-unsafe-eval'"}; connect-src 'self'`;
   await send('Emulation.setDeviceMetricsOverride',{width:suffix.includes('mobile')?375:1200,height:800,deviceScaleFactor:1,mobile:false});
   await send('Emulation.setCPUThrottlingRate',{rate:suffix.includes('mobile')?4:1});
-  await send('Page.navigate',{url:`${server.origin}/${diagnostic?'output/glb-draco/diagnostic.html':'tests/'+fixture}${suffix}`});
+  await send('Page.navigate',{url:`${server.origin}/tests/${fixture}${suffix}`});
   let state;
-  for(let i=0;i<1200;i++) {
+  for(let i=0;i<3000;i++) {
    await wait(100);
    const result=await send('Runtime.evaluate',{expression:'({status:document.body?.dataset.status,results:document.querySelector("#results")?.textContent})',returnByValue:true});
    state=result.result.value;
@@ -41,16 +50,20 @@ try {
   }
   if(state?.status!=='pass')throw Error(JSON.stringify(state));
   const shot=await send('Page.captureScreenshot',{format:'png'});fs.mkdirSync(path.join(root,'output/glb-viewer'),{recursive:true});fs.writeFileSync(path.join(root,`output/glb-viewer/${suffix.includes('bundle')?'bundle':'source'}-${suffix.includes('mobile')?'mobile':'desktop'}.png`),Buffer.from(shot.data,'base64'));
-  fs.writeFileSync(path.join(root,`output/${diagnostic?'diagnostic-':''}draco-${suffix.includes('bundle')?'bundle':'source'}-${suffix.includes('mobile')?'cpu4':'desktop'}.json`),state.results);
+  fs.writeFileSync(path.join(root,cspSmoke?`output/draco-csp-${suffix.includes('deny')?'denied':'allowed'}.json`:`output/draco-${suffix.includes('bundle')?'bundle':'source'}-${suffix.includes('mobile')?'cpu4':'desktop'}.json`),state.results);
   console.log(`${fixture} passed (${suffix||'source'}).`);
  }
 } finally {
  // Graceful browser shutdown releases Windows profile locks before cleanup.
- if(socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({id:999999,method:'Browser.close'}));
- for(let i=0;processHandle && processHandle.exitCode === null && i<50;i++) await wait(100);
+ if(socket?.readyState === WebSocket.OPEN) await new Promise(resolve=>{
+  const timer=setTimeout(resolve,15000);
+  socket.addEventListener('close',()=>{clearTimeout(timer);resolve()},{once:true});
+  socket.send(JSON.stringify({id:999999,method:'Browser.close'}));
+ });
+ for(let i=0;processHandle && processHandle.exitCode === null && i<150;i++) await wait(100);
  socket?.close();if(processHandle?.exitCode === null) processHandle.kill();await server?.close();
  await wait(500);
  // Exact temporary directory created above; no user browser profile is touched.
  if(path.dirname(path.resolve(profile)) !== path.resolve(os.tmpdir()) || !path.basename(profile).startsWith('helper-glb-viewer-'))throw Error('Unexpected temporary profile path');
- fs.rmSync(profile,{recursive:true,force:true,maxRetries:10,retryDelay:300});
+ await fs.promises.rm(profile,{recursive:true,force:true,maxRetries:20,retryDelay:500});
 }

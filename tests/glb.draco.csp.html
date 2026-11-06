@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const assert=(v,m)=>{if(!v)throw Error(m)},sleep=()=>new Promise(r=>setTimeout(r,40));
+const workers=new Set(),NativeWorker=window.Worker;
+window.Worker=class extends NativeWorker{constructor(...args){super(...args);workers.add(this)}terminate(){workers.delete(this);super.terminate()}};
+try {
+ const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY),create=await loader.get('ui.glb.viewer');
+ const bytes=await (await fetch('../output/draco-assembled-private.glb')).arrayBuffer();
+ const viewer=create({source:bytes});viewer.open();
+ for(let n=0;n<1800&&viewer.getState().status==='loading';n++)await sleep();
+ if(location.search.includes('deny')){assert(viewer.getState().status==='error','worker WASM CSP must reject');assert(!viewer.refs.viewport.children.length,'no canvas on failure');}
+ else {assert(viewer.getState().status==='ready',viewer.getState().error);assert(viewer.refs.viewport.querySelector('canvas'),'strict CSP full scene rendered');}
+ assert(workers.size===0,'CSP success/failure worker cleanup');await viewer.close();viewer.destroy();
+ document.body.dataset.status='pass';document.querySelector('#results').textContent=JSON.stringify({csp:location.search.includes('deny')?'WASM denied: actionable failure and cleanup':'explicit same-origin/WASM/blob policy: full scene ready'});
+}catch(error){document.body.dataset.status='fail';document.querySelector('#results').textContent=error.stack}
+</script>

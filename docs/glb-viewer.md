@@ -1,4 +1,4 @@
-# GLB viewer (0.21.329 candidate)
+# GLB viewer (0.21.330 candidate)
 
 `ui.glb.viewer` exports `createGlbViewer(options)`, a complete fullscreen canonical
 modal for self-contained glTF 2.0 binary files. Interaction follows the orbit,
@@ -125,7 +125,7 @@ compilation (for strict policies, `wasm-unsafe-eval`). No JS decoder fallback or
 CDN is used. Decoder construction is lazy after existing preflight validation.
 
 The 128 MiB geometry accounting is unchanged. Additional Draco-only guards are
-1,024 draws, 2,000,000 expanded scene triangles, 4,096 expanded nodes, depth 64,
+2,048 draws, 3,000,000 expanded scene triangles, 4,096 expanded nodes, depth 64,
 and 1,024 compressed bufferViews. Both declared and loaded scene work are checked.
 Decoded point/index/component counts must match accessors before JS output arrays
 are copied; output is capped at 128 MiB across jobs. Decoder native WASM memory
@@ -148,6 +148,7 @@ claim is made for the separately isolated PR196 allocation prototype.
 Tests: `node tests/glb.draco.setup.mjs`, `node tests/glb.draco.unit.mjs`, then
 `node tests/glb.draco.regression.mjs`. The browser suite requires the authorized
 private scene at `output/draco-assembled-private.glb` (not redistributed); its
-SHA256 is checked. The reproducible cube uses dev-only draco3d 1.5.7. For the
-explicitly relaxed, non-production assembled-scene measurement see
-[Draco candidate evidence](benchmarks/glb-draco-2026-11-06.md).
+SHA256 is checked. The reproducible cube uses dev-only draco3d 1.5.7. For the initial diagnostic see [historical decoder evidence](benchmarks/glb-draco-2026-11-06.md).
+The separate .330 policy candidate now admits that scene in canonical mode; see
+[policy evidence](benchmarks/glb-draco-policy-2026-11-06.md) and the exact
+[Syndicatum deployment contract](glb-draco-deployment.md).

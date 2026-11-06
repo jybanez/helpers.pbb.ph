@@ -7,8 +7,13 @@ const json=validateGlb(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+byte
 assert.equal(dracoManifest(json).size,1);
 const wrong=structuredClone(json);wrong.meshes[0].primitives[0].extensions.KHR_draco_mesh_compression.bufferView=1000;
 assert.throws(()=>dracoManifest(wrong),/embedded/);
-const work=structuredClone(json);work.scenes[0].nodes=Array(1025).fill(0);
+const work=structuredClone(json);work.scenes[0].nodes=Array(2049).fill(0);
 assert.throws(()=>dracoManifest(work),/draw calls/);
+work.scenes[0].nodes=Array(2048).fill(0);assert.equal(dracoManifest(work).size,1,'draw boundary included');
+const triangleWork=structuredClone(json);triangleWork.accessors[3].count=9000;triangleWork.scenes[0].nodes=Array(1000).fill(0);
+assert.equal(dracoManifest(triangleWork).size,1,'3M boundary included');
+triangleWork.accessors[3].count=9003;assert.throws(()=>dracoManifest(triangleWork),/triangles/);
+const doubled=structuredClone(json);doubled.materials=[{doubleSided:true,alphaMode:'BLEND'}];doubled.meshes[0].primitives[0].material=0;doubled.scenes[0].nodes=Array(1025).fill(0);assert.throws(()=>dracoManifest(doubled),/draw calls/);
 const cycle=structuredClone(json);cycle.nodes[0].children=[0];assert.throws(()=>dracoManifest(cycle),/hierarchy/);
 // Verify native WASM memory, not just a JS accounting counter, refuses growth.
 const wasm=await WebAssembly.compile(fs.readFileSync('vendor/three/draco-r187/draco_decoder.wasm'));
