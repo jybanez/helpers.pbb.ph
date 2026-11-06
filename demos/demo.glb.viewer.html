@@ -6,8 +6,8 @@ viewer.open(); // Shows immediately; renderer loads lazily.
 // Or viewer.open({source: file}); // File, Blob or ArrayBuffer
 // viewer.update({context: nextProject, load: nextRead});
 // viewer.setWireframe(true); // When ready; false restores materials.
-// viewer.close(); viewer.destroy();</code></pre><p><a href="../docs/glb-viewer.md">Complete contract and format limits</a></p><p>The demo scene is synthetic and contains an embedded checker texture, floor and two props. No model data is uploaded. The rendering module is served from this site. Compressed geometry, external textures and animation controls are outside this first version.</p></main><script type="module">
-import {uiLoader} from '../js/ui/ui.loader.js?v=0.21.328';
+// viewer.close(); viewer.destroy();</code></pre><p><a href="../docs/glb-viewer.md">Complete contract and format limits</a></p><p>The demo scene is synthetic and contains an embedded checker texture, floor and two props. No model data is uploaded. The rendering module is served from this site. Bounded Draco triangle decoding uses local decoder assets. Oversized scenes, external textures and animation controls remain outside the supported preview contract.</p></main><script type="module">
+import {uiLoader} from '../js/ui/ui.loader.js?v=0.21.329';
 import '../js/demo/demo.shell.js';
 const create=await uiLoader.get('ui.glb.viewer');const viewer=create();
 document.querySelector('#scene').onclick=()=>viewer.open({title:'Textured room',load:async({signal})=>{const response=await fetch('../tests/fixtures/textured-room.glb',{signal});if(!response.ok)throw Error('Demo file unavailable');return response.arrayBuffer();}});
