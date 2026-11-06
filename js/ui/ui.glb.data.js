@@ -1,5 +1,6 @@
 import {GLB_DRACO_WORK_LIMITS} from './ui.glb.policy.js';
-const SUPPORTED_EXTENSIONS = new Set(['KHR_draco_mesh_compression','KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
+import {validateWebpTextures} from './ui.glb.webp.js';
+const SUPPORTED_EXTENSIONS = new Set(['EXT_texture_webp','KHR_draco_mesh_compression','KHR_materials_specular','KHR_materials_unlit','KHR_texture_transform','KHR_mesh_quantization','KHR_lights_punctual']);
 
 // Validate the container before handing any bytes to the rendering dependency.
 export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
@@ -34,6 +35,7 @@ export function validateGlb(buffer, maxBytes = 64 * 1024 * 1024) {
   visit(json);
   if ((json.buffers || []).length > 1 || (json.buffers?.[0]?.byteLength || 0) > binLength) throw new Error('Missing embedded model buffer.');
   validateGeometry(json, buffer, binOffset, binLength);
+  validateWebpTextures(json,buffer,binOffset);
   dracoManifest(json);
   for (const image of json.images || []) if (!Number.isInteger(image.bufferView) || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Textures must be embedded PNG, JPEG or WebP images.');
   return json;

@@ -43,6 +43,7 @@ export async function mountGlb(host, bytes, signal) {
       sanitizeNodePivots(parser.json);
       const original = parser.getDependency.bind(parser);
       parser.getDependency = (type,index) => original(type,index).then(value => {
+        if(type==='texture' && !value)throw new Error('Embedded texture could not be decoded. Export valid PNG, JPEG or static WebP textures.');
         if (type==='bufferView' && definitions.has(index)) draco.bind(value,definitions.get(index));
         return ['material','texture','mesh','scene'].includes(type) ? track(value) : value;
       });
