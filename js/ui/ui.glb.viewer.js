@@ -1,6 +1,6 @@
 import {createViewerHeaderActions} from './ui.viewer.actions.js';
 import { createModal } from './ui.modal.js';
-import { prepareGlb } from './ui.glb.data.js?v=0.21.330';
+import { prepareGlb } from './ui.glb.data.js?v=0.21.332';
 
 export function createGlbViewer(supplied = {}) {
   let options = {title:'3D model',maxBytes:64*1024*1024,...supplied};
@@ -39,7 +39,7 @@ export function createGlbViewer(supplied = {}) {
       if(!current())return false;const prepared=prepareGlb(data,snapshot.maxBytes);
       // Resolve relative to this deployed module in source and main-bundle modes.
       const bundled=new URL(import.meta.url).pathname.endsWith('/helpers.ui.bundle.min.js');
-      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.330':'../../vendor/three/glb.runtime.js?v=0.21.330',import.meta.url);
+      const url=new URL(bundled?'../vendor/three/glb.runtime.js?v=0.21.332':'../../vendor/three/glb.runtime.js?v=0.21.332',import.meta.url);
       const engine=await import(url.href);if(!current())return false;
       const mounted=await engine.mountGlb(host,prepared.bytes,signal);
       if(!current()){mounted.dispose();return false;}runtime=mounted;setStatus('ready',prepared.skippedExtensions.length ? `Showing standard fallback. Skipped optional features: ${prepared.skippedExtensions.join(', ')}.` : '');return true;

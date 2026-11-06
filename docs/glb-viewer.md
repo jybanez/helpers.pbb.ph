@@ -152,3 +152,33 @@ SHA256 is checked. The reproducible cube uses dev-only draco3d 1.5.7. For the in
 The separate .330 policy candidate now admits that scene in canonical mode; see
 [policy evidence](benchmarks/glb-draco-policy-2026-11-06.md) and the exact
 [Syndicatum deployment contract](glb-draco-deployment.md).
+
+## Embedded WebP textures (.332 candidate)
+
+`EXT_texture_webp` is supported through the pinned Three r187 loader's existing
+handler. Only embedded `image/webp` bufferViews are admitted. Required and optional
+extension references are checked before loading; URI resources remain forbidden.
+RIFF lengths/chunk bounds, VP8/VP8L headers, VP8X canvas consistency, dimensions
+and static-image structure are validated before native decoding. Animation is
+rejected. Native decode failure is surfaced as an error rather than silently
+displaying an untextured material. Successful and late-arriving bitmaps use the
+existing disposal path on close, source change and failure.
+
+New WebP limits: 4,096 pixels per dimension and 128 MiB aggregate reservation at
+12 bytes per pixel per WebP texture definition (bitmap, GPU/mip storage and upload
+reserve). This is a conservative admission estimate, not a browser-wide memory
+guarantee; PNG/JPEG and other existing budgets are unchanged. Geometry, Draco
+worker/output, hierarchy and render-work limits are unchanged. Small compressed
+files can still exceed these independent decoded-resource limits.
+
+Deploy `js/ui/ui.glb.webp.js` with the updated GLB data/viewer modules, loader,
+UI JS bundle and `vendor/three/glb.runtime.js`. Decoder binaries are unchanged.
+The candidate is not published until reviewed.
+
+Tests: `node tests/glb.webp.unit.mjs` and `node tests/glb.webp.regression.mjs`.
+Set `GLB_WEBP_PRIVATE=1` to additionally assert the exact authorized v013 geometry
+rejection using `output/glb-v013-private.glb`; private bytes are not distributed.
+See [v013 admission evidence](benchmarks/glb-webp-2026-11-07.md).
+
+Format references: [WebP container specification](https://developers.google.com/speed/webp/docs/riff_container)
+and [EXT_texture_webp](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Vendor/EXT_texture_webp).

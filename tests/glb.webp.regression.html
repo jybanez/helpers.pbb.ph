@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><body data-status="pending"><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const assert=(v,m)=>{if(!v)throw Error(m)},sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const until=async fn=>{for(let i=0;i<600;i++){if(fn())return;await sleep(30)}throw Error('Timeout')};
+const live=new Set(),original=window.createImageBitmap;
+window.createImageBitmap=async(...args)=>{const bitmap=await original(...args),close=bitmap.close.bind(bitmap);live.add(bitmap);bitmap.close=()=>{live.delete(bitmap);close()};return bitmap;};
+function pack(j,bin){const text=new TextEncoder().encode(JSON.stringify(j)),n=Math.ceil(text.length/4)*4,m=Math.ceil(bin.length/4)*4,b=new ArrayBuffer(28+n+m),v=new DataView(b);[0x46546c67,2,b.byteLength,n,0x4e4f534a].forEach((x,i)=>v.setUint32(i*4,x,true));new Uint8Array(b,20,n).fill(32);new Uint8Array(b,20,text.length).set(text);v.setUint32(20+n,m,true);v.setUint32(24+n,0x004e4942,true);new Uint8Array(b,28+n,bin.length).set(bin);return b;}
+try{
+ const c=document.createElement('canvas');c.width=32;c.height=32;const ctx=c.getContext('2d');ctx.fillStyle='#ff0000';ctx.fillRect(0,0,32,32);ctx.fillStyle='#00ff00';ctx.fillRect(0,0,16,16);
+ const blob=await new Promise(r=>c.toBlob(r,'image/webp'));assert(blob.type==='image/webp','browser WebP encoding');const webp=new Uint8Array(await blob.arrayBuffer());
+ const base=await (await fetch('./fixtures/textured-room.glb')).arrayBuffer(),view=new DataView(base),n=view.getUint32(12,true),j=JSON.parse(new TextDecoder().decode(new Uint8Array(base,20,n))),old=new Uint8Array(base,28+n),bin=new Uint8Array(old.length+webp.length);bin.set(old);bin.set(webp,old.length);
+ const image=j.images.length;j.images.push({bufferView:j.bufferViews.length,mimeType:'image/webp'});j.bufferViews.push({buffer:0,byteOffset:old.length,byteLength:webp.length});j.buffers[0].byteLength=bin.length;j.textures[0]={extensions:{EXT_texture_webp:{source:image}}};j.extensionsUsed=['EXT_texture_webp'];j.extensionsRequired=['EXT_texture_webp'];const bytes=pack(j,bin);
+ const loader=createUiLoader(DEFAULT_COMPONENT_REGISTRY,{preferBundles:location.search.includes('bundle')}),create=await loader.get('ui.glb.viewer');
+ const viewer=create({source:bytes});
+ for(let cycle=0;cycle<3;cycle++){
+  viewer.open();assert(viewer.getState().status==='loading','opens immediately');await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='ready',viewer.getState().error);assert(live.size>0,'decoded image tracked');
+  const canvas=viewer.refs.viewport.querySelector('canvas'),gl=canvas.getContext('webgl2'),pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let red=0,green=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i]>pixels[i+1]*2&&pixels[i]>80)red++;if(pixels[i+1]>pixels[i]*2&&pixels[i+1]>80)green++;}assert(red>20&&green>20,'WebP texture colors rendered');
+  const camera=JSON.stringify(viewer.getState().view.camera);viewer.setWireframe(true);assert(JSON.stringify(viewer.getState().view.camera)===camera,'wireframe preserves camera');await viewer.close();assert(gl.isContextLost()&&live.size===0,'bitmap and context cleanup');
+ }
+ // Corrupt compressed data while retaining the dimension header: browser decode
+ // must surface an error, never silently substitute an untextured material.
+ const corrupt=bin.slice();corrupt.fill(0,old.length+30);viewer.update({source:pack(j,corrupt)});viewer.open();await until(()=>viewer.getState().status!=='loading');assert(viewer.getState().status==='error','corrupt entropy rejected');assert(!viewer.refs.viewport.children.length&&live.size===0,'decode failure cleanup');await viewer.close();
+ // Dismiss while a browser bitmap decode resolves late.
+ let started,release;const began=new Promise(r=>started=r),gate=new Promise(r=>release=r),wrapped=window.createImageBitmap;window.createImageBitmap=async(...args)=>{started();await gate;return wrapped(...args)};
+ viewer.update({source:bytes});viewer.open();await began;await viewer.close();release();await sleep(500);assert(live.size===0&&!viewer.refs.viewport.children.length,'late decode disposed');window.createImageBitmap=wrapped;viewer.destroy();
+ if(location.search.includes('private')){const r=await fetch('../output/glb-v013-private.glb');assert(r.ok,'private fixture available');const b=await r.arrayBuffer();assert(b.byteLength===19750280,'exact v013 size');const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('');assert(hash==='b1803a1e929b761fc2098dbc38e08ed41aa83dd953c813f60939c64cef4ff5e0','exact v013 hash');const privateViewer=create({source:b});privateViewer.open();await until(()=>privateViewer.getState().status!=='loading');assert(privateViewer.getState().error?.includes('geometry')&&privateViewer.getState().error.includes('128 MiB'),'exact v013 separate geometry blocker');privateViewer.destroy();}
+ document.body.dataset.status='pass';document.querySelector('#results').textContent='WebP colors rendered, wireframe, reopen, corrupt decode rejection, close/late-decode bitmap cleanup passed';
+}catch(e){document.body.dataset.status='fail';document.querySelector('#results').textContent=e.stack}
+</script>
