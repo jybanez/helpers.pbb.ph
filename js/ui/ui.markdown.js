@@ -1,5 +1,6 @@
 import { Marked } from "../vendor/marked.esm.js";
 import createDOMPurify from "../vendor/dompurify.es.mjs";
+import {createDocumentImageScope} from './ui.document.images.js';
 
 const MAX_BYTES = 256 * 1024;
 const FALLBACK_CHARS = 4096;
@@ -18,7 +19,8 @@ function normalize(options) {
   if (!["_self", "_blank"].includes(next.linkTarget)) throw new TypeError("linkTarget must be _self or _blank.");
   if (next.maxLines != null && (!Number.isInteger(next.maxLines) || next.maxLines < 1 || next.maxLines > 20)) throw new TypeError("maxLines must be null or an integer from 1 to 20.");
   if (!Number.isInteger(next.headingOffset)) throw new TypeError("headingOffset must be an integer.");
-  if (next.images !== undefined && next.images !== false) throw new TypeError("Images are disabled in Markdown v1.");
+  if (next.images !== undefined && typeof next.images !== 'boolean') throw new TypeError('images must be a boolean.');
+  if (next.images && (next.profile!=='full'||typeof next.resolveImage!=='function')) throw new TypeError('Inline images require the full profile and a host resolveImage callback.');
   for (const key of ["emptyText", "showMoreLabel", "showLessLabel", "fallbackLabel", "oversizeLabel", "codeLabel", "tableLabel"]) next[key] = String(next[key] ?? defaults[key]);
   return next;
 }
@@ -37,10 +39,15 @@ function safeURL(href) {
 }
 
 function renderFragment(source, opts, doc) {
+  const imageRequests=[];
   const compact = opts.profile === "compact";
   const parser = new Marked({ gfm: true, breaks: true, async: false, renderer: {
     html(token) { return escape(token.text); },
-    image(token) { return escape(token.text); },
+    image(token) {
+      if(!opts.images || imageRequests.length>=24)return escape(token.text);
+      const id=imageRequests.length;imageRequests.push({source:token.href,alt:token.text||'Image unavailable'});
+      return `<span data-ui-image="${id}">${escape(token.text||'Image unavailable')}</span>`;
+    },
     link(token) {
       const label = this.parser.parseInline(token.tokens), href = safeURL(token.href);
       if (!href) return label;
@@ -76,16 +83,17 @@ function renderFragment(source, opts, doc) {
   if (!purifier.isSupported) throw Object.assign(new Error("Sanitizer unavailable"), { reason: "sanitizer-unavailable" });
   const html = parser.parse(source);
   const fragment = purifier.sanitize(html, {
-    ALLOWED_TAGS: compact ? tags : fullTags,
-    ALLOWED_ATTR: ["href", "target", "rel", "start", "role", "tabindex", "aria-label"],
+    ALLOWED_TAGS: compact ? tags : [...fullTags,'span'],
+    ALLOWED_ATTR: ["href", "target", "rel", "start", "role", "tabindex", "aria-label", 'data-ui-image'],
     // These fixed renderer attributes are not URLs; href still uses both URL gates.
-    ADD_URI_SAFE_ATTR: ["target", "rel", "start", "tabindex", "aria-label"],
+    ADD_URI_SAFE_ATTR: ["target", "rel", "start", "tabindex", "aria-label", 'data-ui-image'],
     ALLOWED_NAMESPACES: ["http://www.w3.org/1999/xhtml"],
     ALLOW_DATA_ATTR: false, ALLOW_ARIA_ATTR: false,
     ALLOWED_URI_REGEXP: /^(?:https?:\/\/|mailto:)/i,
     RETURN_DOM_FRAGMENT: true, SANITIZE_DOM: true
   });
   if (!fragment || fragment.nodeType !== 11 || (html.trim() && !fragment.hasChildNodes())) throw new Error("Sanitizer returned no content");
+  fragment.imageRequests=imageRequests;
   return fragment;
 }
 
@@ -106,6 +114,7 @@ export function createMarkdownView(host, options = {}) {
   if (!host?.appendChild || !host.ownerDocument?.defaultView) throw new TypeError("Markdown view requires a browser host.");
   const doc = host.ownerDocument, win = doc.defaultView;
   let opts = normalize(options), destroyed = false, expanded = false, truncated = false, reason = null, fragment, plain = "", collapsed = false;
+  let imageScope=null,imageReady=Promise.resolve(),imageRevision=0,failedImages=0;
   const root = doc.createElement("div"); root.className = "ui-markdown";
   const content = doc.createElement("div"); content.className = "ui-markdown-content"; content.id = `ui-markdown-${++nextId}`;
   const toggle = doc.createElement("button"); toggle.type = "button"; toggle.className = "ui-markdown-toggle"; toggle.setAttribute("aria-controls", content.id);
@@ -128,6 +137,7 @@ export function createMarkdownView(host, options = {}) {
     return { fragment: result, plain: plainText(result), reason: fallback };
   }
   function show() {
+    imageScope?.dispose();imageRevision++;failedImages=0;
     const focused = doc.activeElement === toggle;
     content.replaceChildren(collapsed ? doc.createTextNode(plain) : fragment.cloneNode(true));
     content.classList.toggle("is-clamped", collapsed);
@@ -135,6 +145,18 @@ export function createMarkdownView(host, options = {}) {
     toggle.hidden = !truncated; toggle.textContent = expanded ? opts.showLessLabel : opts.showMoreLabel;
     toggle.setAttribute("aria-expanded", String(expanded));
     if (focused && !toggle.hidden) toggle.focus({ preventScroll: true });
+    if(opts.images && !collapsed){
+      const token=imageRevision,scope=createDocumentImageScope(opts.resolveImage,opts.signal);imageScope=scope;
+      imageReady=(async()=>{
+        for(const placeholder of content.querySelectorAll('[data-ui-image]')){
+          const request=fragment.imageRequests?.[Number(placeholder.dataset.uiImage)];if(!request)continue;
+          if(scope.signal.aborted)return;
+          try{const src=await scope.load(request.source,request.alt);if(destroyed||token!==imageRevision||scope.signal.aborted)return;
+            const img=doc.createElement('img');img.alt=request.alt;img.src=src;img.style.maxWidth='100%';img.style.height='auto';placeholder.replaceWith(img);
+          }catch{if(token===imageRevision){failedImages++;placeholder.textContent=`${request.alt} (image unavailable)`;}}
+        }
+      })();
+    } else imageReady=Promise.resolve();
   }
   function measure() {
     if (destroyed || opts.profile !== "compact" || !opts.maxLines || reason || !opts.markdown.trim()) return;
@@ -160,7 +182,9 @@ export function createMarkdownView(host, options = {}) {
   return {
     update(next = {}) { if (!destroyed) apply(normalize({ ...opts, ...next })); },
     getSource: () => opts.markdown,
-    getState: () => ({ profile: opts.profile, expanded, truncated, fallback: reason !== null, reason, destroyed }),
-    destroy() { if (destroyed) return; destroyed = true; observer.disconnect(); toggle.removeEventListener("click", onToggle); root.remove(); fragment = null; plain = ""; }
+    whenReady: () => imageReady,
+    cancel() {imageScope?.dispose();imageRevision++;},
+    getState: () => ({ profile: opts.profile, expanded, truncated, fallback: reason !== null, reason, destroyed, failedImages }),
+    destroy() { if (destroyed) return; destroyed = true; imageScope?.dispose();imageRevision++;observer.disconnect(); toggle.removeEventListener("click", onToggle); root.remove(); fragment = null; plain = ""; }
   };
 }

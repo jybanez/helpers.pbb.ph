@@ -7324,3 +7324,9 @@ The UI loader includes `css/incident/incident.chrome.css`; manual modular consum
 ### Color picker
 
 `ui.color.picker` provides native RGB selection, optional opacity control and independently optional RGBA/HEX displays. Canonical form schema: `type: "ui.color.picker"`. See [API and alpha conventions](docs/color-picker.md) and [source/bundle demo](demos/demo.color.picker.html).
+
+### Sandboxed review documents
+
+`ui.html.viewer` / `createHtmlViewer` previews passive HTML documents in an opaque-origin sandbox. `ui.markdown.viewer` and full-profile `createMarkdownView` can opt into inline images with `images: true` and an explicit host `resolveImage` callback. Raw Markdown HTML stays escaped. No untrusted document URL is fetched automatically.
+
+See [document preview integration and limits](docs/document-previews.md) and the [HTML/Markdown image playground](demos/demo.html.viewer.html). Both complete viewers preserve canonical modal loading, header actions and cancellation.

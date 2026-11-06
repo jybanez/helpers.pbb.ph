@@ -1,5 +1,5 @@
-import { uiLoader } from '../ui/ui.loader.js?v=0.21.223';
-import './demo.shell.js?v=0.21.223';
+import { uiLoader } from '../ui/ui.loader.js?v=0.21.333';
+import './demo.shell.js?v=0.21.333';
 const format = document.body.dataset.format;
 const createViewer = await uiLoader.get(`ui.${format}.viewer`);
 const source = document.querySelector('#source');

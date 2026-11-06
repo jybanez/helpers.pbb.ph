@@ -1,4 +1,5 @@
 import {createViewerHeaderActions} from './ui.viewer.actions.js';
+import {createHtmlDocumentView} from './ui.html.document.js';
 import { createModal } from "./ui.modal.js";
 import { createDataInspector } from "./ui.data.inspector.js";
 import { createMarkdownView } from "./ui.markdown.js";
@@ -8,6 +9,7 @@ import { checkText, parseViewerJson, parseViewerCsv, viewerLimits, viewerSourceU
 export const createJsonViewer = options => createFileViewer("json", options);
 export const createMarkdownViewer = options => createFileViewer("markdown", options);
 export const createCsvViewer = options => createFileViewer("csv", options);
+export const createHtmlViewer = options => createFileViewer('html', options);
 
 function createFileViewer(format, supplied = {}) {
   let options = normalize({ title: `${format === "markdown" ? "Markdown" : format.toUpperCase()} Viewer`, fullscreen: false, headers: true, ...supplied });
@@ -60,7 +62,7 @@ function createFileViewer(format, supplied = {}) {
       sourceUrl: viewerSourceUrl(next.sourceUrl, document.baseURI) };
   }
   function getState() { return { format, open: !destroyed && modal.getState().open, destroyed, status, error, rowCount, fullscreen: Boolean(options.fullscreen) }; }
-  function invalidate() { headerActions.cancel(); revision++; controller?.abort(); controller = null; }
+  function invalidate() { headerActions.cancel(); renderer?.cancel?.();revision++; controller?.abort(); controller = null; }
   function clearContent() { renderer?.destroy(); renderer = null; host.replaceChildren(); rowCount = null; }
   function syncChrome() {
     const focused = document.activeElement;
@@ -108,7 +110,7 @@ function createFileViewer(format, supplied = {}) {
     if (Object.hasOwn(patch, "url") && !Object.hasOwn(patch, "content")) merged.content = null;
     if (Object.hasOwn(patch, "content") && !Object.hasOwn(patch, "url")) merged.url = "";
     const next = normalize(merged); // Invalid options leave the current viewer intact.
-    const reloadNeeded = ["url", "content", "headers", "limits", "sourceUrl"].some(key => Object.hasOwn(patch, key));
+    const reloadNeeded = ["url", "content", "headers", "limits", "sourceUrl", "images", "resolveImage"].some(key => Object.hasOwn(patch, key));
     options = next;
     syncChrome();
     if (reloadNeeded) { invalidate(); if (modal.getState().open) void reload(); }
@@ -139,7 +141,11 @@ function createFileViewer(format, supplied = {}) {
         if (data === null) { const scalar = document.createElement("pre"); scalar.textContent = "null"; host.append(scalar); }
         else renderer = createDataInspector(host, data, { chrome: false, expandDepth: 1 });
       } else if (format === "markdown") {
-        renderer = createMarkdownView(host, { markdown: text, profile: "full", linkTarget: "_blank" });
+        renderer = createMarkdownView(host, { markdown: text, profile: "full", linkTarget: "_blank", images:snapshot.images,resolveImage:snapshot.resolveImage,signal });
+        await renderer.whenReady();
+      } else if(format==='html') {
+        renderer=createHtmlDocumentView(host,{html:text,resolveImage:snapshot.resolveImage,signal,title:snapshot.title,onExitFocus:()=>modal.refs.closeButton.focus()});
+        await renderer.ready;
       } else {
         const parsed = parseViewerCsv(text, { ...snapshot.limits, headers: snapshot.headers });
         rowCount = parsed.rows.length;
@@ -147,7 +153,9 @@ function createFileViewer(format, supplied = {}) {
           enableColumnResize: true, enablePagination: true, pageSize: 50, pageSizeOptions: [25, 50, 100], chrome: false });
         if (!rowCount) { setStatus("empty", "No data rows in this file."); return; }
       }
-      setStatus("ready");
+      if(!current())return;
+      const missing=renderer?.getState?.().failedImages||0;
+      setStatus("ready",missing?`${missing} image(s) unavailable. Check approved project images and reopen the preview.`:'');
     } catch (cause) {
       if (!current() || signal.aborted) return;
       clearContent();

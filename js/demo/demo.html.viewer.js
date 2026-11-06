@@ -1,0 +1,13 @@
+import {uiLoader} from '../ui/ui.loader.js?v=0.21.333';
+import './demo.shell.js?v=0.21.333';
+const factories={html:await uiLoader.get('ui.html.viewer'),markdown:await uiLoader.get('ui.markdown.viewer')};
+const samples={html:'<h1>Layout review</h1><p>Compare the original and proposed layout.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><figure><img src="project:before" alt="Original layout" width="480"><figcaption>Before: separate rooms</figcaption></figure><figure><img src="project:after" alt="Proposed layout" width="480"><figcaption>After: open plan</figcaption></figure></div>',markdown:'# Layout review\n\n![Original layout](project:before)\n\n*Before: separate rooms*\n\n![Proposed layout](project:after)\n\n*After: open plan*',hostile:'<h1>Passive content remains</h1><script>alert("blocked")</script><form action="https://example.invalid"><input><button>Blocked form</button></form><img src="https://example.invalid/image.png" alt="Unapproved image"><a href="https://example.invalid" target="_top">This becomes passive text</a><div style="background:url(https://example.invalid/pixel);padding:16px">No CSS resource loads</div>'};
+const blobs=new Map();
+for(const [key,color] of [['project:before','#5874b9'],['project:after','#328270']]){const canvas=document.createElement('canvas');canvas.width=480;canvas.height=240;const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,480,240);c.strokeStyle='white';c.lineWidth=6;c.strokeRect(30,30,420,180);if(key.endsWith('before')){c.beginPath();c.moveTo(240,30);c.lineTo(240,210);c.stroke();}c.fillStyle='white';c.font='24px sans-serif';c.fillText(key.endsWith('before')?'Before':'After',50,80);blobs.set(key,await new Promise(r=>canvas.toBlob(r,'image/png')));}
+const source=document.querySelector('#source'),format=document.querySelector('#format');let viewer;
+const reset=()=>source.value=samples[format.value];format.addEventListener('change',reset);reset();
+document.querySelector('#open').disabled=false;document.querySelector('#open').addEventListener('click',()=>{
+ viewer?.destroy();const denied=document.querySelector('#deny').checked;
+ viewer=factories[format.value==='markdown'?'markdown':'html']({title:'Project review',content:source.value,images:format.value==='markdown',resolveImage:async(reference,{signal})=>{await new Promise(r=>setTimeout(r,400));if(signal.aborted||denied||!blobs.has(reference))return null;return blobs.get(reference);}});viewer.open();document.querySelector('#status').textContent='Opened with canonical loading state. Images are resolved from the explicit demo map.';
+});
+window.addEventListener('pagehide',()=>viewer?.destroy());
