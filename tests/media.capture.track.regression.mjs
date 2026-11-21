@@ -22,10 +22,10 @@ try {
             hookEvents.push({type:'start', kind:actualKind, sameTrack:tracks.includes(audioTrack), state:audioTrack.readyState});
             window.borrowedTrack = audioTrack;
             if (mode === 'throw-start') throw new Error('consumer start failure');
-            if (mode === 'reentrant') composer.destroy();
+            if (mode === 'reentrant' || mode === 'reentrant-throw-cleanup') composer.destroy();
             return ({reason}) => {
               hookEvents.push({type:'end', reason, state:audioTrack.readyState});
-              if (mode === 'throw-cleanup') throw new Error('consumer cleanup failure');
+              if (mode === 'throw-cleanup' || mode === 'reentrant-throw-cleanup') throw new Error('consumer cleanup failure');
             };
           },
         } } });
@@ -54,7 +54,7 @@ try {
       await page.waitForFunction(() => files.length === 1);
       assert.equal(await page.evaluate(() => hookEvents.length), 4);
       assert.equal(await page.evaluate(() => files[0].size > 0), true);
-      for (const mode of ['cancel', 'dispose', 'limit', 'throw-start', 'throw-cleanup', 'reentrant', 'device']) {
+      for (const mode of ['cancel', 'dispose', 'limit', 'throw-start', 'throw-cleanup', 'reentrant', 'reentrant-throw-cleanup', 'device']) {
         await load(kind, mode);
         if (mode === 'cancel' || mode === 'throw-cleanup') await page.getByRole('button', {name:'Close modal', exact:true}).click();
         if (mode === 'dispose') await page.evaluate(() => composer.destroy());
@@ -62,9 +62,36 @@ try {
         await page.waitForFunction(() => tracks.every(t => t.readyState === 'ended'));
         const events = await page.evaluate(() => hookEvents);
         assert.equal(events.length, mode === 'throw-start' ? 1 : 2, mode);
-        if (events[1]) assert.equal(events[1].reason, ['limit', 'device'].includes(mode) ? 'error' : 'cancel', mode);
+        if (events[1]) assert.deepEqual(events[1], {type:'end', reason:['limit', 'device'].includes(mode) ? 'error' : 'cancel', state:'live'}, mode);
         assert.equal(await page.evaluate(() => files.length), 0);
       }
+    }
+    // captureMedia is a direct modular API, not a public bundle registry export.
+    // The composer disposal cases above exercise its bundled implementation.
+    if (!bundle) for (const kind of ['audio', 'video']) for (const throwCleanup of [false, true]) {
+      await page.goto(server.origin + '/tests/composer.recording.regression.html');
+      await page.waitForFunction(() => window.ready);
+      await page.evaluate(async ({kind, throwCleanup}) => {
+        const {captureMedia} = await import('/js/ui/ui.media.capture.js');
+        const controller = new AbortController();
+        window.directEvents = []; window.directResult = 'pending';
+        void captureMedia({kind, signal:controller.signal, onRecordingStart({audioTrack}) {
+          window.directTrack = audioTrack;
+          directEvents.push({type:'start', state:audioTrack.readyState});
+          controller.abort();
+          return ({reason}) => {
+            directEvents.push({type:'end', reason, state:audioTrack.readyState});
+            if (throwCleanup) throw new Error('direct consumer cleanup failure');
+          };
+        }}).then(result => {window.directResult = result;});
+      }, {kind, throwCleanup});
+      await page.getByRole('button', {name:'Start recording', exact:true}).click();
+      await page.waitForFunction(() => directResult === null);
+      assert.deepEqual(await page.evaluate(() => directEvents), [
+        {type:'start', state:'live'}, {type:'end', reason:'cancel', state:'live'},
+      ]);
+      assert.equal(await page.evaluate(() => directTrack.readyState === 'ended' && tracks.every(t => t.readyState === 'ended')), true);
+      assert.equal(await page.evaluate(() => files.length), 0);
     }
     assert.deepEqual(errors, []);
     await page.close();

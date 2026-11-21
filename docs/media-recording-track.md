@@ -34,6 +34,8 @@ again. Record again acquires a fresh stream and starts a new hook/cleanup pair.
 Cancellation while permission is pending never calls the hook; late permission
 results are released. Device disconnection may mean the track has already ended
 when error cleanup runs.
+Synchronous cancellation inside the start hook defers track release until that
+hook returns and its disposer has run, including when the disposer throws.
 
 Do not stop, clone, or change the borrowed track. Return cleanup synchronously;
 Helper does not await consumer initialization or finalization. Consumers that

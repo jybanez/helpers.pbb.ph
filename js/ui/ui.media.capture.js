@@ -12,11 +12,21 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
     let stream, recorder, timer, deadline, url, graphContext, graphSource, chunks = [], bytes = 0;
     let disposed = false, phase = "permission", result = null;
     let recordingCleanup = null, recordingEndReason = null;
+    let recordingCallbackDepth = 0, trackStopPending = false;
+    function flushTrackStop() {
+      if (!recordingCallbackDepth && trackStopPending) {
+        trackStopPending = false;
+        stopTracks();
+      }
+    }
     function endRecording(reason) {
       recordingEndReason ??= reason;
       const dispose = recordingCleanup; recordingCleanup = null;
+      if (!dispose) return;
       // Consumer failures must never prevent Helper from releasing its devices.
-      try { dispose?.({ reason: recordingEndReason }); } catch (cause) { console.warn("Recording integration cleanup failed", cause); }
+      recordingCallbackDepth++;
+      try { dispose({ reason: recordingEndReason }); } catch (cause) { console.warn("Recording integration cleanup failed", cause); }
+      finally { recordingCallbackDepth--; flushTrackStop(); }
     }
     const status = createElement("p", { text: "Requesting permission...", attrs: { role: "status", "aria-live": "polite" } });
     const error = createElement("p", { attrs: { role: "alert", hidden: "hidden" } });
@@ -93,6 +103,9 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
     }
     function stopTracks() {
       endRecording("cancel");
+      // A start hook may synchronously abort before it returns its disposer.
+      // Keep the borrowed track live until both callbacks have unwound.
+      if (recordingCallbackDepth) { trackStopPending = true; return; }
       graph?.attachAudioNode(null); graph?.setPlayback({ isPlaying: false, isLive: false, isActive: false });
       graphSource?.disconnect(); graphSource = null;
       if (graphContext) { void graphContext.close().catch(() => {}); graphContext = null; }
@@ -165,10 +178,15 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
         const began = Date.now();
         if (typeof onRecordingStart === "function") {
           // Borrow the recorder's microphone; never acquire a second stream.
-          const dispose = onRecordingStart({ audioTrack: stream.getAudioTracks()[0], kind });
-          recordingCleanup = typeof dispose === "function" ? dispose : null;
-          // A synchronous consumer can dismiss/abort capture from its start hook.
-          if (recordingEndReason) endRecording(recordingEndReason);
+          recordingCallbackDepth++;
+          try {
+            const dispose = onRecordingStart({ audioTrack: stream.getAudioTracks()[0], kind });
+            recordingCleanup = typeof dispose === "function" ? dispose : null;
+          } finally {
+            recordingCallbackDepth--;
+            if (recordingEndReason) endRecording(recordingEndReason);
+            flushTrackStop();
+          }
           if (disposed || phase !== "recording") return false;
         }
         status.hidden = false;
