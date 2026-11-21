@@ -1,5 +1,10 @@
 # Diary offline speech diagnostic
 
+Follow-up: the separate Diary WASM experiment passed independent offline
+Chrome/Edge audio and video checks. See
+[the Whisper verification report](media-recording-whisper-verification.md).
+The native-browser observations below remain the historical diagnostic.
+
 Task #503, Planner message #14680. Tested 2026-11-21 with the Helper hook at
 `a856bd2b6502bfad5e39d5869710b46f00e7c949`, integrated on Diary's discovery page.
 The [sanitized event evidence](media-recording-speech-evidence.json) records the
