@@ -1,0 +1,155 @@
+{
+  "date": "2026-11-21",
+  "testOrigin": "https://diary.wizaya.com",
+  "status": "passed",
+  "browsers": [
+    {
+      "browser": "158.0.8127.36",
+      "channel": "chrome",
+      "os": "10.0.26320",
+      "started": "2026-11-21T12:11:16.861Z",
+      "fixtureSha256": "d3b91d424397bc1462bece7210ee5969960d85491bea8bf43b8dbcaa4ef7cf85",
+      "fixtureBytes": 603566,
+      "manifestSha256": "9fbf7947d005fb75752c7b3a3a6a93e9a1c96b661d0d9f97ccf162e29fd067ef",
+      "prepareMs": 8272,
+      "directFixture": {
+        "text": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing.",
+        "ms": 8784.899999976158,
+        "sampleRate": 16000,
+        "samples": 160000
+      },
+      "externalBlocked": true,
+      "online": false,
+      "helperRevision": "a856bd2b6502bfad5e39d5869710b46f00e7c949",
+      "model": {
+        "repository": "onnx-community/whisper-tiny.en",
+        "revision": "794207fec2761281fe63a23a94b7e9f53a4efbc1",
+        "dtype": "q8",
+        "language": "en-US"
+      },
+      "runtime": {
+        "transformers": "3.8.1",
+        "onnxRuntimeWeb": "1.22.0-dev.20250409-89f8206ba4",
+        "device": "wasm",
+        "threads": 1
+      },
+      "http": {
+        "allRequestCountIncludingBlockedProbe": 37,
+        "recordingAndFinalizationCount": 0,
+        "nonProbeRequestBodies": 0,
+        "allNonProbeRequestsSameOriginGET": true
+      },
+      "sessions": [
+        {
+          "kind": "audio",
+          "firstText": "Please open the door.",
+          "firstTextMs": 10585.59999999404,
+          "max25msTimerGapMs": 30.30000001192093,
+          "timerTicks": 492,
+          "stopControlReadMs": 30,
+          "finalText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing English speech recognition.",
+          "savedEditedText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing English speech recognition. Edited offline audio verification.",
+          "savedBlobBytes": 138285,
+          "savedBlobType": "audio/webm;codecs=opus",
+          "cumulativeCaptureCount": 1,
+          "trackCloneCount": 0,
+          "analysisUsesRecorderTrack": true,
+          "allTracksEnded": true
+        },
+        {
+          "kind": "video",
+          "firstText": "Please open the door.",
+          "firstTextMs": 9034.300000011921,
+          "max25msTimerGapMs": 26.69999998807907,
+          "timerTicks": 423,
+          "stopControlReadMs": 6,
+          "finalText": "Please open the door. The blue notebook is on the table. This is an offline recording test.",
+          "savedEditedText": "Please open the door. The blue notebook is on the table. This is an offline recording test. Edited offline video verification.",
+          "savedBlobBytes": 445909,
+          "savedBlobType": "video/webm;codecs=vp8,opus",
+          "cumulativeCaptureCount": 2,
+          "trackCloneCount": 0,
+          "analysisUsesRecorderTrack": true,
+          "allTracksEnded": true
+        }
+      ]
+    },
+    {
+      "browser": "159.0.4402.13",
+      "channel": "msedge",
+      "os": "10.0.26320",
+      "started": "2026-11-21T12:12:52.943Z",
+      "fixtureSha256": "d3b91d424397bc1462bece7210ee5969960d85491bea8bf43b8dbcaa4ef7cf85",
+      "fixtureBytes": 603566,
+      "manifestSha256": "9fbf7947d005fb75752c7b3a3a6a93e9a1c96b661d0d9f97ccf162e29fd067ef",
+      "prepareMs": 7599,
+      "directFixture": {
+        "text": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing.",
+        "ms": 10020.40000000596,
+        "sampleRate": 16000,
+        "samples": 160000
+      },
+      "externalBlocked": true,
+      "online": false,
+      "helperRevision": "a856bd2b6502bfad5e39d5869710b46f00e7c949",
+      "model": {
+        "repository": "onnx-community/whisper-tiny.en",
+        "revision": "794207fec2761281fe63a23a94b7e9f53a4efbc1",
+        "dtype": "q8",
+        "language": "en-US"
+      },
+      "runtime": {
+        "transformers": "3.8.1",
+        "onnxRuntimeWeb": "1.22.0-dev.20250409-89f8206ba4",
+        "device": "wasm",
+        "threads": 1
+      },
+      "http": {
+        "allRequestCountIncludingBlockedProbe": 37,
+        "recordingAndFinalizationCount": 0,
+        "nonProbeRequestBodies": 0,
+        "allNonProbeRequestsSameOriginGET": true
+      },
+      "sessions": [
+        {
+          "kind": "audio",
+          "firstText": "Please open the door.",
+          "firstTextMs": 10674.800000011921,
+          "max25msTimerGapMs": 33.5,
+          "timerTicks": 490,
+          "stopControlReadMs": 22,
+          "finalText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing English speech recognition.",
+          "savedEditedText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing English speech recognition. Edited offline audio verification.",
+          "savedBlobBytes": 138496,
+          "savedBlobType": "audio/webm;codecs=opus",
+          "cumulativeCaptureCount": 1,
+          "trackCloneCount": 0,
+          "analysisUsesRecorderTrack": true,
+          "allTracksEnded": true
+        },
+        {
+          "kind": "video",
+          "firstText": "Please open the door.",
+          "firstTextMs": 10282.90000000596,
+          "max25msTimerGapMs": 27.5,
+          "timerTicks": 473,
+          "stopControlReadMs": 4,
+          "finalText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing",
+          "savedEditedText": "Please open the door. The blue notebook is on the table. This is an offline recording test. We are testing Edited offline video verification.",
+          "savedBlobBytes": 432802,
+          "savedBlobType": "video/webm;codecs=vp8,opus",
+          "cumulativeCaptureCount": 2,
+          "trackCloneCount": 0,
+          "analysisUsesRecorderTrack": true,
+          "allTracksEnded": true
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Headless Windows and disposable synthetic English only; no broad accuracy, multilingual, mobile, or long-session claim.",
+    "Timer gaps and control round-trip time measure this machine only.",
+    "Readiness kept a loaded worker/model in memory; cold offline browser restart and cache eviction were not tested.",
+    "An initial test harness asserted on a missing pre-start transcript node, and another included the deliberately blocked external probe in an origin-only check. Both harness errors were corrected; the reported fresh-profile Chrome and Edge runs completed all assertions."
+  ]
+}

@@ -6,11 +6,28 @@ import { createAudioGraph } from "./ui.audio.audiograph.js?v=0.21.62";
 import { createAudioPlayer } from "./ui.audio.player.js?v=0.21.271";
 
 // Own only streams acquired here. No caller/call-session streams are accepted.
-export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 1024, maxDurationMs = 60000, mimeTypes, audioGraphOptions = {} } = {}) {
+export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 1024, maxDurationMs = 60000, mimeTypes, audioGraphOptions = {}, onRecordingStart } = {}) {
   return new Promise((resolve) => {
     if (signal?.aborted) { resolve(null); return; }
     let stream, recorder, timer, deadline, url, graphContext, graphSource, chunks = [], bytes = 0;
     let disposed = false, phase = "permission", result = null;
+    let recordingCleanup = null, recordingEndReason = null;
+    let recordingCallbackDepth = 0, trackStopPending = false;
+    function flushTrackStop() {
+      if (!recordingCallbackDepth && trackStopPending) {
+        trackStopPending = false;
+        stopTracks();
+      }
+    }
+    function endRecording(reason) {
+      recordingEndReason ??= reason;
+      const dispose = recordingCleanup; recordingCleanup = null;
+      if (!dispose) return;
+      // Consumer failures must never prevent Helper from releasing its devices.
+      recordingCallbackDepth++;
+      try { dispose({ reason: recordingEndReason }); } catch (cause) { console.warn("Recording integration cleanup failed", cause); }
+      finally { recordingCallbackDepth--; flushTrackStop(); }
+    }
     const status = createElement("p", { text: "Requesting permission...", attrs: { role: "status", "aria-live": "polite" } });
     const error = createElement("p", { attrs: { role: "alert", hidden: "hidden" } });
     const preview = createElement(kind === "video" ? "video" : "audio", { attrs: { playsinline: "", "aria-label": "Recording preview" } });
@@ -85,6 +102,10 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
       if (hadFocus) (playerActions ? playerHost.querySelector("button") : toggleAction ? toggleHost.querySelector("button") : modal.refs?.headerActions?.querySelector("button"))?.focus();
     }
     function stopTracks() {
+      endRecording("cancel");
+      // A start hook may synchronously abort before it returns its disposer.
+      // Keep the borrowed track live until both callbacks have unwound.
+      if (recordingCallbackDepth) { trackStopPending = true; return; }
       graph?.attachAudioNode(null); graph?.setPlayback({ isPlaying: false, isLive: false, isActive: false });
       graphSource?.disconnect(); graphSource = null;
       if (graphContext) { void graphContext.close().catch(() => {}); graphContext = null; }
@@ -110,7 +131,7 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
     });
     function fail(message) {
       if (disposed) return;
-      phase = "error"; result = null; cleanup(); modal.setBusy(false);
+      phase = "error"; result = null; endRecording("error"); cleanup(); modal.setBusy(false);
       status.hidden = false;
       status.textContent = "Nothing was attached. Your draft is unchanged.";
       error.textContent = message; error.hidden = false;
@@ -120,7 +141,7 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
       if (disposed || phase !== "ready") return false;
       try {
         if (graphContext?.state === "suspended") void graphContext.resume().catch(() => {});
-        phase = "recording"; chunks = []; bytes = 0;
+        phase = "recording"; chunks = []; bytes = 0; recordingEndReason = null;
         recorder.ondataavailable = event => {
           if (disposed || phase === "error") return;
           if (event.data?.size) { bytes += event.data.size; if (bytes > maxBytes) { fail("Recording exceeds the attachment size limit. Record a shorter clip."); return; } chunks.push(event.data); }
@@ -128,7 +149,8 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
         recorder.onerror = () => fail("Recording failed. Check your device and try a new recording.");
         recorder.onstop = () => {
           if (disposed || phase === "error") return;
-          clearInterval(timer); clearTimeout(deadline); stopTracks();
+          clearInterval(timer); clearTimeout(deadline); endRecording("stop"); stopTracks();
+          if (disposed || phase === "error") return;
           const blob = new Blob(chunks, { type: recorder.mimeType || chunks[0]?.type || "" }); chunks = [];
           if (!blob.size || !blob.type || blob.size > maxBytes) { fail("The recording is empty, unsupported, or too large. Try a shorter recording in a supported browser."); return; }
           phase = "preview";
@@ -154,6 +176,19 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
         };
         recorder.start(250);
         const began = Date.now();
+        if (typeof onRecordingStart === "function") {
+          // Borrow the recorder's microphone; never acquire a second stream.
+          recordingCallbackDepth++;
+          try {
+            const dispose = onRecordingStart({ audioTrack: stream.getAudioTracks()[0], kind });
+            recordingCleanup = typeof dispose === "function" ? dispose : null;
+          } finally {
+            recordingCallbackDepth--;
+            if (recordingEndReason) endRecording(recordingEndReason);
+            flushTrackStop();
+          }
+          if (disposed || phase !== "recording") return false;
+        }
         status.hidden = false;
         status.textContent = "Recording — 0 seconds";
         timer = setInterval(() => { status.textContent = `Recording — ${Math.floor((Date.now() - began) / 1000)} seconds`; }, 500);
@@ -164,6 +199,8 @@ export function captureMedia({ kind = "audio", signal, maxBytes = 25 * 1024 * 10
             if (phase !== "recording") return; phase = "stopping"; clearInterval(timer); clearTimeout(deadline);
             status.textContent = "Preparing preview..."; modal.setBusy(true, { message: "Preparing preview..." });
             deadline = setTimeout(() => fail("The browser could not finish recording. Close this dialog and try again."), 10000);
+            endRecording("stop");
+            if (disposed || phase !== "stopping") return;
             try { recorder.stop(); } catch { fail("Unable to finish recording. Try a new recording."); }
           } },
         ]);

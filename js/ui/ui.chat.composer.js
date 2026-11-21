@@ -1,6 +1,6 @@
 import { createElement, clearNode } from "./ui.dom.js";
 import { createIcon } from "./ui.icons.js";
-import { captureMedia } from "./ui.media.capture.js?v=0.21.271";
+import { captureMedia } from "./ui.media.capture.js?v=0.21.335";
 
 const DEFAULT_OPTIONS = {
   className: "",

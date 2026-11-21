@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+import { startStaticServer } from './_support/static-server.mjs';
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright');
+const server = await startStaticServer({ rootDir: process.cwd(), port: 0 });
+const browser = await chromium.launch({ channel: 'msedge', headless: true, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+try {
+  for (const bundle of [false, true]) {
+    const page = await browser.newPage();
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    const load = async (kind, mode = 'normal') => {
+      await page.goto(server.origin + '/tests/composer.recording.regression.html' + (bundle ? '?bundle' : ''));
+      await page.waitForFunction(() => window.ready);
+      await page.evaluate(({kind, mode}) => {
+        window.hookEvents = []; window.getUserMediaCalls = 0;
+        const acquireWithTracking = navigator.mediaDevices.getUserMedia;
+        navigator.mediaDevices.getUserMedia = constraints => { getUserMediaCalls++; return acquireWithTracking(constraints); };
+        window.captureController = new AbortController();
+        composer.update({}, { attachmentOptions: { [kind === 'video' ? 'videos' : 'audios']: {
+          ...(mode === 'limit' ? {maxDurationMs: 100} : {}),
+          onRecordingStart({audioTrack, kind: actualKind}) {
+            hookEvents.push({type:'start', kind:actualKind, sameTrack:tracks.includes(audioTrack), state:audioTrack.readyState});
+            window.borrowedTrack = audioTrack;
+            if (mode === 'throw-start') throw new Error('consumer start failure');
+            if (mode === 'reentrant' || mode === 'reentrant-throw-cleanup') composer.destroy();
+            return ({reason}) => {
+              hookEvents.push({type:'end', reason, state:audioTrack.readyState});
+              if (mode === 'throw-cleanup' || mode === 'reentrant-throw-cleanup') throw new Error('consumer cleanup failure');
+            };
+          },
+        } } });
+      }, {kind, mode});
+      await page.getByRole('button', {name:kind === 'video' ? 'Attach Video' : 'Attach Audio', exact:true}).click();
+      assert.deepEqual(await page.evaluate(() => hookEvents), []);
+      await page.getByRole('button', {name:'Start recording', exact:true}).click();
+    };
+    const stop = async () => {
+      await page.waitForTimeout(400);
+      await page.getByRole('button', {name:'Stop recording', exact:true}).click();
+      await page.getByRole('button', {name:'Attach recording', exact:true}).waitFor();
+    };
+    for (const kind of ['audio', 'video']) {
+      await load(kind);
+      assert.deepEqual(await page.evaluate(() => hookEvents), [{type:'start', kind, sameTrack:true, state:'live'}]);
+      assert.equal(await page.evaluate(() => getUserMediaCalls), 1);
+      await stop();
+      assert.deepEqual(await page.evaluate(() => hookEvents[1]), {type:'end', reason:'stop', state:'live'});
+      assert.equal(await page.evaluate(() => tracks.every(t => t.readyState === 'ended')), true);
+      await page.getByRole('button', {name:'Record again', exact:true}).click();
+      await page.waitForFunction(() => hookEvents.length === 3);
+      assert.equal(await page.evaluate(() => getUserMediaCalls), 2);
+      await stop();
+      await page.getByRole('button', {name:'Attach recording', exact:true}).click();
+      await page.waitForFunction(() => files.length === 1);
+      assert.equal(await page.evaluate(() => hookEvents.length), 4);
+      assert.equal(await page.evaluate(() => files[0].size > 0), true);
+      for (const mode of ['cancel', 'dispose', 'limit', 'throw-start', 'throw-cleanup', 'reentrant', 'reentrant-throw-cleanup', 'device']) {
+        await load(kind, mode);
+        if (mode === 'cancel' || mode === 'throw-cleanup') await page.getByRole('button', {name:'Close modal', exact:true}).click();
+        if (mode === 'dispose') await page.evaluate(() => composer.destroy());
+        if (mode === 'device') await page.evaluate(() => borrowedTrack.dispatchEvent(new Event('ended')));
+        await page.waitForFunction(() => tracks.every(t => t.readyState === 'ended'));
+        const events = await page.evaluate(() => hookEvents);
+        assert.equal(events.length, mode === 'throw-start' ? 1 : 2, mode);
+        if (events[1]) assert.deepEqual(events[1], {type:'end', reason:['limit', 'device'].includes(mode) ? 'error' : 'cancel', state:'live'}, mode);
+        assert.equal(await page.evaluate(() => files.length), 0);
+      }
+    }
+    // captureMedia is a direct modular API, not a public bundle registry export.
+    // The composer disposal cases above exercise its bundled implementation.
+    if (!bundle) for (const kind of ['audio', 'video']) for (const throwCleanup of [false, true]) {
+      await page.goto(server.origin + '/tests/composer.recording.regression.html');
+      await page.waitForFunction(() => window.ready);
+      await page.evaluate(async ({kind, throwCleanup}) => {
+        const {captureMedia} = await import('/js/ui/ui.media.capture.js');
+        const controller = new AbortController();
+        window.directEvents = []; window.directResult = 'pending';
+        void captureMedia({kind, signal:controller.signal, onRecordingStart({audioTrack}) {
+          window.directTrack = audioTrack;
+          directEvents.push({type:'start', state:audioTrack.readyState});
+          controller.abort();
+          return ({reason}) => {
+            directEvents.push({type:'end', reason, state:audioTrack.readyState});
+            if (throwCleanup) throw new Error('direct consumer cleanup failure');
+          };
+        }}).then(result => {window.directResult = result;});
+      }, {kind, throwCleanup});
+      await page.getByRole('button', {name:'Start recording', exact:true}).click();
+      await page.waitForFunction(() => directResult === null);
+      assert.deepEqual(await page.evaluate(() => directEvents), [
+        {type:'start', state:'live'}, {type:'end', reason:'cancel', state:'live'},
+      ]);
+      assert.equal(await page.evaluate(() => directTrack.readyState === 'ended' && tracks.every(t => t.readyState === 'ended')), true);
+      assert.equal(await page.evaluate(() => files.length), 0);
+    }
+    assert.deepEqual(errors, []);
+    await page.close();
+    console.log('Live recording track passed: ' + (bundle ? 'bundle' : 'source'));
+  }
+} finally { await browser.close(); await server.close(); }
