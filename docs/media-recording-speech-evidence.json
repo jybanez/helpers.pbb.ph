@@ -1,0 +1,305 @@
+{
+  "browser": "158.0.8127.36",
+  "os": "10.0.26320",
+  "fixtureSha256": "d3b91d424397bc1462bece7210ee5969960d85491bea8bf43b8dbcaa4ef7cf85",
+  "fixtureBytes": 603566,
+  "ready": "available",
+  "externalBlocked": true,
+  "online": false,
+  "date": "2026-11-21",
+  "helperRevision": "a856bd2b6502bfad5e39d5869710b46f00e7c949",
+  "playwright": "1.64.0-alpha-1790635538000",
+  "runs": [
+    {
+      "name": "standalone-track",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 1,
+      "events": [
+        {
+          "type": "start",
+          "ms": 217
+        },
+        {
+          "type": "audiostart",
+          "ms": 560
+        },
+        {
+          "type": "soundstart",
+          "ms": 4194
+        },
+        {
+          "type": "speechstart",
+          "ms": 4194
+        },
+        {
+          "type": "speechend",
+          "ms": 22004
+        },
+        {
+          "type": "soundend",
+          "ms": 22004
+        },
+        {
+          "type": "audioend",
+          "ms": 22004
+        },
+        {
+          "type": "end",
+          "ms": 22004
+        }
+      ],
+      "resultCount": 0,
+      "peak": 1,
+      "sampleCount": 240,
+      "blobBytes": 0,
+      "recognitionUsesAcquiredTrack": true,
+      "allTracksEnded": true,
+      "audioSettings": {
+        "sampleRate": 48000,
+        "channelCount": 1,
+        "autoGainControl": true,
+        "echoCancellation": true,
+        "noiseSuppression": true
+      }
+    },
+    {
+      "name": "standalone-track-recorder",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 1,
+      "events": [
+        {
+          "type": "start",
+          "ms": 28
+        },
+        {
+          "type": "audiostart",
+          "ms": 456
+        },
+        {
+          "type": "soundstart",
+          "ms": 4197
+        },
+        {
+          "type": "speechstart",
+          "ms": 4197
+        },
+        {
+          "type": "speechend",
+          "ms": 22005
+        },
+        {
+          "type": "soundend",
+          "ms": 22005
+        },
+        {
+          "type": "audioend",
+          "ms": 22005
+        },
+        {
+          "type": "end",
+          "ms": 22005
+        }
+      ],
+      "resultCount": 0,
+      "peak": 1,
+      "sampleCount": 240,
+      "blobBytes": 214024,
+      "recognitionUsesAcquiredTrack": true,
+      "allTracksEnded": true,
+      "audioSettings": {
+        "sampleRate": 48000,
+        "channelCount": 1,
+        "autoGainControl": true,
+        "echoCancellation": true,
+        "noiseSuppression": true
+      }
+    },
+    {
+      "name": "native-microphone",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 0,
+      "events": [
+        {
+          "type": "start",
+          "ms": 1
+        },
+        {
+          "type": "audiostart",
+          "ms": 184
+        },
+        {
+          "type": "audioend",
+          "ms": 8095
+        },
+        {
+          "type": "error",
+          "ms": 8097,
+          "error": "no-speech"
+        },
+        {
+          "type": "end",
+          "ms": 8098
+        }
+      ],
+      "resultCount": 0,
+      "peak": 0,
+      "sampleCount": 0,
+      "blobBytes": 0
+    },
+    {
+      "name": "pbb-audio",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 1,
+      "events": [
+        {
+          "type": "start",
+          "ms": 36
+        },
+        {
+          "type": "audiostart",
+          "ms": 319
+        },
+        {
+          "type": "soundstart",
+          "ms": 4125
+        },
+        {
+          "type": "speechstart",
+          "ms": 4125
+        },
+        {
+          "type": "speechend",
+          "ms": 22123
+        },
+        {
+          "type": "soundend",
+          "ms": 22123
+        },
+        {
+          "type": "audioend",
+          "ms": 22133
+        },
+        {
+          "type": "end",
+          "ms": 22134
+        }
+      ],
+      "resultCount": 0,
+      "captureCount": 1,
+      "recognitionUsesAcquiredTrack": true,
+      "allTracksEnded": true
+    },
+    {
+      "name": "pbb-video",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 1,
+      "events": [
+        {
+          "type": "start",
+          "ms": 37
+        },
+        {
+          "type": "audiostart",
+          "ms": 468
+        },
+        {
+          "type": "soundstart",
+          "ms": 4143
+        },
+        {
+          "type": "speechstart",
+          "ms": 4143
+        },
+        {
+          "type": "speechend",
+          "ms": 22141
+        },
+        {
+          "type": "soundend",
+          "ms": 22141
+        },
+        {
+          "type": "audioend",
+          "ms": 22142
+        },
+        {
+          "type": "end",
+          "ms": 22143
+        }
+      ],
+      "resultCount": 0,
+      "captureCount": 1,
+      "recognitionUsesAcquiredTrack": true,
+      "allTracksEnded": true
+    },
+    {
+      "name": "clean-track",
+      "processLocally": true,
+      "lang": "en-US",
+      "continuous": true,
+      "argumentCount": 1,
+      "events": [
+        {
+          "type": "start",
+          "ms": 268
+        },
+        {
+          "type": "audiostart",
+          "ms": 669
+        },
+        {
+          "type": "soundstart",
+          "ms": 4144
+        },
+        {
+          "type": "speechstart",
+          "ms": 4144
+        },
+        {
+          "type": "speechend",
+          "ms": 22004
+        },
+        {
+          "type": "soundend",
+          "ms": 22004
+        },
+        {
+          "type": "audioend",
+          "ms": 22004
+        },
+        {
+          "type": "end",
+          "ms": 22004
+        }
+      ],
+      "resultCount": 0,
+      "peak": 0.9266506433486938,
+      "sampleCount": 240,
+      "blobBytes": 0,
+      "recognitionUsesAcquiredTrack": true,
+      "allTracksEnded": true,
+      "audioSettings": {
+        "sampleRate": 44100,
+        "channelCount": 2,
+        "autoGainControl": false,
+        "echoCancellation": false,
+        "noiseSuppression": false
+      }
+    }
+  ],
+  "limitations": [
+    "Native no-argument microphone did not detect speech; fake WAV routing to its internal capture was not independently verified.",
+    "Synthetic fixture and headless browser results do not establish physical microphone behavior or all-browser failure.",
+    "No interim or final result events occurred; offline words-before-Stop acceptance remains unmet."
+  ]
+}
