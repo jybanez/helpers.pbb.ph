@@ -147,6 +147,15 @@
 
       assert(categories.length === 22, "icons registry should expose 22 categories");
       assert(names.includes("actions.close"), "icons registry should include actions.close");
+      for (const name of ["actions.heart", "actions.heart-filled"]) {
+        assert(names.includes(name), `${name} is available`);
+        const heart = createIcon(name);
+        assert(heart.getAttribute("viewBox") === "0 0 24 24", `${name} uses the standard viewBox`);
+        assert(heart.getAttribute("stroke") === "currentColor", `${name} inherits stroke color`);
+        assert(heart.getAttribute("aria-hidden") === "true", `${name} is decorative by default`);
+        assert(heart.querySelector("path").getAttribute("fill") === (name.endsWith("-filled") ? "currentColor" : null), `${name} has the intended fill`);
+        host.appendChild(heart);
+      }
       assert(names.includes("actions.hide"), "icons registry should include actions.hide");
       assert(names.includes("actions.settings"), "icons registry should include actions.settings");
       assert(names.includes("actions.options"), "icons registry should include actions.options");

@@ -1,4 +1,6 @@
 export const ICON_DEFINITIONS = {
+  "actions.heart": icon("actions", [path("M20.5 4.5a5.3 5.3 0 0 0-7.5 0L12 5.5l-1-1a5.3 5.3 0 0 0-7.5 7.5L12 20.5l8.5-8.5a5.3 5.3 0 0 0 0-7.5Z")]),
+  "actions.heart-filled": icon("actions", [path("M20.5 4.5a5.3 5.3 0 0 0-7.5 0L12 5.5l-1-1a5.3 5.3 0 0 0-7.5 7.5L12 20.5l8.5-8.5a5.3 5.3 0 0 0 0-7.5Z", { fill: "currentColor" })]),
   "map.ruler": icon("map", [path("M3 15 15 3l6 6L9 21Z"), line(8, 10, 11, 13), line(12, 6, 15, 9), line(4, 14, 7, 17), line(16, 10, 18, 12)]),
   "map.pin": icon("map", [path("M12 22s7-8 7-13a7 7 0 1 0-14 0c0 5 7 13 7 13Z"), circle(12, 9, 3)]),
   "actions.move": icon("actions", [line(3,12,21,12), line(12,3,12,21), polyline("6 9 3 12 6 15"), polyline("18 9 21 12 18 15"), polyline("9 6 12 3 15 6"), polyline("9 18 12 21 15 18")]),
