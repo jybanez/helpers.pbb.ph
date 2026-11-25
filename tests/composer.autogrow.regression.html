@@ -26,7 +26,8 @@ try {
  assert(height()>wide,'width change recalculates wrapping');
  host.style.display='none';c.update({value:'hidden\n'.repeat(7)});host.style.display='block';await tick();
  assert(height()>medium,'hidden initialization measures when revealed');
- c.clear();assert(height()<=small+1,'clear shrinks');
+ const beforeClear=height();c.clear();assert(height()<beforeClear&&c.getValue()==='','clear shrinks at the current width');
+ host.style.width='400px';await tick();assert(height()<=small+1,'clear returns to the baseline at the original width');
  c.update({value:'x\n'.repeat(20)},{maxRows:3});assert(height()<capped&&getComputedStyle(c.refs.input).overflowY==='auto','updated maxRows is applied');
  c.update({}, {autoGrow:false});assert(c.refs.input.style.height===''&&getComputedStyle(c.refs.input).resize==='vertical','opt-out restores current manual behavior');
  c.update({}, {autoGrow:true,multiline:false});assert(c.refs.input.tagName==='INPUT'&&c.refs.input.style.height==='','single-line input unchanged');
