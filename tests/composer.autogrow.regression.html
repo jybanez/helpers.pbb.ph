@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Composer auto-grow</title>
+<style>body{font:16px/20px sans-serif}#host{width:400px}</style></head>
+<body data-status="pending"><div id="host"></div><pre id="results"></pre><script type="module">
+import {createUiLoader,DEFAULT_COMPONENT_REGISTRY} from '../js/ui/ui.loader.js';
+const bundled=new URLSearchParams(location.search).has('bundle');
+const loader=bundled ? (await import('../dist/helpers.ui.bundle.min.js')).uiLoader : createUiLoader(DEFAULT_COMPONENT_REGISTRY);
+const create=await loader.get('ui.chat.composer');
+const host=document.querySelector('#host'),results=document.querySelector('#results');
+const tick=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+const assert=(ok,msg)=>{if(!ok)throw Error(msg);results.textContent+=`PASS ${msg}\n`;};
+let c;
+try {
+ c=create(host,{}, {autoGrow:true,maxRows:10,showAttachmentButton:false});
+ const height=()=>c.refs.input.getBoundingClientRect().height;
+ const small=height();
+ c.setValue('Line\n'.repeat(4)+'Last');
+ const medium=height();assert(medium>small,'explicit newlines grow');
+ c.setValue('Line\n'.repeat(20));
+ const capped=height(),s=getComputedStyle(c.refs.input);
+ const expected=10*parseFloat(s.lineHeight)+parseFloat(s.paddingTop)+parseFloat(s.paddingBottom)+parseFloat(s.borderTopWidth)+parseFloat(s.borderBottomWidth);
+ assert(Math.abs(capped-expected)<2&&s.overflowY==='auto'&&c.refs.input.scrollHeight>c.refs.input.clientHeight,'ten rows cap with internal scroll');
+ c.refs.input.value='short';c.refs.input.dispatchEvent(new Event('input'));
+ assert(height()<medium&&getComputedStyle(c.refs.input).overflowY==='hidden','typing deletion shrinks and removes scrollbar');
+ c.setValue('wrapped words '.repeat(40));assert(height()>small,'wrapped text grows');
+ c.setValue('wrapped words '.repeat(10));const wide=height();host.style.width='200px';await tick();
+ assert(height()>wide,'width change recalculates wrapping');
+ host.style.display='none';c.update({value:'hidden\n'.repeat(7)});host.style.display='block';await tick();
+ assert(height()>medium,'hidden initialization measures when revealed');
+ c.clear();assert(height()<=small+1,'clear shrinks');
+ c.update({value:'x\n'.repeat(20)},{maxRows:3});assert(height()<capped&&getComputedStyle(c.refs.input).overflowY==='auto','updated maxRows is applied');
+ c.update({}, {autoGrow:false});assert(c.refs.input.style.height===''&&getComputedStyle(c.refs.input).resize==='vertical','opt-out restores current manual behavior');
+ c.update({}, {autoGrow:true,multiline:false});assert(c.refs.input.tagName==='INPUT'&&c.refs.input.style.height==='','single-line input unchanged');
+ c.update({value:'Normal line height\n'.repeat(20)}, {multiline:true});c.refs.input.style.lineHeight='normal';c.setValue(c.getValue());assert(Number.isFinite(height())&&height()>44,'normal line height is measured');
+ c.destroy();await tick();assert(!host.childNodes.length,'destroy cleans up');
+ document.body.dataset.status='pass';results.textContent+='PASS auto-grow regression';
+}catch(error){document.body.dataset.status='fail';results.textContent+=`FAIL ${error.stack}`;c?.destroy();}
+</script></body></html>

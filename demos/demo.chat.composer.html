@@ -56,6 +56,7 @@
         { option: "<code>capture</code>", default: '<code>null</code>', description: "Optional native capture hint for camera/mic-capable environments." },
         { option: "<code>maxLength</code>", default: '<code>null</code>', description: "Optional max length constraint for the text input." },
         { option: "<code>multiline</code>", default: '<code>true</code>', description: "Uses a textarea by default; when false, uses a single-line input." },
+        { option: "<code>autoGrow / maxRows</code>", default: '<code>false / 10</code>', description: "Opt into growing and shrinking with wrapped text; scroll internally after maxRows visible lines." },
         { option: "<code>submitOnEnter</code>", default: '<code>true</code>', description: "When true, Enter submits and Shift+Enter adds a newline." }
       ],
       propertiesText: "<code>refs</code> returns current root, input, send, attach, fileInput, video, audio, metadata and helper nodes. Read again after update; absent controls are undefined. <code>getState()</code> returns the text value and options, not the app-owned attachment queue.",
@@ -330,6 +331,7 @@ async onSend({ text }) {
     });
 
     const helperComposer = createChatComposer(document.getElementById('composerHelperHost'), {}, {
+      autoGrow:true, maxRows:10,
       attachmentPlacement:'helper', attachmentLabel:'Attach files',
       helperText:'Enter sends. Shift+Enter adds a new line.',
       onSend:({text})=>writeLog('helper.send',{text}),
