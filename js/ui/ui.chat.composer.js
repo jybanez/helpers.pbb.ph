@@ -17,6 +17,8 @@ const DEFAULT_OPTIONS = {
   capture: null,
   maxLength: null,
   multiline: true,
+  autoGrow: false,
+  maxRows: 10,
   submitOnEnter: true,
   onChange: null,
   onSend: null,
@@ -35,6 +37,7 @@ export function createChatComposer(container, data = {}, options = {}) {
   let attachmentCount = normalizeAttachmentCount(data?.attachmentCount);
   let currentOptions = { ...DEFAULT_OPTIONS, ...(options || {}) };
   let refs = {};
+  let resizeObserver = null;
   let attachmentController = null, attachmentRevision = 0, attachmentBusy = false, destroyed = false;
   let attachmentError = '';
   function fileOptions() { return { ...currentOptions, ...(currentOptions.attachmentOptions?.files || {}) }; }
@@ -106,6 +109,8 @@ export function createChatComposer(container, data = {}, options = {}) {
       return;
     }
 
+    resizeObserver?.disconnect();
+    resizeObserver = null;
     clearNode(container);
     refs = {};
 
@@ -153,6 +158,7 @@ export function createChatComposer(container, data = {}, options = {}) {
     input.value = currentValue;
     input.addEventListener("input", () => {
       currentValue = String(input.value || "");
+      resizeInput();
       currentOptions.onChange?.(currentValue);
       syncButtons();
     });
@@ -235,8 +241,61 @@ export function createChatComposer(container, data = {}, options = {}) {
     if (metadata.childNodes.length) root.appendChild(metadata);
 
     container.appendChild(root);
+    resizeInput();
+    if (currentOptions.autoGrow && input.tagName === "TEXTAREA" && typeof ResizeObserver === "function") {
+      let lastWidth = input.getBoundingClientRect().width;
+      resizeObserver = new ResizeObserver(() => {
+        const width = input.getBoundingClientRect().width;
+        if (width !== lastWidth) { lastWidth = width; resizeInput(); }
+      });
+      resizeObserver.observe(input);
+    }
     syncAttachmentError();
   }
+
+  function resizeInput() {
+    const input = refs.input;
+    if (destroyed || !currentOptions.autoGrow || input?.tagName !== "TEXTAREA" || !input.getBoundingClientRect().width) return;
+    const style = getComputedStyle(input);
+    const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const border = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    let lineHeight = parseFloat(style.lineHeight);
+    // Measure the browser's normal line box instead of assuming a font-size ratio.
+    if (!Number.isFinite(lineHeight)) {
+      const probe = input.cloneNode(false);
+      probe.removeAttribute("id");
+      probe.setAttribute("aria-hidden", "true");
+      Object.assign(probe.style, {
+        position: "absolute", visibility: "hidden", pointerEvents: "none",
+        height: "auto", minHeight: "0", maxHeight: "none",
+        fontFamily: style.fontFamily, fontSize: style.fontSize,
+        fontWeight: style.fontWeight, fontStyle: style.fontStyle,
+        fontStretch: style.fontStretch, fontVariant: style.fontVariant,
+        lineHeight: style.lineHeight, letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+      });
+      probe.rows = 1;
+      input.parentNode.appendChild(probe);
+      const oneRow = probe.clientHeight;
+      probe.rows = 2;
+      lineHeight = probe.clientHeight - oneRow;
+      probe.remove();
+    }
+    const rows = Number(currentOptions.maxRows);
+    const maxRows = Number.isFinite(rows) && rows >= 1 ? Math.floor(rows) : DEFAULT_OPTIONS.maxRows;
+    const maxHeight = lineHeight * maxRows + padding + border;
+    input.style.resize = "none";
+    input.style.minHeight = `${Math.min(44, maxHeight)}px`;
+    input.style.maxHeight = `${maxHeight}px`;
+    input.style.overflowY = "hidden";
+    input.style.height = "0px";
+    const contentHeight = input.scrollHeight + border;
+    input.style.height = `${Math.min(Math.max(contentHeight, Math.min(44, maxHeight)), maxHeight)}px`;
+    input.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+  }
+
+  const onFontsLoaded = () => resizeInput();
+  document.fonts?.addEventListener?.("loadingdone", onFontsLoaded);
 
   function syncAttachmentError() {
     refs.attachmentError?.remove();
@@ -362,6 +421,8 @@ export function createChatComposer(container, data = {}, options = {}) {
 
   function destroy() {
     destroyed = true; cancelAttachment();
+    resizeObserver?.disconnect();
+    document.fonts?.removeEventListener?.("loadingdone", onFontsLoaded);
     refs = {};
     clearNode(container);
   }
@@ -371,6 +432,7 @@ export function createChatComposer(container, data = {}, options = {}) {
     if (refs.input) {
       refs.input.value = currentValue;
     }
+    resizeInput();
     syncButtons();
   }
 

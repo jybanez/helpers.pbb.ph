@@ -72,6 +72,8 @@ type ChatComposerOptions = {
   capture?: string | null;
   maxLength?: number | null;
   multiline?: boolean;
+  autoGrow?: boolean;
+  maxRows?: number;
   submitOnEnter?: boolean;
   onChange?: (value: string) => void;
   onSend?: (payload: { text: string }) => void | Promise<void>;
@@ -97,6 +99,8 @@ type ChatComposerOptions = {
   capture: null,
   maxLength: null,
   multiline: true,
+  autoGrow: false,
+  maxRows: 10,
   submitOnEnter: true,
   onChange: null,
   onSend: null,
@@ -269,3 +273,15 @@ completion because rendering replaces nodes; absent controls are undefined. The
 metadata node is detached when unused. Stable classes are
 `.ui-chat-composer-metadata`, `.ui-chat-composer-attach.is-helper-action`, and
 `.ui-chat-composer-attach-label`. Use supported options instead of moving these nodes.
+
+## Optional textarea auto-grow
+
+Pass `{ autoGrow: true, maxRows: 10 }` in the factory options (or `update` options).
+The textarea grows for wrapped text and newlines, shrinks on deletion, `setValue`,
+or `clear`, and scrolls internally beyond the visible-line cap. It recalculates
+when its width changes, when revealed after hidden initialization, and after web
+fonts load. Padding and borders are additional to the line cap. Auto-grow owns the
+height and disables manual resizing while enabled. It applies only to multiline
+textareas; the default `autoGrow: false` retains manual vertical resizing.
+`maxRows` defaults to 10; finite values at least 1 are rounded down, and invalid
+values use the default. No transport, submission, or validation behavior changes.
