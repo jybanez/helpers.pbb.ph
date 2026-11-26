@@ -31,7 +31,17 @@ try {
  c.update({value:'x\n'.repeat(20)},{maxRows:3});assert(height()<capped&&getComputedStyle(c.refs.input).overflowY==='auto','updated maxRows is applied');
  c.update({}, {autoGrow:false});assert(c.refs.input.style.height===''&&getComputedStyle(c.refs.input).resize==='vertical','opt-out restores current manual behavior');
  c.update({}, {autoGrow:true,multiline:false});assert(c.refs.input.tagName==='INPUT'&&c.refs.input.style.height==='','single-line input unchanged');
- c.update({value:'Normal line height\n'.repeat(20)}, {multiline:true});c.refs.input.style.lineHeight='normal';c.setValue(c.getValue());assert(Number.isFinite(height())&&height()>44,'normal line height is measured');
+ c.update({}, {multiline:true,maxRows:3});
+ Object.assign(c.refs.input.style,{fontSize:'32px',lineHeight:'normal'});
+ c.setValue('One\nTwo\nThree');
+ const native=document.createElement('textarea');native.className=c.refs.input.className;
+ Object.assign(native.style,{fontSize:'32px',lineHeight:'normal',height:'auto',maxHeight:'none'});native.rows=3;
+ host.appendChild(native);
+ assert(Math.abs(height()-native.getBoundingClientRect().height)<2,'normal line cap preserves inline typography and native row height');
+ assert(c.refs.input.scrollHeight<=c.refs.input.clientHeight+1&&getComputedStyle(c.refs.input).overflowY==='hidden','exactly maxRows fits without scrolling');
+ const threeRows=height();c.setValue('One\nTwo\nThree\nFour');
+ assert(Math.abs(height()-threeRows)<2&&c.refs.input.scrollHeight>c.refs.input.clientHeight&&getComputedStyle(c.refs.input).overflowY==='auto','one line beyond maxRows scrolls at the same height');
+ native.remove();
  c.destroy();await tick();assert(!host.childNodes.length,'destroy cleans up');
  document.body.dataset.status='pass';results.textContent+='PASS auto-grow regression';
 }catch(error){document.body.dataset.status='fail';results.textContent+=`FAIL ${error.stack}`;c?.destroy();}

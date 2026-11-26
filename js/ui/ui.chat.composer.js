@@ -265,7 +265,15 @@ export function createChatComposer(container, data = {}, options = {}) {
       const probe = input.cloneNode(false);
       probe.removeAttribute("id");
       probe.setAttribute("aria-hidden", "true");
-      probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;height:auto;min-height:0;max-height:none;";
+      Object.assign(probe.style, {
+        position: "absolute", visibility: "hidden", pointerEvents: "none",
+        height: "auto", minHeight: "0", maxHeight: "none",
+        fontFamily: style.fontFamily, fontSize: style.fontSize,
+        fontWeight: style.fontWeight, fontStyle: style.fontStyle,
+        fontStretch: style.fontStretch, fontVariant: style.fontVariant,
+        lineHeight: style.lineHeight, letterSpacing: style.letterSpacing,
+        wordSpacing: style.wordSpacing,
+      });
       probe.rows = 1;
       input.parentNode.appendChild(probe);
       const oneRow = probe.clientHeight;
